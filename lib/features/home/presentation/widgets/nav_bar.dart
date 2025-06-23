@@ -1,8 +1,9 @@
 // lib/features/home/presentation/widgets/nav_bar.dart
 import 'package:flutter/material.dart';
-import 'package:agriguard_fyp/Profile/presentation/screens/profile_screen.dart';
 import 'package:agriguard_fyp/features/scan/presentation/screens/capture_screen.dart';
 import 'package:agriguard_fyp/features/home/presentation/screens/home_screen.dart';
+
+import '../../../Profile/presentation/screens/profile_screen.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int selectedIndex;

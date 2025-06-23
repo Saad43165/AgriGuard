@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/app_icons.dart';
-import '../../../core/constants/app_routes.dart';
-import '../../../features/home/presentation/widgets/nav_bar.dart';
-
-
+import '../../../../core/constants/app_icons.dart';
+import '../../../../core/constants/app_routes.dart';
+import '../../../home/presentation/widgets/nav_bar.dart';
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 

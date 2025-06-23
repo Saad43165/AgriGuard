@@ -2,7 +2,7 @@
 import 'package:agriguard_fyp/features/scan/presentation/screens/capture_screen.dart';
 import 'package:agriguard_fyp/features/scan/presentation/screens/image_edit_screen.dart';
 import 'package:flutter/material.dart';
-import '../../Profile/presentation/screens/profile_screen.dart';
+import '../../features/Profile/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/login_screens.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
