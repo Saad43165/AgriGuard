@@ -1,5 +1,5 @@
 // lib/core/constants/app_constants.dart
-library app_constants;
+library;
 
 export 'app_durations.dart';
 export 'app_icons.dart';

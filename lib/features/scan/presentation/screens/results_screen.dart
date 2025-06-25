@@ -260,8 +260,8 @@ class ResultsScreen extends StatelessWidget {
   Widget _buildFloatingActionButton(BuildContext context) {
     return FloatingActionButton(
       onPressed: () => _saveReport(context),
-      child: const Icon(Icons.save),
       tooltip: 'Save Report',
+      child: const Icon(Icons.save),
     );
   }
 

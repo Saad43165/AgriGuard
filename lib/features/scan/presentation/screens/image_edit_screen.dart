@@ -2,7 +2,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -28,7 +27,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> {
   double _contrast = 1.0;
   double _saturation = 1.0;
   Color _selectedColor = Colors.red;
-  List<Offset> _points = [];
+  final List<Offset> _points = [];
   final GlobalKey _imageKey = GlobalKey();
   Matrix4 _matrix = Matrix4.identity();
   Rect? _cropRect;

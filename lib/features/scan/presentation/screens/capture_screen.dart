@@ -7,6 +7,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../home/presentation/widgets/nav_bar.dart';
 
 class CaptureScreen extends StatefulWidget {
+  const CaptureScreen({super.key});
+
   @override
   _CaptureScreenState createState() => _CaptureScreenState();
 }
@@ -122,7 +124,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   width: double.infinity,
                   margin: const EdgeInsets.all(AppMeasurements.smallPadding),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
                   ),
                   child: _buildImagePreview(),
