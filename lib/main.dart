@@ -1,7 +1,6 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'config/app_theme.dart';
-import 'core/navigation/app_router.dart'; // Updated import
+import 'core/navigation/app_router.dart';
 
 void main() {
   runApp(const AgriGuardApp());
@@ -15,8 +14,8 @@ class AgriGuardApp extends StatelessWidget {
     return MaterialApp(
       title: 'AgriGuard',
       theme: AppTheme.lightTheme,
-      initialRoute: '/splash', // Ensure this matches a defined route
-      onGenerateRoute: AppRouter.generateRoute, // Ensure AppRouter is defined
+      initialRoute: '/splash',
+      onGenerateRoute: AppRouter.generateRoute,
       debugShowCheckedModeBanner: false,
     );
   }

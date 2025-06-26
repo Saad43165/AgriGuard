@@ -1,14 +1,15 @@
-// lib/features/scan/presentation/screens/image_edit_screen.dart
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:vector_math/vector_math_64.dart' show Vector3, Matrix4;
+import 'package:vector_math/vector_math_64.dart' show Matrix4;
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_routes.dart';
 
 class ImageEditScreen extends StatefulWidget {
   final String imagePath;
@@ -19,7 +20,7 @@ class ImageEditScreen extends StatefulWidget {
   State<ImageEditScreen> createState() => _ImageEditScreenState();
 }
 
-class _ImageEditScreenState extends State<ImageEditScreen> {
+class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderStateMixin {
   img.Image? _originalImage;
   img.Image? _editedImage;
   Uint8List? _encodedImage;
@@ -34,12 +35,36 @@ class _ImageEditScreenState extends State<ImageEditScreen> {
   Rect? _cropRect;
   bool _isCropping = false;
   Offset? _cropStart;
+  Offset? _cropEnd;
+  double _currentScale = 1.0;
+
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    debugPrint('ImageEditScreen initialized with imagePath: ${widget.imagePath}');
     _loadImage();
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fadeController.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadImage() async {
@@ -53,16 +78,20 @@ class _ImageEditScreenState extends State<ImageEditScreen> {
       if (decodedImage == null) {
         throw Exception('Failed to decode image at ${widget.imagePath}');
       }
+
       setState(() {
         _originalImage = decodedImage;
-        _editedImage = img.copyResize(decodedImage, width: 800);
+        _editedImage = img.copyResize(decodedImage, width: 1000); // Higher resolution for better editing
         _applyFilters();
         _isLoading = false;
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading image: $e')),
+          SnackBar(
+            content: Text('Error loading image: $e'),
+            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+          ),
         );
         Navigator.pop(context);
       }
@@ -71,55 +100,68 @@ class _ImageEditScreenState extends State<ImageEditScreen> {
 
   void _applyFilters() {
     if (_editedImage == null || _originalImage == null) return;
-    _editedImage = img.copyResize(_originalImage!, width: 800);
+
+    // Start with original image
+    _editedImage = img.copyResize(_originalImage!, width: 1000);
+
+    // Apply color adjustments
     _editedImage = img.adjustColor(
       _editedImage!,
       brightness: _brightness.clamp(-1.0, 1.0),
-      contrast: _contrast.clamp(0.0, 2.0),
-      saturation: _saturation.clamp(0.0, 2.0),
+      contrast: _contrast.clamp(0.5, 1.5), // More reasonable contrast range
+      saturation: _saturation.clamp(0.5, 1.5), // More reasonable saturation range
     );
+
+    // Apply highlights
     if (_points.isNotEmpty) _highlightAreas();
+
+    // Apply crop
     if (_cropRect != null) _applyCrop();
+
     _encodedImage = img.encodeJpg(_editedImage!);
-    if (mounted) setState(() {});
+    setState(() {});
   }
 
   void _highlightAreas() {
-    if (_editedImage == null) {
-      debugPrint('Error: _editedImage is null in _highlightAreas');
-      return;
-    }
+    if (_editedImage == null) return;
+
     for (final point in _points) {
       final x = (point.dx * _editedImage!.width).toInt().clamp(0, _editedImage!.width - 1);
       final y = (point.dy * _editedImage!.height).toInt().clamp(0, _editedImage!.height - 1);
-      debugPrint('Highlighting at x: $x, y: $y with color: $_selectedColor');
+
+      // Draw a more visible highlight
       img.drawCircle(
         _editedImage!,
         x: x,
         y: y,
-        radius: 10,
+        radius: 20,
         color: img.ColorRgb8(_selectedColor.red, _selectedColor.green, _selectedColor.blue),
       );
+      img.drawCircle(
+        _editedImage!,
+        x: x,
+        y: y,
+        radius: 15,
+        color: img.ColorRgb8(255, 255, 255),
+      );
     }
-    _encodedImage = img.encodeJpg(_editedImage!); // Re-encode after highlighting
-    if (mounted) setState(() {});
   }
 
   void _applyCrop() {
     if (_editedImage == null || _cropRect == null) return;
 
-    final imageWidth = _editedImage!.width;
-    final imageHeight = _editedImage!.height;
-
     final renderBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
+    final imageWidth = _editedImage!.width;
+    final imageHeight = _editedImage!.height;
     final boxSize = renderBox.size;
 
-    // Convert from widget space (cropRect) to image space
-    final scaleX = imageWidth / boxSize.width;
-    final scaleY = imageHeight / boxSize.height;
+    // Adjust for current scale
+    final scaleX = imageWidth / (boxSize.width * _currentScale);
+    final scaleY = imageHeight / (boxSize.height * _currentScale);
 
+    // Convert crop rectangle from widget coordinates to image coordinates
     final x = (_cropRect!.left * scaleX).round().clamp(0, imageWidth - 1);
     final y = (_cropRect!.top * scaleY).round().clamp(0, imageHeight - 1);
     final width = (_cropRect!.width * scaleX).round().clamp(1, imageWidth - x);
@@ -132,14 +174,22 @@ class _ImageEditScreenState extends State<ImageEditScreen> {
       width: width,
       height: height,
     );
+
+    // Reset view after crop
+    _matrix = Matrix4.identity();
+    _currentScale = 1.0;
+    _cropRect = null;
+    _isCropping = false;
   }
 
   Future<void> _saveAndNavigateToResults() async {
     if (_encodedImage == null || _editedImage == null) return;
+
     try {
       final tempDir = await getTemporaryDirectory();
       final editedPath = '${tempDir.path}/edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
       await File(editedPath).writeAsBytes(_encodedImage!);
+
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
@@ -159,287 +209,579 @@ class _ImageEditScreenState extends State<ImageEditScreen> {
               'width': _cropRect!.width,
               'height': _cropRect!.height,
             }
-                : {},
+                : null,
           },
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving image: $e')),
+          SnackBar(
+            content: Text('Error saving image: $e'),
+            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+          ),
         );
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppStrings.editAndAnalyze),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _saveAndNavigateToResults,
-            tooltip: AppStrings.analyze,
-          ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-            tooltip: 'Cancel',
+  Widget _buildGlassCard({required Widget child, EdgeInsets? padding}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-        padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-        child: Column(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTapDown: (details) {
-                  if (!_isCropping) {
-                    final box = _imageKey.currentContext?.findRenderObject() as RenderBox?;
-                    if (box != null) {
-                      final localPosition = box.globalToLocal(details.globalPosition);
-                      final inverseMatrix = _matrix.clone()..invert();
-                      final transformedPoint = inverseMatrix.transform3(Vector3(
-                        localPosition.dx,
-                        localPosition.dy,
-                        0,
-                      ));
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: padding ?? const EdgeInsets.all(12),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
 
-                      final imageSize = box.size;
-                      final relativeX = (transformedPoint.x / imageSize.width).clamp(0.0, 1.0);
-                      final relativeY = (transformedPoint.y / imageSize.height).clamp(0.0, 1.0);
+  void _handleImageTapDown(TapDownDetails details) {
+    if (_isCropping) {
+      final renderBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
 
-                      debugPrint('Tapped at local: $localPosition, transformed: $transformedPoint, relative: ($relativeX, $relativeY)');
-                      setState(() {
-                        _points.add(Offset(relativeX, relativeY));
-                        _applyFilters();
-                      });
-                    }
-                  }
-                },
-                onPanStart: _isCropping
-                    ? (details) => setState(() => _cropStart = details.localPosition)
-                    : null,
-                onPanUpdate: _isCropping
-                    ? (details) {
-                  if (_cropStart != null) {
-                    final current = details.localPosition;
-                    final box = _imageKey.currentContext?.findRenderObject() as RenderBox?;
-                    if (box == null) return;
-                    final boxSize = box.size;
+      final localPosition = renderBox.globalToLocal(details.globalPosition);
+      setState(() {
+        _cropStart = localPosition;
+        _cropEnd = localPosition;
+        _updateCropRect();
+      });
+    } else {
+      final renderBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
 
-                    final left = (_cropStart!.dx < current.dx ? _cropStart!.dx : current.dx)
-                        .clamp(0.0, boxSize.width);
-                    final top = (_cropStart!.dy < current.dy ? _cropStart!.dy : current.dy)
-                        .clamp(0.0, boxSize.height);
-                    final width = (_cropStart!.dx - current.dx).abs().clamp(0.0, boxSize.width - left);
-                    final height = (_cropStart!.dy - current.dy).abs().clamp(0.0, boxSize.height - top);
+      final localPosition = renderBox.globalToLocal(details.globalPosition);
+      final size = renderBox.size;
 
+      final normalizedX = (localPosition.dx / size.width).clamp(0.0, 1.0);
+      final normalizedY = (localPosition.dy / size.height).clamp(0.0, 1.0);
 
-                    setState(() => _cropRect = Rect.fromLTWH(left, top, width, height));
-                  }
-                }
-                    : null,
-                onPanEnd: _isCropping
-                    ? (_) {
-                  setState(() {
-                    _applyFilters();
-                    _cropStart = null;
-                  });
-                }
-                    : null,
-                child: Stack(
-                  children: [
-                    MatrixGestureDetector(
-                      onMatrixUpdate: (m, tm, sm, rm) {
-                        setState(() => _matrix = m);
-                      },
-                      child: Container(
-                        key: _imageKey,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).dividerColor),
-                          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                          child: Transform(
-                            transform: _matrix,
-                            child: _encodedImage != null
-                                ? Image.memory(_encodedImage!, fit: BoxFit.contain)
-                                : const SizedBox.shrink(),
+      setState(() {
+        _points.add(Offset(normalizedX, normalizedY));
+        _applyFilters();
+      });
+    }
+  }
+
+  void _handleImagePanUpdate(DragUpdateDetails details) {
+    if (_isCropping && _cropStart != null) {
+      final renderBox = _imageKey.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+
+      final localPosition = renderBox.globalToLocal(details.globalPosition);
+      setState(() {
+        _cropEnd = localPosition;
+        _updateCropRect();
+      });
+    }
+  }
+
+  void _updateCropRect() {
+    if (_cropStart == null || _cropEnd == null) return;
+
+    final left = _cropStart!.dx < _cropEnd!.dx ? _cropStart!.dx : _cropEnd!.dx;
+    final top = _cropStart!.dy < _cropEnd!.dy ? _cropStart!.dy : _cropEnd!.dy;
+    final right = _cropStart!.dx > _cropEnd!.dx ? _cropStart!.dx : _cropEnd!.dx;
+    final bottom = _cropStart!.dy > _cropEnd!.dy ? _cropStart!.dy : _cropEnd!.dy;
+
+    final width = right - left;
+    final height = bottom - top;
+
+    if (width > 20 && height > 20) {
+      _cropRect = Rect.fromLTWH(left, top, width, height);
+    }
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _matrix = Matrix4.identity();
+      _currentScale = 1.0;
+    });
+  }
+
+  void _zoomIn() {
+    setState(() {
+      _currentScale *= 1.2;
+      _matrix = Matrix4.identity()..scale(_currentScale);
+    });
+  }
+
+  void _zoomOut() {
+    setState(() {
+      _currentScale = (_currentScale / 1.2).clamp(0.5, 10.0);
+      _matrix = Matrix4.identity()..scale(_currentScale);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: const Color(0xFF00D4AA),
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFF00D4AA),
+          secondary: const Color(0xFF6C63FF),
+          surface: const Color(0xFF1A1A2E),
+          background: const Color(0xFF16213E),
+        ),
+      ),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+            ).createShader(bounds),
+            child: Text(
+              AppStrings.editAndAnalyze,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          actions: [
+            _buildActionButton(
+              icon: Icons.check_rounded,
+              color: const Color(0xFF00D4AA),
+              onTap: _saveAndNavigateToResults,
+            ),
+            _buildActionButton(
+              icon: Icons.close_rounded,
+              color: Colors.red,
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF0F0F23),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+                Color(0xFF0F0F23),
+              ],
+              stops: [0.0, 0.3, 0.7, 1.0],
+            ),
+          ),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00D4AA)))
+              : SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  // Image display area with fixed aspect ratio
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildGlassCard(
+                        child: GestureDetector(
+                          onTapDown: _handleImageTapDown,
+                          onPanUpdate: _handleImagePanUpdate,
+                          onPanEnd: (_) {
+                            if (_isCropping) _applyFilters();
+                          },
+                          child: Stack(
+                            children: [
+                              MatrixGestureDetector(
+                                onMatrixUpdate: (m, tm, sm, rm) {
+                                  setState(() {
+                                    _matrix = m;
+                                    _currentScale = m.getMaxScaleOnAxis();
+                                  });
+                                },
+                                child: Container(
+                                  key: _imageKey,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Transform(
+                                    transform: _matrix,
+                                    child: _encodedImage != null
+                                        ? Image.memory(
+                                      _encodedImage!,
+                                      fit: BoxFit.contain,
+                                    )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ),
+                              ),
+                              if (_isCropping && _cropRect != null)
+                                Positioned(
+                                  left: _cropRect!.left,
+                                  top: _cropRect!.top,
+                                  child: Container(
+                                    width: _cropRect!.width,
+                                    height: _cropRect!.height,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                      border: Border.all(
+                                        color: const Color(0xFF00D4AA),
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                    if (_isCropping && _cropRect != null)
-                      Positioned(
-                        left: _cropRect!.left,
-                        top: _cropRect!.top,
-                        child: Container(
-                          width: _cropRect!.width,
-                          height: _cropRect!.height,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Theme.of(context).primaryColor, width: 2),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                  ),
+                  // Toolbars
+                  _buildToolbar(),
+                  _buildAdjustmentSliders(),
+                ],
               ),
             ),
-            const SizedBox(height: AppMeasurements.smallPadding),
-            _buildToolbar(),
-            _buildAdjustmentSliders(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.2),
+            color.withOpacity(0.1),
           ],
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: color),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildToolbar() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(vertical: AppMeasurements.smallPadding),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: () {
-              setState(() {
-                _points.clear();
-                _brightness = 0.0;
-                _contrast = 1.0;
-                _saturation = 1.0;
-                _cropRect = null;
-                _applyFilters();
-              });
-            },
-            tooltip: AppStrings.reset,
-          ),
-          IconButton(
-            icon: const Icon(Icons.colorize),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: Text(AppStrings.selectHighlightColor),
-                content: SingleChildScrollView(
-                  child: ColorPicker(
-                    pickerColor: _selectedColor,
-                    onColorChanged: (color) => setState(() => _selectedColor = color),
-                    showLabel: true,
-                    pickerAreaHeightPercent: 0.8,
+    return _buildGlassCard(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            _buildToolButton(
+              icon: Icons.undo_rounded,
+              label: 'Reset',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _points.clear();
+                  _brightness = 0.0;
+                  _contrast = 1.0;
+                  _saturation = 1.0;
+                  _cropRect = null;
+                  _isCropping = false;
+                  _matrix = Matrix4.identity();
+                  _currentScale = 1.0;
+                  _applyFilters();
+                });
+              },
+            ),
+            _buildToolButton(
+              icon: Icons.colorize_rounded,
+              label: 'Color',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: const Color(0xFF1A1A2E),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                    ),
+                    title: const Text(
+                      'Select Highlight Color',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    content: SingleChildScrollView(
+                      child: ColorPicker(
+                        pickerColor: _selectedColor,
+                        onColorChanged: (color) => setState(() => _selectedColor = color),
+                        showLabel: true,
+                        pickerAreaHeightPercent: 0.7,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'OK',
+                          style: TextStyle(color: Color(0xFF00D4AA)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            _buildToolButton(
+              icon: Icons.clear_rounded,
+              label: 'Clear',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _points.clear();
+                  _applyFilters();
+                });
+              },
+            ),
+            _buildToolButton(
+              icon: Icons.crop_rounded,
+              label: _isCropping ? 'Apply' : 'Crop',
+              isActive: _isCropping,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _isCropping = !_isCropping;
+                  if (!_isCropping && _cropRect != null) {
+                    _applyFilters();
+                  } else {
+                    _cropRect = null;
+                  }
+                });
+              },
+            ),
+            _buildToolButton(
+              icon: Icons.zoom_in_rounded,
+              label: 'Zoom In',
+              onTap: _zoomIn,
+            ),
+            _buildToolButton(
+              icon: Icons.zoom_out_rounded,
+              label: 'Zoom Out',
+              onTap: _zoomOut,
+            ),
+            _buildToolButton(
+              icon: Icons.center_focus_strong_rounded,
+              label: 'Reset Zoom',
+              onTap: _resetZoom,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isActive = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        gradient: isActive
+            ? const LinearGradient(
+          colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+        )
+            : LinearGradient(
+          colors: [
+            const Color(0xFF00D4AA).withOpacity(0.2),
+            const Color(0xFF6C63FF).withOpacity(0.2),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  color: isActive ? Colors.white : const Color(0xFF00D4AA),
+                  size: 20,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isActive ? Colors.white : const Color(0xFF00D4AA),
+                    fontSize: 12,
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(AppStrings.ok),
-                  ),
-                ],
-              ),
+              ],
             ),
-            tooltip: AppStrings.selectColor,
           ),
-          IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              setState(() {
-                _points.clear();
-                _applyFilters();
-              });
-            },
-            tooltip: AppStrings.clearMarks,
-          ),
-          IconButton(
-            icon: const Icon(Icons.crop),
-            onPressed: () {
-              setState(() {
-                _isCropping = !_isCropping;
-                if (!_isCropping) _cropRect = null;
-              });
-            },
-            tooltip: _isCropping ? 'Finish Cropping' : 'Crop Image',
-            color: _isCropping ? Theme.of(context).primaryColor : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.zoom_in),
-            onPressed: () {
-              setState(() {
-                _matrix = Matrix4.copy(_matrix)..scale(1.2);
-              });
-            },
-            tooltip: 'Zoom In',
-          ),
-          IconButton(
-            icon: const Icon(Icons.zoom_out),
-            onPressed: () {
-              setState(() {
-                _matrix = Matrix4.copy(_matrix)..scale(0.8);
-              });
-            },
-            tooltip: 'Zoom Out',
-          ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildAdjustmentSliders() {
-    return Padding(
-      padding: const EdgeInsets.all(AppMeasurements.smallPadding),
+    return _buildGlassCard(
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildSlider(Icons.brightness_6, _brightness, 0.0, 2.0, AppStrings.brightness),
-          _buildSlider(Icons.contrast, _contrast, 0.0, 2.0, AppStrings.contrast),
-          _buildSlider(Icons.color_lens, _saturation, 0.0, 2.0, AppStrings.saturation),
+          _buildSlider(
+            icon: Icons.brightness_6_rounded,
+            value: _brightness,
+            min: -1.0,
+            max: 1.0,
+            label: 'Brightness',
+            onChanged: (value) {
+              setState(() {
+                _brightness = value;
+                _applyFilters();
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildSlider(
+            icon: Icons.contrast_rounded,
+            value: _contrast,
+            min: 0.5,
+            max: 1.5,
+            label: 'Contrast',
+            onChanged: (value) {
+              setState(() {
+                _contrast = value;
+                _applyFilters();
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildSlider(
+            icon: Icons.color_lens_rounded,
+            value: _saturation,
+            min: 0.5,
+            max: 1.5,
+            label: 'Saturation',
+            onChanged: (value) {
+              setState(() {
+                _saturation = value;
+                _applyFilters();
+              });
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSlider(IconData icon, double value, double min, double max, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppMeasurements.extraSmallPadding),
-      child: Row(
-        children: [
-          Icon(icon, size: AppMeasurements.iconSizeMedium),
-          const SizedBox(width: AppMeasurements.smallPadding),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: Theme.of(context).textTheme.bodySmall),
-                Slider(
-                  value: value,
-                  min: min,
-                  max: max,
-                  divisions: 20,
-                  label: value.toStringAsFixed(1),
-                  onChanged: (newValue) => setState(() {
-                    switch (label) {
-                      case AppStrings.brightness:
-                        _brightness = newValue;
-                        break;
-                      case AppStrings.contrast:
-                        _contrast = newValue;
-                        break;
-                      case AppStrings.saturation:
-                        _saturation = newValue;
-                        break;
-                    }
-                    _applyFilters();
-                  }),
-                ),
+  Widget _buildSlider({
+    required IconData icon,
+    required double value,
+    required double min,
+    required double max,
+    required String label,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF00D4AA).withOpacity(0.3),
+                const Color(0xFF6C63FF).withOpacity(0.3),
               ],
             ),
           ),
-        ],
-      ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF00D4AA),
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                ),
+              ),
+              Slider(
+                value: value,
+                min: min,
+                max: max,
+                divisions: 20,
+                label: value.toStringAsFixed(1),
+                activeColor: const Color(0xFF00D4AA),
+                inactiveColor: Colors.white.withOpacity(0.2),
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
