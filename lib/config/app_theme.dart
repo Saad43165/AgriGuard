@@ -55,7 +55,6 @@ class AppTheme {
       tertiary: accentYellow,
       onPrimary: textLight,
       onSecondary: textLight,
-      onBackground: textDark,
       surface: surfaceLight,
       onSurface: textDark,
     ),
@@ -134,7 +133,7 @@ class AppTheme {
       color: primaryGreen,
       circularTrackColor: Colors.grey[300],
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -165,7 +164,6 @@ class AppTheme {
       tertiary: accentYellow,
       onPrimary: textLight,
       onSecondary: textLight,
-      onBackground: textLight,
       surface: surfaceDark,
       onSurface: textLight,
     ),
@@ -260,7 +258,7 @@ class AppTheme {
       color: secondaryGreen,
       circularTrackColor: Colors.grey[700],
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
