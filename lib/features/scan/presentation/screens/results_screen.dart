@@ -24,26 +24,14 @@ class ResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme.copyWith(
-      primary: const Color(0xFF00D4AA),
-      secondary: const Color(0xFF6C63FF),
-      surface: const Color(0xFF1A1A2E),
-      background: const Color(0xFF16213E),
-    );
     final result = _getDiagnosisResult();
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: const Color(0xFF00D4AA),
-        colorScheme: colorScheme,
-      ),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: _buildAppBar(context),
-        body: _buildBody(context, theme, colorScheme, result),
-        bottomNavigationBar: const BottomNavBar(selectedIndex: 1),
-        floatingActionButton: _buildFloatingActionButton(context),
-      ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(context),
+      body: _buildBody(context, theme, result),
+      bottomNavigationBar: const BottomNavBar(selectedIndex: 1),
+      floatingActionButton: _buildFloatingActionButton(context),
     );
   }
 
@@ -52,15 +40,17 @@ class ResultsScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       title: ShaderMask(
-        shaderCallback: (bounds) => const LinearGradient(
-          colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
         ).createShader(bounds),
-        child: const Text(
+        child: Text(
           'Analysis Results',
-          style: TextStyle(
-            fontSize: 24,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -70,12 +60,12 @@ class ResultsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           gradient: LinearGradient(
             colors: [
-              Colors.cyan.withOpacity(0.2),
-              Colors.purple.withOpacity(0.2),
+              Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
             ],
           ),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -87,18 +77,17 @@ class ResultsScreen extends StatelessWidget {
               HapticFeedback.lightImpact();
               Navigator.pop(context);
             },
-            child: const Padding(
-              padding: EdgeInsets.only(),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
               child: Icon(
-                AppIcons.back,
-                color: Color(0xFF00D4AA),
+                Icons.arrow_back_rounded,
+                color: Theme.of(context).colorScheme.primary,
                 size: 20,
               ),
             ),
           ),
         ),
       ),
-
       centerTitle: true,
       actions: [
         Container(
@@ -107,12 +96,12 @@ class ResultsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(_borderRadius),
             gradient: LinearGradient(
               colors: [
-                Colors.cyan.withOpacity(0.2),
-                Colors.purple.withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               ],
             ),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -124,11 +113,11 @@ class ResultsScreen extends StatelessWidget {
                 HapticFeedback.lightImpact();
                 _shareResults(context);
               },
-              child: const Padding(
-                padding: EdgeInsets.all(12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Icon(
                   Icons.share_rounded,
-                  color: Color(0xFF00D4AA),
+                  color: Theme.of(context).colorScheme.primary,
                   size: 24,
                 ),
               ),
@@ -139,17 +128,24 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, ThemeData theme, ColorScheme colorScheme, DiagnosisResult result) {
+  Widget _buildBody(BuildContext context, ThemeData theme, DiagnosisResult result) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0F0F23),
-            Color(0xFF16213E),
-            Color(0xFF1A1A2E),
-            Color(0xFF0F0F23),
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+            const Color(0xFF0F0F23),
+            const Color(0xFF16213E),
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F23),
+          ]
+              : [
+            Theme.of(context).colorScheme.background,
+            Theme.of(context).colorScheme.background.withOpacity(0.9),
+            Theme.of(context).colorScheme.background.withOpacity(0.8),
+            Theme.of(context).colorScheme.background,
           ],
           stops: [0.0, 0.3, 0.7, 1.0],
         ),
@@ -160,17 +156,17 @@ class ResultsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDiagnosisCard(theme, colorScheme, result),
+              _buildDiagnosisCard(context, theme, result),
               const SizedBox(height: _sectionSpacing),
-              _buildAnalysisDetailsCard(context, colorScheme),
+              _buildAnalysisDetailsCard(context),
               const SizedBox(height: _sectionSpacing),
-              _buildRecommendationsCard(context, result, colorScheme),
+              _buildRecommendationsCard(context, result),
               const SizedBox(height: _sectionSpacing),
               if (scanData['imageUrl'] != null) ...[
                 _buildScannedImageSection(context),
                 const SizedBox(height: _sectionSpacing),
               ],
-              _buildNextStepsCard(context, colorScheme),
+              _buildNextStepsCard(context),
             ],
           ),
         ),
@@ -178,7 +174,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGlassCard({required Widget child}) {
+  Widget _buildGlassCard(BuildContext context, {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(_borderRadius),
@@ -186,17 +182,17 @@ class ResultsScreen extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -212,8 +208,9 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiagnosisCard(ThemeData theme, ColorScheme colorScheme, DiagnosisResult result) {
+  Widget _buildDiagnosisCard(BuildContext context, ThemeData theme, DiagnosisResult result) {
     return _buildGlassCard(
+      context,
       child: Padding(
         padding: _cardPadding,
         child: Column(
@@ -221,8 +218,8 @@ class ResultsScreen extends StatelessWidget {
           children: [
             Text(
               'PLANT DIAGNOSIS',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: Colors.white.withOpacity(0.7),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 letterSpacing: 1.2,
                 fontSize: 14,
               ),
@@ -232,7 +229,7 @@ class ResultsScreen extends StatelessWidget {
               result.disease,
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 24,
               ),
             ),
@@ -244,7 +241,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAnalysisDetailsCard(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildAnalysisDetailsCard(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -255,6 +252,7 @@ class ResultsScreen extends StatelessWidget {
         ),
         const SizedBox(height: _itemSpacing),
         _buildGlassCard(
+          context,
           child: Padding(
             padding: _cardPadding,
             child: Column(
@@ -280,7 +278,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecommendationsCard(BuildContext context, DiagnosisResult result, ColorScheme colorScheme) {
+  Widget _buildRecommendationsCard(BuildContext context, DiagnosisResult result) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,6 +289,7 @@ class ResultsScreen extends StatelessWidget {
         ),
         const SizedBox(height: _itemSpacing),
         _buildGlassCard(
+          context,
           child: Column(
             children: result.recommendations.asMap().entries.map((entry) {
               final isLast = entry.key == result.recommendations.length - 1;
@@ -300,7 +299,7 @@ class ResultsScreen extends StatelessWidget {
                       ? null
                       : Border(
                     bottom: BorderSide(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                       width: 1,
                     ),
                   ),
@@ -319,14 +318,14 @@ class ResultsScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
                             colors: [
-                              colorScheme.primary.withOpacity(0.2),
-                              colorScheme.secondary.withOpacity(0.2),
+                              Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                             ],
                           ),
                         ),
                         child: Icon(
                           Icons.check_circle_rounded,
-                          color: colorScheme.secondary,
+                          color: Theme.of(context).colorScheme.secondary,
                           size: 20,
                         ),
                       ),
@@ -334,9 +333,8 @@ class ResultsScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           entry.value,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -363,6 +361,7 @@ class ResultsScreen extends StatelessWidget {
         ),
         const SizedBox(height: _itemSpacing),
         _buildGlassCard(
+          context,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(_borderRadius),
             child: Image.file(
@@ -377,7 +376,7 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNextStepsCard(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildNextStepsCard(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -388,6 +387,7 @@ class ResultsScreen extends StatelessWidget {
         ),
         const SizedBox(height: _itemSpacing),
         _buildGlassCard(
+          context,
           child: Padding(
             padding: _cardPadding,
             child: Column(
@@ -397,7 +397,6 @@ class ResultsScreen extends StatelessWidget {
                   icon: Icons.history_rounded,
                   title: 'Monitor Progress',
                   subtitle: 'Check back in 3-5 days',
-                  colorScheme: colorScheme,
                 ),
                 const SizedBox(height: _itemSpacing),
                 _buildActionItem(
@@ -405,7 +404,6 @@ class ResultsScreen extends StatelessWidget {
                   icon: Icons.local_pharmacy_rounded,
                   title: 'Purchase Treatment',
                   subtitle: 'Find recommended products',
-                  colorScheme: colorScheme,
                 ),
               ],
             ),
@@ -424,16 +422,19 @@ class ResultsScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
           ),
         ),
-        child: const Center(
+        child: Center(
           child: Icon(
             Icons.save_rounded,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onPrimary,
             size: 28,
           ),
         ),
@@ -451,19 +452,18 @@ class ResultsScreen extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF00D4AA).withOpacity(0.2),
-                const Color(0xFF6C63FF).withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               ],
             ),
           ),
-          child: Icon(icon, color: const Color(0xFF00D4AA), size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -481,12 +481,12 @@ class ResultsScreen extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF00D4AA).withOpacity(0.2),
-                const Color(0xFF6C63FF).withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               ],
             ),
           ),
-          child: Icon(icon, color: const Color(0xFF00D4AA), size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -495,17 +495,16 @@ class ResultsScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   fontSize: 14,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -521,7 +520,6 @@ class ResultsScreen extends StatelessWidget {
         required IconData icon,
         required String title,
         required String subtitle,
-        required ColorScheme colorScheme,
       }) {
     return Material(
       color: Colors.transparent,
@@ -532,7 +530,7 @@ class ResultsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                 width: 1,
               ),
             ),
@@ -545,12 +543,12 @@ class ResultsScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      colorScheme.primary.withOpacity(0.2),
-                      colorScheme.secondary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                     ],
                   ),
                 ),
-                child: Icon(icon, color: colorScheme.primary, size: 20),
+                child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -559,16 +557,15 @@ class ResultsScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -577,7 +574,7 @@ class ResultsScreen extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
             ],
           ),
@@ -594,7 +591,7 @@ class ResultsScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Sharing results...'),
-        backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
       ),
     );
   }
@@ -603,7 +600,7 @@ class ResultsScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Report saved successfully'),
-        backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
       ),
     );
   }

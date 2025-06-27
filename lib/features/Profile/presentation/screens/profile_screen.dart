@@ -45,9 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     _nameController.text = _userProfile['name'];
     _emailController.text = _userProfile['email'];
-    _phoneController.text = _userProfile['phone'];
+    _phoneController.text = _phoneController.text = _userProfile['phone'];
 
-    // Initialize animations
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -72,7 +71,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
-    // Start animations with a small delay to ensure widget is mounted
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fadeController.forward();
@@ -107,68 +105,61 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: const Color(0xFF00D4AA),
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF00D4AA),
-          secondary: const Color(0xFF6C63FF),
-          surface: const Color(0xFF1A1A2E),
-          background: const Color(0xFF16213E),
-        ),
-      ),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-                Color(0xFF0F0F23),
-              ],
-              stops: [0.0, 0.3, 0.7, 1.0],
-            ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
+            ]
+                : [
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
+            ],
+            stops: [0.0, 0.3, 0.7, 1.0],
           ),
-          child: Stack(
-            children: [
-              // Animated background elements
-              ...List.generate(6, (index) => _buildFloatingOrb(index)),
-
-              // Main content
-              SafeArea(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          _buildHeader(),
-                          const SizedBox(height: 40),
-                          _buildProfilePicture(),
-                          const SizedBox(height: 32),
-                          _buildProfileInfo(),
-                          const SizedBox(height: 24),
-                          _buildStatistics(),
-                          const SizedBox(height: 24),
-                          _buildActions(),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
+        ),
+        child: Stack(
+          children: [
+            ...List.generate(6, (index) => _buildFloatingOrb(index)),
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 40),
+                        _buildProfilePicture(),
+                        const SizedBox(height: 32),
+                        _buildProfileInfo(),
+                        const SizedBox(height: 24),
+                        _buildStatistics(),
+                        const SizedBox(height: 24),
+                        _buildActions(),
+                        const SizedBox(height: 40),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        bottomNavigationBar: const BottomNavBar(selectedIndex: 2),
       ),
+      bottomNavigationBar: const BottomNavBar(selectedIndex: 2),
     );
   }
 
@@ -188,8 +179,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.cyan.withOpacity(0.1),
-                    Colors.purple.withOpacity(0.05),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    Theme.of(context).colorScheme.secondary.withOpacity(0.05),
                     Colors.transparent,
                   ],
                 ),
@@ -206,15 +197,17 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
           ).createShader(bounds),
-          child: const Text(
+          child: Text(
             'Profile',
-            style: TextStyle(
-              fontSize: 32,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -223,12 +216,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
               colors: [
-                Colors.cyan.withOpacity(0.2),
-                Colors.purple.withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               ],
             ),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -241,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 padding: const EdgeInsets.all(12),
                 child: Icon(
                   _isEditing ? Icons.check_rounded : Icons.edit_rounded,
-                  color: const Color(0xFF00D4AA),
+                  color: Theme.of(context).colorScheme.primary,
                   size: 24,
                 ),
               ),
@@ -258,7 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer glow ring
           Container(
             width: 150,
             height: 150,
@@ -266,36 +258,27 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF00D4AA).withOpacity(0.3),
-                  const Color(0xFF6C63FF).withOpacity(0.3),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                 ],
               ),
             ),
           ),
-          // Inner profile picture
           Container(
             width: 120,
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                 width: 2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00D4AA).withOpacity(0.4),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                ),
-              ],
             ),
             child: const CircleAvatar(
               radius: 58,
               backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
             ),
           ),
-          // Edit button
           if (_isEditing)
             Positioned(
               bottom: 0,
@@ -303,27 +286,23 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF00D4AA).withOpacity(0.5),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ],
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () {},
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
                       child: Icon(
                         Icons.camera_alt_rounded,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 20,
                       ),
                     ),
@@ -344,21 +323,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -428,53 +400,41 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF00D4AA).withOpacity(0.2),
-                const Color(0xFF6C63FF).withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               ],
             ),
           ),
-          child: Icon(icon, color: const Color(0xFF00D4AA), size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: _isEditing
               ? TextFormField(
             controller: controller,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                 fontSize: 16,
               ),
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.4),
-                  width: 1.5,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFF00D4AA),
-                  width: 2,
-                ),
-              ),
+              enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+              focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Colors.redAccent,
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.error,
                   width: 1.5,
                 ),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Colors.redAccent,
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.error,
                   width: 2,
                 ),
               ),
@@ -485,18 +445,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -519,12 +477,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF00D4AA).withOpacity(0.2),
-                const Color(0xFF6C63FF).withOpacity(0.2),
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
               ],
             ),
           ),
-          child: Icon(icon, color: const Color(0xFF00D4AA), size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -533,18 +491,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -568,14 +524,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF00D4AA).withOpacity(0.2),
-                        const Color(0xFF6C63FF).withOpacity(0.2),
+                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                       ],
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.analytics_rounded,
-                    color: Color(0xFF00D4AA),
+                    color: Theme.of(context).colorScheme.primary,
                     size: 20,
                   ),
                 ),
@@ -583,19 +539,17 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Statistics',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     Text(
                       _userProfile['joinDate'],
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                   ],
@@ -610,18 +564,18 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   value: _userProfile['scanCount'].toString(),
                   label: 'Scans',
                   icon: Icons.camera_alt_rounded,
-                  color: const Color(0xFF00D4AA),
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 Container(
                   width: 1,
                   height: 60,
-                  color: Colors.white.withOpacity(0.2),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 ),
                 _buildStatItem(
                   value: _userProfile['crops'].length.toString(),
                   label: 'Crops',
                   icon: Icons.eco_rounded,
-                  color: const Color(0xFF6C63FF),
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ],
             ),
@@ -655,17 +609,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -682,17 +634,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       {
         'icon': Icons.help_outline_rounded,
         'title': 'Help & Support',
-        'onTap': () {},
       },
       {
         'icon': Icons.settings_rounded,
         'title': 'Settings',
-        'onTap': () {},
+        'onTap': () => Navigator.pushNamed(context, AppRoutes.settings),
       },
       {
         'icon': Icons.logout_rounded,
         'title': 'Logout',
-        'color': Colors.red,
+        'color': Theme.of(context).colorScheme.error,
         'onTap': () => Navigator.pushReplacementNamed(context, AppRoutes.login),
       },
     ];
@@ -706,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildActionTile(Map<String, dynamic> action) {
     final isLast = action['title'] == 'Logout';
-    final color = action['color'] as Color? ?? Colors.white;
+    final color = action['color'] as Color? ?? Theme.of(context).colorScheme.onSurface;
 
     return Material(
       color: Colors.transparent,
@@ -722,7 +673,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 ? null
                 : Border(
               bottom: BorderSide(
-                color: Colors.white.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                 width: 1,
               ),
             ),
@@ -745,9 +696,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               Expanded(
                 child: Text(
                   action['title'],
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: color,
-                    fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

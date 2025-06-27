@@ -81,7 +81,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
 
       setState(() {
         _originalImage = decodedImage;
-        _editedImage = img.copyResize(decodedImage, width: 1000); // Higher resolution for better editing
+        _editedImage = img.copyResize(decodedImage, width: 1000);
         _applyFilters();
         _isLoading = false;
       });
@@ -90,7 +90,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading image: $e'),
-            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
           ),
         );
         Navigator.pop(context);
@@ -101,21 +101,17 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
   void _applyFilters() {
     if (_editedImage == null || _originalImage == null) return;
 
-    // Start with original image
     _editedImage = img.copyResize(_originalImage!, width: 1000);
 
-    // Apply color adjustments
     _editedImage = img.adjustColor(
       _editedImage!,
       brightness: _brightness.clamp(-1.0, 1.0),
-      contrast: _contrast.clamp(0.5, 1.5), // More reasonable contrast range
-      saturation: _saturation.clamp(0.5, 1.5), // More reasonable saturation range
+      contrast: _contrast.clamp(0.5, 1.5),
+      saturation: _saturation.clamp(0.5, 1.5),
     );
 
-    // Apply highlights
     if (_points.isNotEmpty) _highlightAreas();
 
-    // Apply crop
     if (_cropRect != null) _applyCrop();
 
     _encodedImage = img.encodeJpg(_editedImage!);
@@ -129,7 +125,6 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
       final x = (point.dx * _editedImage!.width).toInt().clamp(0, _editedImage!.width - 1);
       final y = (point.dy * _editedImage!.height).toInt().clamp(0, _editedImage!.height - 1);
 
-      // Draw a more visible highlight
       img.drawCircle(
         _editedImage!,
         x: x,
@@ -157,11 +152,9 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
     final imageHeight = _editedImage!.height;
     final boxSize = renderBox.size;
 
-    // Adjust for current scale
     final scaleX = imageWidth / (boxSize.width * _currentScale);
     final scaleY = imageHeight / (boxSize.height * _currentScale);
 
-    // Convert crop rectangle from widget coordinates to image coordinates
     final x = (_cropRect!.left * scaleX).round().clamp(0, imageWidth - 1);
     final y = (_cropRect!.top * scaleY).round().clamp(0, imageHeight - 1);
     final width = (_cropRect!.width * scaleX).round().clamp(1, imageWidth - x);
@@ -175,7 +168,6 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
       height: height,
     );
 
-    // Reset view after crop
     _matrix = Matrix4.identity();
     _currentScale = 1.0;
     _cropRect = null;
@@ -218,7 +210,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving image: $e'),
-            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
           ),
         );
       }
@@ -233,17 +225,17 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -341,132 +333,128 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: const Color(0xFF00D4AA),
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF00D4AA),
-          secondary: const Color(0xFF6C63FF),
-          surface: const Color(0xFF1A1A2E),
-          background: const Color(0xFF16213E),
+  Widget build( context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ).createShader(bounds),
+          child: Text(
+            AppStrings.editAndAnalyze,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ),
+        actions: [
+          _buildActionButton(
+            icon: Icons.check_rounded,
+            color: Theme.of(context).colorScheme.primary,
+            onTap: _saveAndNavigateToResults,
+          ),
+          _buildActionButton(
+            icon: Icons.close_rounded,
+            color: Theme.of(context).colorScheme.error,
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
       ),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
-            ).createShader(bounds),
-            child: Text(
-              AppStrings.editAndAnalyze,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
+            ]
+                : [
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
+            ],
+            stops: [0.0, 0.3, 0.7, 1.0],
           ),
-          actions: [
-            _buildActionButton(
-              icon: Icons.check_rounded,
-              color: const Color(0xFF00D4AA),
-              onTap: _saveAndNavigateToResults,
-            ),
-            _buildActionButton(
-              icon: Icons.close_rounded,
-              color: Colors.red,
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
         ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-                Color(0xFF0F0F23),
-              ],
-              stops: [0.0, 0.3, 0.7, 1.0],
-            ),
-          ),
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00D4AA)))
-              : SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  // Image display area with fixed aspect ratio
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildGlassCard(
-                        child: GestureDetector(
-                          onTapDown: _handleImageTapDown,
-                          onPanUpdate: _handleImagePanUpdate,
-                          onPanEnd: (_) {
-                            if (_isCropping) _applyFilters();
-                          },
-                          child: Stack(
-                            children: [
-                              MatrixGestureDetector(
-                                onMatrixUpdate: (m, tm, sm, rm) {
-                                  setState(() {
-                                    _matrix = m;
-                                    _currentScale = m.getMaxScaleOnAxis();
-                                  });
-                                },
-                                child: Container(
-                                  key: _imageKey,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Transform(
-                                    transform: _matrix,
-                                    child: _encodedImage != null
-                                        ? Image.memory(
-                                      _encodedImage!,
-                                      fit: BoxFit.contain,
-                                    )
-                                        : const SizedBox.shrink(),
-                                  ),
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
+            : SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildGlassCard(
+                      child: GestureDetector(
+                        onTapDown: _handleImageTapDown,
+                        onPanUpdate: _handleImagePanUpdate,
+                        onPanEnd: (_) {
+                          if (_isCropping) _applyFilters();
+                        },
+                        child: Stack(
+                          children: [
+                            MatrixGestureDetector(
+                              onMatrixUpdate: (m, tm, sm, rm) {
+                                setState(() {
+                                  _matrix = m;
+                                  _currentScale = m.getMaxScaleOnAxis();
+                                });
+                              },
+                              child: Container(
+                                key: _imageKey,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Transform(
+                                  transform: _matrix,
+                                  child: _encodedImage != null
+                                      ? Image.memory(
+                                    _encodedImage!,
+                                    fit: BoxFit.contain,
+                                  )
+                                      : const SizedBox.shrink(),
                                 ),
                               ),
-                              if (_isCropping && _cropRect != null)
-                                Positioned(
-                                  left: _cropRect!.left,
-                                  top: _cropRect!.top,
-                                  child: Container(
-                                    width: _cropRect!.width,
-                                    height: _cropRect!.height,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.3),
-                                      border: Border.all(
-                                        color: const Color(0xFF00D4AA),
-                                        width: 2,
-                                      ),
+                            ),
+                            if (_isCropping && _cropRect != null)
+                              Positioned(
+                                left: _cropRect!.left,
+                                top: _cropRect!.top,
+                                child: Container(
+                                  width: _cropRect!.width,
+                                  height: _cropRect!.height,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+                                    border: Border.all(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      width: 2,
                                     ),
                                   ),
                                 ),
-                            ],
-                          ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                  // Toolbars
-                  _buildToolbar(),
-                  _buildAdjustmentSliders(),
-                ],
-              ),
+                ),
+                _buildToolbar(),
+                _buildAdjustmentSliders(),
+              ],
             ),
           ),
         ),
@@ -490,7 +478,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -544,14 +532,16 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    backgroundColor: const Color(0xFF1A1A2E),
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Select Highlight Color',
-                      style: TextStyle(color: Colors.white),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     content: SingleChildScrollView(
                       child: ColorPicker(
@@ -564,9 +554,11 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text(
+                        child: Text(
                           'OK',
-                          style: TextStyle(color: Color(0xFF00D4AA)),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -633,17 +625,20 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         gradient: isActive
-            ? const LinearGradient(
-          colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+            ? LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
         )
             : LinearGradient(
           colors: [
-            const Color(0xFF00D4AA).withOpacity(0.2),
-            const Color(0xFF6C63FF).withOpacity(0.2),
+            Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.2),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -659,15 +654,14 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
               children: [
                 Icon(
                   icon,
-                  color: isActive ? Colors.white : const Color(0xFF00D4AA),
+                  color: isActive ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.primary,
                   size: 20,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   label,
-                  style: TextStyle(
-                    color: isActive ? Colors.white : const Color(0xFF00D4AA),
-                    fontSize: 12,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isActive ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -745,14 +739,14 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
             shape: BoxShape.circle,
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF00D4AA).withOpacity(0.3),
-                const Color(0xFF6C63FF).withOpacity(0.3),
+                Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.3),
               ],
             ),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFF00D4AA),
+            color: Theme.of(context).colorScheme.primary,
             size: 20,
           ),
         ),
@@ -763,9 +757,8 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                 ),
               ),
               Slider(
@@ -774,8 +767,8 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
                 max: max,
                 divisions: 20,
                 label: value.toStringAsFixed(1),
-                activeColor: const Color(0xFF00D4AA),
-                inactiveColor: Colors.white.withOpacity(0.2),
+                activeColor: Theme.of(context).colorScheme.primary,
+                inactiveColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 onChanged: onChanged,
               ),
             ],

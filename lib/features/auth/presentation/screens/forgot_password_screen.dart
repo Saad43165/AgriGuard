@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
 import '../../../../core/constants/app_constants.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -47,23 +46,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     setState(() => _isLoading = true);
 
     try {
-      // Mock password reset logic
       final email = _emailController.text.trim();
-      await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      await Future.delayed(const Duration(seconds: 1));
 
       if (email == 'test@agriguard.com') {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
+            content: Text(
               'Password reset link sent to your email',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
-            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
@@ -80,13 +77,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
         SnackBar(
           content: Text(
             e.toString().contains('No account') ? 'No account found with this email' : 'An unexpected error occurred',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
             ),
           ),
-          backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+          backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
@@ -100,7 +96,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     }
   }
 
-  Widget _buildGlassCard({required Widget child}) {
+  Widget _buildGlassCard(BuildContext context, {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
@@ -108,17 +104,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -126,353 +122,344 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: child,
-        ),
+        child: child,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: const Color(0xFF00D4AA),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00D4AA),
-          secondary: Color(0xFF6C63FF),
-          surface: Color(0xFF1A1A2E),
-          background: Color(0xFF16213E),
-        ),
-      ),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: Container(
-            margin: const EdgeInsets.only(left: AppMeasurements.smallPadding),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.cyan.withOpacity(0.2),
-                  Colors.purple.withOpacity(0.2),
-                ],
-              ),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.only(left: AppMeasurements.smallPadding),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+              ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context);
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Icon(
-                    Icons.arrow_back_rounded,
-                    color: Color(0xFF00D4AA),
-                    size: 24,
-                  ),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(context);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
                 ),
               ),
             ),
           ),
-          title: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
-            ).createShader(bounds),
-            child: const Text(
-              'Reset Password',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          centerTitle: true,
         ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-                Color(0xFF0F0F23),
-              ],
-              stops: [0.0, 0.3, 0.7, 1.0],
+        title: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ).createShader(bounds),
+          child: Text(
+            'Reset Password',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 24,
             ),
           ),
-          child: SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Header with logo and title
-                    Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFF00D4AA).withOpacity(0.2),
-                                const Color(0xFF6C63FF).withOpacity(0.2),
-                              ],
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.eco_rounded,
-                            size: 60,
-                            color: Color(0xFF00D4AA),
-                            semanticLabel: 'AgriGuard Logo',
+        ),
+        centerTitle: true,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
+            ]
+                : [
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
+            ],
+            stops: const [0.0, 0.3, 0.7, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: AppMeasurements.smallPadding),
-                        ShaderMask(
-                          shaderCallback: (bounds) => const LinearGradient(
-                            colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
-                          ).createShader(bounds),
-                          child: const Text(
-                            'AgriGuard',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                            semanticsLabel: 'AgriGuard',
-                          ),
+                        child: Icon(
+                          Icons.eco_rounded,
+                          size: 60,
+                          color: Theme.of(context).colorScheme.primary,
+                          semanticLabel: 'AgriGuard Logo',
                         ),
-                        const SizedBox(height: AppMeasurements.smallPadding),
-                        Text(
-                          'Recover your account',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                      ),
+                      const SizedBox(height: AppMeasurements.smallPadding),
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.secondary,
+                          ],
+                        ).createShader(bounds),
+                        child: Text(
+                          'AgriGuard',
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 32,
                           ),
                           textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppMeasurements.defaultPadding * 2),
-
-                    // Title
-                    Text(
-                      'Reset Password',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppMeasurements.smallPadding),
-
-                    // Description
-                    Text(
-                      'Enter your email to receive a password reset link',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppMeasurements.defaultPadding),
-
-                    // Form
-                    _buildGlassCard(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Email Field
-                              Text(
-                                'Email Address',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: AppMeasurements.smallPadding),
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'your@email.com',
-                                  hintStyle: TextStyle(
-                                    color: Colors.white.withOpacity(0.5),
-                                  ),
-                                  prefixIcon: const Icon(
-                                    Icons.email_rounded,
-                                    color: Color(0xFF00D4AA),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.transparent,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                    borderSide: BorderSide(
-                                      color: Colors.white.withOpacity(0.2),
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                    borderSide: BorderSide(
-                                      color: Colors.white.withOpacity(0.2),
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF00D4AA),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                    borderSide: const BorderSide(
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                    borderSide: const BorderSide(
-                                      color: Colors.red,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your email';
-                                  }
-                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                    return 'Please enter a valid email';
-                                  }
-                                  return null;
-                                },
-                                autofillHints: const [AutofillHints.email],
-                              ),
-                            ],
-                          ),
+                          semanticsLabel: 'AgriGuard',
                         ),
                       ),
+                      const SizedBox(height: AppMeasurements.smallPadding),
+                      Text(
+                        'Recover your account',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppMeasurements.defaultPadding * 2),
+                  Text(
+                    'Reset Password',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
                     ),
-                    const SizedBox(height: AppMeasurements.defaultPadding),
-
-                    // Submit Button
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                        onTap: _isLoading ? null : _resetPassword,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppMeasurements.smallPadding),
+                  Text(
+                    'Enter your email to receive a password reset link',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppMeasurements.defaultPadding),
+                  _buildGlassCard(
+                    context,
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Email Address',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          child: _isLoading
-                              ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                            const SizedBox(height: AppMeasurements.smallPadding),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              decoration: InputDecoration(
+                                hintText: 'your@email.com',
+                                hintStyle: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.email_rounded,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                                  borderSide: BorderSide(
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                                  borderSide: BorderSide(
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                                  borderSide: BorderSide(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Sending...',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          )
-                              : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.send_rounded,
-                                size: 20,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Send Reset Link',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppMeasurements.defaultPadding),
-
-                    // Back to Login
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(context);
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            text: 'Remembered your password? ',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                              autofillHints: const [AutofillHints.email],
                             ),
-                            children: const [
-                              TextSpan(
-                                text: 'Login',
-                                style: TextStyle(
-                                  color: Color(0xFF00D4AA),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppMeasurements.defaultPadding),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                      onTap: _isLoading ? null : _resetPassword,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
+                          ),
+                        ),
+                        child: _isLoading
+                            ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Sending...',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        )
+                            : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.send_rounded,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Send Reset Link',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppMeasurements.defaultPadding),
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'Remembered your password? ',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'Login',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

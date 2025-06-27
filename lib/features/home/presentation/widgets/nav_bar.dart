@@ -1,7 +1,8 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui' as ui;
-import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_routes.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -17,69 +18,44 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.withOpacity(0.8),
-            Colors.black.withOpacity(0.8),
-          ],
-        ),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.8),
+            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
             blurRadius: 10,
-            offset: const Offset(0, -2, ),
+            offset: const Offset(0, -5),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
-            padding: const EdgeInsets.only(top: 8),
-            child: BottomNavigationBar(
-              currentIndex: selectedIndex,
-              onTap: onTap ?? (index) => _handleNavigation(context, index),
-              elevation: 0,
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.transparent,
-              selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.white.withOpacity(0.6),
-              selectedLabelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
-              ),
-              unselectedLabelStyle: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                height: 1.5,
-                color: Colors.white.withOpacity(0.6),
-              ),
-              items: [
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 _buildNavItem(
+                  context: context,
                   icon: Icons.home_outlined,
-                  activeIcon: Icons.home_filled,
+                  activeIcon: Icons.home_rounded,
                   label: 'Home',
-                  isActive: selectedIndex == 0,
+                  index: 0,
                 ),
                 _buildNavItem(
-                  icon: Icons.camera_alt_outlined,
-                  activeIcon: Icons.camera_alt_rounded,
+                  context: context,
+                  icon: Icons.search_outlined,
+                  activeIcon: Icons.search_rounded,
                   label: 'Scan',
-                  isActive: selectedIndex == 1,
+                  index: 1,
                 ),
                 _buildNavItem(
+                  context: context,
                   icon: Icons.person_outline,
                   activeIcon: Icons.person_rounded,
                   label: 'Profile',
-                  isActive: selectedIndex == 2,
+                  index: 2,
                 ),
               ],
             ),
@@ -89,40 +65,79 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  BottomNavigationBarItem _buildNavItem({
+  Widget _buildNavItem({
+    required BuildContext context,
     required IconData icon,
     required IconData activeIcon,
     required String label,
-    required bool isActive,
+    required int index,
   }) {
-    return BottomNavigationBarItem(
-      icon: AnimatedContainer(
+    final isActive = selectedIndex == index;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isLightMode = Theme.of(context).brightness == Brightness.light;
+
+    return GestureDetector(
+      onTap: () => _handleTap(context, index),
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: isActive
-              ? const LinearGradient(
-            colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
-          )
-              : null,
+          borderRadius: BorderRadius.circular(16),
+          color: isActive ? colorScheme.primary.withOpacity(0.2) : Colors.transparent,
         ),
-        child: Icon(
-          isActive ? activeIcon : icon,
-          color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-          size: 24,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive ? colorScheme.primary : Colors.transparent,
+              ),
+              child: Icon(
+                isActive ? activeIcon : icon,
+                size: 24,
+                color: isActive
+                    ? colorScheme.onPrimary
+                    : isLightMode
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: isActive
+                    ? colorScheme.primary
+                    : isLightMode
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
-      label: label,
     );
   }
 
-  void _handleNavigation(BuildContext context, int index) {
+  void _handleTap(BuildContext context, int index) {
     if (index == selectedIndex) return;
 
     HapticFeedback.lightImpact();
 
+    if (onTap != null) {
+      onTap!(index);
+    } else {
+      _navigateToRoute(context, index);
+    }
+  }
+
+  void _navigateToRoute(BuildContext context, int index) {
     String routeName;
     switch (index) {
       case 0:

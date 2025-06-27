@@ -14,7 +14,8 @@ class CaptureScreen extends StatefulWidget {
   State<CaptureScreen> createState() => _CaptureScreenState();
 }
 
-class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateMixin {
+class _CaptureScreenState extends State<CaptureScreen>
+    with TickerProviderStateMixin {
   XFile? _imageFile;
   bool _isLoading = false;
   bool _isProcessing = false;
@@ -84,7 +85,9 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Image captured successfully!'),
-            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.secondary.withOpacity(0.9),
           ),
         );
       }
@@ -93,7 +96,7 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(AppStrings.failedToPickImage),
-          backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+          backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
         ),
       );
       debugPrint('Image picker error: $e');
@@ -126,7 +129,6 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
         throw Exception('Failed to save image to storage');
       }
 
-      // Simulate processing delay
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -142,7 +144,9 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(AppStrings.failedToProcessImage),
-            backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.error.withOpacity(0.9),
           ),
         );
         debugPrint('Image processing error: $e');
@@ -160,7 +164,9 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Image cleared. Ready for new capture.'),
-        backgroundColor: const Color(0xFF6C63FF).withOpacity(0.9),
+        backgroundColor: Theme.of(
+          context,
+        ).colorScheme.secondary.withOpacity(0.9),
       ),
     );
   }
@@ -173,17 +179,17 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -201,131 +207,144 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: const Color(0xFF00D4AA),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00D4AA),
-          secondary: Color(0xFF6C63FF),
-          surface: Color(0xFF1A1A2E),
-          background: Color(0xFF16213E),
-        ),
-      ),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-                Color(0xFF0F0F23),
-              ],
-              stops: [0.0, 0.3, 0.7, 1.0],
-            ),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors:
+                Theme.of(context).brightness == Brightness.dark
+                    ? [
+                      const Color(0xFF0F0F23),
+                      const Color(0xFF16213E),
+                      const Color(0xFF1A1A2E),
+                      const Color(0xFF0F0F23),
+                    ]
+                    : [
+                      Theme.of(context).colorScheme.background,
+                      Theme.of(context).colorScheme.background.withOpacity(0.9),
+                      Theme.of(context).colorScheme.background.withOpacity(0.8),
+                      Theme.of(context).colorScheme.background,
+                    ],
+            stops: [0.0, 0.3, 0.7, 1.0],
           ),
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverAppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  expandedHeight: 100,
-                  flexibleSpace: FlexibleSpaceBar(
-                    titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-                    title: ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
-                      ).createShader(bounds),
-                      child: const Text(
-                        'Scan Leaf',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    background: Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+        ),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                expandedHeight: 100,
+                flexibleSpace: FlexibleSpaceBar(
+                  titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                  title: ShaderMask(
+                    shaderCallback:
+                        (bounds) => LinearGradient(
                           colors: [
-                            Color(0xFF0F0F23),
-                            Color(0xFF1A1A2E),
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.secondary,
                           ],
-                        ),
+                        ).createShader(bounds),
+                    child: Text(
+                      'Scan Leaf',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
-                  pinned: true,
-                  actions: [
-                    if (_imageFile != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppMeasurements.smallPadding),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.cyan.withOpacity(0.2),
-                                Colors.purple.withOpacity(0.2),
-                              ],
-                            ),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                              width: 1,
-                            ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Theme.of(context).colorScheme.background,
+                          Theme.of(context).colorScheme.surface,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                pinned: true,
+                actions: [
+                  if (_imageFile != null)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        right: AppMeasurements.smallPadding,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            AppMeasurements.borderRadius,
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                              onTap: _retakeImage,
-                              child: const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: Icon(
-                                  Icons.refresh_rounded,
-                                  color: Color(0xFF00D4AA),
-                                  size: 24,
-                                ),
-                              ),
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(
+                                context,
+                              ).colorScheme.primary.withOpacity(0.2),
+                              Theme.of(
+                                context,
+                              ).colorScheme.secondary.withOpacity(0.2),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(
+                              AppMeasurements.borderRadius,
+                            ),
+                            onTap: _retakeImage,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+
                             ),
                           ),
                         ),
                       ),
+                    ),
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    const SizedBox(height: AppMeasurements.defaultPadding),
+                    _buildImageSection(),
+                    _buildActionButtons(),
                   ],
                 ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: AppMeasurements.defaultPadding),
-                      _buildImageSection(),
-                      _buildActionButtons(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        bottomNavigationBar: BottomNavBar(
-          selectedIndex: 1,
-          onTap: _handleNavigation,
-        ),
+      ),
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: 1,
+        onTap: _handleNavigation,
       ),
     );
   }
 
   Widget _buildImageSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppMeasurements.defaultPadding),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppMeasurements.defaultPadding,
+      ),
       child: _buildGlassCard(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
@@ -349,34 +368,36 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF00D4AA).withOpacity(0.2),
-                    const Color(0xFF6C63FF).withOpacity(0.2),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                   ],
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.eco_rounded,
                 size: 60,
-                color: Color(0xFF00D4AA),
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             const SizedBox(height: AppMeasurements.defaultPadding),
             Text(
               'No leaf image selected',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: AppMeasurements.smallPadding),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppMeasurements.defaultPadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppMeasurements.defaultPadding,
+              ),
               child: Text(
                 'Capture a photo with your camera or select one from your gallery to get started',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                   fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
@@ -404,24 +425,25 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
                   width: double.infinity,
                   height: 400,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(
+                      AppMeasurements.borderRadius,
+                    ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.broken_image_rounded,
                         size: 60,
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(height: AppMeasurements.smallPadding),
                       Text(
                         'Failed to load image',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 16,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ],
@@ -433,26 +455,32 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
               bottom: AppMeasurements.smallPadding,
               left: AppMeasurements.smallPadding,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.background.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(
+                    AppMeasurements.borderRadius,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_circle_rounded,
-                      color: Color(0xFF00D4AA),
+                      color: Theme.of(context).colorScheme.primary,
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       'Image ready',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -494,65 +522,88 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
                   ),
                 ],
               ),
-              if (_imageFile != null) const SizedBox(height: AppMeasurements.defaultPadding),
+              if (_imageFile != null)
+                const SizedBox(height: AppMeasurements.defaultPadding),
               if (_imageFile != null)
                 SizedBox(
                   width: double.infinity,
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppMeasurements.borderRadius,
+                      ),
                       onTap: _isProcessing ? null : _processAndNavigate,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF00D4AA), Color(0xFF6C63FF)],
+                          borderRadius: BorderRadius.circular(
+                            AppMeasurements.borderRadius,
+                          ),
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
                           ),
                         ),
-                        child: _isProcessing
-                            ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Processing...',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        )
-                            : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.auto_fix_high_rounded,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Analyze Leaf',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                        child:
+                            _isProcessing
+                                ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Processing...',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.auto_fix_high_rounded,
+                                      size: 20,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Analyze Leaf',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                       ),
                     ),
                   ),
@@ -580,20 +631,30 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
             gradient: LinearGradient(
-              colors: isPrimary
-                  ? [
-                const Color(0xFF00D4AA).withOpacity(0.2),
-                const Color(0xFF6C63FF).withOpacity(0.2),
-              ]
-                  : [
-                Colors.white.withOpacity(0.05),
-                Colors.white.withOpacity(0.02),
-              ],
+              colors:
+                  isPrimary
+                      ? [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        Theme.of(
+                          context,
+                        ).colorScheme.secondary.withOpacity(0.2),
+                      ]
+                      : [
+                        Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.05),
+                        Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.02),
+                      ],
             ),
             border: Border.all(
-              color: isPrimary
-                  ? const Color(0xFF00D4AA).withOpacity(0.3)
-                  : Colors.white.withOpacity(0.2),
+              color:
+                  isPrimary
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+                      : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.2),
             ),
           ),
           child: Column(
@@ -603,30 +664,39 @@ class _CaptureScreenState extends State<CaptureScreen> with TickerProviderStateM
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: isPrimary
-                        ? [
-                      const Color(0xFF00D4AA),
-                      const Color(0xFF6C63FF),
-                    ]
-                        : [
-                      Colors.white.withOpacity(0.2),
-                      Colors.white.withOpacity(0.1),
-                    ],
+                    colors:
+                        isPrimary
+                            ? [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.secondary,
+                            ]
+                            : [
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.2),
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.1),
+                            ],
                   ),
                 ),
                 child: Icon(
                   icon,
                   size: 24,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: AppMeasurements.smallPadding),
               Text(
                 label,
-                style: TextStyle(
-                  color: isPrimary ? Colors.white : Colors.white.withOpacity(0.7),
-                  fontSize: 16,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                  color:
+                      isPrimary
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],

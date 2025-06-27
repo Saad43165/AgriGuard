@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'config/app_theme.dart';
+import 'package:provider/provider.dart';
 import 'core/navigation/app_router.dart';
+import 'core/constants/app_routes.dart';
+import 'core/widgets/app_themes.dart';
 
 void main() {
-  runApp(const AgriGuardApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const AgriGuardApp(),
+    ),
+  );
 }
 
 class AgriGuardApp extends StatelessWidget {
@@ -13,8 +20,8 @@ class AgriGuardApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'AgriGuard',
-      theme: AppTheme.lightTheme,
-      initialRoute: '/splash',
+      theme: Provider.of<ThemeProvider>(context).currentTheme,
+      initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRouter.generateRoute,
       debugShowCheckedModeBanner: false,
     );

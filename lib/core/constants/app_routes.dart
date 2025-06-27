@@ -1,4 +1,3 @@
-// lib/core/constants/app_routes.dart
 class AppRoutes {
   static const String splash = '/splash';
   static const String login = '/login';
@@ -10,5 +9,5 @@ class AppRoutes {
   static const String results = '/results';
   static const String profile = '/profile';
   static const String imageEdit = '/image-edit';
-
+  static const String settings = '/settings';
 }
