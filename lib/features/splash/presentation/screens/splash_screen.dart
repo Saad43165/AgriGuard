@@ -161,11 +161,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                   semanticsLabel: 'Protecting Your Crops',
                                 ),
                                 const SizedBox(height: 24),
-                                CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
                               ],
                             ),
                           ),
