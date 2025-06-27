@@ -10,4 +10,5 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String imageEdit = '/image-edit';
   static const String settings = '/settings';
+  static const String help = '/help-and-support';
 }

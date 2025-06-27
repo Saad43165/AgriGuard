@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widget/animation_orbs_background.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -95,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         ),
         child: Stack(
           children: [
-            ...List.generate(6, (index) => _buildFloatingOrb(index)),
+            AnimatedOrbsBackground(scaleAnimation: _scaleAnimation),
             SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnimation,
@@ -177,35 +179,6 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFloatingOrb(int index) {
-    return AnimatedBuilder(
-      animation: _fadeController,
-      builder: (context, child) {
-        return Positioned(
-          top: (index * 150.0) % MediaQuery.of(context).size.height,
-          left: (index * 100.0) % MediaQuery.of(context).size.width,
-          child: Transform.scale(
-            scale: _scaleAnimation.value,
-            child: Container(
-              width: 80 + (index * 20.0),
-              height: 80 + (index * 20.0),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.05),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 

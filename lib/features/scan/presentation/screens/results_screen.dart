@@ -6,7 +6,6 @@ import '../../../../core/widgets/severity_indicator.dart';
 import '../../../../mock_data/mock_disease.dart';
 import '../../../../mock_data/mock_scans.dart';
 import '../../../home/presentation/widgets/nav_bar.dart';
-import '../../../../core/constants/app_routes.dart';
 import '../../../../core/constants/app_constants.dart';
 
 class ResultsScreen extends StatelessWidget {
@@ -31,12 +30,20 @@ class ResultsScreen extends StatelessWidget {
       appBar: _buildAppBar(context),
       body: _buildBody(context, theme, result),
       bottomNavigationBar: const BottomNavBar(selectedIndex: 1),
-      floatingActionButton: _buildFloatingActionButton(context),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          _buildFloatingActionButton(context), // Save button
+          const SizedBox(height: 16),
+          _buildShareFloatingActionButton(context), // Share button moved here
+        ],
+      ),
     );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
+      automaticallyImplyLeading: false,
       backgroundColor: Colors.transparent,
       elevation: 0,
       title: ShaderMask(
@@ -46,50 +53,24 @@ class ResultsScreen extends StatelessWidget {
             Theme.of(context).colorScheme.secondary,
           ],
         ).createShader(bounds),
-        child: Text(
-          'Analysis Results',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ),
-      leading: Container(
-        margin: const EdgeInsets.only(left: AppMeasurements.defaultPadding),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary.withOpacity(0.2),
-              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-            ],
-          ),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(context);
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Icon(
-                Icons.arrow_back_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: Row(
+            children: [
+              Text(
+                'Analysis Results',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
       centerTitle: true,
       actions: [
+        // Back button moved to actions (right side)
         Container(
           margin: const EdgeInsets.only(right: AppMeasurements.smallPadding),
           decoration: BoxDecoration(
@@ -111,14 +92,14 @@ class ResultsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(_borderRadius),
               onTap: () {
                 HapticFeedback.lightImpact();
-                _shareResults(context);
+                Navigator.pop(context);
               },
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+              child:  Padding(
+                padding: EdgeInsets.all(12),
                 child: Icon(
-                  Icons.share_rounded,
+                  Icons.arrow_back_rounded,
                   color: Theme.of(context).colorScheme.primary,
-                  size: 24,
+                  size: 22, // Reduced size
                 ),
               ),
             ),
@@ -443,6 +424,36 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildShareFloatingActionButton(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        _shareResults(context);
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.share_rounded,
+            color: Theme.of(context).colorScheme.onPrimary,
+            size: 28,
+          ),
+        ),
+      ),
+      tooltip: 'Share Results',
+    );
+  }
+
   Widget _buildSectionHeader(BuildContext context, {required String title, required IconData icon}) {
     return Row(
       children: [
@@ -574,7 +585,9 @@ class ResultsScreen extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right_rounded,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                color:
+
+                Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
             ],
           ),
@@ -638,9 +651,7 @@ class ResultsScreen extends StatelessWidget {
         return DiagnosisResult(
           disease: disease['name'] as String? ?? 'Unknown Disease',
           severity: scan['severity'] as String? ?? 'Unknown',
-          recommendations: (scan['recommendations'] as List<dynamic>?)
-              ?.cast<String>() ??
-              ['Consult an expert'],
+          recommendations: (scan['recommendations'] as List<dynamic>?)?.cast<String>() ?? ['Consult an expert'],
         );
       } catch (e) {
         debugPrint('Error fetching mock scan: $e');

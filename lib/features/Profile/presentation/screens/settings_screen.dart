@@ -48,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
     );
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(-1.0, 0.0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
@@ -66,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     setState(() {
       _isDarkMode = prefs.getBool('isDarkMode') ?? false;
       _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-      _selectedLanguage = prefs.getString('language') ?? 'English';
+
     });
   }
 
@@ -74,7 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', _isDarkMode);
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
-    await prefs.setString('language', _selectedLanguage);
+
   }
 
   @override
@@ -188,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         ),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(10),
             gradient: LinearGradient(
               colors: [
                 Theme.of(context).colorScheme.primary.withOpacity(0.2),
@@ -203,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
               onTap: () {
                 HapticFeedback.lightImpact();
                 Navigator.pop(context);
@@ -254,7 +254,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               },
             ),
             const SizedBox(height: 20),
-            _buildLanguageTile(),
             const SizedBox(height: 20),
             _buildActionTile(
               icon: Icons.delete_rounded,
@@ -406,73 +405,4 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildLanguageTile() {
-    final languages = ['English', 'Spanish', 'French', 'Urdu'];
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-              ],
-            ),
-          ),
-          child: Icon(Icons.language_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            value: _selectedLanguage,
-            decoration: InputDecoration(
-              labelText: 'Language',
-              labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-              ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-              focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error,
-                  width: 1.5,
-                ),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error,
-                  width: 2,
-                ),
-              ),
-            ),
-            dropdownColor: Theme.of(context).colorScheme.surface,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            items: languages.map((language) {
-              return DropdownMenuItem(
-                value: language,
-                child: Text(language),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedLanguage = value;
-                  _saveSettings();
-                });
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
 }

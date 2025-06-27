@@ -21,8 +21,10 @@ class _CaptureScreenState extends State<CaptureScreen>
   bool _isProcessing = false;
   late AnimationController _fadeController;
   late AnimationController _scaleController;
+  late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -40,6 +42,10 @@ class _CaptureScreenState extends State<CaptureScreen>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
@@ -47,11 +53,16 @@ class _CaptureScreenState extends State<CaptureScreen>
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
     );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 3.0), // Slide from bottom
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fadeController.forward();
         _scaleController.forward();
+        _slideController.forward();
       }
     });
   }
@@ -60,6 +71,7 @@ class _CaptureScreenState extends State<CaptureScreen>
   void dispose() {
     _fadeController.dispose();
     _scaleController.dispose();
+    _slideController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -240,7 +252,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                 automaticallyImplyLeading: false,
                 backgroundColor: Colors.transparent,
                 elevation: 0,
-                expandedHeight: 100,
+                expandedHeight: 50,
                 flexibleSpace: FlexibleSpaceBar(
                   titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
                   title: ShaderMask(

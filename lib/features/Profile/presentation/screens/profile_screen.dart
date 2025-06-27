@@ -252,7 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         alignment: Alignment.center,
         children: [
           Container(
-            width: 150,
+            width: 140,
             height: 150,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -266,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
           Container(
             width: 120,
-            height: 120,
+            height: 130,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
@@ -276,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             ),
             child: const CircleAvatar(
               radius: 58,
-              backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
+              backgroundImage: AssetImage('assets/images/saad.png'),
             ),
           ),
           if (_isEditing)
@@ -634,6 +634,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       {
         'icon': Icons.help_outline_rounded,
         'title': 'Help & Support',
+        'onTap': () => Navigator.pushNamed(context, AppRoutes.help),
       },
       {
         'icon': Icons.settings_rounded,

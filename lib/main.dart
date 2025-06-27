@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' show ChangeNotifierProvider, Provider;
 import 'core/navigation/app_router.dart';
 import 'core/constants/app_routes.dart';
 import 'core/widgets/app_themes.dart';
