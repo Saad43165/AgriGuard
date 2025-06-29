@@ -120,10 +120,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               const Color(0xFF0F0F23),
             ]
                 : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.9),
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              Theme.of(context).colorScheme.surface,
             ],
             stops: [0.0, 0.3, 0.7, 1.0],
           ),

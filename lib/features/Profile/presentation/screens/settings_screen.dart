@@ -21,7 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   late Animation<Offset> _slideAnimation;
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
-  String _selectedLanguage = 'English';
+  final String _selectedLanguage = 'English';
 
   @override
   void initState() {
@@ -102,10 +102,10 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               const Color(0xFF0F0F23),
             ]
                 : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.9),
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              Theme.of(context).colorScheme.surface,
             ],
             stops: [0.0, 0.3, 0.7, 1.0],
           ),

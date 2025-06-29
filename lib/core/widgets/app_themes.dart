@@ -44,8 +44,7 @@ class AppTheme {
       secondary: Color(0xFF6C63FF),
       onSecondary: Colors.white,
       surface: Color(0xFFF0F2F5), // Softer light gray for better contrast
-      onSurface: Color(0xFF1A1A2E), // Darker text for readability
-      background: Color(0xFFE8ECEF), // Slightly darker background
+      onSurface: Color(0xFF1A1A2E), // Slightly darker background
       error: Color(0xFFD32F2F), // More vibrant red for errors
       onError: Colors.white,
     ),
@@ -118,7 +117,6 @@ class AppTheme {
       onSecondary: Colors.black,
       surface: Color(0xFF1A1A2E),
       onSurface: Colors.white,
-      background: Color(0xFF16213E),
       error: Color(0xFFCF6679),
       onError: Colors.black,
     ),

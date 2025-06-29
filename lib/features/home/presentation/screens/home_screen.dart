@@ -127,8 +127,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if (!mounted) return;
 
       final validScans = scans.where((scan) {
-        return scan is Map<String, dynamic> &&
-            scan.containsKey('id') &&
+        return scan.containsKey('id') &&
             scan.containsKey('imageUrl') &&
             scan.containsKey('result') &&
             scan.containsKey('timestamp');
@@ -215,10 +214,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const Color(0xFF0F0F23),
             ]
                 : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.9),
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              Theme.of(context).colorScheme.surface,
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),
@@ -329,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -720,7 +719,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

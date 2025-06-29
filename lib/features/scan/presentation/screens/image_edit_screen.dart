@@ -29,7 +29,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
   double _contrast = 1.0;
   double _saturation = 1.0;
   Color _selectedColor = Colors.red;
-  List<Offset> _points = [];
+  final List<Offset> _points = [];
   final GlobalKey _imageKey = GlobalKey();
   Matrix4 _matrix = Matrix4.identity();
   Rect? _cropRect;
@@ -235,7 +235,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -381,10 +381,10 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
               const Color(0xFF0F0F23),
             ]
                 : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.9),
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              Theme.of(context).colorScheme.surface,
             ],
             stops: [0.0, 0.3, 0.7, 1.0],
           ),
@@ -439,7 +439,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
                                   width: _cropRect!.width,
                                   height: _cropRect!.height,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+                                    color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
                                     border: Border.all(
                                       color: Theme.of(context).colorScheme.primary,
                                       width: 2,
