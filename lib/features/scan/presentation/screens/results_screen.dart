@@ -29,7 +29,6 @@ class ResultsScreen extends StatelessWidget {
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
       body: _buildBody(context, theme, result),
-      bottomNavigationBar: const BottomNavBar(selectedIndex: 1),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -582,12 +581,6 @@ class ResultsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color:
-
-                Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               ),
             ],
           ),

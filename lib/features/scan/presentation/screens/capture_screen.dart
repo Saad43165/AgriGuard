@@ -24,7 +24,6 @@ class _CaptureScreenState extends State<CaptureScreen>
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -53,10 +52,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 3.0), // Slide from bottom
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -97,9 +92,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Image captured successfully!'),
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.secondary.withOpacity(0.9),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           ),
         );
       }
@@ -124,6 +117,7 @@ class _CaptureScreenState extends State<CaptureScreen>
     setState(() => _isProcessing = true);
 
     try {
+      // Save image to permanent storage
       Directory appDir;
       try {
         appDir = await getApplicationDocumentsDirectory();
@@ -141,10 +135,58 @@ class _CaptureScreenState extends State<CaptureScreen>
         throw Exception('Failed to save image to storage');
       }
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Simulate AI analysis with delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Generate mock scan result
+      final _ = _generateMockScanResult(permanentFile.path);
 
       if (mounted) {
-        await Navigator.pushNamed(
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                    Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Scan completed successfully!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Navigate to edit image screen with the image path
+        Navigator.pushNamed(
           context,
           AppRoutes.imageEdit,
           arguments: {'imagePath': permanentFile.path},
@@ -156,9 +198,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(AppStrings.failedToProcessImage),
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.error.withOpacity(0.9),
+            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
           ),
         );
         debugPrint('Image processing error: $e');
@@ -170,15 +210,74 @@ class _CaptureScreenState extends State<CaptureScreen>
     }
   }
 
+  Map<String, dynamic> _generateMockScanResult(String imagePath) {
+    final diseases = [
+      'Leaf Spot Disease',
+      'Powdery Mildew',
+      'Rust Disease',
+      'Bacterial Blight',
+      'Anthracnose',
+      'Healthy Plant',
+      'Mosaic Virus',
+      'Leaf Curl',
+    ];
+
+    final recommendations = [
+      'Apply fungicide spray',
+      'Improve air circulation',
+      'Remove affected leaves',
+      'Use copper-based treatment',
+      'Reduce watering frequency',
+      'No treatment needed',
+      'Apply neem oil',
+      'Quarantine the plant',
+    ];
+
+    final confidenceLevel = 75 + (DateTime.now().millisecondsSinceEpoch % 25);
+    final randomIndex = DateTime.now().millisecondsSinceEpoch % diseases.length;
+
+    return {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'imageUrl': imagePath,
+      'result': diseases[randomIndex],
+      'confidence': confidenceLevel,
+      'recommendation': recommendations[randomIndex],
+      'timestamp': DateTime.now().toIso8601String(),
+      'severity': randomIndex < 3 ? 'High' : randomIndex < 6 ? 'Medium' : 'Low',
+      'treatment': _getTreatmentDetails(diseases[randomIndex]),
+    };
+  }
+
+  String _getTreatmentDetails(String disease) {
+    switch (disease) {
+      case 'Leaf Spot Disease':
+        return 'Remove infected leaves and apply copper fungicide. Ensure good air circulation.';
+      case 'Powdery Mildew':
+        return 'Spray with baking soda solution or neem oil. Avoid overhead watering.';
+      case 'Rust Disease':
+        return 'Apply sulfur-based fungicide and improve plant spacing for better airflow.';
+      case 'Bacterial Blight':
+        return 'Use copper-based bactericide and avoid watering leaves directly.';
+      case 'Anthracnose':
+        return 'Prune affected areas and apply preventive fungicide spray.';
+      case 'Healthy Plant':
+        return 'Continue current care routine. Monitor regularly for any changes.';
+      case 'Mosaic Virus':
+        return 'Remove infected plants to prevent spread. Control aphid vectors.';
+      case 'Leaf Curl':
+        return 'Check for pests and environmental stress. Adjust watering schedule.';
+      default:
+        return 'Consult with a plant specialist for specific treatment recommendations.';
+    }
+  }
+
   void _retakeImage() {
     HapticFeedback.lightImpact();
     setState(() => _imageFile = null);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Image cleared. Ready for new capture.'),
-        backgroundColor: Theme.of(
-          context,
-        ).colorScheme.secondary.withOpacity(0.9),
+        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
       ),
     );
   }
@@ -226,20 +325,19 @@ class _CaptureScreenState extends State<CaptureScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors:
-                Theme.of(context).brightness == Brightness.dark
-                    ? [
-                      const Color(0xFF0F0F23),
-                      const Color(0xFF16213E),
-                      const Color(0xFF1A1A2E),
-                      const Color(0xFF0F0F23),
-                    ]
-                    : [
-                      Theme.of(context).colorScheme.background,
-                      Theme.of(context).colorScheme.background.withOpacity(0.9),
-                      Theme.of(context).colorScheme.background.withOpacity(0.8),
-                      Theme.of(context).colorScheme.background,
-                    ],
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
+            ]
+                : [
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
+            ],
             stops: [0.0, 0.3, 0.7, 1.0],
           ),
         ),
@@ -256,18 +354,15 @@ class _CaptureScreenState extends State<CaptureScreen>
                 flexibleSpace: FlexibleSpaceBar(
                   titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
                   title: ShaderMask(
-                    shaderCallback:
-                        (bounds) => LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.secondary,
-                          ],
-                        ).createShader(bounds),
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
+                      ],
+                    ).createShader(bounds),
                     child: Text(
                       'Scan Leaf',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -300,18 +395,12 @@ class _CaptureScreenState extends State<CaptureScreen>
                           ),
                           gradient: LinearGradient(
                             colors: [
-                              Theme.of(
-                                context,
-                              ).colorScheme.primary.withOpacity(0.2),
-                              Theme.of(
-                                context,
-                              ).colorScheme.secondary.withOpacity(0.2),
+                              Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                             ],
                           ),
                           border: Border.all(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withOpacity(0.2),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                             width: 1,
                           ),
                         ),
@@ -324,7 +413,11 @@ class _CaptureScreenState extends State<CaptureScreen>
                             onTap: _retakeImage,
                             child: Padding(
                               padding: const EdgeInsets.all(12),
-
+                              child: Icon(
+                                Icons.refresh_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -380,8 +473,8 @@ class _CaptureScreenState extends State<CaptureScreen>
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    Theme.of(context).colorScheme.primary.withOpacity(0.9),
+                    Theme.of(context).colorScheme.secondary.withOpacity(0.9),
                   ],
                 ),
               ),
@@ -400,20 +493,17 @@ class _CaptureScreenState extends State<CaptureScreen>
               ),
             ),
             const SizedBox(height: AppMeasurements.smallPadding),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppMeasurements.defaultPadding,
+            Text(
+              'Capture a photo with your camera \n Select from your gallery to get started',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), // Slightly higher opacity for better contrast
+                fontWeight: FontWeight.w500,
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16), // Responsive font size
               ),
-              child: Text(
-                'Capture a photo with your camera or select one from your gallery to get started',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              textAlign: TextAlign.center,
+              softWrap: true, // Allows text to wrap naturally
+              maxLines: 2, // Limits to two lines for consistency
+              overflow: TextOverflow.ellipsis, // Handles overflow gracefully
             ),
           ],
         ),
@@ -472,9 +562,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.background.withOpacity(0.7),
+                  color: Theme.of(context).colorScheme.background.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(
                     AppMeasurements.borderRadius,
                   ),
@@ -559,63 +647,46 @@ class _CaptureScreenState extends State<CaptureScreen>
                             ],
                           ),
                         ),
-                        child:
-                            _isProcessing
-                                ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Processing...',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                                : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.auto_fix_high_rounded,
-                                      size: 20,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Analyze Leaf',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        child: _isProcessing
+                            ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Analyzing...',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        )
+                            : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.auto_fix_high_rounded,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Analyze Leaf',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -643,30 +714,20 @@ class _CaptureScreenState extends State<CaptureScreen>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
             gradient: LinearGradient(
-              colors:
-                  isPrimary
-                      ? [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        Theme.of(
-                          context,
-                        ).colorScheme.secondary.withOpacity(0.2),
-                      ]
-                      : [
-                        Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.05),
-                        Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.02),
-                      ],
+              colors: isPrimary
+                  ? [
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+              ]
+                  : [
+                Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              ],
             ),
             border: Border.all(
-              color:
-                  isPrimary
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                      : Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withOpacity(0.2),
+              color: isPrimary
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
             ),
           ),
           child: Column(
@@ -676,20 +737,15 @@ class _CaptureScreenState extends State<CaptureScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors:
-                        isPrimary
-                            ? [
-                              Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.secondary,
-                            ]
-                            : [
-                              Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.2),
-                              Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.1),
-                            ],
+                    colors: isPrimary
+                        ? [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ]
+                        : [
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    ],
                   ),
                 ),
                 child: Icon(
@@ -703,12 +759,9 @@ class _CaptureScreenState extends State<CaptureScreen>
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color:
-                      isPrimary
-                          ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                  color: isPrimary
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],

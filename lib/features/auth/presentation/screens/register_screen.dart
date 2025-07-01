@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/animation_mixin.dart';
+import '../../../../core/constants/app_measurements.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,7 +12,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStateMixin, ScreenAnimationMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -24,24 +25,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fadeController.forward();
-      }
-    });
+    initializeAnimations();
   }
 
   @override
@@ -53,7 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     _phoneController.dispose();
     _locationController.dispose();
     _farmSizeController.dispose();
-    _fadeController.dispose();
+    disposeAnimations();
     super.dispose();
   }
 
@@ -78,12 +66,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
               ),
             ),
             backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+              borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
             ),
           ),
         );
@@ -97,12 +86,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
             ),
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
           ),
         ),
       );
@@ -138,12 +128,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
             ),
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
           ),
         ),
       );
@@ -172,12 +163,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
             ),
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
           ),
         ),
       );
@@ -188,10 +180,10 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     }
   }
 
-  Widget _buildGlassCard(BuildContext context, {required Widget child}) {
+  Widget _buildGlassCard(BuildContext context, {required Widget child, required double borderRadius, required EdgeInsets padding}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+        borderRadius: BorderRadius.circular(borderRadius),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -207,13 +199,13 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.background.withOpacity(0.3),
-            blurRadius: 20,
+            blurRadius: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: child,
       ),
     );
@@ -221,40 +213,47 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
+    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+    final imageSize = MediaQuery.of(context).size.width * 0.3; // 20% of screen width
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: Container(
-          margin: const EdgeInsets.only(left: AppMeasurements.smallPadding),
+          margin: EdgeInsets.only(left: smallPadding),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            borderRadius: BorderRadius.circular(borderRadius),
             gradient: LinearGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                theme.colorScheme.primary.withOpacity(0.2),
+                theme.colorScheme.secondary.withOpacity(0.2),
               ],
             ),
             border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              color: theme.colorScheme.onSurface.withOpacity(0.2),
               width: 1,
             ),
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+              borderRadius: BorderRadius.circular(borderRadius),
               onTap: () {
                 HapticFeedback.lightImpact();
                 Navigator.pop(context);
               },
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(smallPadding),
                 child: Icon(
                   Icons.arrow_back_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
+                  color: theme.colorScheme.primary,
+                  size: AppMeasurements.getResponsiveIconSizeMedium(context),
                 ),
               ),
             ),
@@ -263,16 +262,16 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
         title: ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
+              theme.colorScheme.primary,
+              theme.colorScheme.secondary,
             ],
           ).createShader(bounds),
           child: Text(
             'Create Account',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 24,
+              color: theme.colorScheme.onSurface,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 24),
             ),
           ),
         ),
@@ -283,681 +282,730 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
+            colors: theme.brightness == Brightness.dark
                 ? [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
             ]
                 : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              theme.colorScheme.background,
+              theme.colorScheme.background.withOpacity(0.9),
+              theme.colorScheme.background.withOpacity(0.8),
+              theme.colorScheme.background,
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Column(
-                    children: [
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: _buildGlassCard(
-                          context,
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            width: 100,
-                            height: 100,
-                            child: _imageFile == null
-                                ? Icon(
-                              Icons.person_rounded,
-                              size: 50,
-                              color: Theme.of(context).colorScheme.primary,
-                              semanticLabel: 'Profile Image Placeholder',
-                            )
-                                : ClipOval(
-                              child: Image.file(
-                                File(_imageFile!.path),
-                                fit: BoxFit.cover,
-                                width: 80,
-                                height: 80,
-                                errorBuilder: (context, error, stackTrace) => const Icon(
-                                  Icons.broken_image_rounded,
-                                  size: 60,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppMeasurements.smallPadding),
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.secondary,
-                          ],
-                        ).createShader(bounds),
-                        child: Text(
-                          'AgriGuard',
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 32,
-                          ),
-                          textAlign: TextAlign.center,
-                          semanticsLabel: 'AgriGuard',
-                        ),
-                      ),
-                      const SizedBox(height: AppMeasurements.smallPadding),
-                      Text(
-                        'Create an account to protect your crops',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding * 2),
-                  Text(
-                    'Join AgriGuard',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppMeasurements.smallPadding),
-                  _buildGlassCard(
-                    context,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Full Name *',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _nameController,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'Enter your full name',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.person_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(padding),
+            child: applyAnimations(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = isLargeScreen ? 500.0 : constraints.maxWidth;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Column(
+                            children: [
+                              GestureDetector(
+                                onTap: _pickImage,
+                                child: _buildGlassCard(
+                                  context,
+                                  borderRadius: borderRadius,
+                                  padding: EdgeInsets.all(smallPadding),
+                                  child: Container(
+                                    width: imageSize,
+                                    height: imageSize,
+                                    child: _imageFile == null
+                                        ? Icon(
+                                      Icons.person_rounded,
+                                      size: imageSize * 0.5,
+                                      color: theme.colorScheme.primary,
+                                      semanticLabel: 'Profile Image Placeholder',
+                                    )
+                                        : ClipOval(
+                                      child: Image.file(
+                                        File(_imageFile!.path),
+                                        fit: BoxFit.cover,
+                                        width: imageSize,
+                                        height: imageSize,
+                                        errorBuilder: (context, error, stackTrace) => Icon(
+                                          Icons.broken_image_rounded,
+                                          size: imageSize * 0.5,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your name';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Email Address *',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'your@email.com',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.email_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                              SizedBox(height: smallPadding),
+                              ShaderMask(
+                                shaderCallback: (bounds) => LinearGradient(
+                                  colors: [
+                                    theme.colorScheme.primary,
+                                    theme.colorScheme.secondary,
+                                  ],
+                                ).createShader(bounds),
+                                child: Text(
+                                  'AgriGuard',
+                                  style: theme.textTheme.headlineLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onSurface,
+                                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 32),
                                   ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
+                                  textAlign: TextAlign.center,
+                                  semanticsLabel: 'AgriGuard',
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                              autofillHints: const [AutofillHints.email],
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Phone Number',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
+                              SizedBox(height: smallPadding),
+                              Text(
+                                'Create an account to protect your crops',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: '+92 300 1234567',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.phone_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value != null && value.isNotEmpty) {
-                                  if (!RegExp(r'^\+?\d{10,15}$').hasMatch(value)) {
-                                    return 'Please enter a valid phone number';
-                                  }
-                                }
-                                return null;
-                              },
-                              autofillHints: const [AutofillHints.telephoneNumber],
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Location',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _locationController,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'e.g., Punjab, Pakistan',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.location_on_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              autofillHints: const [AutofillHints.location],
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Farm Size (acres)',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _farmSizeController,
-                              keyboardType: TextInputType.number,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'e.g., 5',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.landscape_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Password *',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'Enter your password',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.lock_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
-                              autofillHints: const [AutofillHints.password],
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Confirm Password *',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _confirmPasswordController,
-                              obscureText: _obscureConfirmPassword,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'Confirm your password',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.lock_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureConfirmPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please confirm your password';
-                                }
-                                if (value != _passwordController.text) {
-                                  return 'Passwords do not match';
-                                }
-                                return null;
-                              },
-                              autofillHints: const [AutofillHints.password],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                      onTap: _isLoading ? null : _register,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.secondary,
                             ],
                           ),
-                        ),
-                        child: _isLoading
-                            ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
+                          SizedBox(height: padding * 2),
+                          Text(
+                            'Join AgriGuard',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 28),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Registering...',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        )
-                            : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.person_add_rounded,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Register',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pushNamed(context, '/login');
-                      },
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'Already have an account? ',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            textAlign: TextAlign.center,
                           ),
-                          children: [
-                            TextSpan(
-                              text: 'Login',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
+                          SizedBox(height: smallPadding),
+                          _buildGlassCard(
+                            context,
+                            borderRadius: borderRadius,
+                            padding: EdgeInsets.all(padding),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Full Name *',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _nameController,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter your full name',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.person_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your name';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Email Address *',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'your@email.com',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.email_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your email';
+                                        }
+                                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                          return 'Please enter a valid email';
+                                        }
+                                        return null;
+                                      },
+                                      autofillHints: const [AutofillHints.email],
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Phone Number',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _phoneController,
+                                      keyboardType: TextInputType.phone,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: '+92 300 1234567',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.phone_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value != null && value.isNotEmpty) {
+                                          if (!RegExp(r'^\+?\d{10,15}$').hasMatch(value)) {
+                                            return 'Please enter a valid phone number';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                      autofillHints: const [AutofillHints.telephoneNumber],
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Location',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _locationController,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'e.g., Punjab, Pakistan',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.location_on_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      autofillHints: const [AutofillHints.location],
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Farm Size (acres)',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _farmSizeController,
+                                      keyboardType: TextInputType.number,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'e.g., 5',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.landscape_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Password *',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter your password',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.lock_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                            color: theme.colorScheme.primary,
+                                            size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                          ),
+                                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your password';
+                                        }
+                                        if (value.length < 6) {
+                                          return 'Password must be at least 6 characters';
+                                        }
+                                        return null;
+                                      },
+                                      autofillHints: const [AutofillHints.password],
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Confirm Password *',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _confirmPasswordController,
+                                      obscureText: _obscureConfirmPassword,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Confirm your password',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.lock_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscureConfirmPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                            color: theme.colorScheme.primary,
+                                            size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                          ),
+                                          onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please confirm your password';
+                                        }
+                                        if (value != _passwordController.text) {
+                                          return 'Passwords do not match';
+                                        }
+                                        return null;
+                                      },
+                                      autofillHints: const [AutofillHints.password],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(height: padding),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(borderRadius),
+                              onTap: _isLoading ? null : _register,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: padding),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(borderRadius),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary,
+                                      theme.colorScheme.secondary,
+                                    ],
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                      height: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: theme.colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(width: smallPadding),
+                                    Text(
+                                      'Registering...',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                    : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_add_rounded,
+                                      size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                    SizedBox(width: smallPadding),
+                                    Text(
+                                      'Register',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: padding),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.pushNamed(context, '/login');
+                              },
+                              child: RichText(
+                                text: TextSpan(
+                                  text: 'Already have an account? ',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: 'Login',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

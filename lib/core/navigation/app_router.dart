@@ -8,7 +8,7 @@ import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
 import '../../features/scan/presentation/screens/capture_screen.dart';
-import '../../features/scan/presentation/screens/image_edit_screen.dart';
+import '../../features/edit/presentation/screens/image_edit_screen.dart';
 import '../../features/scan/presentation/screens/results_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
@@ -17,6 +17,50 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final args = settings.arguments as Map<String, dynamic>?;
 
+    // Helper method for consistent animations
+    Route<dynamic> buildAnimatedRoute({
+      required Widget page,
+      Duration transitionDuration = const Duration(milliseconds: 500),
+    }) {
+      return PageRouteBuilder(
+        settings: settings,
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide animation
+          const beginSlide = Offset(-1.0, 0.0); // Slide from left
+          const endSlide = Offset.zero;
+          const curve = Curves.easeInOut;
+          var slideTween = Tween(begin: beginSlide, end: endSlide).chain(CurveTween(curve: curve));
+          var slideAnimation = animation.drive(slideTween);
+
+          // Fade animation
+          var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+          );
+
+          // Scale animation
+          var scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: const Interval(0.0, 0.75, curve: Curves.elasticOut), // Scale completes in 375ms
+            ),
+          );
+
+          return FadeTransition(
+            opacity: fadeAnimation,
+            child: ScaleTransition(
+              scale: scaleAnimation,
+              child: SlideTransition(
+                position: slideAnimation,
+                child: child,
+              ),
+            ),
+          );
+        },
+        transitionDuration: transitionDuration,
+      );
+    }
+
     switch (settings.name) {
       case AppRoutes.splash:
         return MaterialPageRoute(
@@ -24,64 +68,19 @@ class AppRouter {
           settings: settings,
         );
       case AppRoutes.login:
-        return MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: const LoginScreen());
       case AppRoutes.register:
-        return MaterialPageRoute(
-          builder: (_) => const RegisterScreen(),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: const RegisterScreen());
       case AppRoutes.forgotPassword:
-        return MaterialPageRoute(
-          builder: (_) => const ForgotPasswordScreen(),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: const ForgotPasswordScreen());
       case AppRoutes.home:
-        return MaterialPageRoute(
-          builder: (_) => HomeScreen(userData: args),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: HomeScreen(userData: args));
       case AppRoutes.profile:
-        return MaterialPageRoute(
-          builder: (_) => ProfileScreen(userData: args),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: ProfileScreen(userData: args));
       case AppRoutes.history:
-        return PageRouteBuilder(
-          settings: settings,
-          pageBuilder: (context, animation, secondaryAnimation) => const HistoryScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(-1.0, 0.0); // Slide from left
-            const end = Offset.zero;
-            const curve = Curves.easeInOut;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-            var offsetAnimation = animation.drive(tween);
-            return SlideTransition(
-              position: offsetAnimation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 400), // Slightly slower
-        );
+        return buildAnimatedRoute(page: const HistoryScreen());
       case AppRoutes.scan:
-        return PageRouteBuilder(
-          settings: settings,
-          pageBuilder: (context, animation, secondaryAnimation) => const CaptureScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(0.0, 1.0); // Slide from bottom
-            const end = Offset.zero;
-            const curve = Curves.easeInOut;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-            var offsetAnimation = animation.drive(tween);
-            return SlideTransition(
-              position: offsetAnimation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 300), // Slightly slower
-        );
+        return buildAnimatedRoute(page: const CaptureScreen());
       case AppRoutes.imageEdit:
         final imagePath = args?['imagePath'] as String? ?? '';
         if (imagePath.isEmpty) {
@@ -91,50 +90,14 @@ class AppRouter {
             ),
           );
         }
-        return MaterialPageRoute(
-          builder: (_) => ImageEditScreen(imagePath: imagePath),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: ImageEditScreen(imagePath: imagePath));
       case AppRoutes.results:
         final scanData = args?['scanData'] as Map<String, dynamic>? ?? {};
-        return MaterialPageRoute(
-          builder: (_) => ResultsScreen(scanData: scanData),
-          settings: settings,
-        );
+        return buildAnimatedRoute(page: ResultsScreen(scanData: scanData));
       case AppRoutes.settings:
-        return PageRouteBuilder(
-          settings: settings,
-          pageBuilder: (context, animation, secondaryAnimation) => const SettingsScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(-1.0, 0.0); // Slide from left
-            const end = Offset.zero;
-            const curve = Curves.easeInOut;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-            var offsetAnimation = animation.drive(tween);
-            return SlideTransition(
-              position: offsetAnimation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 300), // Slightly slower
-        );
+        return buildAnimatedRoute(page: const SettingsScreen());
       case AppRoutes.help:
-        return PageRouteBuilder(
-          settings: settings,
-          pageBuilder: (context, animation, secondaryAnimation) => const HelpAndSupportScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            const begin = Offset(-1.0, 0.0); // Slide from left
-            const end = Offset.zero;
-            const curve = Curves.easeInOut;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-            var offsetAnimation = animation.drive(tween);
-            return SlideTransition(
-              position: offsetAnimation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 300), // Slightly slower
-        );
+        return buildAnimatedRoute(page: const HelpAndSupportScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

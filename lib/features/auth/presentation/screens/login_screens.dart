@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../config/app_theme.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/animation_mixin.dart';
+import '../../../../core/constants/app_measurements.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,37 +10,24 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin, ScreenAnimationMixin {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fadeController.forward();
-      }
-    });
+    initializeAnimations();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _fadeController.dispose();
+    disposeAnimations();
     super.dispose();
   }
 
@@ -73,22 +60,23 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
             ),
           ),
           backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
           ),
         ),
       );
     }
   }
 
-  Widget _buildGlassCard(BuildContext context, {required Widget child}) {
+  Widget _buildGlassCard(BuildContext context, {required Widget child, required double borderRadius, required EdgeInsets padding}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+        borderRadius: BorderRadius.circular(borderRadius),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -104,13 +92,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.background.withOpacity(0.3),
-            blurRadius: 20,
+            blurRadius: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: child,
       ),
     );
@@ -118,6 +106,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
+    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: Container(
@@ -125,352 +119,375 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
+            colors: theme.brightness == Brightness.dark
                 ? [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
             ]
                 : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              theme.colorScheme.background,
+              theme.colorScheme.background.withOpacity(0.9),
+              theme.colorScheme.background.withOpacity(0.8),
+              theme.colorScheme.background,
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                            ],
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.eco_rounded,
-                          size: 60,
-                          color: Theme.of(context).colorScheme.primary,
-                          semanticLabel: 'AgriGuard Logo',
-                        ),
-                      ),
-                      const SizedBox(height: AppMeasurements.smallPadding),
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.secondary,
-                          ],
-                        ).createShader(bounds),
-                        child: Text(
-                          'AgriGuard',
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 32,
-                          ),
-                          textAlign: TextAlign.center,
-                          semanticsLabel: 'AgriGuard',
-                        ),
-                      ),
-                      const SizedBox(height: AppMeasurements.smallPadding),
-                      Text(
-                        'Protecting Your Crops',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
-                        textAlign: TextAlign.center,
-                        semanticsLabel: 'Protecting Your Crops',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding * 2),
-                  Text(
-                    'Welcome Back',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppMeasurements.smallPadding),
-                  Text(
-                    'Sign in to continue protecting your fields',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding),
-                  _buildGlassCard(
-                    context,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Email Address',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'your@email.com',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.email_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(padding),
+            child: applyAnimations(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxWidth = isLargeScreen ? 500.0 : constraints.maxWidth;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(smallPadding),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary.withOpacity(0.2),
+                                      theme.colorScheme.secondary.withOpacity(0.2),
+                                    ],
                                   ),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
+                                child: Icon(
+                                  Icons.eco_rounded,
+                                  size: AppMeasurements.getResponsiveIconSizeLarge(context),
+                                  color: theme.colorScheme.primary,
+                                  semanticLabel: 'AgriGuard Logo',
                                 ),
                               ),
-                              autofillHints: const [AutofillHints.email],
-                            ),
-                            const SizedBox(height: AppMeasurements.defaultPadding),
-                            Text(
-                              'Password',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                              decoration: InputDecoration(
-                                hintText: 'Enter your password',
-                                hintStyle: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.lock_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                ),
-                                filled: true,
-                                fillColor: Colors.transparent,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              autofillHints: const [AutofillHints.password],
-                            ),
-                            const SizedBox(height: AppMeasurements.smallPadding),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                  Navigator.pushNamed(context, '/forgot-password');
-                                },
+                              SizedBox(height: smallPadding),
+                              ShaderMask(
+                                shaderCallback: (bounds) => LinearGradient(
+                                  colors: [
+                                    theme.colorScheme.primary,
+                                    theme.colorScheme.secondary,
+                                  ],
+                                ).createShader(bounds),
                                 child: Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                                  'AgriGuard',
+                                  style: theme.textTheme.headlineLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onSurface,
+                                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 32),
                                   ),
+                                  textAlign: TextAlign.center,
+                                  semanticsLabel: 'AgriGuard',
+                                ),
+                              ),
+                              SizedBox(height: smallPadding),
+                              Text(
+                                'Protecting Your Crops',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                ),
+                                textAlign: TextAlign.center,
+                                semanticsLabel: 'Protecting Your Crops',
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: padding * 2),
+                          Text(
+                            'Welcome Back',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 28),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: smallPadding),
+                          Text(
+                            'Sign in to continue protecting your fields',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: padding),
+                          _buildGlassCard(
+                            context,
+                            borderRadius: borderRadius,
+                            padding: EdgeInsets.all(padding),
+                            child: Form(
+                              key: _formKey,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Email Address',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'your@email.com',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.email_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      autofillHints: const [AutofillHints.email],
+                                    ),
+                                    SizedBox(height: padding),
+                                    Text(
+                                      'Password',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter your password',
+                                        hintStyle: TextStyle(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.lock_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                        ),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                            color: theme.colorScheme.primary,
+                                            size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                          ),
+                                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.onSurface.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(borderRadius),
+                                          borderSide: const BorderSide(
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      autofillHints: const [AutofillHints.password],
+                                    ),
+                                    SizedBox(height: smallPadding),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        onPressed: () {
+                                          HapticFeedback.lightImpact();
+                                          Navigator.pushNamed(context, '/forgot-password');
+                                        },
+                                        child: Text(
+                                          'Forgot Password?',
+                                          style: TextStyle(
+                                            color: theme.colorScheme.primary,
+                                            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                      onTap: _isLoading ? null : _handleLogin,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-                          gradient: LinearGradient(
-                            colors: [
-                              Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.secondary,
-                            ],
                           ),
-                        ),
-                        child: _isLoading
-                            ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                          SizedBox(height: padding),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(borderRadius),
+                              onTap: _isLoading ? null : _handleLogin,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: padding),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(borderRadius),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary,
+                                      theme.colorScheme.secondary,
+                                    ],
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                      height: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: theme.colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    SizedBox(width: smallPadding),
+                                    Text(
+                                      'Signing In...',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                    : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.login_rounded,
+                                      size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                    SizedBox(width: smallPadding),
+                                    Text(
+                                      'Sign In',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Signing In...',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        )
-                            : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.login_rounded,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Sign In',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppMeasurements.defaultPadding),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pushNamed(context, '/register');
-                      },
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'New Farmer? ',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
                           ),
-                          children: [
-                            TextSpan(
-                              text: 'Create Account',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
+                          SizedBox(height: padding),
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                Navigator.pushNamed(context, '/register');
+                              },
+                              child: RichText(
+                                text: TextSpan(
+                                  text: 'New Farmer? ',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: 'Create Account',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

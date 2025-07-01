@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import 'dart:ui';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/severity_indicator.dart';
@@ -86,6 +87,79 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  Future<void> _deleteScan(int index) async {
+    final scan = AppMockData.recentScans[index];
+    final imagePath =
+        scan['imageUrl'] as String?; // Assuming imageUrl is the file path
+    if (imagePath != null) {
+      try {
+        final file = File(imagePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        debugPrint('Failed to delete image file: $e');
+      }
+    }
+
+    setState(() {
+      AppMockData.recentScans.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Scan deleted successfully!',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+        ),
+        duration: AppDurations.snackBarDuration,
+      ),
+    );
+  }
+
+  Future<void> _showDeleteConfirmationDialog(int index) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // User must tap a button to dismiss
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Scan'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                  'Are you sure you want to delete this scan? This action cannot be undone.',
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteScan(index);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,18 +167,19 @@ class _HistoryScreenState extends State<HistoryScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leadingWidth: 200, // This ensures the leading widget gets proper width
+        leadingWidth: 2000, // This ensures the leading widget gets proper width
         leading: Padding(
           padding: const EdgeInsets.only(left: AppMeasurements.defaultPadding),
           child: Align(
             alignment: Alignment.centerLeft,
             child: ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-              ).createShader(bounds),
+              shaderCallback:
+                  (bounds) => LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                  ).createShader(bounds),
               child: Text(
                 'Scan History',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -118,7 +193,9 @@ class _HistoryScreenState extends State<HistoryScreen>
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: AppMeasurements.defaultPadding),
+            margin: const EdgeInsets.only(
+              right: AppMeasurements.defaultPadding,
+            ),
             height: 50,
             width: 50,
             decoration: BoxDecoration(
@@ -170,10 +247,10 @@ class _HistoryScreenState extends State<HistoryScreen>
                       Color(0xFF0F0F23),
                     ]
                     : [
-                      Theme.of(context).colorScheme.background,
-                      Theme.of(context).colorScheme.background.withOpacity(0.9),
-                      Theme.of(context).colorScheme.background.withOpacity(0.8),
-                      Theme.of(context).colorScheme.background,
+                      Theme.of(context).colorScheme.surface,
+                      Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                      Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                      Theme.of(context).colorScheme.surface,
                     ],
             stops: [0.0, 0.3, 0.7, 1.0],
           ),
@@ -194,7 +271,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                     ).colorScheme.onSurface.withOpacity(0.2),
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(
-                        AppMeasurements.defaultPadding,
+                        AppMeasurements.smallPadding,
                       ),
                       child: _buildGlassCard(
                         child: Padding(
@@ -342,44 +419,76 @@ class _HistoryScreenState extends State<HistoryScreen>
                                                               AppMeasurements
                                                                   .borderRadius,
                                                             ),
-                                                        child: Image.asset(
-                                                          scan['image'],
-                                                          width: 50,
-                                                          height: 50,
-                                                          fit: BoxFit.cover,
-                                                          errorBuilder:
-                                                              (
-                                                                context,
-                                                                error,
-                                                                stackTrace,
-                                                              ) => Container(
-                                                                width: 50,
-                                                                height: 50,
-                                                                decoration: BoxDecoration(
-                                                                  color:
-                                                                      Theme.of(
+                                                        child:
+                                                            scan['imageUrl'] !=
+                                                                    null
+                                                                ? Image.file(
+                                                                  File(
+                                                                    scan['imageUrl']
+                                                                        as String,
+                                                                  ),
+                                                                  width: 50,
+                                                                  height: 50,
+                                                                  fit:
+                                                                      BoxFit
+                                                                          .cover,
+                                                                  errorBuilder:
+                                                                      (
                                                                         context,
-                                                                      ).colorScheme.surface,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        AppMeasurements
-                                                                            .borderRadius,
+                                                                        error,
+                                                                        stackTrace,
+                                                                      ) => Container(
+                                                                        width:
+                                                                            50,
+                                                                        height:
+                                                                            50,
+                                                                        decoration: BoxDecoration(
+                                                                          color:
+                                                                              Theme.of(
+                                                                                context,
+                                                                              ).colorScheme.surface,
+                                                                          borderRadius: BorderRadius.circular(
+                                                                            AppMeasurements.borderRadius,
+                                                                          ),
+                                                                        ),
+                                                                        child: Icon(
+                                                                          AppIcons
+                                                                              .imageError,
+                                                                          color: Theme.of(
+                                                                            context,
+                                                                          ).colorScheme.onSurface.withOpacity(
+                                                                            0.7,
+                                                                          ),
+                                                                        ),
                                                                       ),
+                                                                )
+                                                                : Container(
+                                                                  width: 50,
+                                                                  height: 50,
+                                                                  decoration: BoxDecoration(
+                                                                    color:
+                                                                        Theme.of(
+                                                                          context,
+                                                                        ).colorScheme.surface,
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          AppMeasurements
+                                                                              .borderRadius,
+                                                                        ),
+                                                                  ),
+                                                                  child: Icon(
+                                                                    AppIcons
+                                                                        .imageError,
+                                                                    color: Theme.of(
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .onSurface
+                                                                        .withOpacity(
+                                                                          0.7,
+                                                                        ),
+                                                                  ),
                                                                 ),
-                                                                child: Icon(
-                                                                  AppIcons
-                                                                      .imageError,
-                                                                  color: Theme.of(
-                                                                        context,
-                                                                      )
-                                                                      .colorScheme
-                                                                      .onSurface
-                                                                      .withOpacity(
-                                                                        0.7,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                        ),
                                                       ),
                                                       const SizedBox(
                                                         width:
@@ -440,13 +549,19 @@ class _HistoryScreenState extends State<HistoryScreen>
                                                           ],
                                                         ),
                                                       ),
-                                                      Icon(
-                                                        Icons
-                                                            .chevron_right_rounded,
-                                                        color: Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface
-                                                            .withOpacity(0.5),
+                                                      IconButton(
+                                                        icon: Icon(
+                                                          Icons.delete_rounded,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .error,
+                                                        ),
+                                                        onPressed:
+                                                            () =>
+                                                                _showDeleteConfirmationDialog(
+                                                                  index,
+                                                                ),
                                                       ),
                                                     ],
                                                   ),
@@ -520,7 +635,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),

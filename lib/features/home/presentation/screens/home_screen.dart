@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +9,49 @@ import '../widgets/nav_bar.dart';
 class ScanService {
   Future<List<Map<String, dynamic>>> fetchRecentScans() async {
     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    return []; // Return empty list for now
+    final prefs = await SharedPreferences.getInstance();
+    final scansJson = prefs.getStringList('recent_scans') ?? [];
+
+    List<Map<String, dynamic>> scans = [];
+    for (String scanJson in scansJson) {
+      try {
+        // Parse the JSON string into a Map (assuming proper serialization)
+        final Map<String, dynamic> scan = Map<String, dynamic>.from(
+          jsonDecode(scanJson) as Map, // Requires `import 'dart:convert';`
+        );
+        scans.add(scan);
+      } catch (e) {
+        debugPrint('Error parsing scan: $e');
+      }
+    }
+    return scans;
+  }
+
+  // Add method to save scan with proper JSON serialization
+  Future<void> saveScan(Map<String, dynamic> scan) async {
+    final prefs = await SharedPreferences.getInstance();
+    final scansJson = prefs.getStringList('recent_scans') ?? [];
+
+    // Add new scan to beginning of list with JSON encoding
+    scansJson.insert(0, jsonEncode(scan)); // Requires `import 'dart:convert';`
+
+    // Keep only last 10 scans
+    if (scansJson.length > 10) {
+      scansJson.removeRange(10, scansJson.length);
+    }
+
+    await prefs.setStringList('recent_scans', scansJson);
+  }
+
+  // Add method to delete scan
+  Future<void> deleteScan(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final scansJson = prefs.getStringList('recent_scans') ?? [];
+    final updatedScans = scansJson.where((json) {
+      final scan = jsonDecode(json) as Map<String, dynamic>;
+      return scan['id'] != id;
+    }).toList();
+    await prefs.setStringList('recent_scans', updatedScans);
   }
 }
 
@@ -22,6 +66,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final List<Map<String, dynamic>> _recentScans = [];
   bool _isFirstTimeUser = true;
+  bool _isLoading = false;
 
   late AnimationController _fadeController;
   late AnimationController _scaleController;
@@ -36,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _loadFirstTimeUser();
+    _loadRecentScans();
     _initializeAnimations();
   }
 
@@ -66,7 +112,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+    );
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
@@ -99,6 +147,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _loadRecentScans() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final scans = await ScanService().fetchRecentScans();
+      if (mounted) {
+        setState(() {
+          _recentScans.clear();
+          _recentScans.addAll(scans);
+          // If we have scans, user is no longer first time
+          if (scans.isNotEmpty) {
+            _isFirstTimeUser = false;
+            _saveFirstTimeUser();
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        debugPrint('Failed to load scans: $e');
+      }
+    }
+  }
+
   Future<void> _saveFirstTimeUser() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstTimeUser', _isFirstTimeUser);
@@ -108,53 +181,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
     if (args != null && args.containsKey('newScan') && args['newScan'] is Map<String, dynamic>) {
       final newScan = args['newScan'] as Map<String, dynamic>;
+
       if (!_recentScans.any((scan) => scan['id'] == newScan['id']) && mounted) {
         setState(() {
           _recentScans.insert(0, newScan);
-          _isFirstTimeUser = false;
+          _isFirstTimeUser = false; // User is no longer first time after first scan
         });
         _saveFirstTimeUser();
+
+        // Save the scan persistently
+        ScanService().saveScan(newScan);
+
+        // Show success message
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showCustomSnackBar(message: 'New scan added successfully!', isError: false);
+          }
+        });
       }
+    }
+
+    // Handle returning from scan screen - refresh scans
+    if (args != null && args.containsKey('refreshScans') && args['refreshScans'] == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadRecentScans();
+      });
     }
   }
 
   Future<void> _refreshScans() async {
     HapticFeedback.lightImpact();
-    try {
-      final scans = await ScanService().fetchRecentScans();
-      if (!mounted) return;
+    await _loadRecentScans();
 
-      final validScans = scans.where((scan) {
-        return scan is Map<String, dynamic> &&
-            scan.containsKey('id') &&
-            scan.containsKey('imageUrl') &&
-            scan.containsKey('result') &&
-            scan.containsKey('timestamp');
-      }).toList();
-
-      setState(() {
-        _recentScans.clear();
-        _recentScans.addAll(validScans);
-        _isFirstTimeUser = validScans.isEmpty;
-      });
-      _saveFirstTimeUser();
-
-      if (mounted) {
-        _showCustomSnackBar(
-          message: AppStrings.scansRefreshed,
-          isError: false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _showCustomSnackBar(
-          message: AppStrings.scanRefreshFailed,
-          isError: true,
-        );
-      }
-      debugPrint('Failed to refresh scans: $e');
+    if (mounted) {
+      _showCustomSnackBar(message: AppStrings.scansRefreshed, isError: false);
     }
   }
 
@@ -188,11 +251,68 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         backgroundColor: Colors.transparent,
         elevation: 0,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 3),
       ),
+    );
+  }
+
+  Future<void> _deleteScan(String id) async {
+    final index = _recentScans.indexWhere((scan) => scan['id'] == id);
+    if (index != -1) {
+      final scan = _recentScans[index];
+      final imagePath = scan['imageUrl'] as String?;
+      if (imagePath != null) {
+        try {
+          final file = File(imagePath);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (e) {
+          debugPrint('Failed to delete image file: $e');
+        }
+      }
+
+      setState(() {
+        _recentScans.removeAt(index);
+      });
+      await ScanService().deleteScan(id);
+
+      _showCustomSnackBar(message: 'Scan deleted successfully!', isError: false);
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(String id) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Scan'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to delete this scan? This action cannot be undone.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteScan(id);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -246,7 +366,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           const SizedBox(height: 32),
                           _buildScanButton(),
                           const SizedBox(height: 32),
-                          _buildScanContentSection(),
+                          _isLoading
+                              ? _buildLoadingSection()
+                              : _buildScanContentSection(),
                         ],
                       ),
                     ),
@@ -267,11 +389,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Navigator.pushNamed(context, AppRoutes.scan);
                 break;
               case 2:
-                Navigator.pushNamed(context, AppRoutes.profile, arguments: widget.userData);
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.profile,
+                  arguments: widget.userData,
+                );
                 break;
             }
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadingSection() {
+    return _buildGlassCard(
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading your scans...',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -365,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Icon(
                 AppIcons.logo,
                 size: 48,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 20),
@@ -465,11 +613,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildScanContentSection() {
-    if (_isFirstTimeUser) {
-      return _buildFirstTimeUserGuide();
-    }
     if (_recentScans.isEmpty) {
-      return _buildEmptyScansState();
+      return _buildFirstTimeUserGuide(); // Show guidelines when no scans
     }
     return _buildRecentScansSection();
   }
@@ -535,21 +680,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [
-                color.withOpacity(0.3),
-                color.withOpacity(0.1),
-              ],
+              colors: [color.withOpacity(0.3), color.withOpacity(0.1)],
             ),
-            border: Border.all(
-              color: color.withOpacity(0.5),
-              width: 1,
-            ),
+            border: Border.all(color: color.withOpacity(0.5), width: 1),
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
+          child: Icon(icon, color: color, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -666,7 +801,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Navigator.pushNamed(context, AppRoutes.history);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Text(
                         AppStrings.viewAll,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -693,7 +831,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               return Container(
                 width: 160,
                 margin: const EdgeInsets.only(right: 16),
-                child: _buildScanCard(scan),
+                child: _buildScanCard(scan, index),
               );
             },
           ),
@@ -702,7 +840,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildScanCard(Map<String, dynamic> scan) {
+  Widget _buildScanCard(Map<String, dynamic> scan, int index) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -734,68 +872,115 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(16),
             onTap: () {
               HapticFeedback.lightImpact();
-              Navigator.pushNamed(
-                context,
-                AppRoutes.results,
-                arguments: scan,
-              );
+              Navigator.pushNamed(context, AppRoutes.results, arguments: scan);
             },
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          scan['imageUrl']?.toString() ?? 'assets/images/placeholder.jpg',
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                            child: Icon(
-                              Icons.image_not_supported_rounded,
-                              size: 32,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: scan['imageUrl']?.toString().startsWith('assets/') == true
+                                ? Image.asset(
+                              scan['imageUrl']?.toString() ?? 'assets/images/placeholder.jpg',
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                                child: Icon(
+                                  Icons.image_not_supported_rounded,
+                                  size: 32,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+                            )
+                                : Image.file(
+                              File(scan['imageUrl']?.toString() ?? ''),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                                child: Icon(
+                                  Icons.image_not_supported_rounded,
+                                  size: 32,
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        scan['result']?.toString() ?? 'Unknown Disease',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatTimestamp(scan['timestamp']?.toString() ?? ''),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    scan['result']?.toString() ?? 'Unknown',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 14,
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.delete_rounded,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 20,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    onPressed: () => _showDeleteConfirmationDialog(scan['id'] as String),
                   ),
-                  Text(
-                    scan['timestamp']?.toString() ?? 'N/A',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(String timestamp) {
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return 'Unknown';
+    }
   }
 }

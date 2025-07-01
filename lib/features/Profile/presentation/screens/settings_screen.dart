@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/widgets/app_themes.dart';
 
@@ -19,9 +20,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
+
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
   String _selectedLanguage = 'English';
+  final List<String> _languages = ['English', 'Spanish', 'French'];
 
   @override
   void initState() {
@@ -66,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     setState(() {
       _isDarkMode = prefs.getBool('isDarkMode') ?? false;
       _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-
+      _selectedLanguage = prefs.getString('selectedLanguage') ?? 'English';
     });
   }
 
@@ -74,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', _isDarkMode);
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
-
+    await prefs.setString('selectedLanguage', _selectedLanguage);
   }
 
   @override
@@ -87,69 +90,82 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
+    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-              const Color(0xFF0F0F23),
-            ]
-                : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                const Color(0xFF0F0F23),
+                const Color(0xFF16213E),
+                const Color(0xFF1A1A2E),
+                const Color(0xFF0F0F23),
+              ]
+                  : [
+                Theme.of(context).colorScheme.background,
+                Theme.of(context).colorScheme.background.withOpacity(0.9),
+                Theme.of(context).colorScheme.background.withOpacity(0.8),
+                Theme.of(context).colorScheme.background,
+              ],
+              stops: const [0.0, 0.3, 0.7, 1.0],
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            ...List.generate(6, (index) => _buildFloatingOrb(index)),
-            SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildHeader(),
-                        const SizedBox(height: 40),
-                        _buildSettings(),
-                        const SizedBox(height: 40),
-                      ],
+          child: Stack(
+            children: [
+              ...List.generate(6, (index) => _buildFloatingOrb(index)),
+              SafeArea(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(padding),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: isLargeScreen ? 600.0 : double.infinity),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeader(),
+                            SizedBox(height: padding * 2),
+                            _buildSettings(),
+                            SizedBox(height: padding * 2),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildFloatingOrb(int index) {
+    final size = MediaQuery.of(context).size;
     return AnimatedBuilder(
       animation: _fadeController,
       builder: (context, child) {
         return Positioned(
-          top: (index * 150.0) % MediaQuery.of(context).size.height,
-          left: (index * 100.0) % MediaQuery.of(context).size.width,
+          top: (index * 150.0) % size.height,
+          left: (index * 100.0) % size.width,
           child: Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: 80 + (index * 20.0),
-              height: 80 + (index * 20.0),
+              width: AppMeasurements.getResponsiveSize(context, baseSize: 80 + (index * 20)),
+              height: AppMeasurements.getResponsiveSize(context, baseSize: 80 + (index * 20)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -168,6 +184,9 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   }
 
   Widget _buildHeader() {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -182,13 +201,14 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             'Settings',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 24),
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(borderRadius),
             gradient: LinearGradient(
               colors: [
                 Theme.of(context).colorScheme.primary.withOpacity(0.2),
@@ -203,17 +223,17 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(borderRadius),
               onTap: () {
                 HapticFeedback.lightImpact();
                 Navigator.pop(context);
               },
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(padding * 0.75),
                 child: Icon(
                   Icons.arrow_back_rounded,
                   color: Theme.of(context).colorScheme.primary,
-                  size: 24,
+                  size: AppMeasurements.getResponsiveIconSizeMedium(context),
                 ),
               ),
             ),
@@ -224,10 +244,14 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   }
 
   Widget _buildSettings() {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+
     return _buildGlassCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(padding),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildToggleTile(
               icon: Icons.dark_mode_rounded,
@@ -239,9 +263,10 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                   _saveSettings();
                   ThemeProvider.of(context).toggleTheme(value);
                 });
+                HapticFeedback.lightImpact();
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: smallPadding),
             _buildToggleTile(
               icon: Icons.notifications_rounded,
               title: 'Notifications',
@@ -251,10 +276,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                   _notificationsEnabled = value;
                   _saveSettings();
                 });
+                HapticFeedback.lightImpact();
               },
             ),
-            const SizedBox(height: 20),
-            const SizedBox(height: 20),
+
+            SizedBox(height: smallPadding),
             _buildActionTile(
               icon: Icons.delete_rounded,
               title: 'Clear Scan History',
@@ -263,18 +289,22 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                 HapticFeedback.heavyImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Scan history cleared!'),
+                    content: Text(
+                      'Scan history cleared!',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                     backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(20),
                     ),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               },
             ),
-            const SizedBox(height: 20),
-
           ],
         ),
       ),
@@ -282,9 +312,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   }
 
   Widget _buildGlassCard({required Widget child}) {
+    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
+
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(borderRadius),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -299,7 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: child,
@@ -314,10 +346,13 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(smallPadding),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -327,14 +362,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               ],
             ),
           ),
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: smallPadding),
         Expanded(
           child: Text(
             title,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -345,6 +381,64 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           inactiveThumbColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           onChanged: onChanged,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownTile({
+    required IconData icon,
+    required String title,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(smallPadding),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+              ],
+            ),
+          ),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+        ),
+        SizedBox(width: smallPadding),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: AppMeasurements.getResponsiveSize(context, baseSize: 150),
+          child: DropdownButton<String>(
+            value: value,
+            items: items.map((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(item, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14))),
+              );
+            }).toList(),
+            onChanged: onChanged,
+            underline: const SizedBox(),
+            icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            dropdownColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+          ),
         ),
       ],
     );
@@ -356,12 +450,17 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     required Color color,
     required VoidCallback onTap,
   }) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(borderRadius),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(padding),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -373,23 +472,20 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(smallPadding),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color.withOpacity(0.1),
                 ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 20,
-                ),
+                child: Icon(icon, color: color, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: smallPadding),
               Expanded(
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: color,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -397,6 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               Icon(
                 Icons.chevron_right_rounded,
                 color: color.withOpacity(0.5),
+                size: AppMeasurements.getResponsiveIconSizeSmall(context),
               ),
             ],
           ),
@@ -405,4 +502,49 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     );
   }
 
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Logout',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to log out?',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, AppRoutes.login);
+            },
+            child: Text(
+              'Logout',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

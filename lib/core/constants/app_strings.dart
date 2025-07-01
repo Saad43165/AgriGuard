@@ -1,4 +1,3 @@
-// lib/core/constants/app_strings.dart
 class AppStrings {
   // TODO: Consider using `intl` package for localization support in the future
 
@@ -53,6 +52,12 @@ class AppStrings {
   static const String resetLinkSent = 'Password reset link sent to your email';
   /// Error message when scan refresh fails
   static const String scanRefreshFailed = 'Failed to refresh scans. Please try again.';
+  /// Error message when image fails to load
+  static const String failedToLoadImage = 'Failed to Load Image';
+  /// Error message when image picking fails
+  static const String failedToPickImage = 'Failed to pick image. Please try again.';
+  /// Error message when image processing fails
+  static const String failedToProcessImage = 'Failed to process image. Please try again.';
 
   // Home and Scanning
   /// Welcome message on home screen
@@ -89,8 +94,6 @@ class AppStrings {
   static const String scanPlant = 'Scan Plant';
   /// Button text for editing and analyzing an image
   static const String editAndAnalyze = 'Edit and Analyze';
-  /// Error message when image fails to load
-  static const String failedToLoadImage = 'Failed to Load Image';
   /// Label for camera option
   static const String camera = 'Camera';
   /// Label for gallery option
@@ -113,6 +116,14 @@ class AppStrings {
   static const String tailoredTreatmentAdvice = 'Receive tailored treatment advice';
 
   // Image Editing
+  /// Title for image editing screen
+  static const String editImage = 'Edit Image';
+  /// Button text for undoing an action
+  static const String undo = 'Undo';
+  /// Button text for redoing an action
+  static const String redo = 'Redo';
+  /// Button text to save edited image
+  static const String save = 'Save';
   /// Button text to reset image edits
   static const String reset = 'Reset';
   /// Label for selecting color
@@ -131,6 +142,36 @@ class AppStrings {
   static const String contrast = 'Contrast';
   /// Label for saturation adjustment
   static const String saturation = 'Saturation';
+  /// Label for hue adjustment
+  static const String hue = 'Hue';
+  /// Label for temperature adjustment
+  static const String temperature = 'Temperature';
+  /// Label for tint adjustment
+  static const String tint = 'Tint';
+  /// Label for highlight size adjustment
+  static const String highlightSize = 'Highlight Size';
+  /// Label for choosing a color
+  static const String chooseColor = 'Choose Color';
+  /// Button text to start cropping
+  static const String startCrop = 'Start Crop';
+  /// Button text to apply crop
+  static const String applyCrop = 'Apply Crop';
+  /// Button text to reset crop
+  static const String resetCrop = 'Reset Crop';
+  /// Label for brush size adjustment
+  static const String brushSize = 'Brush Size';
+  /// Label for brush opacity adjustment
+  static const String brushOpacity = 'Brush Opacity';
+  /// Label for entering text annotation
+  static const String enterText = 'Enter Text';
+  /// Label for blur effect
+  static const String blur = 'Blur';
+  /// Label for posterize effect
+  static const String posterize = 'Posterize';
+  /// Label for grayscale effect
+  static const String grayscale = 'Grayscale';
+  /// Label for sepia effect
+  static const String sepia = 'Sepia';
 
   // Profile and Other
   /// Button text for logout action
@@ -142,8 +183,5 @@ class AppStrings {
   /// Placeholder for scan results screen title
   static const String results = 'Results';
 
-  static const String failedToPickImage = 'Failed to pick image. Please try again.';
-
-  static const String failedToProcessImage = 'Failed to process image. Please try again.';
-
+  static const String done = 'Done';
 }

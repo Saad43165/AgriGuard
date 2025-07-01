@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
+import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../home/presentation/widgets/nav_bar.dart';
 
@@ -20,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  XFile? _profileImage;
 
   late AnimationController _fadeController;
   late AnimationController _scaleController;
@@ -33,19 +37,20 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     super.initState();
 
     _userProfile = widget.userData ?? {
-      'name': 'John Farmer',
-      'email': 'john@agriguard.com',
-      'phone': '+92 300 1234567',
+      'name': 'Saad Ikram',
+      'email': 'saad@agriguard.com',
+      'phone': '+92 300 2455578',
       'location': 'Punjab, Pakistan',
       'farmSize': '5 acres',
       'crops': ['Wheat', 'Cotton', 'Rice'],
-      'joinDate': 'Joined: January 2023',
+      'joinDate': 'Joined: July 01, 2025',
       'scanCount': 24,
+      'lastUpdated': 'Last Updated: 05:20 PM PKT, July 01, 2025',
     };
 
     _nameController.text = _userProfile['name'];
     _emailController.text = _userProfile['email'];
-    _phoneController.text = _phoneController.text = _userProfile['phone'];
+    _phoneController.text = _userProfile['phone'];
 
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -99,77 +104,135 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         _userProfile['name'] = _nameController.text;
         _userProfile['email'] = _emailController.text;
         _userProfile['phone'] = _phoneController.text;
+        _userProfile['lastUpdated'] = 'Last Updated: ${TimeOfDay.now().format(context)}, July 01, 2025';
       }
     });
+  }
+
+  Future<void> _pickProfileImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = pickedFile;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: const Text('Profile picture updated!'), backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9)),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-              const Color(0xFF0F0F23),
-            ]
-                : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isTablet = screenWidth > 600;
+
+          return _buildBody(context, isTablet, constraints.maxWidth);
+        },
+      ),
+      bottomNavigationBar: const BottomNavBar(selectedIndex: 2),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, bool isTablet, double maxWidth) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final padding = EdgeInsets.symmetric(
+      horizontal: maxWidth * 0.05, // 5% of screen width
+      vertical: AppMeasurements.defaultPadding,
+    );
+    final cardPadding = EdgeInsets.all(maxWidth * 0.03); // 3% of screen width
+    final sectionSpacing = maxWidth * 0.04; // 4% of screen width
+    final itemSpacing = maxWidth * 0.02; // 2% of screen width
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+            const Color(0xFF0F0F23),
+            const Color(0xFF16213E),
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F23),
+          ]
+              : [
+            Theme.of(context).colorScheme.background,
+            Theme.of(context).colorScheme.background.withOpacity(0.9),
+            Theme.of(context).colorScheme.background.withOpacity(0.8),
+            Theme.of(context).colorScheme.background,
+          ],
+          stops: const [0.0, 0.3, 0.7, 1.0],
         ),
-        child: Stack(
-          children: [
-            ...List.generate(6, (index) => _buildFloatingOrb(index)),
-            SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+      ),
+      child: Stack(
+        children: [
+          ...List.generate(6, (index) => _buildFloatingOrb(index, maxWidth)),
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: SingleChildScrollView(
+                  padding: padding,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
                     child: Column(
                       children: [
                         _buildHeader(),
-                        const SizedBox(height: 40),
-                        _buildProfilePicture(),
-                        const SizedBox(height: 32),
-                        _buildProfileInfo(),
-                        const SizedBox(height: 24),
-                        _buildStatistics(),
-                        const SizedBox(height: 24),
-                        _buildActions(),
-                        const SizedBox(height: 40),
+                        SizedBox(height: sectionSpacing),
+                        _buildProfilePicture(maxWidth),
+                        SizedBox(height: sectionSpacing),
+                        if (isTablet)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Flexible(
+                                flex: 1,
+                                child: _buildProfileInfo(cardPadding, itemSpacing),
+                              ),
+                              SizedBox(width: sectionSpacing),
+                              Flexible(
+                                flex: 1,
+                                child: _buildStatistics(cardPadding, itemSpacing),
+                              ),
+                            ],
+                          )
+                        else
+                          Column(
+                            children: [
+                              _buildProfileInfo(cardPadding, itemSpacing),
+                              SizedBox(height: sectionSpacing),
+                              _buildStatistics(cardPadding, itemSpacing),
+                            ],
+                          ),
+                        SizedBox(height: sectionSpacing),
+                        _buildActions(cardPadding),
+                        SizedBox(height: sectionSpacing),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      bottomNavigationBar: const BottomNavBar(selectedIndex: 2),
     );
   }
 
-  Widget _buildFloatingOrb(int index) {
+  Widget _buildFloatingOrb(int index, double maxWidth) {
     return AnimatedBuilder(
       animation: _fadeController,
       builder: (context, child) {
         return Positioned(
           top: (index * 150.0) % MediaQuery.of(context).size.height,
-          left: (index * 100.0) % MediaQuery.of(context).size.width,
+          left: (index * 100.0) % maxWidth,
           child: Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
@@ -193,129 +256,156 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ).createShader(bounds),
-          child: Text(
-            'Profile',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
+    return Semantics(
+      label: 'Profile header with edit toggle',
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.secondary,
               ],
-            ),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: _toggleEditMode,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Icon(
-                  _isEditing ? Icons.check_rounded : Icons.edit_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
+            ).createShader(bounds),
+            child: Text(
+              'Profile',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfilePicture() {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
           Container(
-            width: 140,
-            height: 150,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(16),
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                 ],
               ),
-            ),
-          ),
-          Container(
-            width: 120,
-            height: 130,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                width: 2,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
               ),
             ),
-            child: const CircleAvatar(
-              radius: 58,
-              backgroundImage: AssetImage('assets/images/saad.png'),
-            ),
-          ),
-          if (_isEditing)
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () {},
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Icon(
-                        Icons.camera_alt_rounded,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        size: 20,
-                      ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: _toggleEditMode,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Semantics(
+                    label: _isEditing ? 'Save profile changes' : 'Edit profile',
+                    child: Icon(
+                      _isEditing ? Icons.check_rounded : Icons.edit_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
                     ),
                   ),
                 ),
               ),
             ),
+          ),
         ],
       ),
     );
   }
 
+  Widget _buildProfilePicture(double maxWidth) {
+    final profileSize = maxWidth * 0.3 > 150 ? 150.0 : maxWidth * 0.3;
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Semantics(
+        label: 'Profile picture with edit option',
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: profileSize,
+              height: profileSize * 1.07,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              width: profileSize - 20,
+              height: (profileSize - 20) * 1.08,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: _profileImage != null
+                    ? Image.file(
+                  File(_profileImage!.path),
+                  fit: BoxFit.cover,
+                  width: profileSize - 20,
+                  height: (profileSize - 20) * 1.08,
+                  errorBuilder: (context, error, stackTrace) => const CircleAvatar(
+                    radius: 58,
+                    backgroundImage: AssetImage('assets/images/saad.png'),
+                  ),
+                )
+                    : const CircleAvatar(
+                  radius: 58,
+                  backgroundImage: AssetImage('assets/images/saad.png'),
+                ),
+              ),
+            ),
+            if (_isEditing)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Semantics(
+                  label: 'Change profile picture',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                      ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: _pickProfileImage,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.camera_alt_rounded,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGlassCard({required Widget child}) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -342,10 +432,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildProfileInfo() {
+  Widget _buildProfileInfo(EdgeInsets cardPadding, double itemSpacing) {
     return _buildGlassCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: cardPadding,
         child: Column(
           children: [
             _buildEditableField(
@@ -354,27 +444,27 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               controller: _nameController,
               icon: Icons.person_rounded,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: itemSpacing),
             _buildEditableField(
               label: 'Email',
               value: _userProfile['email'],
               controller: _emailController,
               icon: Icons.email_rounded,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: itemSpacing),
             _buildEditableField(
               label: 'Phone',
               value: _userProfile['phone'],
               controller: _phoneController,
               icon: Icons.phone_rounded,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: itemSpacing),
             _buildInfoTile(
               icon: Icons.location_on_rounded,
               label: 'Location',
               value: _userProfile['location'],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: itemSpacing),
             _buildInfoTile(
               icon: Icons.agriculture_rounded,
               label: 'Farm Size',
@@ -392,75 +482,81 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required TextEditingController controller,
     required IconData icon,
   }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+    return Semantics(
+      label: 'Editable field for $label',
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                ],
+              ),
+            ),
+            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+          ),
+          SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+          Expanded(
+            child: _isEditing
+                ? TextFormField(
+              controller: controller,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              decoration: InputDecoration(
+                labelText: label,
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  fontSize: 16,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04,
+                  vertical: MediaQuery.of(context).size.height * 0.02,
+                ),
+                enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
+                focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.error,
+                    width: 1.5,
+                  ),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.error,
+                    width: 2,
+                  ),
+                ),
+              ),
+            )
+                : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
           ),
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _isEditing
-              ? TextFormField(
-            controller: controller,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                fontSize: 16,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
-              focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error,
-                  width: 1.5,
-                ),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.error,
-                  width: 2,
-                ),
-              ),
-            ),
-          )
-              : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -472,7 +568,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -484,7 +580,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
           child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: MediaQuery.of(context).size.width * 0.04),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,16 +606,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildStatistics() {
+  Widget _buildStatistics(EdgeInsets cardPadding, double itemSpacing) {
     return _buildGlassCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: cardPadding,
         child: Column(
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -535,7 +631,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: MediaQuery.of(context).size.width * 0.04),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -547,7 +643,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                       ),
                     ),
                     Text(
-                      _userProfile['joinDate'],
+                      _userProfile['lastUpdated'],
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                       ),
@@ -556,7 +652,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: itemSpacing),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -568,7 +664,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 ),
                 Container(
                   width: 1,
-                  height: 60,
+                  height: MediaQuery.of(context).size.height * 0.08,
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 ),
                 _buildStatItem(
@@ -594,7 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -606,7 +702,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
           child: Icon(icon, size: 28, color: color),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: MediaQuery.of(context).size.width * 0.02),
         Text(
           value,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -624,7 +720,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildActions() {
+  Widget _buildActions(EdgeInsets cardPadding) {
     final actions = [
       {
         'icon': Icons.history_rounded,
@@ -651,63 +747,66 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     return _buildGlassCard(
       child: Column(
-        children: actions.map((action) => _buildActionTile(action)).toList(),
+        children: actions.map((action) => _buildActionTile(action, cardPadding)).toList(),
       ),
     );
   }
 
-  Widget _buildActionTile(Map<String, dynamic> action) {
+  Widget _buildActionTile(Map<String, dynamic> action, EdgeInsets cardPadding) {
     final isLast = action['title'] == 'Logout';
     final color = action['color'] as Color? ?? Theme.of(context).colorScheme.onSurface;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          action['onTap']();
-        },
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            border: isLast
-                ? null
-                : Border(
-              bottom: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                width: 1,
+    return Semantics(
+      label: 'Action: ${action['title']}',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            action['onTap']();
+          },
+          child: Container(
+            padding: cardPadding,
+            decoration: BoxDecoration(
+              border: isLast
+                  ? null
+                  : Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  width: 1,
+                ),
               ),
             ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withOpacity(0.1),
-                ),
-                child: Icon(
-                  action['icon'],
-                  color: color,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  action['title'],
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withOpacity(0.1),
+                  ),
+                  child: Icon(
+                    action['icon'],
                     color: color,
-                    fontWeight: FontWeight.w500,
+                    size: 20,
                   ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: color.withOpacity(0.5),
-              ),
-            ],
+                SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+                Expanded(
+                  child: Text(
+                    action['title'],
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: color.withOpacity(0.5),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
   bool _isDarkMode = false;
@@ -37,74 +37,94 @@ class ThemeProvider extends ChangeNotifier {
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    primaryColor: const Color(0xFF00D4AA),
+    primaryColor: const Color(0xFF00D4AA), // Vibrant teal as the primary color
     colorScheme: const ColorScheme.light(
-      primary: Color(0xFF00D4AA),
-      onPrimary: Colors.white,
-      secondary: Color(0xFF6C63FF),
-      onSecondary: Colors.white,
-      surface: Color(0xFFF0F2F5), // Softer light gray for better contrast
-      onSurface: Color(0xFF1A1A2E), // Darker text for readability
-      background: Color(0xFFE8ECEF), // Slightly darker background
-      error: Color(0xFFD32F2F), // More vibrant red for errors
-      onError: Colors.white,
+      primary: Color(0xFF00D4AA), // Teal for primary actions
+      onPrimary: Colors.white, // White text on primary background
+      secondary: Color(0xFF6C63FF), // Purple for secondary actions
+      onSecondary: Colors.white, // White text on secondary background
+      surface: Color(0xFFF5F7FA), // Light gray surface for cards and sheets
+      onSurface: Color(0xFF2C3E50), // Dark slate for text, better contrast
+      background: Color(0xFFF9FBFD), // Very light background for a clean look
+      error: Color(0xFFD32F2F), // Vibrant red for errors
+      onError: Colors.white, // White text on error background
     ),
-    scaffoldBackgroundColor: const Color(0xFFE8ECEF),
+    scaffoldBackgroundColor: const Color(0xFFF9FBFD), // Consistent with background
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
         fontSize: 32,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1A1A2E),
+        color: Color(0xFF2C3E50), // Darker text for headings
       ),
       headlineMedium: TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF1A1A2E),
+        color: Color(0xFF2C3E50), // Consistent dark text
       ),
       bodyLarge: TextStyle(
         fontSize: 18,
-        color: Color(0xFF1A1A2E),
+        color: Color(0xFF34495E), // Slightly lighter for body text, good contrast
       ),
       bodyMedium: TextStyle(
         fontSize: 16,
-        color: Color(0xFF1A1A2E),
+        color: Color(0xFF34495E), // Consistent with bodyLarge
       ),
       bodySmall: TextStyle(
         fontSize: 14,
-        color: Color(0xFF1A1A2E),
+        color: Color(0xFF7F8C8D), // Subtle gray for captions
       ),
     ),
     buttonTheme: const ButtonThemeData(
-      buttonColor: Color(0xFF00D4AA),
+      buttonColor: Color(0xFF00D4AA), // Teal buttons
       textTheme: ButtonTextTheme.primary,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF00D4AA), // Teal background
+        foregroundColor: Colors.white, // White text
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: const Color(0xFFF7F9FA), // Light fill for inputs
+      fillColor: const Color(0xFFF7FAFC), // Very light fill for inputs
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF00D4AA)),
+        borderSide: const BorderSide(color: Color(0xFFB0BEC5)), // Light gray border
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFB0BEC5)), // Subtle border
+        borderSide: const BorderSide(color: Color(0xFFB0BEC5)), // Consistent border
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF00D4AA), width: 2),
+        borderSide: const BorderSide(color: Color(0xFF00D4AA), width: 2), // Teal focus
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD32F2F)),
+        borderSide: const BorderSide(color: Color(0xFFD32F2F)), // Red for errors
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+        borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2), // Bold red
       ),
-      labelStyle: const TextStyle(color: Color(0xFF1A1A2E)),
+      labelStyle: const TextStyle(color: Color(0xFF34495E)), // Darker label for contrast
+      hintStyle: const TextStyle(color: Color(0xFF7F8C8D)), // Subtle hint text
     ),
     iconTheme: const IconThemeData(
-      color: Color(0xFF1A1A2E),
+      color: Color(0xFF2C3E50), // Dark slate for icons
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFFF9FBFD), // Matches background
+      foregroundColor: Color(0xFF2C3E50), // Dark text for app bar
+      elevation: 0, // No shadow for a flat look
+    ),
+    cardTheme: const CardTheme(
+      color: Color(0xFFF5F7FA), // Light surface for cards
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
     ),
   );
 
@@ -150,6 +170,15 @@ class AppTheme {
     buttonTheme: const ButtonThemeData(
       buttonColor: Color(0xFF00D4AA),
       textTheme: ButtonTextTheme.primary,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF00D4AA),
+        foregroundColor: Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
