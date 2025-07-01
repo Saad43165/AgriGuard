@@ -98,7 +98,7 @@ class _AnimatedOrbsBackgroundState extends State<AnimatedOrbsBackground> with Ti
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.background.withOpacity(0.2),
+                            color: Theme.of(context).colorScheme.surface.withOpacity(0.2),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
