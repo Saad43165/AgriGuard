@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_measurements.dart';
 import '../widget/animation_orbs_background.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -119,6 +120,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
 
     return Scaffold(
       body: Container(
@@ -135,8 +138,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             ]
                 : [
               Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background.withOpacity(0.95),
+              Theme.of(context).colorScheme.surface,
               Theme.of(context).colorScheme.background,
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
@@ -158,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   position: _slideAnimation,
                   child: Center(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(padding),
                       child: _buildMainCard(context),
                     ),
                   ),
@@ -181,8 +184,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           child: Transform.scale(
             scale: _scaleAnimation.value * (0.8 + (index * 0.1)),
             child: Container(
-              width: 60 + (index * 15.0),
-              height: 60 + (index * 15.0),
+              width: AppMeasurements.getResponsiveSize(context, baseSize: 60 + (index * 15.0)),
+              height: AppMeasurements.getResponsiveSize(context, baseSize: 60 + (index * 15.0)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -207,10 +210,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Widget _buildMainCard(BuildContext context) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Theme.of(context).colorScheme.onSurface;
+    final subtleTextColor = isDark ? Colors.white.withOpacity(0.7) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -232,7 +241,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: Column(
@@ -246,23 +255,23 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   return Transform.rotate(
                     angle: _rotateAnimation.value * 0.2,
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(smallPadding),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            Colors.white.withOpacity(0.3),
-                            Colors.white.withOpacity(0.1),
+                            isDark ? Colors.white.withOpacity(0.3) : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                            isDark ? Colors.white.withOpacity(0.1) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
                             Colors.transparent,
                           ],
                         ),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.4),
+                          color: isDark ? Colors.white.withOpacity(0.4) : Theme.of(context).colorScheme.primary.withOpacity(0.5),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.white.withOpacity(0.2),
+                            color: isDark ? Colors.white.withOpacity(0.2) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -270,15 +279,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       ),
                       child: Icon(
                         Icons.agriculture,
-                        size: 60,
-                        color: Colors.white,
+                        size: AppMeasurements.getResponsiveIconSizeLarge(context),
+                        color: isDark ? Colors.white : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   );
                 },
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: smallPadding * 1.5),
 
               // App name with shader
               ShaderMask(
@@ -292,38 +301,38 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   'AgriGuard',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 36,
+                    color: textColor,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 36),
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: smallPadding * 0.5),
 
               // Tagline
               Text(
                 'Protecting Your Crops',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  fontSize: 18,
+                  color: subtleTextColor,
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
                 ),
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 8),
+              SizedBox(height: smallPadding * 0.5),
 
               // Subtitle
               Text(
                 'Smart Agriculture Solutions',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  fontSize: 14,
+                  color: subtleTextColor,
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
                 ),
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: smallPadding * 2),
 
               // Progress indicator
               AnimatedBuilder(
@@ -332,35 +341,35 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   return Column(
                     children: [
                       Container(
-                        width: 200,
-                        height: 4,
+                        width: AppMeasurements.getResponsiveSize(context, baseSize: 200),
+                        height: AppMeasurements.getResponsiveSize(context, baseSize: 4),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(2),
-                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                          color: isDark ? Colors.white.withOpacity(0.3) : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                         ),
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Container(
-                            width: 200 * _progressAnimation.value,
-                            height: 4,
+                            width: AppMeasurements.getResponsiveSize(context, baseSize: 200) * _progressAnimation.value,
+                            height: AppMeasurements.getResponsiveSize(context, baseSize: 4),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.white,
-                                  Colors.white.withOpacity(0.8),
+                                  isDark ? Colors.white : Theme.of(context).colorScheme.primary,
+                                  isDark ? Colors.white.withOpacity(0.8) : Theme.of(context).colorScheme.primary.withOpacity(0.8),
                                 ],
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: smallPadding),
                       Text(
                         'Loading...',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 12,
+                          color: subtleTextColor,
+                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 12),
                           letterSpacing: 1,
                         ),
                       ),

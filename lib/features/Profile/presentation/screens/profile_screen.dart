@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         _userProfile['name'] = _nameController.text;
         _userProfile['email'] = _emailController.text;
         _userProfile['phone'] = _phoneController.text;
-        _userProfile['lastUpdated'] = 'Last Updated: ${TimeOfDay.now().format(context)}, July 01, 2025';
+        _userProfile['lastUpdated'] = 'Last Updated: ${TimeOfDay.now().format(context)}, July 02, 2025';
       }
     });
   }
@@ -122,6 +122,239 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
+  void _showStatisticsDialog() {
+    // Mock additional data for demonstration (replace with actual data if available)
+    final Map<String, int> scansPerCrop = {
+      'Wheat': 10,
+      'Cotton': 8,
+      'Rice': 6,
+    };
+    final DateTime lastScanDate = DateTime.now().subtract(const Duration(days: 1)); // Example last scan date
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: _buildGlassCard(
+          useSolidBackground: true,
+          child: Padding(
+            padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                            Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                          ],
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.analytics_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                      ),
+                    ),
+                    SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Statistics',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          Text(
+                            'Last Updated: ${TimeOfDay.fromDateTime(DateTime.now()).format(context)}, July 02, 2025', // Updated to current time
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            softWrap: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context) * 1.5),
+                // Detailed Statistics
+                Column(
+                  children: [
+                    Text(
+                      'Scan Breakdown',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                      ),
+                    ),
+                    SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                    ..._userProfile['crops'].map((crop) => Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppMeasurements.getResponsiveSmallPadding(context) * 0.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            crop,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                            ),
+                          ),
+                          Text(
+                            '${scansPerCrop[crop] ?? 0} Scans',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                    SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Last Scan Date',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                          ),
+                        ),
+                        Text(
+                          '${lastScanDate.day}/${lastScanDate.month}/${lastScanDate.year}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                    ),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: _buildGlassCard(
+          useSolidBackground: true, // New parameter to switch to solid white
+          child: Padding(
+            padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                  size: AppMeasurements.getResponsiveIconSizeLarge(context),
+                ),
+                SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                Text(
+                  'Confirm Logout',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
+                  ),
+                ),
+                SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                Text(
+                  'Are you sure you want to log out?',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9), // Increased opacity for better contrast
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context) * 1.5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)), // Subtle border for light mode
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacementNamed(context, AppRoutes.login);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                        ),
+                      ),
+                      child: Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onError,
+                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,12 +375,12 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
     final padding = EdgeInsets.symmetric(
-      horizontal: maxWidth * 0.05, // 5% of screen width
-      vertical: AppMeasurements.defaultPadding,
+      horizontal: AppMeasurements.getResponsivePadding(context),
+      vertical: AppMeasurements.getResponsivePadding(context),
     );
-    final cardPadding = EdgeInsets.all(maxWidth * 0.03); // 3% of screen width
-    final sectionSpacing = maxWidth * 0.04; // 4% of screen width
-    final itemSpacing = maxWidth * 0.02; // 2% of screen width
+    final cardPadding = EdgeInsets.all(AppMeasurements.getResponsivePadding(context) * 0.75);
+    final sectionSpacing = AppMeasurements.getResponsivePadding(context) * 1.5;
+    final itemSpacing = AppMeasurements.getResponsiveSmallPadding(context) * 1.5;
 
     return Container(
       decoration: BoxDecoration(
@@ -199,7 +432,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               SizedBox(width: sectionSpacing),
                               Flexible(
                                 flex: 1,
-                                child: _buildStatistics(cardPadding, itemSpacing),
+                                child: GestureDetector(
+                                  onTap: _showStatisticsDialog,
+                                  child: _buildStatistics(cardPadding, itemSpacing),
+                                ),
                               ),
                             ],
                           )
@@ -208,7 +444,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                             children: [
                               _buildProfileInfo(cardPadding, itemSpacing),
                               SizedBox(height: sectionSpacing),
-                              _buildStatistics(cardPadding, itemSpacing),
+                              GestureDetector(
+                                onTap: _showStatisticsDialog,
+                                child: _buildStatistics(cardPadding, itemSpacing),
+                              ),
                             ],
                           ),
                         SizedBox(height: sectionSpacing),
@@ -236,8 +475,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           child: Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: 80 + (index * 20.0),
-              height: 80 + (index * 20.0),
+              width: AppMeasurements.getResponsiveSize(context, baseSize: 80 + (index * 20.0)),
+              height: AppMeasurements.getResponsiveSize(context, baseSize: 80 + (index * 20.0)),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -273,12 +512,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onSurface,
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 28),
               ),
             ),
           ),
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
               gradient: LinearGradient(
                 colors: [
                   Theme.of(context).colorScheme.primary.withOpacity(0.2),
@@ -293,16 +533,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                 onTap: _toggleEditMode,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
                   child: Semantics(
                     label: _isEditing ? 'Save profile changes' : 'Edit profile',
                     child: Icon(
                       _isEditing ? Icons.check_rounded : Icons.edit_rounded,
                       color: Theme.of(context).colorScheme.primary,
-                      size: 24,
+                      size: AppMeasurements.getResponsiveIconSizeMedium(context),
                     ),
                   ),
                 ),
@@ -315,7 +555,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildProfilePicture(double maxWidth) {
-    final profileSize = maxWidth * 0.3 > 150 ? 150.0 : maxWidth * 0.3;
+    final profileSize = AppMeasurements.getResponsiveSize(context, baseSize: maxWidth * 0.3 > 150 ? 150.0 : maxWidth * 0.3);
     return ScaleTransition(
       scale: _scaleAnimation,
       child: Semantics(
@@ -337,8 +577,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               ),
             ),
             Container(
-              width: profileSize - 20,
-              height: (profileSize - 20) * 1.08,
+              width: profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2,
+              height: (profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2) * 1.08,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -351,8 +591,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                     ? Image.file(
                   File(_profileImage!.path),
                   fit: BoxFit.cover,
-                  width: profileSize - 20,
-                  height: (profileSize - 20) * 1.08,
+                  width: profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2,
+                  height: (profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2) * 1.08,
                   errorBuilder: (context, error, stackTrace) => const CircleAvatar(
                     radius: 58,
                     backgroundImage: AssetImage('assets/images/saad.png'),
@@ -386,11 +626,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                         customBorder: const CircleBorder(),
                         onTap: _pickProfileImage,
                         child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
                           child: Icon(
                             Icons.camera_alt_rounded,
                             color: Theme.of(context).colorScheme.onPrimary,
-                            size: 20,
+                            size: AppMeasurements.getResponsiveIconSizeSmall(context),
                           ),
                         ),
                       ),
@@ -404,35 +644,44 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildGlassCard({required Widget child}) {
-    final screenWidth = MediaQuery.of(context).size.width;
+  Widget _buildGlassCard({required Widget child, bool useSolidBackground = false}) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+        color: useSolidBackground
+            ? Colors.white.withOpacity(1) //background
+            : null,
+        gradient: !useSolidBackground
+            ? LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
             Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
             Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+          ]
+              : [
+            Colors.white.withOpacity(0.3),
+            Colors.grey[200]!.withOpacity(0.2),
           ],
-        ),
+        )
+            : null,
         border: Border.all(
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: 1,
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+        child: useSolidBackground
+            ? child // No blur for solid background
+            : BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: child,
         ),
       ),
     );
-  }
-
-  Widget _buildProfileInfo(EdgeInsets cardPadding, double itemSpacing) {
+  }  Widget _buildProfileInfo(EdgeInsets cardPadding, double itemSpacing) {
     return _buildGlassCard(
       child: Padding(
         padding: cardPadding,
@@ -482,12 +731,13 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required TextEditingController controller,
     required IconData icon,
   }) {
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
     return Semantics(
       label: 'Editable field for $label',
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+            padding: EdgeInsets.all(smallPadding),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -497,9 +747,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 ],
               ),
             ),
-            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
           ),
-          SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+          SizedBox(width: smallPadding),
           Expanded(
             child: _isEditing
                 ? TextFormField(
@@ -509,25 +759,25 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 labelText: label,
                 labelStyle: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                  fontSize: 16,
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                 ),
                 filled: true,
                 fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.04,
-                  vertical: MediaQuery.of(context).size.height * 0.02,
+                  horizontal: smallPadding,
+                  vertical: AppMeasurements.getResponsiveSmallPadding(context) * 0.5,
                 ),
                 enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
                 focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
                 errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                   borderSide: BorderSide(
                     color: Theme.of(context).colorScheme.error,
                     width: 1.5,
                   ),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                   borderSide: BorderSide(
                     color: Theme.of(context).colorScheme.error,
                     width: 2,
@@ -542,6 +792,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -550,6 +801,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                   ),
                 ),
               ],
@@ -565,10 +817,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     required String label,
     required String value,
   }) {
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
     return Row(
       children: [
         Container(
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+          padding: EdgeInsets.all(smallPadding),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -578,9 +831,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               ],
             ),
           ),
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
         ),
-        SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+        SizedBox(width: smallPadding),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,6 +842,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
                 ),
               ),
               const SizedBox(height: 4),
@@ -597,123 +851,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatistics(EdgeInsets cardPadding, double itemSpacing) {
-    return _buildGlassCard(
-      child: Padding(
-        padding: cardPadding,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                      ],
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.analytics_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                SizedBox(width: MediaQuery.of(context).size.width * 0.04),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Statistics',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      _userProfile['lastUpdated'],
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: itemSpacing),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatItem(
-                  value: _userProfile['scanCount'].toString(),
-                  label: 'Scans',
-                  icon: Icons.camera_alt_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                Container(
-                  width: 1,
-                  height: MediaQuery.of(context).size.height * 0.08,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                ),
-                _buildStatItem(
-                  value: _userProfile['crops'].length.toString(),
-                  label: 'Crops',
-                  icon: Icons.eco_rounded,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required String value,
-    required String label,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Container(
-          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                color.withOpacity(0.2),
-                color.withOpacity(0.1),
-              ],
-            ),
-          ),
-          child: Icon(icon, size: 28, color: color),
-        ),
-        SizedBox(height: MediaQuery.of(context).size.width * 0.02),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontSize: 24,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -741,7 +882,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         'icon': Icons.logout_rounded,
         'title': 'Logout',
         'color': Theme.of(context).colorScheme.error,
-        'onTap': () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+        'onTap': _showLogoutConfirmationDialog,
       },
     ];
 
@@ -755,6 +896,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Widget _buildActionTile(Map<String, dynamic> action, EdgeInsets cardPadding) {
     final isLast = action['title'] == 'Logout';
     final color = action['color'] as Color? ?? Theme.of(context).colorScheme.onSurface;
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
 
     return Semantics(
       label: 'Action: ${action['title']}',
@@ -780,7 +922,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
+                  padding: EdgeInsets.all(smallPadding),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: color.withOpacity(0.1),
@@ -788,28 +930,176 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   child: Icon(
                     action['icon'],
                     color: color,
-                    size: 20,
+                    size: AppMeasurements.getResponsiveIconSizeSmall(context),
                   ),
                 ),
-                SizedBox(width: MediaQuery.of(context).size.width * 0.04),
+                SizedBox(width: smallPadding),
                 Expanded(
                   child: Text(
                     action['title'],
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: color,
                       fontWeight: FontWeight.w500,
+                      fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                     ),
                   ),
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
                   color: color.withOpacity(0.5),
+                  size: AppMeasurements.getResponsiveIconSizeSmall(context),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatistics(EdgeInsets cardPadding, double itemSpacing) {
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final mediumPadding = AppMeasurements.getResponsivePadding(context);
+    final iconSize = AppMeasurements.getResponsiveIconSizeMedium(context);
+    final fontSizeLarge = AppMeasurements.getResponsiveFontSize(context, baseSize: 18);
+    final fontSizeSmall = AppMeasurements.getResponsiveFontSize(context, baseSize: 14);
+
+    return _buildGlassCard(
+      child: Padding(
+        padding: cardPadding,
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(smallPadding),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                      ],
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.analytics_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: iconSize,
+                  ),
+                ),
+                SizedBox(width: smallPadding),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Statistics',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: fontSizeLarge,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      Text(
+                        _userProfile['lastUpdated'] ?? 'N/A',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                          fontSize: fontSizeSmall,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: itemSpacing),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildStatItem(
+                  value: _userProfile['scanCount'].toString(),
+                  label: 'Scans',
+                  icon: Icons.camera_alt_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                Container(
+                  width: 1,
+                  height: AppMeasurements.getResponsiveHeight(context, baseHeight: 80),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                ),
+                _buildStatItem(
+                  value: _userProfile['crops'].length.toString(),
+                  label: 'Crops',
+                  icon: Icons.eco_rounded,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required String value,
+    required String label,
+    required IconData icon,
+    required Color color,
+  }) {
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final iconSize = AppMeasurements.getResponsiveIconSizeSmall(context);
+    final fontSizeMedium = AppMeasurements.getResponsiveFontSize(context, baseSize: 16);
+    final fontSizeSmall = AppMeasurements.getResponsiveFontSize(context, baseSize: 12);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: EdgeInsets.all(smallPadding),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(0.2),
+                color.withOpacity(0.1),
+              ],
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: iconSize,
+            color: color,
+          ),
+        ),
+        SizedBox(height: smallPadding * 0.5),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: fontSizeMedium,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: color.withOpacity(0.7),
+            fontSize: fontSizeSmall,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+      ],
     );
   }
 }

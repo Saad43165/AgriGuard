@@ -15,9 +15,8 @@ class ScanService {
     List<Map<String, dynamic>> scans = [];
     for (String scanJson in scansJson) {
       try {
-        // Parse the JSON string into a Map (assuming proper serialization)
         final Map<String, dynamic> scan = Map<String, dynamic>.from(
-          jsonDecode(scanJson) as Map, // Requires `import 'dart:convert';`
+          jsonDecode(scanJson) as Map,
         );
         scans.add(scan);
       } catch (e) {
@@ -27,15 +26,12 @@ class ScanService {
     return scans;
   }
 
-  // Add method to save scan with proper JSON serialization
   Future<void> saveScan(Map<String, dynamic> scan) async {
     final prefs = await SharedPreferences.getInstance();
     final scansJson = prefs.getStringList('recent_scans') ?? [];
 
-    // Add new scan to beginning of list with JSON encoding
-    scansJson.insert(0, jsonEncode(scan)); // Requires `import 'dart:convert';`
+    scansJson.insert(0, jsonEncode(scan));
 
-    // Keep only last 10 scans
     if (scansJson.length > 10) {
       scansJson.removeRange(10, scansJson.length);
     }
@@ -43,11 +39,11 @@ class ScanService {
     await prefs.setStringList('recent_scans', scansJson);
   }
 
-  // Add method to delete scan
   Future<void> deleteScan(String id) async {
     final prefs = await SharedPreferences.getInstance();
     final scansJson = prefs.getStringList('recent_scans') ?? [];
-    final updatedScans = scansJson.where((json) {
+    final updatedScans =
+    scansJson.where((json) {
       final scan = jsonDecode(json) as Map<String, dynamic>;
       return scan['id'] != id;
     }).toList();
@@ -156,7 +152,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         setState(() {
           _recentScans.clear();
           _recentScans.addAll(scans);
-          // If we have scans, user is no longer first time
           if (scans.isNotEmpty) {
             _isFirstTimeUser = false;
             _saveFirstTimeUser();
@@ -180,34 +175,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+    ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
-    if (args != null && args.containsKey('newScan') && args['newScan'] is Map<String, dynamic>) {
-      final newScan = args['newScan'] as Map<String, dynamic>;
-
-      if (!_recentScans.any((scan) => scan['id'] == newScan['id']) && mounted) {
-        setState(() {
-          _recentScans.insert(0, newScan);
-          _isFirstTimeUser = false; // User is no longer first time after first scan
-        });
-        _saveFirstTimeUser();
-
-        // Save the scan persistently
-        ScanService().saveScan(newScan);
-
-        // Show success message
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _showCustomSnackBar(message: 'New scan added successfully!', isError: false);
-          }
-        });
-      }
-    }
-
-    // Handle returning from scan screen - refresh scans
-    if (args != null && args.containsKey('refreshScans') && args['refreshScans'] == true) {
+    if (args != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _loadRecentScans();
+        if (mounted) {
+          if (args.containsKey('newScan') &&
+              args['newScan'] is Map<String, dynamic>) {
+            final newScan = args['newScan'] as Map<String, dynamic>;
+            if (!_recentScans.any((scan) => scan['id'] == newScan['id'])) {
+              setState(() {
+                _recentScans.insert(0, newScan);
+                _isFirstTimeUser = false;
+              });
+              _saveFirstTimeUser();
+              _showCustomSnackBar(
+                message: 'New scan added successfully!',
+                isError: false,
+              );
+            }
+          }
+
+          if (args.containsKey('refreshScans') &&
+              args['refreshScans'] == true) {
+            _loadRecentScans();
+          }
+        }
       });
     }
   }
@@ -215,9 +209,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _refreshScans() async {
     HapticFeedback.lightImpact();
     await _loadRecentScans();
-
     if (mounted) {
-      _showCustomSnackBar(message: AppStrings.scansRefreshed, isError: false);
+      _showCustomSnackBar(
+        message: 'Scans refreshed successfully!',
+        isError: false,
+      );
     }
   }
 
@@ -228,7 +224,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: isError
+              colors:
+              isError
                   ? [
                 Theme.of(context).colorScheme.error.withOpacity(0.8),
                 Theme.of(context).colorScheme.error.withOpacity(0.8),
@@ -262,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (index != -1) {
       final scan = _recentScans[index];
       final imagePath = scan['imageUrl'] as String?;
-      if (imagePath != null) {
+      if (imagePath != null && !imagePath.startsWith('assets/')) {
         try {
           final file = File(imagePath);
           if (await file.exists()) {
@@ -275,10 +272,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       setState(() {
         _recentScans.removeAt(index);
+        if (_recentScans.isEmpty) {
+          _isFirstTimeUser = true;
+        }
       });
-      await ScanService().deleteScan(id);
 
-      _showCustomSnackBar(message: 'Scan deleted successfully!', isError: false);
+      await ScanService().deleteScan(id);
+      _saveFirstTimeUser();
+
+      if (mounted) {
+        _showCustomSnackBar(
+          message: 'Scan deleted successfully!',
+          isError: false,
+        );
+      }
     }
   }
 
@@ -288,23 +295,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Scan'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('Are you sure you want to delete this scan? This action cannot be undone.'),
-              ],
-            ),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Delete Scan',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Are you sure you want to delete this scan? This action cannot be undone.',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Delete'),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
                 _deleteScan(id);
@@ -319,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final String fullName = args?['fullName']?.toString() ?? AppMetadata.appName;
+    final String fullName = args?['fullName']?.toString() ?? 'User';
 
     return Scaffold(
       body: Container(
@@ -354,22 +371,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: RefreshIndicator(
                     onRefresh: _refreshScans,
                     color: Theme.of(context).colorScheme.primary,
-                    backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 32),
-                          _buildWelcomeSection(fullName),
-                          const SizedBox(height: 32),
-                          _buildScanButton(),
-                          const SizedBox(height: 32),
-                          _isLoading
-                              ? _buildLoadingSection()
-                              : _buildScanContentSection(),
-                        ],
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height - kToolbarHeight - 60),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: 32),
+                            _buildWelcomeSection(fullName),
+                            const SizedBox(height: 32),
+                            _buildScanButton(),
+                            const SizedBox(height: 32),
+                            _isLoading
+                                ? _buildLoadingSection()
+                                : _buildScanContentSection(),
+                            const SizedBox(height: 16), // Extra space at bottom
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -386,12 +407,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             HapticFeedback.lightImpact();
             switch (index) {
               case 1:
-                Navigator.pushNamed(context, AppRoutes.scan);
+                Navigator.pushNamed(context, '/scan');
                 break;
               case 2:
                 Navigator.pushNamed(
                   context,
-                  AppRoutes.profile,
+                  '/profile',
                   arguments: widget.userData,
                 );
                 break;
@@ -407,6 +428,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Container(
         padding: const EdgeInsets.all(40),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(
               color: Theme.of(context).colorScheme.primary,
@@ -498,6 +520,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       scale: _scaleAnimation,
       child: _buildGlassCard(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(20),
@@ -511,9 +534,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               child: Icon(
-                AppIcons.logo,
+                Icons.eco_rounded,
                 size: 48,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
             const SizedBox(height: 20),
@@ -525,10 +548,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ).createShader(bounds),
               child: Text(
-                '${AppStrings.welcome}, $fullName!',
+                'Welcome, $fullName!',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Colors.white,
                   fontSize: 24,
                 ),
                 textAlign: TextAlign.center,
@@ -537,13 +560,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 12),
             Text(
               _isFirstTimeUser
-                  ? AppStrings.getStartedScan
-                  : AppStrings.cropHealthInsights,
+                  ? 'Get started by scanning your first plant!'
+                  : 'Your crop health insights await you.',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                 fontSize: 16,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -573,31 +598,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(20),
                 onTap: () {
                   HapticFeedback.mediumImpact();
-                  Navigator.pushNamed(context, AppRoutes.scan);
+                  Navigator.pushNamed(context, '/scan');
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
                         ),
                         child: Icon(
-                          AppIcons.scan,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          Icons.camera_alt_rounded,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           size: 24,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        AppStrings.scanPlant,
+                        'Scan Plant',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           fontSize: 18,
                         ),
                       ),
@@ -613,10 +638,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildScanContentSection() {
-    if (_recentScans.isEmpty) {
-      return _buildFirstTimeUserGuide(); // Show guidelines when no scans
-    }
-    return _buildRecentScansSection();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_recentScans.isEmpty) _buildFirstTimeUserGuide(),
+        if (_recentScans.isNotEmpty) _buildRecentScansSection(),
+      ],
+    );
   }
 
   Widget _buildFirstTimeUserGuide() {
@@ -632,34 +660,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ).createShader(bounds),
             child: Text(
-              AppStrings.howToGetStarted,
+              'How to Get Started',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: Colors.white,
                 fontSize: 22,
               ),
             ),
           ),
           const SizedBox(height: 24),
           _buildGuideStep(
-            icon: AppIcons.scan,
-            title: '${AppStrings.step} 1. ${AppStrings.scanYourPlant}',
-            description: AppStrings.captureClearLeafPhoto,
+            icon: Icons.camera_alt_rounded,
+            title: 'Step 1. Scan Your Plant',
+            description: 'Capture a clear photo of the leaf showing symptoms',
             color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 20),
           _buildGuideStep(
             icon: Icons.analytics_rounded,
-            title: '${AppStrings.step} 2. ${AppStrings.getDiagnosis}',
-            description: AppStrings.aiAnalyzesSymptoms,
+            title: 'Step 2. Get Diagnosis',
+            description: 'Our AI analyzes the symptoms and identifies the disease',
             color: Theme.of(context).colorScheme.secondary,
           ),
           const SizedBox(height: 20),
           _buildGuideStep(
             icon: Icons.medical_services_rounded,
-            title: '${AppStrings.step} 3. ${AppStrings.viewRecommendations}',
-            description: AppStrings.tailoredTreatmentAdvice,
-            color: Theme.of(context).colorScheme.error,
+            title: 'Step 3. View Recommendations',
+            description: 'Receive tailored treatment advice for your plant',
+            color: Theme.of(context).colorScheme.tertiary ?? Theme.of(context).colorScheme.error,
           ),
         ],
       ),
@@ -676,7 +704,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -684,7 +712,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
             border: Border.all(color: color.withOpacity(0.5), width: 1),
           ),
-          child: Icon(icon, color: color, size: 24),
+          child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -706,55 +734,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   fontSize: 14,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEmptyScansState() {
-    return _buildGlassCard(
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-                ],
-              ),
-            ),
-            child: Icon(
-              Icons.search_off_rounded,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            AppStrings.noScansYet,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 20,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppStrings.scanFirstPlant,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 
@@ -774,10 +760,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ).createShader(bounds),
                 child: Text(
-                  AppStrings.recentScans,
+                  'Recent Scans',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                     fontSize: 22,
                   ),
                 ),
@@ -796,17 +782,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.pushNamed(context, AppRoutes.history);
-                    },
+                    onTap: () => _showAllScansDialog(),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
                       child: Text(
-                        AppStrings.viewAll,
+                        'View All',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.w600,
@@ -840,147 +823,438 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildScanCard(Map<String, dynamic> scan, int index) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-          ],
-        ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.pushNamed(context, AppRoutes.results, arguments: scan);
-            },
-            child: Stack(
+  Future<void> _showAllScansDialog() async {
+    HapticFeedback.lightImpact();
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+
+          backgroundColor: Colors.white,
+          insetPadding: const EdgeInsets.all(16),
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            width: double.maxFinite,
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                  Theme.of(context).colorScheme.surface.withOpacity(0.7),
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'All Recent Scans',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: _buildAllScansList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAllScansList() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: _recentScans.length,
+      itemBuilder: (context, index) {
+        final scan = _recentScans[index];
+        return Dismissible(
+          key: Key(scan['id']?.toString() ?? index.toString()),
+          background: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: Icon(
+              Icons.delete_rounded,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            HapticFeedback.mediumImpact();
+            return await showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text('Delete Scan'),
+                content: const Text(
+                  'Are you sure you want to delete this scan?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          onDismissed: (direction) {
+            _deleteScan(scan['id']?.toString() ?? '');
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.02),
+                ],
+              ),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              ),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(12),
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                      ],
+                    ),
+                  ),
+                  child: scan['imageUrl'] != null
+                      ? Image.file(
+                    File(scan['imageUrl']),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.local_florist_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  )
+                      : Icon(
+                    Icons.local_florist_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+              title: Text(
+                scan['diagnosis'] ?? 'Unknown Disease',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                scan['timestamp'] ?? 'Unknown Date',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
+                onPressed: () => _showScanOptionsBottomSheet(scan),
+              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, '/results', arguments: scan);
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showScanOptionsBottomSheet(Map<String, dynamic> scan) async {
+    HapticFeedback.lightImpact();
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(1),
+              ],
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(2),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.visibility_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: const Text('View Details'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/results', arguments: scan);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.share_rounded,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                title: const Text('Share Results'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _shareResults(scan);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.delete_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: const Text('Delete Scan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showDeleteConfirmationDialog(scan['id']?.toString() ?? '');
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _shareResults(Map<String, dynamic> scan) async {
+    try {
+      final String shareText = '''
+Plant Health Scan Results
+
+Disease: ${scan['diagnosis'] ?? 'Unknown'}
+Date: ${scan['timestamp'] ?? 'Unknown'}
+Confidence: ${scan['confidence'] ?? 'N/A'}%
+
+Treatment: ${scan['treatment'] ?? 'No treatment available'}
+
+Generated by Plant Health Scanner
+''';
+
+      // Note: You would need to add share_plus package to pubspec.yaml
+      // and import 'package:share_plus/share_plus.dart';
+      // Share.share(shareText);
+
+      // For now, we'll just show the text in a dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Share Results'),
+          content: SingleChildScrollView(child: Text(shareText)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        _showCustomSnackBar(message: 'Failed to share results', isError: true);
+      }
+    }
+  }
+
+  Widget _buildScanCard(Map<String, dynamic> scan, int index) {
+    return AnimatedBuilder(
+      animation: _scaleController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                ],
+              ),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pushNamed(context, '/results', arguments: scan);
+                },
+                onLongPress: () => _showScanOptionsBottomSheet(scan),
+                child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
+                        flex: 3,
                         child: Container(
+                          width: double.infinity,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                              width: 1,
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                              ],
                             ),
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: scan['imageUrl']?.toString().startsWith('assets/') == true
-                                ? Image.asset(
-                              scan['imageUrl']?.toString() ?? 'assets/images/placeholder.jpg',
+                            child: scan['imageUrl'] != null
+                                ? Image.file(
+                              File(scan['imageUrl']),
                               fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                              errorBuilder: (context, error, stackTrace) => Center(
                                 child: Icon(
-                                  Icons.image_not_supported_rounded,
+                                  Icons.local_florist_rounded,
                                   size: 32,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                             )
-                                : Image.file(
-                              File(scan['imageUrl']?.toString() ?? ''),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                                child: Icon(
-                                  Icons.image_not_supported_rounded,
-                                  size: 32,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                                ),
+                                : Center(
+                              child: Icon(
+                                Icons.local_florist_rounded,
+                                size: 32,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        scan['result']?.toString() ?? 'Unknown Disease',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 13,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
                       const SizedBox(height: 4),
-                      Text(
-                        _formatTimestamp(scan['timestamp']?.toString() ?? ''),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          fontSize: 11,
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              scan['diagnosis'] ?? 'Unknown Disease',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              scan['timestamp'] ?? 'Unknown Date',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Spacer(),
+                            if (scan['confidence'] != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: _getConfidenceColor(scan['confidence']).withOpacity(0.2),
+                                  ),
+                                  child: Text(
+                                    '${scan['confidence']}% confidence',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: _getConfidenceColor(scan['confidence']),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.delete_rounded,
-                      color: Theme.of(context).colorScheme.error,
-                      size: 20,
-                    ),
-                    onPressed: () => _showDeleteConfirmationDialog(scan['id'] as String),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  String _formatTimestamp(String timestamp) {
-    try {
-      final dateTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inDays > 0) {
-        return '${difference.inDays}d ago';
-      } else if (difference.inHours > 0) {
-        return '${difference.inHours}h ago';
-      } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes}m ago';
-      } else {
-        return 'Just now';
-      }
-    } catch (e) {
-      return 'Unknown';
+  Color _getConfidenceColor(dynamic confidence) {
+    final double conf = double.tryParse(confidence.toString()) ?? 0;
+    if (conf >= 80) {
+      return Colors.green;
+    } else if (conf >= 60) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
     }
   }
 }

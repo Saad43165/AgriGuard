@@ -89,28 +89,36 @@ class _CaptureScreenState extends State<CaptureScreen>
         _scaleController.reset();
         _scaleController.forward();
         HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Image captured successfully!'),
-            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-          ),
-        );
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Image captured successfully!'),
+                backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
       HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(AppStrings.failedToPickImage),
-          backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-        ),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(AppStrings.failedToPickImage),
+              backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
+            ),
+          );
+        }
+      });
       debugPrint('Image picker error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
   }
-
-  Future<void> _processAndNavigate() async {
+  Future<void> _processAndSendToEditScreen() async {
     if (_imageFile == null || _isProcessing) return;
 
     HapticFeedback.mediumImpact();
@@ -135,72 +143,28 @@ class _CaptureScreenState extends State<CaptureScreen>
         throw Exception('Failed to save image to storage');
       }
 
-      // Simulate AI analysis with delay
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Generate mock scan result
-      final _ = _generateMockScanResult(permanentFile.path);
-
       if (mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Scan completed successfully!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-
-        // Navigate to edit image screen with the image path
         Navigator.pushNamed(
           context,
-          AppRoutes.imageEdit,
-          arguments: {'imagePath': permanentFile.path},
+          AppRoutes.imageEdit, // Navigate to edit screen instead of home
+          arguments: {
+            'imagePath': permanentFile.path,
+          },
         );
       }
     } catch (e) {
       if (mounted) {
         HapticFeedback.heavyImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(AppStrings.failedToProcessImage),
-            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-          ),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Failed to process image'),
+                backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
+              ),
+            );
+          }
+        });
         debugPrint('Image processing error: $e');
       }
     } finally {
@@ -209,7 +173,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       }
     }
   }
-
   Map<String, dynamic> _generateMockScanResult(String imagePath) {
     final diseases = [
       'Leaf Spot Disease',
@@ -274,12 +237,18 @@ class _CaptureScreenState extends State<CaptureScreen>
   void _retakeImage() {
     HapticFeedback.lightImpact();
     setState(() => _imageFile = null);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Image cleared. Ready for new capture.'),
-        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-      ),
-    );
+
+    // Use post frame callback to show snackbar after state update
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Image cleared. Ready for new capture.'),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+          ),
+        );
+      }
+    });
   }
 
   Widget _buildGlassCard({required Widget child}) {
@@ -496,14 +465,14 @@ class _CaptureScreenState extends State<CaptureScreen>
             Text(
               'Capture a photo with your camera \n Select from your gallery to get started',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), // Slightly higher opacity for better contrast
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                 fontWeight: FontWeight.w500,
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16), // Responsive font size
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
               ),
               textAlign: TextAlign.center,
-              softWrap: true, // Allows text to wrap naturally
-              maxLines: 2, // Limits to two lines for consistency
-              overflow: TextOverflow.ellipsis, // Handles overflow gracefully
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -633,7 +602,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                       borderRadius: BorderRadius.circular(
                         AppMeasurements.borderRadius,
                       ),
-                      onTap: _isProcessing ? null : _processAndNavigate,
+                      onTap: _isProcessing ? null : _processAndSendToEditScreen,
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(

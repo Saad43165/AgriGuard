@@ -12,6 +12,7 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import '../../../../core/constants/animation_mixin.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_measurements.dart';
+import '../../../home/presentation/screens/home_screen.dart';
 
 enum EditingTool {
   adjust,
@@ -613,54 +614,53 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
     setState(() => _isProcessing = true);
 
     try {
-      final tempDir = await getTemporaryDirectory();
-      final editedPath = '${tempDir.path}/edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      // 1. Save the edited image to permanent storage
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = 'edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final editedPath = '${appDir.path}/$fileName';
       await File(editedPath).writeAsBytes(_encodedImage!);
 
+      // 2. Generate scan result data
+      final scanResult = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'imageUrl': editedPath,
+        'result': 'Analyzed Plant',
+        'confidence': 95,
+        'recommendation': 'Apply recommended treatment',
+        'timestamp': DateTime.now().toIso8601String(),
+        'severity': 'Medium',
+        'treatment': 'Detailed treatment instructions',
+      };
+
+      // 3. Save the scan to persistent storage
+      await ScanService().saveScan(scanResult);
+
       if (mounted) {
-        Navigator.pushReplacementNamed(
+        // 4. Navigate to results screen while ensuring home screen will update
+        Navigator.pushNamed(
           context,
           AppRoutes.results,
           arguments: {
-            'imageUrl': editedPath,
-            'adjustments': {
-              'brightness': _brightness,
-              'contrast': _contrast,
-              'saturation': _saturation,
-              'hue': _hue,
-              'temperature': _temperature,
-              'tint': _tint,
-              'exposure': _exposure,
-              'highlights': _highlights,
-              'shadows': _shadows,
-              'vibrance': _vibrance,
-              'clarity': _clarity,
-              'vignette': _vignette,
-              'grain': _grain,
-            },
-            'effects': {
-              'blur': _blurRadius,
-              'sharpen': _sharpenAmount,
-              'grayscale': _isGrayscale,
-              'sepia': _isSepia,
-              'posterize': _posterizeLevel,
-            },
-            'annotations': {
-              'highlights': _highlightPoints.map((p) => {'dx': p.dx, 'dy': p.dy}).toList(),
-              'drawings': _drawingPoints.length,
-              'texts': _textAnnotations.length,
-            },
+            'imagePath': editedPath,
+            'scanData': scanResult,
           },
-        );
+        ).then((_) {
+          // This ensures home screen refreshes when we return from results
+          if (mounted) {
+            Navigator.pop(context); // Go back to home
+          }
+        });
       }
     } catch (e) {
-      _showErrorSnackBar('Error saving image: $e');
+      if (mounted) {
+        _showErrorSnackBar('Error saving scan: $e');
+      }
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
-  }
-
-  void _showErrorSnackBar(String message) {
+  }  void _showErrorSnackBar(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -129,7 +129,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLargeScreen = AppMeasurements.isLargeScreen(context);
-    final isLandscape = AppMeasurements.isLandscape(context);
     final padding = AppMeasurements.getResponsivePadding(context);
     final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
     final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
@@ -137,42 +136,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Container(
-          margin: EdgeInsets.only(left: smallPadding),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(borderRadius),
-            gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary.withOpacity(0.2),
-                theme.colorScheme.secondary.withOpacity(0.2),
-              ],
-            ),
-            border: Border.all(
-              color: theme.colorScheme.onSurface.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(borderRadius),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.pop(context);
-              },
-              child: Padding(
-                padding: EdgeInsets.all(smallPadding),
-                child: Icon(
-                  Icons.arrow_back_rounded,
-                  color: theme.colorScheme.primary,
-                  size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                ),
-              ),
-            ),
-          ),
-        ),
         title: ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
             colors: [
@@ -189,9 +155,44 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
             ),
           ),
         ),
-        centerTitle: true,
-      ),
-      body: Container(
+        actions: [
+          Container(
+            margin: EdgeInsets.only(right: smallPadding),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(borderRadius),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.2),
+                  theme.colorScheme.secondary.withOpacity(0.2),
+                ],
+              ),
+              border: Border.all(
+                color: theme.colorScheme.onSurface.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(borderRadius),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context);
+                },
+                child: Padding(
+                  padding: EdgeInsets.all(smallPadding),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: theme.colorScheme.primary,
+                    size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        centerTitle: false, // Ensure title stays on the left
+      ),      body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,

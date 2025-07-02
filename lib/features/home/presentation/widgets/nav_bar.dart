@@ -17,7 +17,14 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-    final navBarHeight = AppMeasurements.getResponsivePadding(context) * 4.0 + safeAreaBottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final baseHeight = AppMeasurements.getResponsivePadding(context) * 4.0 + safeAreaBottom;
+
+    // Ensure nav bar height doesn't exceed available space
+    final navBarHeight = baseHeight.clamp(
+      AppMeasurements.getResponsivePadding(context) * 3.0 + safeAreaBottom, // Minimum height
+      screenHeight * 0.15, // Maximum 15% of screen height to avoid overflow
+    );
 
     return SizedBox(
       height: navBarHeight,
@@ -89,12 +96,12 @@ class BottomNavBar extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
           onTap: () => _handleTap(context, index),
           splashColor: colorScheme.primary.withOpacity(0.1),
           highlightColor: colorScheme.primary.withOpacity(0.05),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: EdgeInsets.symmetric(vertical: smallPadding * 0.5),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -102,7 +109,7 @@ class BottomNavBar extends StatelessWidget {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOut,
-                  padding: EdgeInsets.all(smallPadding),
+                  padding: EdgeInsets.all(smallPadding * 0.45),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isActive ? colorScheme.primary : Colors.transparent,
@@ -125,6 +132,8 @@ class BottomNavBar extends StatelessWidget {
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 11),
                   ),
+                  overflow: TextOverflow.ellipsis, // Prevent text overflow
+                  maxLines: 1, // Limit to one line
                 ),
               ],
             ),

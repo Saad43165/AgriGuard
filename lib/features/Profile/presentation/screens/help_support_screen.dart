@@ -82,7 +82,6 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen> with Ticker
           return _buildBody(context, isTablet, constraints.maxWidth);
         },
       ),
-      bottomNavigationBar: const BottomNavBar(selectedIndex: 2), // Assuming this is the profile/help index
     );
   }
 
