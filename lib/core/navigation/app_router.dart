@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../features/Profile/presentation/screens/help_support_screen.dart';
+import '../../features/HelpSupport/help_support_screen.dart';
+import '../../features/Profile/presentation/profile_screen.dart';
+import '../../features/ResultScreen/presentation/screens/results_screen.dart';
+import '../../features/Settings/presentation/settings_screen.dart';
 import '../../features/auth/presentation/screens/login_screens.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
-import '../../features/profile/presentation/screens/profile_screen.dart';
-import '../../features/profile/presentation/screens/settings_screen.dart';
-import '../../features/scan/presentation/screens/capture_screen.dart';
+import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/edit/presentation/screens/image_edit_screen.dart';
-import '../../features/scan/presentation/screens/results_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 
@@ -30,7 +30,8 @@ class AppRouter {
           const beginSlide = Offset(-1.0, 0.0); // Slide from left
           const endSlide = Offset.zero;
           const curve = Curves.easeInOut;
-          var slideTween = Tween(begin: beginSlide, end: endSlide).chain(CurveTween(curve: curve));
+          var slideTween = Tween(begin: beginSlide, end: endSlide).chain(
+              CurveTween(curve: curve));
           var slideAnimation = animation.drive(slideTween);
 
           // Fade animation
@@ -42,7 +43,8 @@ class AppRouter {
           var scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
             CurvedAnimation(
               parent: animation,
-              curve: const Interval(0.0, 0.75, curve: Curves.elasticOut), // Scale completes in 375ms
+              curve: const Interval(0.0, 0.75,
+                  curve: Curves.elasticOut), // Scale completes in 375ms
             ),
           );
 
@@ -85,7 +87,8 @@ class AppRouter {
         final imagePath = args?['imagePath'] as String? ?? '';
         if (imagePath.isEmpty) {
           return MaterialPageRoute(
-            builder: (_) => const Scaffold(
+            builder: (_) =>
+            const Scaffold(
               body: Center(child: Text('No image path provided')),
             ),
           );
@@ -100,10 +103,11 @@ class AppRouter {
         return buildAnimatedRoute(page: const HelpAndSupportScreen());
       default:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(child: Text('No route defined for ${settings.name}')),
-          ),
+          builder: (_) =>
+              Scaffold(
+                body: Center(
+                    child: Text('No route defined for ${settings.name}')),
+              ),
         );
     }
-  }
-}
+  }}

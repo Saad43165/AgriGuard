@@ -5,7 +5,7 @@ class AppMockData {
   static const String mockPassword = 'saad123';
   static const String mockFullName = 'Saad Ikram';
 
-  // Mock scan results
+  // Mock ResultScreen results
   static final List<Map<String, dynamic>> recentScans = [
     {
       'id': '1',

@@ -135,7 +135,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             child: ListBody(
               children: <Widget>[
                 Text(
-                  'Are you sure you want to delete this scan? This action cannot be undone.',
+                  'Are you sure you want to delete this ResultScreen? This action cannot be undone.',
                 ),
               ],
             ),

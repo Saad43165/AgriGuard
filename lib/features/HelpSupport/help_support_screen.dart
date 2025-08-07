@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import '../../../../core/constants/app_measurements.dart';
-import '../../../home/presentation/widgets/nav_bar.dart';
+import '../../core/constants/app_measurements.dart';
 
 class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});

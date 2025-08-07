@@ -50,7 +50,7 @@ class AppStrings {
   static const String noAccountFound = 'No account found with this email';
   /// Success message for sending password reset link
   static const String resetLinkSent = 'Password reset link sent to your email';
-  /// Error message when scan refresh fails
+  /// Error message when ResultScreen refresh fails
   static const String scanRefreshFailed = 'Failed to refresh scans. Please try again.';
   /// Error message when image fails to load
   static const String failedToLoadImage = 'Failed to Load Image';
@@ -66,15 +66,15 @@ class AppStrings {
   static const String recentScans = 'Recent Scans';
   /// Message when no scans are available
   static const String noScansAvailable = 'No recent scans available';
-  /// Button text to start a new scan
+  /// Button text to start a new ResultScreen
   static const String startNewScan = 'Start New Scan';
-  /// Prompt for first-time users to scan
+  /// Prompt for first-time users to ResultScreen
   static const String getStartedScan = 'Get started by scanning your first plant!';
   /// Message for crop health insights
   static const String cropHealthInsights = 'Monitor your crop health with real-time insights';
   /// Title for scanning a plant
   static const String scanYourPlant = 'Scan Your Plant';
-  /// Prompt to scan the first plant
+  /// Prompt to ResultScreen the first plant
   static const String scanFirstPlant = 'Scan your first plant to see results here';
   /// Action to refresh scans
   static const String refreshScans = 'Refresh Scans';
@@ -90,7 +90,7 @@ class AppStrings {
   static const String noImageSelected = 'No Image Selected';
   /// Prompt to capture or select a leaf image
   static const String captureOrSelectLeaf = 'Capture or select a leaf image';
-  /// Title for scan plant screen
+  /// Title for ResultScreen plant screen
   static const String scanPlant = 'Scan Plant';
   /// Button text for editing and analyzing an image
   static const String editAndAnalyze = 'Edit and Analyze';
@@ -178,9 +178,9 @@ class AppStrings {
   static const String logout = 'Logout';
   /// Placeholder for profile screen title
   static const String profile = 'Profile';
-  /// Placeholder for scan history screen title
+  /// Placeholder for ResultScreen history screen title
   static const String history = 'History';
-  /// Placeholder for scan results screen title
+  /// Placeholder for ResultScreen results screen title
   static const String results = 'Results';
 
   static const String done = 'Done';

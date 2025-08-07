@@ -1,7 +1,7 @@
 // mock_users.dart
 /// Mock data for users.
 /// Each user includes an ID, name, email, and farm details.
-/// This data can be used for testing user-related features like scan history or profiles.
+/// This data can be used for testing user-related features like ResultScreen history or profiles.
 const List<Map<String, dynamic>> mockUsers = [
   {
     'id': 'user_001',

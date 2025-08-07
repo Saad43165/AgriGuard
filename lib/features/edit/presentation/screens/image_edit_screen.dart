@@ -12,6 +12,7 @@ import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import '../../../../core/constants/animation_mixin.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_measurements.dart';
+import '../../../home/presentation/screens/components/scan_service.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 
 enum EditingTool {
@@ -620,7 +621,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
       final editedPath = '${appDir.path}/$fileName';
       await File(editedPath).writeAsBytes(_encodedImage!);
 
-      // 2. Generate scan result data
+      // 2. Generate ResultScreen result data
       final scanResult = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'imageUrl': editedPath,
@@ -632,7 +633,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
         'treatment': 'Detailed treatment instructions',
       };
 
-      // 3. Save the scan to persistent storage
+      // 3. Save the ResultScreen to persistent storage
       await ScanService().saveScan(scanResult);
 
       if (mounted) {
@@ -653,7 +654,7 @@ class _ImageEditScreenState extends State<ImageEditScreen> with TickerProviderSt
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Error saving scan: $e');
+        _showErrorSnackBar('Error saving ResultScreen: $e');
       }
     } finally {
       if (mounted) {

@@ -1,7 +1,7 @@
 // mock_scans.dart
 /// Mock data for plant scans.
-/// Each scan includes an ID, user ID, disease ID, timestamp, severity, and recommendations.
-/// This data can be used for testing scan history or result displays like ResultsScreen.
+/// Each ResultScreen includes an ID, user ID, disease ID, timestamp, severity, and recommendations.
+/// This data can be used for testing ResultScreen history or result displays like ResultsScreen.
 const List<Map<String, dynamic>> mockScans = [
   {
     'id': 'scan_001',
