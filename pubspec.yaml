@@ -53,6 +53,7 @@ dev_dependencies:
   provider: ^6.1.2
   url_launcher: ^6.3.2
   package_info_plus: ^8.3.0
+  intl:
 
 
 

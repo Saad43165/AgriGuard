@@ -1,7 +1,7 @@
 // lib/core/constants/app_mock_data.dart
 class AppMockData {
   // Mock credentials for login/register
-  static const String mockEmail = 'saad@agriguard.com';
+  static const String mockEmail = 's@agriguard.com';
   static const String mockPassword = 'saad123';
   static const String mockFullName = 'Saad Ikram';
 

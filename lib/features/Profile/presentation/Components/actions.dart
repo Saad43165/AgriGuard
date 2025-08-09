@@ -5,10 +5,13 @@ import '../../../../../core/constants/app_routes.dart';
 import 'logout_confirmation_dialog_content.dart';
 import 'glass_card.dart';
 
-class Actions extends StatelessWidget {
-  final EdgeInsets cardPadding;
+class ProfileActions extends StatelessWidget {
+  final EdgeInsets padding;
 
-  const Actions({super.key, required this.cardPadding});
+  const ProfileActions({
+    super.key,
+    required this.padding,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,14 +52,13 @@ class Actions extends StatelessWidget {
 
     return GlassCard(
       child: Column(
-        children: actions.map((action) => _buildActionTile(action, cardPadding, context)).toList(),
+        children: actions.map((action) => _buildActionTile(action, context)).toList(),
       ),
     );
   }
 
-  Widget _buildActionTile(Map<String, dynamic> action, EdgeInsets cardPadding, BuildContext context) {
+  Widget _buildActionTile(Map<String, dynamic> action, BuildContext context) {
     final isLast = action['title'] == 'Logout';
-    // Use primary color for all icons except logout (which uses error color)
     final color = action['color'] as Color? ?? Theme.of(context).colorScheme.primary;
     final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
 
@@ -70,7 +72,7 @@ class Actions extends StatelessWidget {
             action['onTap']();
           },
           child: Container(
-            padding: cardPadding,
+            padding: padding,
             decoration: BoxDecoration(
               border: isLast
                   ? null
@@ -91,7 +93,7 @@ class Actions extends StatelessWidget {
                   ),
                   child: Icon(
                     action['icon'],
-                    color: color, // Now using primary color for all icons except logout
+                    color: color,
                     size: AppMeasurements.getResponsiveIconSizeSmall(context),
                   ),
                 ),

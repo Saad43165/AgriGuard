@@ -268,10 +268,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                     onConfirmPasswordVisibilityChanged: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                   ),
                   const SizedBox(height: 16),
-                  RegisterButton(
-                    isLoading: _isLoading,
-                    onPressed: _register,
-                  ),
                   const SizedBox(height: 16),
                   const LoginPrompt(),
                 ],

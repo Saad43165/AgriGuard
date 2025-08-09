@@ -1,4 +1,6 @@
+import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_routes.dart';
 
 class RegisterForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -13,6 +15,7 @@ class RegisterForm extends StatelessWidget {
   final bool obscureConfirmPassword;
   final VoidCallback onPasswordVisibilityChanged;
   final VoidCallback onConfirmPasswordVisibilityChanged;
+  final bool isLoading;
 
   const RegisterForm({
     super.key,
@@ -28,6 +31,7 @@ class RegisterForm extends StatelessWidget {
     required this.obscureConfirmPassword,
     required this.onPasswordVisibilityChanged,
     required this.onConfirmPasswordVisibilityChanged,
+    this.isLoading = false,
   });
 
   @override
@@ -143,6 +147,25 @@ class RegisterForm extends StatelessWidget {
                     return 'Passwords do not match';
                   }
                   return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              RegisterButton(
+                isLoading: isLoading,
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.home, // Changed from AppRoutes.profile to AppRoutes.home
+                      arguments: {
+                        'registrationNameController': nameController,
+                        'registrationEmailController': emailController,
+                        'registrationPhoneController': phoneController,
+                        'registrationLocationController': locationController,
+                        'registrationFarmSizeController': farmSizeController,
+                      },
+                    );
+                  }
                 },
               ),
             ],

@@ -17,7 +17,6 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final args = settings.arguments as Map<String, dynamic>?;
 
-    // Helper method for consistent animations
     Route<dynamic> buildAnimatedRoute({
       required Widget page,
       Duration transitionDuration = const Duration(milliseconds: 500),
@@ -26,25 +25,20 @@ class AppRouter {
         settings: settings,
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Slide animation
-          const beginSlide = Offset(-1.0, 0.0); // Slide from left
+          const beginSlide = Offset(-1.0, 0.0);
           const endSlide = Offset.zero;
           const curve = Curves.easeInOut;
-          var slideTween = Tween(begin: beginSlide, end: endSlide).chain(
-              CurveTween(curve: curve));
+          var slideTween = Tween(begin: beginSlide, end: endSlide).chain(CurveTween(curve: curve));
           var slideAnimation = animation.drive(slideTween);
 
-          // Fade animation
           var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
             CurvedAnimation(parent: animation, curve: Curves.easeInOut),
           );
 
-          // Scale animation
           var scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
             CurvedAnimation(
               parent: animation,
-              curve: const Interval(0.0, 0.75,
-                  curve: Curves.elasticOut), // Scale completes in 375ms
+              curve: const Interval(0.0, 0.75, curve: Curves.elasticOut),
             ),
           );
 
@@ -78,7 +72,16 @@ class AppRouter {
       case AppRoutes.home:
         return buildAnimatedRoute(page: HomeScreen(userData: args));
       case AppRoutes.profile:
-        return buildAnimatedRoute(page: ProfileScreen(userData: args));
+        return buildAnimatedRoute(
+          page: ProfileScreen(
+            userData: args != null && args.containsKey('name') ? args : null,
+            registrationNameController: args?['registrationNameController'] as TextEditingController?,
+            registrationEmailController: args?['registrationEmailController'] as TextEditingController?,
+            registrationPhoneController: args?['registrationPhoneController'] as TextEditingController?,
+            registrationLocationController: args?['registrationLocationController'] as TextEditingController?,
+            registrationFarmSizeController: args?['registrationFarmSizeController'] as TextEditingController?,
+          ),
+        );
       case AppRoutes.history:
         return buildAnimatedRoute(page: const HistoryScreen());
       case AppRoutes.scan:
@@ -87,8 +90,7 @@ class AppRouter {
         final imagePath = args?['imagePath'] as String? ?? '';
         if (imagePath.isEmpty) {
           return MaterialPageRoute(
-            builder: (_) =>
-            const Scaffold(
+            builder: (_) => const Scaffold(
               body: Center(child: Text('No image path provided')),
             ),
           );
@@ -103,11 +105,10 @@ class AppRouter {
         return buildAnimatedRoute(page: const HelpAndSupportScreen());
       default:
         return MaterialPageRoute(
-          builder: (_) =>
-              Scaffold(
-                body: Center(
-                    child: Text('No route defined for ${settings.name}')),
-              ),
+          builder: (_) => Scaffold(
+            body: Center(child: Text('No route defined for ${settings.name}')),
+          ),
         );
     }
-  }}
+  }
+}

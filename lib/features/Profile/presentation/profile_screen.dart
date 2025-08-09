@@ -6,28 +6,56 @@ import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Settings/presentation/components/floating_orb.dart';
-import '../../Settings/presentation/components/glass_card.dart';
+import 'Components/actions.dart';
+import 'Components/actions.dart' as profile_actions;
 import 'components/profile_header.dart';
 import 'components/profile_info.dart';
 import 'components/profile_picture.dart';
 import 'components/statistics.dart';
-import 'components/actions.dart' as ProfileActions;
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final TextEditingController? registrationNameController;
+  final TextEditingController? registrationEmailController;
+  final TextEditingController? registrationPhoneController;
+  final TextEditingController? registrationLocationController;
+  final TextEditingController? registrationFarmSizeController;
 
-  const ProfileScreen({super.key, this.userData});
+  const ProfileScreen({
+    super.key,
+    this.userData,
+    this.registrationNameController,
+    this.registrationEmailController,
+    this.registrationPhoneController,
+    this.registrationLocationController,
+    this.registrationFarmSizeController,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
-  late Map<String, dynamic> _userProfile;
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
+  Map<String, dynamic> _userProfile = {
+    'name': 'Loading...',
+    'email': '',
+    'phone': '',
+    'location': '',
+    'farmSize': '',
+    'crops': [],
+    'joinDate': '',
+    'scanCount': 0,
+    'lastUpdated': '',
+  };
+
   bool _isEditing = false;
+  bool _isLoading = true;
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+
   XFile? _profileImage;
 
   late AnimationController _fadeController;
@@ -40,31 +68,85 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _loadProfile();
     _initializeAnimations();
+    _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userProfile = widget.userData ?? {
-        'name': prefs.getString('name') ?? 'Saad Ikram',
-        'email': prefs.getString('email') ?? 'saad@agriguard.com',
-        'phone': prefs.getString('phone') ?? '+92 300 2455578',
-        'location': prefs.getString('location') ?? 'Punjab, Pakistan',
-        'farmSize': prefs.getString('farmSize') ?? '5 acres',
-        'crops': prefs.getStringList('crops') ?? ['Wheat', 'Cotton', 'Rice'],
-        'joinDate': prefs.getString('joinDate') ?? 'Joined: July 01, 2025',
-        'scanCount': prefs.getInt('scanCount') ?? 24,
-        'lastUpdated': prefs.getString('lastUpdated') ?? 'Last Updated: 05:20 PM PKT, July 01, 2025',
-      };
-      _nameController.text = _userProfile['name'];
-      _emailController.text = _userProfile['email'];
-      _phoneController.text = _userProfile['phone'];
-      if (prefs.getString('profileImage') != null) {
-        _profileImage = XFile(prefs.getString('profileImage')!);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      String name, email, phone, location, farmSize;
+
+      if (widget.registrationNameController != null &&
+          widget.registrationNameController!.text.isNotEmpty) {
+        name = widget.registrationNameController!.text;
+        email = widget.registrationEmailController?.text ?? '';
+        phone = widget.registrationPhoneController?.text ?? '';
+        location = widget.registrationLocationController?.text ?? '';
+        farmSize = widget.registrationFarmSizeController?.text ?? '';
+      } else if (widget.userData != null) {
+        name = widget.userData!['name'] ?? '';
+        email = widget.userData!['email'] ?? '';
+        phone = widget.userData!['phone'] ?? '';
+        location = widget.userData!['location'] ?? '';
+        farmSize = widget.userData!['farmSize'] ?? '';
+      } else {
+        name = prefs.getString('name') ?? 'Saad Ikram';
+        email = prefs.getString('email') ?? 'saad@agriguard.com';
+        phone = prefs.getString('phone') ?? '+92 300 2455578';
+        location = prefs.getString('location') ?? 'Punjab, Pakistan';
+        farmSize = prefs.getString('farmSize') ?? '5';
       }
-    });
+
+      if (mounted) {
+        setState(() {
+          _userProfile = {
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'location': location,
+            'farmSize': farmSize,
+            'crops': prefs.getStringList('crops') ?? ['Wheat', 'Cotton', 'Rice'],
+            'joinDate': prefs.getString('joinDate') ?? 'Joined: July 01, 2025',
+            'scanCount': prefs.getInt('scanCount') ?? 24,
+            'lastUpdated': prefs.getString('lastUpdated') ??
+                'Last Updated: 05:20 PM PKT, July 01, 2025',
+          };
+
+          _nameController.text = _userProfile['name'];
+          _emailController.text = _userProfile['email'];
+          _phoneController.text = _userProfile['phone'];
+
+          if (prefs.getString('profileImage') != null) {
+            _profileImage = XFile(prefs.getString('profileImage')!);
+          }
+          _isLoading = false;
+        });
+      }
+
+      if (widget.registrationNameController != null &&
+          widget.registrationNameController!.text.isNotEmpty) {
+        await _saveProfile();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _userProfile = {
+            'name': 'Error loading profile',
+            'email': '',
+            'phone': '',
+            'location': '',
+            'farmSize': '',
+            'crops': [],
+            'joinDate': '',
+            'scanCount': 0,
+            'lastUpdated': 'Error: ${e.toString()}',
+          };
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -106,7 +188,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -136,7 +220,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         _userProfile['name'] = _nameController.text;
         _userProfile['email'] = _emailController.text;
         _userProfile['phone'] = _phoneController.text;
-        _userProfile['lastUpdated'] = 'Last Updated: ${DateTime.now().toString().substring(0, 19)}';
+        _userProfile['lastUpdated'] =
+        'Last Updated: ${DateTime.now().toString().substring(0, 19)}';
         _saveProfile();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -160,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       setState(() {
         _profileImage = pickedFile;
       });
-      _saveProfile();
+      await _saveProfile();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profile picture updated!'),
@@ -194,6 +279,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       extendBodyBehindAppBar: true,
       body: LayoutBuilder(
         builder: (context, constraints) {
+          if (_isLoading) {
+            return Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            );
+          }
+
           final screenWidth = MediaQuery.of(context).size.width;
           final isTablet = screenWidth > 600;
 
@@ -216,7 +311,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       horizontal: AppMeasurements.getResponsivePadding(context),
       vertical: AppMeasurements.getResponsivePadding(context),
     );
-    final cardPadding = EdgeInsets.all(AppMeasurements.getResponsivePadding(context) * 0.75);
+    final cardPadding = EdgeInsets.all(
+      AppMeasurements.getResponsivePadding(context) * 0.75,
+    );
     final sectionSpacing = AppMeasurements.getResponsivePadding(context) * 1.5;
 
     return Container(
@@ -259,10 +356,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 child: SingleChildScrollView(
                   padding: padding,
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
+                    constraints: BoxConstraints(
+                      maxWidth: isTablet ? 600 : double.infinity,
+                    ),
                     child: Column(
                       children: [
-                        ProfileHeader(onToggleEdit: _toggleEditMode, isEditing: _isEditing),
+                        ProfileHeader(
+                          onToggleEdit: _toggleEditMode,
+                          isEditing: _isEditing,
+                        ),
                         SizedBox(height: sectionSpacing),
                         ProfilePicture(
                           profileImage: _profileImage,
@@ -326,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                             ],
                           ),
                         SizedBox(height: sectionSpacing),
-                        ProfileActions.Actions(cardPadding: cardPadding),
+                        profile_actions.ProfileActions(padding: cardPadding),
                         SizedBox(height: sectionSpacing),
                       ],
                     ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/app_measurements.dart';
+import '../components/glass_card.dart';
 
 class ProfileInfo extends StatelessWidget {
   final Map<String, dynamic> userProfile;
@@ -22,6 +22,35 @@ class ProfileInfo extends StatelessWidget {
     required this.cardPadding,
     required this.itemSpacing,
   });
+
+  factory ProfileInfo.fromRegistration({
+    Key? key,
+    required TextEditingController nameController,
+    required TextEditingController emailController,
+    required TextEditingController phoneController,
+    required TextEditingController locationController,
+    required TextEditingController farmSizeController,
+    required bool isEditing,
+    required EdgeInsets cardPadding,
+    required double itemSpacing,
+  }) {
+    return ProfileInfo(
+      key: key,
+      userProfile: {
+        'name': nameController.text,
+        'email': emailController.text,
+        'phone': phoneController.text,
+        'location': locationController.text,
+        'farmSize': farmSizeController.text,
+      },
+      isEditing: isEditing,
+      nameController: nameController,
+      emailController: emailController,
+      phoneController: phoneController,
+      cardPadding: cardPadding,
+      itemSpacing: itemSpacing,
+    );
+  }
 
   Widget _buildEditableField({
     required String label,
@@ -46,7 +75,11 @@ class ProfileInfo extends StatelessWidget {
                 ],
               ),
             ),
-            child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: AppMeasurements.getResponsiveIconSizeSmall(context),
+            ),
           ),
           SizedBox(width: smallPadding),
           Expanded(
@@ -96,10 +129,12 @@ class ProfileInfo extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  value,
+                  value.isEmpty ? 'Not provided' : value,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: value.isEmpty
+                        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                        : Theme.of(context).colorScheme.onSurface,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                   ),
                 ),
@@ -131,7 +166,11 @@ class ProfileInfo extends StatelessWidget {
               ],
             ),
           ),
-          child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+          child: Icon(
+            icon,
+            color: Theme.of(context).colorScheme.primary,
+            size: AppMeasurements.getResponsiveIconSizeSmall(context),
+          ),
         ),
         SizedBox(width: smallPadding),
         Expanded(
@@ -147,10 +186,12 @@ class ProfileInfo extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                value,
+                value.isEmpty ? 'Not provided' : value,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: value.isEmpty
+                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                      : Theme.of(context).colorScheme.onSurface,
                   fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                 ),
               ),
@@ -170,7 +211,7 @@ class ProfileInfo extends StatelessWidget {
           children: [
             _buildEditableField(
               label: 'Full Name',
-              value: userProfile['name'],
+              value: userProfile['name'] ?? '',
               controller: nameController,
               icon: Icons.person_rounded,
               context: context,
@@ -178,7 +219,7 @@ class ProfileInfo extends StatelessWidget {
             SizedBox(height: itemSpacing),
             _buildEditableField(
               label: 'Email',
-              value: userProfile['email'],
+              value: userProfile['email'] ?? '',
               controller: emailController,
               icon: Icons.email_rounded,
               context: context,
@@ -186,7 +227,7 @@ class ProfileInfo extends StatelessWidget {
             SizedBox(height: itemSpacing),
             _buildEditableField(
               label: 'Phone',
-              value: userProfile['phone'],
+              value: userProfile['phone'] ?? '',
               controller: phoneController,
               icon: Icons.phone_rounded,
               context: context,
@@ -195,14 +236,14 @@ class ProfileInfo extends StatelessWidget {
             _buildInfoTile(
               icon: Icons.location_on_rounded,
               label: 'Location',
-              value: userProfile['location'],
+              value: userProfile['location'] ?? '',
               context: context,
             ),
             SizedBox(height: itemSpacing),
             _buildInfoTile(
               icon: Icons.agriculture_rounded,
               label: 'Farm Size',
-              value: userProfile['farmSize'],
+              value: userProfile['farmSize']?.isEmpty ?? true ? 'Not provided' : userProfile['farmSize']!,
               context: context,
             ),
           ],

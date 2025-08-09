@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../../core/constants/app_measurements.dart';
 
 class ProfilePicture extends StatelessWidget {
@@ -19,25 +20,35 @@ class ProfilePicture extends StatelessWidget {
     required this.scaleAnimation,
   });
 
+  Future<String?> _getProfileImagePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_image') ?? profileImage?.path;
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileSize = _calculateProfileSize(context);
     final innerSize = profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2;
 
-    return ScaleTransition(
-      scale: scaleAnimation,
-      child: Semantics(
-        label: 'Profile picture',
-        button: isEditing,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            _buildBackgroundCircle(context, profileSize),
-            _buildProfileImage(context, innerSize),
-            if (isEditing) _buildEditButton(context),
-          ],
-        ),
-      ),
+    return FutureBuilder<String?>(
+      future: _getProfileImagePath(),
+      builder: (context, snapshot) {
+        return ScaleTransition(
+          scale: scaleAnimation,
+          child: Semantics(
+            label: 'Profile picture',
+            button: isEditing,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                _buildBackgroundCircle(context, profileSize),
+                _buildProfileImage(context, innerSize, snapshot.data),
+                if (isEditing) _buildEditButton(context),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -64,7 +75,7 @@ class ProfilePicture extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileImage(BuildContext context, double size) {
+  Widget _buildProfileImage(BuildContext context, double size, String? imagePath) {
     return Container(
       width: size,
       height: size * 1.08,
@@ -76,9 +87,9 @@ class ProfilePicture extends StatelessWidget {
         ),
       ),
       child: ClipOval(
-        child: profileImage != null
+        child: imagePath != null && imagePath.isNotEmpty
             ? Image.file(
-          File(profileImage!.path),
+          File(imagePath),
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
         )
