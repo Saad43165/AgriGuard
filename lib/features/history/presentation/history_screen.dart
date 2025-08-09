@@ -105,7 +105,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: const HistoryAppBar(),
+      appBar: const HistoryAppBar(title: 'Scan History',),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

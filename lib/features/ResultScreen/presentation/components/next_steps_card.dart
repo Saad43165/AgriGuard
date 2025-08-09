@@ -6,7 +6,23 @@ import 'section_header.dart';
 import 'action_item.dart';
 
 class NextStepsCard extends StatelessWidget {
-  const NextStepsCard({super.key});
+  final List<ActionItemData> actionItems;
+
+  const NextStepsCard({
+    super.key,
+    this.actionItems = const [
+      ActionItemData(
+        icon: Icons.history_rounded,
+        title: 'Monitor Progress',
+        subtitle: 'Check back in 3-5 days',
+      ),
+      ActionItemData(
+        icon: Icons.local_pharmacy_rounded,
+        title: 'Purchase Treatment',
+        subtitle: 'Find recommended products',
+      ),
+    ],
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,22 +36,24 @@ class NextStepsCard extends StatelessWidget {
         const SizedBox(height: AppMeasurements.smallPadding),
         GlassCard(
           child: Padding(
-            padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
+            padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
             child: Column(
               children: [
-                ActionItem(
-                  icon: Icons.history_rounded,
-                  title: 'Monitor Progress',
-                  subtitle: 'Check back in 3-5 days',
-                  onTap: () => HapticFeedback.lightImpact(),
-                ),
-                const SizedBox(height: AppMeasurements.smallPadding),
-                ActionItem(
-                  icon: Icons.local_pharmacy_rounded,
-                  title: 'Purchase Treatment',
-                  subtitle: 'Find recommended products',
-                  onTap: () => HapticFeedback.lightImpact(),
-                ),
+                for (var i = 0; i < actionItems.length; i++) ...[
+                  Semantics(
+                    label: actionItems[i].title,
+                    button: true,
+                    enabled: actionItems[i].onTap != null,
+                    child: ActionItem(
+                      icon: actionItems[i].icon,
+                      title: actionItems[i].title,
+                      subtitle: actionItems[i].subtitle,
+                      onTap: actionItems[i].onTap ?? () => HapticFeedback.lightImpact(),
+                    ),
+                  ),
+                  if (i < actionItems.length - 1)
+                    const SizedBox(height: AppMeasurements.smallPadding),
+                ],
               ],
             ),
           ),
@@ -43,4 +61,18 @@ class NextStepsCard extends StatelessWidget {
       ],
     );
   }
+}
+
+class ActionItemData {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  const ActionItemData({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
 }

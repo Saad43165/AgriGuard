@@ -1,11 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_form_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_info_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/faq_card.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'dart:ui';
+import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/custom_app_bar.dart';
 import '../../core/constants/app_measurements.dart';
-
 
 class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});
@@ -73,76 +72,18 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
     super.dispose();
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: ShaderMask(
-        shaderCallback: (bounds) => LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-          ],
-        ).createShader(bounds),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Text(
-              'Help & Support',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        Container(
-          margin: EdgeInsets.only(right: AppMeasurements.smallPadding),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-              ],
-            ),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.pop(context);
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Icon(
-                  Icons.arrow_back_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(context),
+      appBar: CustomAppBar(
+        title: 'Help & Support',
+        topPadding: 20.0, // Adjust this value for more/less space from top
+        onBackPressed: () {
+          HapticFeedback.lightImpact();
+          Navigator.pop(context);
+        },
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
@@ -191,6 +132,7 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            SizedBox(height: 20), // Additional space if needed
                             ContactFormCard(itemSpacing: screenWidth * 0.02),
                             SizedBox(height: sectionSpacing),
                             ContactInfoCard(itemSpacing: screenWidth * 0.02),

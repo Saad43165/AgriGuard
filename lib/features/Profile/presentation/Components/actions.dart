@@ -56,7 +56,8 @@ class Actions extends StatelessWidget {
 
   Widget _buildActionTile(Map<String, dynamic> action, EdgeInsets cardPadding, BuildContext context) {
     final isLast = action['title'] == 'Logout';
-    final color = action['color'] as Color? ?? Theme.of(context).colorScheme.onSurface;
+    // Use primary color for all icons except logout (which uses error color)
+    final color = action['color'] as Color? ?? Theme.of(context).colorScheme.primary;
     final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
 
     return Semantics(
@@ -90,7 +91,7 @@ class Actions extends StatelessWidget {
                   ),
                   child: Icon(
                     action['icon'],
-                    color: color,
+                    color: color, // Now using primary color for all icons except logout
                     size: AppMeasurements.getResponsiveIconSizeSmall(context),
                   ),
                 ),
@@ -99,7 +100,7 @@ class Actions extends StatelessWidget {
                   child: Text(
                     action['title'],
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: color,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                       fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                     ),

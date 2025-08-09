@@ -6,7 +6,7 @@ import 'glass_card.dart';
 import 'contact_row.dart';
 import 'section_header.dart';
 
-/// Displays interactive contact information with email, phone, and website links.
+/// Displays interactive contact information with email, phone, and social media links.
 class ContactInfoCard extends StatelessWidget {
   final double itemSpacing;
 
@@ -49,11 +49,11 @@ class ContactInfoCard extends StatelessWidget {
                 ),
                 SizedBox(height: itemSpacing),
                 ContactRow(
-                  label: 'Website',
-                  value: 'Under Development',
-                  icon: Icons.web_rounded,
+                  label: 'Connect With Us',
+                  value: 'Instagram',
+                  icon: Icons.thumb_up_rounded, // or Icons.camera_alt for Instagram
                   itemSpacing: itemSpacing,
-                  onTap: () => _showWebsitePlaceholder(context),
+                  onTap: () => _launchSocialMedia(context, 'https://www.instagram.com/yourprofile'),
                 ),
               ],
             ),
@@ -71,20 +71,10 @@ class ContactInfoCard extends StatelessWidget {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Unable to open email client'),
-            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-          ),
-        );
+        _showErrorSnackbar(context, 'Unable to open email client');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error opening email client: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-        ),
-      );
+      _showErrorSnackbar(context, 'Error opening email client: $e');
     }
   }
 
@@ -96,30 +86,37 @@ class ContactInfoCard extends StatelessWidget {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Unable to open phone app'),
-            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-          ),
-        );
+        _showErrorSnackbar(context, 'Unable to open phone app');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error opening phone app: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-        ),
-      );
+      _showErrorSnackbar(context, 'Error opening phone app: $e');
     }
   }
 
-  /// Shows a placeholder message for the website.
-  Future<void> _showWebsitePlaceholder(BuildContext context) async {
+  /// Launches social media URL
+  Future<void> _launchSocialMedia(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
     HapticFeedback.lightImpact();
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        _showErrorSnackbar(context, 'Unable to open social media');
+      }
+    } catch (e) {
+      _showErrorSnackbar(context, 'Error opening social media: $e');
+    }
+  }
+
+  /// Shows error snackbar
+  void _showErrorSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Website is under development'),
-        backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
       ),
     );
   }

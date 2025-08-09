@@ -49,7 +49,7 @@ class ScanButton extends StatelessWidget {
                           size: AppMeasurements.getResponsiveIconSizeSmall(context),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 30),
                       Text(
                         'Scan Plant',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(

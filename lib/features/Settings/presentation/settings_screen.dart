@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/widgets/app_themes.dart';
-import 'components/actions_tile.dart';
+import 'Tiles/actions_tile.dart';
+import 'Tiles/app_version_tile.dart';
+import 'Tiles/clear_history_tile.dart';
 import 'components/floating_orb.dart';
 import 'components/glass_card.dart';
 import 'components/settings_header.dart';
-import 'components/toggle_tile.dart';
+import 'Tiles/toggle_tile.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -128,24 +130,22 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                 fadeController: _fadeController,
                 scaleAnimation: _scaleAnimation,
               )),
-              SafeArea(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(padding),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: isLargeScreen ? 600.0 : double.infinity),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SettingsHeader(),
-                            SizedBox(height: padding * 2),
-                            _buildSettings(),
-                            SizedBox(height: padding * 2),
-                          ],
-                        ),
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(padding),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isLargeScreen ? 600.0 : double.infinity),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SettingsHeader(title: 'Settings',),
+                          SizedBox(height: padding * 2),
+                          _buildSettings(),
+                          SizedBox(height: padding * 2),
+                        ],
                       ),
                     ),
                   ),
@@ -168,6 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Theme Toggle
             ToggleTile(
               icon: Icons.dark_mode_rounded,
               title: 'Dark Mode',
@@ -182,6 +183,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               },
             ),
             SizedBox(height: smallPadding),
+
+            // Notifications Toggle
             ToggleTile(
               icon: Icons.notifications_rounded,
               title: 'Notifications',
@@ -195,36 +198,35 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               },
             ),
             SizedBox(height: smallPadding),
+
+            // Language Selection (if needed)
+            // DropdownButtonFormField(
+            //   value: _selectedLanguage,
+            //   items: ['English', 'Spanish', 'French'].map((String value) {
+            //     return DropdownMenuItem<String>(
+            //       value: value,
+            //       child: Text(value),
+            //     );
+            //   }).toList(),
+            //   onChanged: (newValue) {
+            //     setState(() {
+            //       _selectedLanguage = newValue!;
+            //       _saveSettings();
+            //     });
+            //   },
+            // ),
+            // SizedBox(height: smallPadding),
+
+            // App Version
+            const AppVersionTile(),
             SizedBox(height: smallPadding),
-            ActionTile(
-              icon: Icons.delete_rounded,
-              title: 'Clear Scan History',
-              color: Theme.of(context).colorScheme.error,
-              onTap: () {
-                HapticFeedback.heavyImpact();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Scan history cleared!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: smallPadding),
-          ],
+
+            // Clear History
+// Clear History
+            const ClearHistoryTile(),
+            SizedBox(height: smallPadding),          ],
         ),
       ),
     );
   }
-
 }

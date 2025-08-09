@@ -80,6 +80,11 @@ class AppMeasurements {
     return (baseSize * (screenWidth / 375)).clamp(baseSize * 0.5, baseSize * 1.5); // Scale with min/max limits
   }
 
+  static double getResponsiveFabSize(BuildContext context, {required double baseSize}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return (baseSize * (screenWidth / 375)).clamp(40.0, 72.0); // Scale FAB size, clamped between 40 and 72
+  }
+
   static bool isLargeScreen(BuildContext context) {
     return MediaQuery.of(context).size.width > 600; // Tablets or larger screens
   }

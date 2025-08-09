@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import '../../../../HelpSupport/presentation/widgets/glass_card.dart';
 
 class ScanCard extends StatelessWidget {
   final Map<String, dynamic> scan;

@@ -10,8 +10,6 @@ import '../../../../core/constants/animation_mixin.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../home/presentation/screens/components/scan_service.dart';
 import 'models/editing_history.dart';
-import 'models/drawing_point.dart';
-import 'models/text_annotation.dart';
 import 'utils/constants.dart';
 import 'utils/image_processor.dart';
 import 'widgets/adjust_panel.dart';

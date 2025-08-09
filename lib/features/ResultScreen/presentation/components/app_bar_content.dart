@@ -1,72 +1,101 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../../../core/constants/app_measurements.dart';
 
 class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
-  const AppBarContent({super.key});
+  final String title;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
+  final List<Widget>? actions;
+  final double elevation;
+  final double topPadding;
+
+  const AppBarContent({
+    super.key,
+    required this.title,
+    this.showBackButton = true,
+    this.onBackPressed,
+    this.actions,
+    this.elevation = 0,
+    this.topPadding = 8.0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: ShaderMask(
-        shaderCallback: (bounds) => LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-          ],
-        ).createShader(bounds),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 10),
-          child: Text(
-            'Analysis Results',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 24),
-            ),
-          ),
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: AppMeasurements.smallPadding),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-              ],
-            ),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.pop(context);
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Icon(
-                  Icons.arrow_back_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: AppMeasurements.getResponsiveIconSizeSmall(context),
+    final padding = AppMeasurements.getResponsivePadding(context);
+
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: elevation,
+        title: Semantics(
+          label: 'App bar with back button',
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
-            ),
+              if (showBackButton)
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        if (onBackPressed != null) {
+                          onBackPressed!();
+                        } else {
+                          Navigator.maybePop(context);
+                        }
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(padding * 0.5),
+                        child: Icon(
+                          Icons.arrow_back_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-      ],
+        centerTitle: true,
+        actions: actions,
+      ),
     );
   }
 
