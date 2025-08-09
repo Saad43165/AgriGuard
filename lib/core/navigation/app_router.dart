@@ -4,12 +4,12 @@ import '../../features/Profile/presentation/profile_screen.dart';
 import '../../features/ResultScreen/presentation/screens/results_screen.dart';
 import '../../features/Settings/presentation/settings_screen.dart';
 import '../../features/auth/presentation/screens/login_screens.dart';
-import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/Registration_screen/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/history/presentation/screens/history_screen.dart';
+import '../../features/history/presentation/history_screen.dart';
 import '../../features/capture/presentations/capture_screen.dart';
-import '../../features/edit/presentation/screens/image_edit_screen.dart';
+import '../../features/edit/presentation/image_edit_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 

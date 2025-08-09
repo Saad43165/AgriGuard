@@ -180,16 +180,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: GlassCard(
-          useSolidBackground: true,
-          child: StatisticsDialogContent(
-            scansPerCrop: scansPerCrop,
-            lastScanDate: lastScanDate,
-            userProfile: _userProfile,
-          ),
-        ),
+      builder: (context) => StatisticsDialogContent(
+        scansPerCrop: scansPerCrop,
+        lastScanDate: lastScanDate,
+        userProfile: _userProfile,
       ),
     );
   }
@@ -198,28 +192,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ).createShader(bounds),
-          child: Text(
-            'Profile',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 24),
-            ),
-          ),
-        ),
-        centerTitle: true,
-      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = MediaQuery.of(context).size.width;

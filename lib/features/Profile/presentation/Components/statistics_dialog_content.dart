@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_measurements.dart';
+import '../../../Profile/presentation/Components/glass_card.dart';
 
 class StatisticsDialogContent extends StatelessWidget {
   final Map<String, int> scansPerCrop;
@@ -15,54 +17,122 @@ class StatisticsDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+      ),
+      child: Stack(
         children: [
-          Text(
-            'Scan Statistics',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
-            ),
-          ),
-          const SizedBox(height: AppMeasurements.defaultPadding),
-          Text(
-            'Total Scans: ${userProfile['scanCount']}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-            ),
-          ),
-          const SizedBox(height: AppMeasurements.smallPadding),
-          ...scansPerCrop.entries.map((entry) => Padding(
-            padding: const EdgeInsets.only(bottom: AppMeasurements.smallPadding),
-            child: Text(
-              '${entry.key}: ${entry.value}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+          GlassCard(
+            borderRadius: AppMeasurements.getResponsiveBorderRadius(context),
+            blur: isDarkMode ? 15.0 : 10.0,
+            child: Padding(
+              padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Scan Statistics',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
+                    ),
+                  ),
+                  SizedBox(height: AppMeasurements.getResponsivePadding(context)),
+                  Semantics(
+                    label: 'Total scans: ${userProfile['scanCount'] ?? 0}',
+                    child: Text(
+                      'Total Scans: ${userProfile['scanCount'] ?? 0}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                  if (scansPerCrop.isEmpty)
+                    Semantics(
+                      label: 'No crop scans available',
+                      child: Text(
+                        'No crop scans available',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                        ),
+                      ),
+                    )
+                  else
+                    ...scansPerCrop.entries.map((entry) => Semantics(
+                      label: '${entry.key}: ${entry.value} scans',
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: AppMeasurements.getResponsiveSmallPadding(context)),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            Icons.grass_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
+                          ),
+                          title: Text(
+                            '${entry.key}: ${entry.value}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    )),
+                  SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+                  Semantics(
+                    label: 'Last scan date: ${lastScanDate.toString().substring(0, 10)}',
+                    child: Text(
+                      'Last Scan: ${lastScanDate.toString().substring(0, 10)}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppMeasurements.getResponsivePadding(context)),
+                ],
               ),
             ),
-          )),
-          const SizedBox(height: AppMeasurements.smallPadding),
-          Text(
-            'Last Scan: ${lastScanDate.toString().substring(0, 10)}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-            ),
           ),
-          const SizedBox(height: AppMeasurements.defaultPadding),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Close',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+          Positioned(
+            right: AppMeasurements.getResponsivePadding(context) / 2,
+            top: AppMeasurements.getResponsivePadding(context) / 2,
+            child: Semantics(
+              label: 'Close dialog',
+              button: true,
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
             ),

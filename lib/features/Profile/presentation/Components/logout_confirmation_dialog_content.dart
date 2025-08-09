@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/constants/app_routes.dart';
+import '../../../../core/constants/app_measurements.dart';
+import '../../../../core/constants/app_routes.dart';
 
 class LogoutConfirmationDialogContent extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -9,6 +9,9 @@ class LogoutConfirmationDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+
     return Padding(
       padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
       child: Column(
@@ -24,7 +27,7 @@ class LogoutConfirmationDialogContent extends StatelessWidget {
             'Confirm Logout',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: textColor,
               fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
             ),
           ),
@@ -32,7 +35,7 @@ class LogoutConfirmationDialogContent extends StatelessWidget {
           Text(
             'Are you sure you want to log out?',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+              color: textColor.withOpacity(0.9),
               fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
             ),
             textAlign: TextAlign.center,
@@ -45,8 +48,8 @@ class LogoutConfirmationDialogContent extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.surface,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                  foregroundColor: textColor,
+                  side: BorderSide(color: textColor.withOpacity(0.3)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                   ),
@@ -54,6 +57,7 @@ class LogoutConfirmationDialogContent extends StatelessWidget {
                 child: Text(
                   'Cancel',
                   style: TextStyle(
+                    color: textColor,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
                   ),
                 ),
