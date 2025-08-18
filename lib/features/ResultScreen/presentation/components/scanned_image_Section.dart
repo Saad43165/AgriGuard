@@ -5,20 +5,24 @@ import '../../../Profile/presentation/Components/glass_card.dart';
 import 'section_header.dart';
 
 class ScannedImageSection extends StatefulWidget {
-  final String imagePath;  // Only accept imagePath for local files
+  final String imagePath;
   final double? height;
   final double? width;
   final BoxFit fit;
   final VoidCallback? onTap;
+  final Widget? placeholder;
+  final Widget? errorWidget;
 
-  const ScannedImageSection({
+   ScannedImageSection({
     super.key,
-    required this.imagePath,  // Required parameter
+    required this.imagePath,
     this.height = 200,
     this.width,
     this.fit = BoxFit.cover,
     this.onTap,
-  });
+    this.placeholder,
+    this.errorWidget,
+  }): assert(imagePath.isNotEmpty, 'imagePath cannot be empty');
 
   @override
   State<ScannedImageSection> createState() => _ScannedImageSectionState();
@@ -28,6 +32,7 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
   late Future<File> _imageFileFuture;
   bool _isLoading = true;
   bool _hasError = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -35,29 +40,58 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
     _imageFileFuture = _loadImageFile();
   }
 
+  @override
+  void didUpdateWidget(covariant ScannedImageSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imagePath != widget.imagePath) {
+      _reloadImage();
+    }
+  }
+
+  void _reloadImage() {
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _errorMessage = null;
+      _imageFileFuture = _loadImageFile();
+    });
+  }
+
   Future<File> _loadImageFile() async {
+    if (!mounted) return Future.error('Widget not mounted');
+
     try {
       final file = File(widget.imagePath);
-      if (await file.exists()) {
-        await file.readAsBytes().then((_) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-              _hasError = false;
-            });
-          }
-        });
-        return file;
+
+      // Check file existence
+      if (!await file.exists()) {
+        throw FileSystemException('File not found', widget.imagePath);
       }
-      throw Exception('File not found');
+
+      // Verify file can be read and is an image
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        throw Exception('File is empty');
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = false;
+        });
+      }
+
+      return file;
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
           _hasError = true;
+          _errorMessage = e.toString();
         });
       }
-      throw e;
+      debugPrint('Error loading image file: $e');
+      return Future.error(e);
     }
   }
 
@@ -80,7 +114,12 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
 
   Widget _buildImageContent(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: () {
+        if (_hasError) {
+          _reloadImage();
+        }
+        widget.onTap?.call();
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(
           AppMeasurements.getResponsiveBorderRadius(context),
@@ -91,27 +130,43 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
   }
 
   Widget _buildImageWidget(BuildContext context) {
-    if (_isLoading) return _buildLoadingIndicator(context);
-    if (_hasError) return _buildErrorPlaceholder(context, Icons.broken_image_rounded, 'Failed to load image');
+    if (_isLoading) {
+      return widget.placeholder ?? _buildLoadingIndicator(context);
+    }
+
+    if (_hasError) {
+      return widget.errorWidget ?? _buildErrorPlaceholder(context);
+    }
 
     return FutureBuilder<File>(
       future: _imageFileFuture,
       builder: (context, snapshot) {
-        if (snapshot.hasError) return _buildErrorPlaceholder(context, Icons.error_outline, 'Image error');
-        if (snapshot.connectionState == ConnectionState.waiting) return _buildLoadingIndicator(context);
-        if (!snapshot.hasData) return _buildErrorPlaceholder(context, Icons.image_not_supported_outlined, 'No image data');
+        if (snapshot.hasError) {
+          return widget.errorWidget ?? _buildErrorPlaceholder(context);
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return widget.placeholder ?? _buildLoadingIndicator(context);
+        }
+
+        if (!snapshot.hasData) {
+          return widget.errorWidget ?? _buildErrorPlaceholder(context);
+        }
 
         return Image.file(
           snapshot.data!,
           fit: widget.fit,
           width: widget.width ?? double.infinity,
           height: widget.height,
+          errorBuilder: (context, error, stackTrace) {
+            return widget.errorWidget ?? _buildErrorPlaceholder(context);
+          },
         );
       },
     );
   }
 
-  Widget _buildErrorPlaceholder(BuildContext context, IconData icon, String message) {
+  Widget _buildErrorPlaceholder(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
       height: widget.height,
@@ -120,9 +175,28 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: theme.colorScheme.error, size: AppMeasurements.getResponsiveIconSizeLarge(context)),
+          Icon(
+            Icons.broken_image_rounded,
+            color: theme.colorScheme.error,
+            size: AppMeasurements.getResponsiveIconSizeLarge(context),
+          ),
           const SizedBox(height: 8),
-          Text(message, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)),
+          Text(
+            _errorMessage ?? 'Failed to load image',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap to retry',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error.withOpacity(0.7),
+            ),
+          ),
         ],
       ),
     );
@@ -135,7 +209,19 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
       width: widget.width ?? double.infinity,
       color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
       child: Center(
-        child: CircularProgressIndicator(color: theme.colorScheme.primary),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: theme.colorScheme.primary),
+            const SizedBox(height: 12),
+            Text(
+              'Loading image...',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

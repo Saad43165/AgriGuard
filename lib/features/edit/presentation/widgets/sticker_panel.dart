@@ -9,14 +9,17 @@ class StickersPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
-    return Wrap(
-      spacing: padding,
-      runSpacing: padding,
-      children: [
-        _buildStickerIcon(Icons.favorite, 'Heart', Colors.red),
-        _buildStickerIcon(Icons.star, 'Star', Colors.yellow),
-        _buildStickerIcon(Icons.local_florist, 'Flower', Colors.green),
-      ],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Wrap(
+        spacing: padding,
+        runSpacing: padding,
+        children: [
+          _buildStickerIcon(Icons.favorite, 'Heart', Colors.red),
+          _buildStickerIcon(Icons.star, 'Star', Colors.yellow),
+          _buildStickerIcon(Icons.local_florist, 'Flower', Colors.green),
+        ],
+      ),
     );
   }
 

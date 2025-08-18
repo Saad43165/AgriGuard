@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_measurements.dart';
 import 'glass_card.dart';
+import 'faq_page.dart'; // Import the new FaqPage
 
 /// A model for FAQ items containing a question and answer.
 class FaqItem {
@@ -26,15 +27,15 @@ class FaqCard extends StatelessWidget {
       question: 'How do I scan a plant for diseases?',
       answer: 'Open the app, tap the scan button, and point your camera at the plant. Ensure good lighting for accurate results.',
     ),
-     FaqItem(
+    FaqItem(
       question: 'What types of plants can the app identify?',
       answer: 'The app supports a wide range of plants, including common houseplants, garden plants, and crops. Check the plant database for specifics.',
     ),
-     FaqItem(
+    FaqItem(
       question: 'How accurate are the scan results?',
       answer: 'Our AI model provides high accuracy, but results depend on image quality and plant condition. Always consult a professional for critical cases.',
     ),
-     FaqItem(
+    FaqItem(
       question: 'Can I save my scan history?',
       answer: 'Yes, all scans are saved in your profile. You can view, delete, or share them from the history section.',
     ),
@@ -168,12 +169,9 @@ class FaqCard extends StatelessWidget {
         child: InkWell(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Replace with actual navigation or URL launch
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Navigating to full FAQ page...'),
-                backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-              ),
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FaqPage()),
             );
           },
           child: Padding(

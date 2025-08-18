@@ -50,7 +50,7 @@ class ImagePreview extends StatelessWidget {
             ),
             const SizedBox(height: AppMeasurements.smallPadding),
             Text(
-              'Capture a photo with your camera\nSelect from your gallery to get started',
+              'Capture a photo with your camera\n Select from your gallery to get started',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                 fontWeight: FontWeight.w500,

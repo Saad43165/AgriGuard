@@ -45,6 +45,7 @@ class SeverityIndicator extends StatelessWidget {
             severity,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: color,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
             ),
           ),

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/widgets/app_themes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -105,7 +106,10 @@ class _RegisterScreenState extends State<RegisterScreen>
       final phone = _phoneController.text.trim();
       final location = _locationController.text.trim();
       final farmSize = _farmSizeController.text.trim();
-
+// Save name to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', name); // Save with key 'user_name'
+      print('Saved user_name: $name'); // Debug
       await Future.delayed(const Duration(seconds: 1));
 
       if (email == 'test@agriguard.com') {

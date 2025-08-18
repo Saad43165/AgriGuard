@@ -20,21 +20,24 @@ class SliderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
-    return Row(
-      children: [
-        SizedBox(width: padding * 2, child: Text(label)),
-        Expanded(
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: onChanged,
-            activeColor: Theme.of(context).colorScheme.primary,
-            inactiveColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          SizedBox(width: padding * 2, child: Text(label)),
+          Expanded(
+            child: Slider(
+              value: value,
+              min: min,
+              max: max,
+              onChanged: onChanged,
+              activeColor: Theme.of(context).colorScheme.primary,
+              inactiveColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            ),
           ),
-        ),
-        SizedBox(width: padding, child: Text(value.toStringAsFixed(2))),
-      ],
+          SizedBox(width: padding, child: Text(value.toStringAsFixed(2))),
+        ],
+      ),
     );
   }
 }

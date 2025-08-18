@@ -233,7 +233,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
                       WelcomeSection(
-                        fullName: fullName,
                         isFirstTimeUser: _isFirstTimeUser,
                         scaleAnimation: _scaleAnimation,
                       ),

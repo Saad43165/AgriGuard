@@ -107,12 +107,33 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                     RecommendationsCard(recommendations: diagnosisResult.recommendations),
                     const SizedBox(height: 16),
                     // In your ResultsScreen build method, change this:
+                    // In your ResultsScreen build method, change this:
                     if (hasImage) ...[
-                      ScannedImageSection(
-                        imagePath: widget.scanData['imagePath'] as String, // Only pass imagePath
-                      ),
+                      if ((widget.scanData['imagePath'] as String?)?.isNotEmpty ?? false) ...[
+                        ScannedImageSection(
+                          imagePath: widget.scanData['imagePath'] as String,
+                        )
+                      ] else if ((widget.scanData['imageUrl'] as String?)?.isNotEmpty ?? false) ...[
+                        Image.network(
+                          widget.scanData['imageUrl'] as String,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                          const Center(child: Text('Failed to load image')),
+                        )
+                      ] else ...[
+                        Container(
+                          height: 200,
+                          child: const Center(child: Text('No image available')),
+                        )
+                      ],
                       const SizedBox(height: 16),
                     ],
+
+
+
+
                     const NextStepsCard(),
                   ],
                 ),
@@ -164,6 +185,10 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Report saved successfully'),
+            behavior: SnackBarBehavior.fixed,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height * 0.1, // Add margin if needed
+            ),// Change from floating to fixed
             backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           ),
         );

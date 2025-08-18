@@ -10,7 +10,7 @@ class WelcomeSection extends StatelessWidget {
   const WelcomeSection({
     super.key,
     required this.isFirstTimeUser,
-    required this.scaleAnimation, required String fullName,
+    required this.scaleAnimation,
   });
 
   Future<String> _getUserName() async {

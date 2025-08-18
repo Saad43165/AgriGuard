@@ -18,11 +18,14 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
     final screenHeight = MediaQuery.of(context).size.height;
-    final baseHeight = AppMeasurements.getResponsivePadding(context) * 4.0 + safeAreaBottom;
+
+    // Calculate base height with minimum value constraint
+    final responsivePadding = AppMeasurements.getResponsivePadding(context);
+    final baseHeight = (responsivePadding * 4.0 + safeAreaBottom).clamp(56.0, double.infinity);
 
     // Ensure nav bar height doesn't exceed available space
     final navBarHeight = baseHeight.clamp(
-      AppMeasurements.getResponsivePadding(context) * 3.0 + safeAreaBottom, // Minimum height
+      (responsivePadding * 3.0 + safeAreaBottom).clamp(56.0, screenHeight * 0.15), // Minimum height with constraints
       screenHeight * 0.15, // Maximum 15% of screen height to avoid overflow
     );
 
@@ -132,8 +135,8 @@ class BottomNavBar extends StatelessWidget {
                     fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 11),
                   ),
-                  overflow: TextOverflow.ellipsis, // Prevent text overflow
-                  maxLines: 1, // Limit to one line
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
@@ -145,7 +148,6 @@ class BottomNavBar extends StatelessWidget {
 
   void _handleTap(BuildContext context, int index) {
     if (index == selectedIndex) {
-      // Optional: Scroll to top if already on the same tab
       return;
     }
 
@@ -177,7 +179,6 @@ class BottomNavBar extends StatelessWidget {
     }
 
     if (currentRoute != targetRoute) {
-      // Preserve existing arguments or add new ones if needed
       final arguments = ModalRoute.of(context)?.settings.arguments;
 
       if (Navigator.canPop(context)) {

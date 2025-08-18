@@ -121,11 +121,8 @@ class AppTheme {
       foregroundColor: Color(0xFF2C3E50), // Dark text for app bar
       elevation: 0, // No shadow for a flat look
     ),
-    cardTheme: const CardTheme(
-      color: Color(0xFFF5F7FA), // Light surface for cards
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-    ),
+
+
   );
 
   static final ThemeData darkTheme = ThemeData(

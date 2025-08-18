@@ -20,34 +20,37 @@ class CropPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
     final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+            ),
+            onPressed: onStartCrop,
+            child: Text(AppStrings.startCrop),
           ),
-          onPressed: onStartCrop,
-          child: Text(AppStrings.startCrop),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+            ),
+            onPressed: onApplyCrop,
+            child: Text(AppStrings.applyCrop),
           ),
-          onPressed: onApplyCrop,
-          child: Text(AppStrings.applyCrop),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: padding, vertical: padding / 2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+            ),
+            onPressed: onResetCrop,
+            child: Text(AppStrings.resetCrop),
           ),
-          onPressed: onResetCrop,
-          child: Text(AppStrings.resetCrop),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
