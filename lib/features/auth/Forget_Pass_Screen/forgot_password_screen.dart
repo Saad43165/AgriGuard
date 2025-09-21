@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; // Optional, if using Provider
 import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_strings.dart';
@@ -11,6 +11,7 @@ import 'widgets/app_bar.dart';
 import 'widgets/email_form.dart';
 import 'widgets/glass_card.dart';
 import 'widgets/header_section.dart';
+import '/auth_services.dart'; // Adjusted import path
 
 /// Screen for handling password reset functionality.
 class ForgotPasswordScreen extends StatefulWidget {
@@ -25,12 +26,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
-  static const _testEmail = 'test@agriguard.com';
+  late AuthService _authService; // Declare authService as a class variable
 
   @override
   void initState() {
     super.initState();
     initializeAnimations();
+    _authService = authService.value; // Initialize in initState
   }
 
   @override
@@ -40,24 +42,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     super.dispose();
   }
 
-  /// Simulates sending a password reset link.
+  /// Handles sending a password reset email.
   Future<void> _resetPassword(String email) async {
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      if (email == _testEmail) {
-        if (!mounted) return;
+      await _authService.resetPassword(email); // Use the class variable
+      if (mounted) {
         _showSnackBar(AppStrings.resetLinkSent);
-        Navigator.pop(context);
-      } else {
-        throw Exception(AppStrings.noAccountFound);
+        Navigator.pop(context); // Return to previous screen after success
       }
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar(e.toString().contains(AppStrings.noAccountFound)
-          ? AppStrings.noAccountFound
-          : 'An unexpected error occurred');
+    } on Exception catch (e) {
+      if (mounted) {
+        _showSnackBar(e.toString().contains(AppStrings.noAccountFound)
+            ? AppStrings.noAccountFound
+            : 'An unexpected error occurred: Please try again');
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -162,6 +162,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                 _resetPassword(_emailController.text.trim());
                               }
                             },
+                            label: AppStrings.sendResetLink,
+                            icon: Icons.email_rounded,
+                            loadingLabel: 'Sending...',
                           ),
                           const SizedBox(height: padding),
                           Center(

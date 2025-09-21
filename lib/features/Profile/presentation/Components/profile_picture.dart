@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../../core/constants/app_measurements.dart';
 
 class ProfilePicture extends StatelessWidget {
@@ -20,19 +22,46 @@ class ProfilePicture extends StatelessWidget {
     required this.scaleAnimation,
   });
 
-  Future<String?> _getProfileImagePath() async {
+  Future<String?> _getProfileImageUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_image') ?? profileImage?.path;
-  }
 
+    // First check Firestore
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final snapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        if (data != null &&
+            data['profileImageUrl'] != null &&
+            data['profileImageUrl'] is String &&
+            data['profileImageUrl'].isNotEmpty) {
+          final url = data['profileImageUrl'] as String;
+          // Only return valid HTTP URLs
+          if (url.startsWith('http')) {
+            return url;
+          }
+        }
+      }
+    }
+
+    // Check local storage
+    final localImage = prefs.getString('user_image');
+    if (localImage != null && localImage.isNotEmpty) {
+      return localImage;
+    }
+
+    return null; // Return null if no valid image
+  }
   @override
   Widget build(BuildContext context) {
     final profileSize = _calculateProfileSize(context);
     final innerSize = profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2;
 
     return FutureBuilder<String?>(
-      future: _getProfileImagePath(),
+      future: _getProfileImageUrl(),
       builder: (context, snapshot) {
+        final imagePath = snapshot.data;
+
         return ScaleTransition(
           scale: scaleAnimation,
           child: Semantics(
@@ -42,7 +71,7 @@ class ProfilePicture extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 _buildBackgroundCircle(context, profileSize),
-                _buildProfileImage(context, innerSize, snapshot.data),
+                _buildProfileImage(context, innerSize, imagePath),
                 if (isEditing) _buildEditButton(context),
               ],
             ),
@@ -88,20 +117,52 @@ class ProfilePicture extends StatelessWidget {
       ),
       child: ClipOval(
         child: imagePath != null && imagePath.isNotEmpty
+            ? (imagePath.startsWith('http') || imagePath.startsWith('https')
+            ? Image.network(
+          imagePath,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(context),
+        )
+            : File(File(imagePath).path).existsSync()
             ? Image.file(
           File(imagePath),
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
+          errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(context),
         )
-            : _buildDefaultAvatar(),
+            : _buildDefaultAvatar(context))
+            : _buildDefaultAvatar(context),
       ),
     );
   }
 
-  Widget _buildDefaultAvatar() {
-    return const CircleAvatar(
-      radius: 58,
-      backgroundImage: AssetImage('assets/images/saad.png'),
+  Widget _buildDefaultAvatar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.person,
+          size: 40,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+        ),
+      ),
     );
   }
 
@@ -116,12 +177,14 @@ class ProfilePicture extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-              ),
+              color: Theme.of(context).colorScheme.primary,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Material(
               color: Colors.transparent,
@@ -130,12 +193,12 @@ class ProfilePicture extends StatelessWidget {
                 onTap: onPickImage,
                 child: Padding(
                   padding: EdgeInsets.all(
-                    AppMeasurements.getResponsiveSmallPadding(context),
+                    AppMeasurements.getResponsiveSmallPadding(context) * 0.8,
                   ),
                   child: Icon(
                     Icons.camera_alt_rounded,
                     color: Theme.of(context).colorScheme.onPrimary,
-                    size: AppMeasurements.getResponsiveIconSizeSmall(context),
+                    size: AppMeasurements.getResponsiveIconSizeSmall(context) * 0.9,
                   ),
                 ),
               ),

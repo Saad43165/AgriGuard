@@ -1,16 +1,17 @@
 import 'dart:io';
-
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_empty_state.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../HelpSupport/presentation/widgets/glass_card.dart';
 import '../../history/presentation/widgets/floating_orb.dart';
-
+import '../../../auth_services.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -28,10 +29,15 @@ class _HistoryScreenState extends State<HistoryScreen>
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
 
+  List<Map<String, dynamic>> _userScans = [];
+  bool _isLoading = true;
+  bool _hasError = false;
+
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _loadUserScans();
   }
 
   void _initializeAnimations() {
@@ -70,15 +76,79 @@ class _HistoryScreenState extends State<HistoryScreen>
     });
   }
 
+  Future<void> _loadUserScans() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('scans')
+            .orderBy('timestamp', descending: true)
+            .get();
+
+        final scans = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'result': data['scanData']?['disease'] ?? 'Unknown',
+            'severity': data['scanData']?['confidence'] ?? 0.0,
+            'timestamp': _formatTimestamp(data['timestamp']),
+            'cropType': data['cropType'] ?? 'Unknown',
+            'confidence': data['scanData']?['confidence'] ?? 0.0,
+            'imageUrl': data['scanData']?['imagePath'] ?? '',
+            'scanData': data['scanData'],
+          };
+        }).toList();
+
+        setState(() {
+          _userScans = scans;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
+    } catch (e) {
+      print('Error loading user scans: $e');
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown date';
+
+    try {
+      final date = timestamp is Timestamp
+          ? timestamp.toDate()
+          : DateTime.parse(timestamp.toString());
+
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'Unknown date';
+    }
+  }
+
   Future<void> _refreshScans() async {
     HapticFeedback.lightImpact();
-    await Future.delayed(AppDurations.mockApiDelay);
+    await _loadUserScans();
+
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          AppStrings.scansRefreshed,
+          _userScans.isEmpty ? 'No scans found' : 'Scans refreshed',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -105,7 +175,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: const HistoryAppBar(title: 'Scan History',),
+      appBar: const HistoryAppBar(title: 'Scan History'),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -160,10 +230,14 @@ class _HistoryScreenState extends State<HistoryScreen>
                               children: [
                                 _buildHeaderSection(),
                                 const SizedBox(height: AppMeasurements.defaultPadding),
-                                AppMockData.recentScans.isEmpty
+                                _isLoading
+                                    ? _buildLoadingState()
+                                    : _hasError
+                                    ? _buildErrorState()
+                                    : _userScans.isEmpty
                                     ? const HistoryEmptyState()
                                     : HistoryListView(
-                                  scans: AppMockData.recentScans,
+                                  scans: _userScans,
                                   onDelete: _showDeleteConfirmationDialog,
                                 ),
                               ],
@@ -178,6 +252,40 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Padding(
+      padding: EdgeInsets.all(40.0),
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Padding(
+      padding: const EdgeInsets.all(40.0),
+      child: Column(
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 50,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load scans',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: _loadUserScans,
+            child: const Text('Try Again'),
+          ),
+        ],
       ),
     );
   }
@@ -197,10 +305,9 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
           ),
           child: Icon(
-            AppIcons.logo,
+            Icons.history_rounded,
             size: AppMeasurements.iconSizeLarge,
             color: Theme.of(context).colorScheme.primary,
-            semanticLabel: AppSemantics.logo,
           ),
         ),
         const SizedBox(height: AppMeasurements.smallPadding),
@@ -212,7 +319,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             ],
           ).createShader(bounds),
           child: Text(
-            AppStrings.recentScans,
+            'Scan History',
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface,
@@ -222,18 +329,29 @@ class _HistoryScreenState extends State<HistoryScreen>
         ),
         const SizedBox(height: AppMeasurements.extraSmallPadding),
         Text(
-          AppMetadata.appTagline,
+          'Your recent crop health scans',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             fontSize: 18,
           ),
           textAlign: TextAlign.center,
         ),
+        if (_userScans.isNotEmpty) ...[
+          const SizedBox(height: AppMeasurements.smallPadding),
+          Text(
+            'Total scans: ${_userScans.length}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Future<void> _showDeleteConfirmationDialog(int index) async {
+    final scan = _userScans[index];
+
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -266,37 +384,64 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Future<void> _deleteScan(int index) async {
-    final scan = AppMockData.recentScans[index];
-    final imagePath = scan['imageUrl'] as String?;
+    try {
+      final scan = _userScans[index];
+      final scanId = scan['id'];
+      final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    if (imagePath != null) {
-      try {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          await file.delete();
-        }
-      } catch (e) {
-        debugPrint('Failed to delete image file: $e');
-      }
-    }
+      if (uid != null && scanId != null) {
+        // Delete from Firebase
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('scans')
+            .doc(scanId)
+            .delete();
 
-    setState(() => AppMockData.recentScans.removeAt(index));
+        // Update scan count
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .update({
+          'scanCount': FieldValue.increment(-1),
+        });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Scan deleted successfully!',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+        // Remove from local list
+        setState(() {
+          _userScans.removeAt(index);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Scan deleted successfully!',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+            ),
+            duration: AppDurations.snackBarDuration,
           ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting scan: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to delete scan',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-        ),
-        duration: AppDurations.snackBarDuration,
-      ),
-    );
+      );
+    }
   }
 }

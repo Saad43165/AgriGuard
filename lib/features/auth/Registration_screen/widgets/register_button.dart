@@ -5,6 +5,7 @@ class RegisterButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   const RegisterButton({
+
     super.key,
     required this.isLoading,
     required this.onPressed,

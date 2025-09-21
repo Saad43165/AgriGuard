@@ -28,7 +28,10 @@ class AppRouter {
           const beginSlide = Offset(-1.0, 0.0);
           const endSlide = Offset.zero;
           const curve = Curves.easeInOut;
-          var slideTween = Tween(begin: beginSlide, end: endSlide).chain(CurveTween(curve: curve));
+          var slideTween = Tween(
+            begin: beginSlide,
+            end: endSlide,
+          ).chain(CurveTween(curve: curve));
           var slideAnimation = animation.drive(slideTween);
 
           var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -46,10 +49,7 @@ class AppRouter {
             opacity: fadeAnimation,
             child: ScaleTransition(
               scale: scaleAnimation,
-              child: SlideTransition(
-                position: slideAnimation,
-                child: child,
-              ),
+              child: SlideTransition(position: slideAnimation, child: child),
             ),
           );
         },
@@ -74,12 +74,8 @@ class AppRouter {
       case AppRoutes.profile:
         return buildAnimatedRoute(
           page: ProfileScreen(
-            userData: args != null && args.containsKey('name') ? args : null,
-            registrationNameController: args?['registrationNameController'] as TextEditingController?,
-            registrationEmailController: args?['registrationEmailController'] as TextEditingController?,
-            registrationPhoneController: args?['registrationPhoneController'] as TextEditingController?,
-            registrationLocationController: args?['registrationLocationController'] as TextEditingController?,
-            registrationFarmSizeController: args?['registrationFarmSizeController'] as TextEditingController?,
+            // No need to pass controllers if loading from Firestore
+            userData: args is Map<String, dynamic> ? args : null,
           ),
         );
       case AppRoutes.history:
@@ -90,9 +86,10 @@ class AppRouter {
         final imagePath = args?['imagePath'] as String? ?? '';
         if (imagePath.isEmpty) {
           return MaterialPageRoute(
-            builder: (_) => const Scaffold(
-              body: Center(child: Text('No image path provided')),
-            ),
+            builder:
+                (_) => const Scaffold(
+                  body: Center(child: Text('No image path provided')),
+                ),
           );
         }
         return buildAnimatedRoute(page: ImageEditScreen(imagePath: imagePath));
@@ -105,9 +102,12 @@ class AppRouter {
         return buildAnimatedRoute(page: const HelpAndSupportScreen());
       default:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(child: Text('No route defined for ${settings.name}')),
-          ),
+          builder:
+              (_) => Scaffold(
+                body: Center(
+                  child: Text('No route defined for ${settings.name}'),
+                ),
+              ),
         );
     }
   }

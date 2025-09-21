@@ -1,42 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
+import '../../../auth_services.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Settings/presentation/components/floating_orb.dart';
-import 'Components/actions.dart';
-import 'Components/actions.dart' as profile_actions;
+import 'Components/profile_info.dart';
 import 'components/profile_header.dart';
-import 'components/profile_info.dart';
 import 'components/profile_picture.dart';
 import 'components/statistics.dart';
+import 'components/actions.dart' as profile_actions;
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
-  final TextEditingController? registrationNameController;
-  final TextEditingController? registrationEmailController;
-  final TextEditingController? registrationPhoneController;
-  final TextEditingController? registrationLocationController;
-  final TextEditingController? registrationFarmSizeController;
 
   const ProfileScreen({
     super.key,
     this.userData,
-    this.registrationNameController,
-    this.registrationEmailController,
-    this.registrationPhoneController,
-    this.registrationLocationController,
-    this.registrationFarmSizeController,
   });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with TickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   Map<String, dynamic> _userProfile = {
     'name': 'Loading...',
     'email': '',
@@ -51,10 +41,13 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   bool _isEditing = false;
   bool _isLoading = true;
+  bool _hasLoaded = false; // ADD THIS FLAG
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _farmSizeController = TextEditingController();
 
   XFile? _profileImage;
 
@@ -69,67 +62,93 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadProfile();
+    // REMOVE _loadProfile() from here
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasLoaded) {
+      _hasLoaded = true;
+      _loadProfile();
+    }
   }
 
   Future<void> _loadProfile() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      setState(() => _isLoading = true);
 
-      String name, email, phone, location, farmSize;
+      // Debug logging
+      print('Route arguments: ${ModalRoute.of(context)?.settings.arguments}');
+      print('Widget userData: ${widget.userData}');
 
-      if (widget.registrationNameController != null &&
-          widget.registrationNameController!.text.isNotEmpty) {
-        name = widget.registrationNameController!.text;
-        email = widget.registrationEmailController?.text ?? '';
-        phone = widget.registrationPhoneController?.text ?? '';
-        location = widget.registrationLocationController?.text ?? '';
-        farmSize = widget.registrationFarmSizeController?.text ?? '';
-      } else if (widget.userData != null) {
-        name = widget.userData!['name'] ?? '';
-        email = widget.userData!['email'] ?? '';
-        phone = widget.userData!['phone'] ?? '';
-        location = widget.userData!['location'] ?? '';
-        farmSize = widget.userData!['farmSize'] ?? '';
-      } else {
-        name = prefs.getString('name') ?? 'Saad Ikram';
-        email = prefs.getString('email') ?? 'saad@agriguard.com';
-        phone = prefs.getString('phone') ?? '+92 300 2455578';
-        location = prefs.getString('location') ?? 'Punjab, Pakistan';
-        farmSize = prefs.getString('farmSize') ?? '5';
+      // Prioritize navigation arguments
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args.isNotEmpty) {
+        print('Loading from route arguments: $args');
+        _userProfile = {
+          'name': args['fullName'] ?? args['name'] ?? 'Loading...',
+          'email': args['email'] ?? '',
+          'phone': args['phoneNumber'] ?? args['phone'] ?? '',
+          'location': args['location'] ?? '',
+          'farmSize': args['farmSize']?.toString() ?? '',
+          'crops': args['crops'] ?? [],
+          'joinDate': args['createdAt']?.toString() ?? args['joinDate'] ?? '',
+          'scanCount': args['scanCount'] ?? 0,
+          'lastUpdated': args['lastUpdated'] ?? '',
+        };
+        _profileImage = args['profileImageUrl'] != null ? XFile(args['profileImageUrl']) : null;
       }
+      // If no args, try to load from Firestore
+      else {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          print('Loading from Firestore for uid: $uid');
+          final snapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+          if (snapshot.exists) {
+            final data = snapshot.data()!;
+            print('Firestore data: $data');
+
+            _userProfile = {
+              'name': data['fullName'] ?? data['name'] ?? 'Loading...',
+              'email': data['email'] ?? '',
+              'phone': data['phoneNumber'] ?? data['phone'] ?? '',
+              'location': data['location'] ?? '',
+              'farmSize': data['farmSize']?.toString() ?? '',
+              'crops': data['crops'] ?? [],
+              'joinDate': data['createdAt']?.toString() ?? data['joinDate'] ?? '',
+              'scanCount': data['scanCount'] ?? 0,
+              'lastUpdated': data['lastUpdated']?.toString() ?? '',
+            };
+
+            // Check for profile image URL
+            if (data['profileImageUrl'] != null && data['profileImageUrl'].isNotEmpty) {
+              _profileImage = XFile(data['profileImageUrl']);
+            }
+          } else {
+            print('No Firestore document found for uid: $uid');
+          }
+        } else {
+          print('No user is currently logged in');
+        }
+      }
+
+      // Update controllers with loaded data
+      _nameController.text = _userProfile['name'];
+      _emailController.text = _userProfile['email'];
+      _phoneController.text = _userProfile['phone'];
+      _locationController.text = _userProfile['location'] ?? '';
+      _farmSizeController.text = _userProfile['farmSize']?.toString() ?? '';
+
+      // Debug logging
+      print('Final userProfile: $_userProfile');
 
       if (mounted) {
-        setState(() {
-          _userProfile = {
-            'name': name,
-            'email': email,
-            'phone': phone,
-            'location': location,
-            'farmSize': farmSize,
-            'crops': prefs.getStringList('crops') ?? ['Wheat', 'Cotton', 'Rice'],
-            'joinDate': prefs.getString('joinDate') ?? 'Joined: July 01, 2025',
-            'scanCount': prefs.getInt('scanCount') ?? 24,
-            'lastUpdated': prefs.getString('lastUpdated') ??
-                'Last Updated: 05:20 PM PKT, July 01, 2025',
-          };
-
-          _nameController.text = _userProfile['name'];
-          _emailController.text = _userProfile['email'];
-          _phoneController.text = _userProfile['phone'];
-
-          if (prefs.getString('profileImage') != null) {
-            _profileImage = XFile(prefs.getString('profileImage')!);
-          }
-          _isLoading = false;
-        });
-      }
-
-      if (widget.registrationNameController != null &&
-          widget.registrationNameController!.text.isNotEmpty) {
-        await _saveProfile();
+        setState(() => _isLoading = false);
       }
     } catch (e) {
+      print('Error loading profile: $e');
+
       if (mounted) {
         setState(() {
           _userProfile = {
@@ -150,18 +169,31 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('name', _userProfile['name']);
-    await prefs.setString('email', _userProfile['email']);
-    await prefs.setString('phone', _userProfile['phone']);
-    await prefs.setString('location', _userProfile['location']);
-    await prefs.setString('farmSize', _userProfile['farmSize']);
-    await prefs.setStringList('crops', _userProfile['crops'].cast<String>());
-    await prefs.setString('joinDate', _userProfile['joinDate']);
-    await prefs.setInt('scanCount', _userProfile['scanCount']);
-    await prefs.setString('lastUpdated', _userProfile['lastUpdated']);
-    if (_profileImage != null) {
-      await prefs.setString('profileImage', _profileImage!.path);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        // Use the AuthService to update profile
+        await authService.value.updateProfile(
+          fullName: _userProfile['name'],
+          phoneNumber: _userProfile['phone'],
+          location: _userProfile['location'],
+          farmSize: _userProfile['farmSize'],
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Profile updated successfully'),
+          backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving profile: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -206,6 +238,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _locationController.dispose();
+    _farmSizeController.dispose();
     _fadeController.dispose();
     _scaleController.dispose();
     _slideController.dispose();
@@ -217,11 +251,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) {
+        // Save all editable fields
         _userProfile['name'] = _nameController.text;
-        _userProfile['email'] = _emailController.text;
         _userProfile['phone'] = _phoneController.text;
-        _userProfile['lastUpdated'] =
-        'Last Updated: ${DateTime.now().toString().substring(0, 19)}';
+        _userProfile['location'] = _locationController.text;
+        _userProfile['farmSize'] = _farmSizeController.text;
+        _userProfile['lastUpdated'] = DateTime.now().toString();
+
         _saveProfile();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -245,13 +281,61 @@ class _ProfileScreenState extends State<ProfileScreen>
       setState(() {
         _profileImage = pickedFile;
       });
-      await _saveProfile();
+      await _uploadProfileImage(pickedFile);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profile picture updated!'),
           backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
         ),
       );
+    }
+  }
+
+  Future<void> _uploadProfileImage(XFile imageFile) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        // For now, just update the timestamp to trigger a refresh
+        // You'll need to implement Firebase Storage upload separately
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .update({
+          'lastUpdated': DateTime.now(),
+        });
+      }
+    } catch (e) {
+      print('Error handling profile image: $e');
+    }
+  }
+
+  // Function to save scan results to Firebase
+  Future<void> saveScanResult(String cropType, Map<String, dynamic> scanData) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        // Save scan to user's scan history
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('scans')
+            .add({
+          'cropType': cropType,
+          'scanData': scanData,
+          'timestamp': DateTime.now(),
+        });
+
+        // Update user's scan count
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .update({
+          'scanCount': FieldValue.increment(1),
+          'lastScan': DateTime.now(),
+        });
+      }
+    } catch (e) {
+      print('Error saving scan: $e');
     }
   }
 
@@ -386,6 +470,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   nameController: _nameController,
                                   emailController: _emailController,
                                   phoneController: _phoneController,
+                                  locationController: _locationController,
+                                  farmSizeController: _farmSizeController,
                                   cardPadding: cardPadding,
                                   itemSpacing: AppMeasurements.getResponsiveSmallPadding(context) * 1.5,
                                 ),
@@ -413,6 +499,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 nameController: _nameController,
                                 emailController: _emailController,
                                 phoneController: _phoneController,
+                                locationController: _locationController,
+                                farmSizeController: _farmSizeController,
                                 cardPadding: cardPadding,
                                 itemSpacing: AppMeasurements.getResponsiveSmallPadding(context) * 1.5,
                               ),

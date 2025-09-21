@@ -1,6 +1,4 @@
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_routes.dart';
 
 class RegisterForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -15,7 +13,6 @@ class RegisterForm extends StatelessWidget {
   final bool obscureConfirmPassword;
   final VoidCallback onPasswordVisibilityChanged;
   final VoidCallback onConfirmPasswordVisibilityChanged;
-  final bool isLoading;
 
   const RegisterForm({
     super.key,
@@ -31,7 +28,6 @@ class RegisterForm extends StatelessWidget {
     required this.obscureConfirmPassword,
     required this.onPasswordVisibilityChanged,
     required this.onConfirmPasswordVisibilityChanged,
-    this.isLoading = false,
   });
 
   @override
@@ -60,9 +56,13 @@ class RegisterForm extends StatelessWidget {
                 label: 'Full Name *',
                 controller: nameController,
                 icon: Icons.person_rounded,
+                semanticsLabel: 'Full Name',
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your name';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Name must be at least 2 characters';
                   }
                   return null;
                 },
@@ -73,6 +73,7 @@ class RegisterForm extends StatelessWidget {
                 label: 'Email Address *',
                 controller: emailController,
                 icon: Icons.email_rounded,
+                semanticsLabel: 'Email Address',
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -90,6 +91,7 @@ class RegisterForm extends StatelessWidget {
                 label: 'Phone Number',
                 controller: phoneController,
                 icon: Icons.phone_rounded,
+                semanticsLabel: 'Phone Number',
                 keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value != null && value.isNotEmpty) {
@@ -106,14 +108,31 @@ class RegisterForm extends StatelessWidget {
                 label: 'Location',
                 controller: locationController,
                 icon: Icons.location_on_rounded,
+                semanticsLabel: 'Location',
+                validator: (value) {
+                  if (value != null && value.isNotEmpty && value.trim().length < 3) {
+                    return 'Location must be at least 3 characters';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildFormField(
                 context,
                 label: 'Farm Size (acres)',
                 controller: farmSizeController,
-                icon: Icons.landscape_rounded,
+                icon: Icons.agriculture_rounded, // Changed from landscape to agriculture
+                semanticsLabel: 'Farm Size',
                 keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final numValue = double.tryParse(value);
+                    if (numValue == null || numValue <= 0) {
+                      return 'Please enter a valid farm size';
+                    }
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildPasswordField(
@@ -121,6 +140,7 @@ class RegisterForm extends StatelessWidget {
                 label: 'Password *',
                 controller: passwordController,
                 obscureText: obscurePassword,
+                semanticsLabel: 'Password',
                 onVisibilityChanged: onPasswordVisibilityChanged,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -138,6 +158,7 @@ class RegisterForm extends StatelessWidget {
                 label: 'Confirm Password *',
                 controller: confirmPasswordController,
                 obscureText: obscureConfirmPassword,
+                semanticsLabel: 'Confirm Password',
                 onVisibilityChanged: onConfirmPasswordVisibilityChanged,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -150,24 +171,6 @@ class RegisterForm extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 24),
-              RegisterButton(
-                isLoading: isLoading,
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    Navigator.pushNamed(
-                      context,
-                      AppRoutes.home, // Changed from AppRoutes.profile to AppRoutes.home
-                      arguments: {
-                        'registrationNameController': nameController,
-                        'registrationEmailController': emailController,
-                        'registrationPhoneController': phoneController,
-                        'registrationLocationController': locationController,
-                        'registrationFarmSizeController': farmSizeController,
-                      },
-                    );
-                  }
-                },
-              ),
             ],
           ),
         ),
@@ -180,6 +183,7 @@ class RegisterForm extends StatelessWidget {
         required String label,
         required TextEditingController controller,
         required IconData icon,
+        required String semanticsLabel,
         TextInputType? keyboardType,
         String? Function(String?)? validator,
       }) {
@@ -206,6 +210,7 @@ class RegisterForm extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: borderRadius),
             filled: true,
             fillColor: theme.colorScheme.surface.withOpacity(0.05),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           validator: validator,
         ),
@@ -218,6 +223,7 @@ class RegisterForm extends StatelessWidget {
         required String label,
         required TextEditingController controller,
         required bool obscureText,
+        required String semanticsLabel,
         required VoidCallback onVisibilityChanged,
         required String? Function(String?)? validator,
       }) {
@@ -251,6 +257,7 @@ class RegisterForm extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: borderRadius),
             filled: true,
             fillColor: theme.colorScheme.surface.withOpacity(0.05),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           validator: validator,
         ),

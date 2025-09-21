@@ -2,14 +2,16 @@ import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/login_pr
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_form.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_header.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../auth_services.dart';
 import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/widgets/app_themes.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -67,31 +69,32 @@ class _RegisterScreenState extends State<RegisterScreen>
 
       if (pickedFile != null) {
         setState(() => _imageFile = pickedFile);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Profile image selected successfully!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            behavior: SnackBarBehavior.floating,
-          ),
+        _showSnackBar(
+          message: 'Profile image selected successfully!',
+          isError: false,
         );
       }
     } catch (e) {
       HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Failed to select image'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      _showSnackBar(message: 'Failed to select image', isError: true);
       debugPrint('Image picker error: $e');
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<String?> _uploadProfileImage() async {
+    if (_imageFile == null) return null;
+
+    try {
+      // TODO: Implement Firebase Storage upload here
+      // For now, we'll just return a placeholder
+      // You'll need to add firebase_storage package and implement actual upload
+      print('Image selected: ${_imageFile!.path}');
+      return 'https://example.com/profile-image.jpg'; // Replace with actual upload logic
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
     }
   }
 
@@ -106,56 +109,109 @@ class _RegisterScreenState extends State<RegisterScreen>
       final phone = _phoneController.text.trim();
       final location = _locationController.text.trim();
       final farmSize = _farmSizeController.text.trim();
-// Save name to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_name', name); // Save with key 'user_name'
-      print('Saved user_name: $name'); // Debug
-      await Future.delayed(const Duration(seconds: 1));
+      final password = _passwordController.text.trim();
 
-      if (email == 'test@agriguard.com') {
-        throw Exception('Email already registered');
+      // Upload profile image if selected
+      final profileImageUrl = await _uploadProfileImage();
+
+      // 🔹 Call AuthService with profile image
+      final user = await authService.value.signUpWithDetails(
+        fullName: name,
+        email: email,
+        password: password,
+        phoneNumber: phone,
+        location: location,
+        farmSize: farmSize,
+        profileImageUrl: profileImageUrl, // Pass the image URL
+      );
+
+      if (user != null) {
+        // Save to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_name', name);
+        if (profileImageUrl != null) {
+          await prefs.setString('user_image', profileImageUrl);
+        }
+
+        if (!mounted) return;
+
+        _showSnackBar(
+          message: '✅ Account created successfully!',
+          isError: false,
+        );
+
+        // Navigate to home with proper data structure
+        Navigator.pushReplacementNamed(
+          context,
+          '/home',
+          arguments: {
+            'fullName': name,
+            'email': email,
+            'phoneNumber': phone, // Changed from 'phone' to 'phoneNumber'
+            'location': location,
+            'farmSize': farmSize, // Remove 'acres' suffix
+            'profileImageUrl': profileImageUrl, // Changed from 'imagePath'
+            'createdAt': DateTime.now(), // Changed from 'joinDate'
+            'scanCount': 0,
+            'crops': const [],
+          },
+        );
+      } else {
+        _showSnackBar(
+          message: '❌ Registration failed. Please try again.',
+          isError: true,
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      String errorMessage;
+      if (e.code == 'email-already-in-use') {
+        errorMessage = '❌ Email already registered. Try logging in.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = '❌ Password is too weak. Use at least 6 characters.';
+      } else {
+        errorMessage = '❌ ${e.message ?? "Registration failed"}';
       }
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Account created successfully'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
-
-      Navigator.pushReplacementNamed(
-        context,
-        '/home',
-        arguments: {
-          'fullName': name,
-          'email': email,
-          'phone': phone,
-          'location': location,
-          'farmSize': '$farmSize acres',
-          'imagePath': _imageFile?.path,
-          'joinDate': 'Joined: ${DateTime.now().toString().split(' ')[0]}',
-          'scanCount': 0,
-          'crops': const [],
-        },
-      );
+      _showSnackBar(message: errorMessage, isError: true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().contains('Email already')
-                ? 'Email already registered'
-                : 'Registration failed',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      _showSnackBar(
+        message: e.toString().contains('Failed to save user data')
+            ? '❌ Failed to save user data. Check your permissions.'
+            : '❌ Unexpected error: $e',
+        isError: true,
       );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showSnackBar({required String message, required bool isError}) {
+    final theme = Theme.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: isError ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: isError ? theme.colorScheme.error : theme.colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        action: isError && message.contains('Email already registered')
+            ? SnackBarAction(
+          label: 'Login',
+          textColor: theme.colorScheme.onPrimary,
+          onPressed: () {
+            Navigator.pushNamed(context, '/login');
+          },
+        )
+            : null,
+      ),
+    );
   }
 
   @override
@@ -207,11 +263,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                   HapticFeedback.lightImpact();
                   Navigator.pop(context);
                 },
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+                child: const Padding(
+                  padding: EdgeInsets.all(12),
                   child: Icon(
                     Icons.arrow_back_rounded,
-                    color: theme.colorScheme.primary,
                     size: 24,
                   ),
                 ),
@@ -219,7 +274,8 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
           ),
         ],
-      ),      body: Container(
+      ),
+      body: Container(
         decoration: BoxDecoration(
           gradient: themeProvider.isDarkMode
               ? const LinearGradient(
@@ -269,9 +325,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                     obscurePassword: _obscurePassword,
                     obscureConfirmPassword: _obscureConfirmPassword,
                     onPasswordVisibilityChanged: () => setState(() => _obscurePassword = !_obscurePassword),
-                    onConfirmPasswordVisibilityChanged: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    onConfirmPasswordVisibilityChanged: () => setState(
+                            () => _obscureConfirmPassword = !_obscureConfirmPassword),
                   ),
                   const SizedBox(height: 16),
+                  RegisterButton(
+                    onPressed: _isLoading ? () {} : _register,
+                    isLoading: _isLoading,
+                  ),
                   const SizedBox(height: 16),
                   const LoginPrompt(),
                 ],

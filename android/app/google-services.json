@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1063721443887",
+    "project_id": "agriguard-867e6",
+    "storage_bucket": "agriguard-867e6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1063721443887:android:768853519ba9f2ec469cda",
+        "android_client_info": {
+          "package_name": "com.example.agriguard_fyp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2q7LlLCjqrh6_6emJAXwrd5yfi5uER7E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

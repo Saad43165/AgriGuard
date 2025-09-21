@@ -11,7 +11,7 @@ class ActionButton extends StatelessWidget {
   const ActionButton({
     super.key,
     required this.isLoading,
-    required this.onPressed,
+    required this.onPressed, required String label, required IconData icon, required String loadingLabel,
   });
 
   @override

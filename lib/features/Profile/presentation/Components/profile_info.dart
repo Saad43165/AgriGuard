@@ -3,12 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../components/glass_card.dart';
 
-class ProfileInfo extends StatelessWidget {
+class ProfileInfo extends StatefulWidget {
   final Map<String, dynamic> userProfile;
   final bool isEditing;
   final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController phoneController;
+  final TextEditingController locationController; // ADD THIS
+  final TextEditingController farmSizeController; // ADD THIS
   final EdgeInsets cardPadding;
   final double itemSpacing;
 
@@ -19,37 +21,23 @@ class ProfileInfo extends StatelessWidget {
     required this.nameController,
     required this.emailController,
     required this.phoneController,
+    required this.locationController, // ADD THIS
+    required this.farmSizeController, // ADD THIS
     required this.cardPadding,
     required this.itemSpacing,
   });
 
-  factory ProfileInfo.fromRegistration({
-    Key? key,
-    required TextEditingController nameController,
-    required TextEditingController emailController,
-    required TextEditingController phoneController,
-    required TextEditingController locationController,
-    required TextEditingController farmSizeController,
-    required bool isEditing,
-    required EdgeInsets cardPadding,
-    required double itemSpacing,
-  }) {
-    return ProfileInfo(
-      key: key,
-      userProfile: {
-        'name': nameController.text,
-        'email': emailController.text,
-        'phone': phoneController.text,
-        'location': locationController.text,
-        'farmSize': farmSizeController.text,
-      },
-      isEditing: isEditing,
-      nameController: nameController,
-      emailController: emailController,
-      phoneController: phoneController,
-      cardPadding: cardPadding,
-      itemSpacing: itemSpacing,
-    );
+  @override
+  State<ProfileInfo> createState() => _ProfileInfoState();
+}
+
+class _ProfileInfoState extends State<ProfileInfo> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with current values
+    widget.locationController.text = widget.userProfile['location'] ?? '';
+    widget.farmSizeController.text = widget.userProfile['farmSize']?.toString() ?? '';
   }
 
   Widget _buildEditableField({
@@ -58,6 +46,7 @@ class ProfileInfo extends StatelessWidget {
     required TextEditingController controller,
     required IconData icon,
     required BuildContext context,
+    bool enabled = true,
   }) {
     final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
     return Semantics(
@@ -83,9 +72,10 @@ class ProfileInfo extends StatelessWidget {
           ),
           SizedBox(width: smallPadding),
           Expanded(
-            child: isEditing
+            child: widget.isEditing && enabled
                 ? TextFormField(
               controller: controller,
+              enabled: enabled,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: label,
@@ -101,20 +91,6 @@ class ProfileInfo extends StatelessWidget {
                 ),
                 enabledBorder: Theme.of(context).inputDecorationTheme.enabledBorder,
                 focusedBorder: Theme.of(context).inputDecorationTheme.focusedBorder,
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.error,
-                    width: 1.5,
-                  ),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.error,
-                    width: 2,
-                  ),
-                ),
               ),
             )
                 : Column(
@@ -146,104 +122,51 @@ class ProfileInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required BuildContext context,
-  }) {
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.all(smallPadding),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-              ],
-            ),
-          ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: AppMeasurements.getResponsiveIconSizeSmall(context),
-          ),
-        ),
-        SizedBox(width: smallPadding),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value.isEmpty ? 'Not provided' : value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: value.isEmpty
-                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GlassCard(
       child: Padding(
-        padding: cardPadding,
+        padding: widget.cardPadding,
         child: Column(
           children: [
             _buildEditableField(
               label: 'Full Name',
-              value: userProfile['name'] ?? '',
-              controller: nameController,
+              value: widget.userProfile['name'] ?? '',
+              controller: widget.nameController,
               icon: Icons.person_rounded,
               context: context,
             ),
-            SizedBox(height: itemSpacing),
+            SizedBox(height: widget.itemSpacing),
             _buildEditableField(
               label: 'Email',
-              value: userProfile['email'] ?? '',
-              controller: emailController,
+              value: widget.userProfile['email'] ?? '',
+              controller: widget.emailController,
               icon: Icons.email_rounded,
               context: context,
+              enabled: false, // Email is not editable
             ),
-            SizedBox(height: itemSpacing),
+            SizedBox(height: widget.itemSpacing),
             _buildEditableField(
               label: 'Phone',
-              value: userProfile['phone'] ?? '',
-              controller: phoneController,
+              value: widget.userProfile['phone'] ?? '',
+              controller: widget.phoneController,
               icon: Icons.phone_rounded,
               context: context,
             ),
-            SizedBox(height: itemSpacing),
-            _buildInfoTile(
-              icon: Icons.location_on_rounded,
+            SizedBox(height: widget.itemSpacing),
+            _buildEditableField(
               label: 'Location',
-              value: userProfile['location'] ?? '',
+              value: widget.userProfile['location'] ?? '',
+              controller: widget.locationController, // USE THE NEW CONTROLLER
+              icon: Icons.location_on_rounded,
               context: context,
             ),
-            SizedBox(height: itemSpacing),
-            _buildInfoTile(
+            SizedBox(height: widget.itemSpacing),
+            _buildEditableField(
+              label: 'Farm Size (acres)',
+              value: widget.userProfile['farmSize']?.toString() ?? '',
+              controller: widget.farmSizeController, // USE THE NEW CONTROLLER
               icon: Icons.agriculture_rounded,
-              label: 'Farm Size',
-              value: userProfile['farmSize']?.isEmpty ?? true ? 'Not provided' : userProfile['farmSize']!,
               context: context,
             ),
           ],
