@@ -26,8 +26,21 @@ class StatisticsDialogContent extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
       ),
-      child: Stack(
-        children: [
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 400),
+        tween: Tween(begin: 0.0, end: 1.0),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Transform.scale(
+            scale: 0.8 + (0.2 * value),
+            child: Opacity(
+              opacity: value,
+              child: child,
+            ),
+          );
+        },
+        child: Stack(
+          children: [
           GlassCard(
             borderRadius: AppMeasurements.getResponsiveBorderRadius(context),
             blur: isDarkMode ? 20.0 : 15.0, // Enhanced blur for better glass effect
@@ -422,6 +435,7 @@ class StatisticsDialogContent extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
