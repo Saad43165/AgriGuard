@@ -1,340 +1,291 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../../../../core/constants/app_measurements.dart';
-import '../../../Profile/presentation/Components/glass_card.dart';
+import '../../../../../../core/constants/app_measurements.dart';
+import 'glass_card.dart';
 
-class StatisticsDialogContent extends StatefulWidget {
+class StatisticsDialogContent extends StatelessWidget {
+  final Map<String, int> scansPerCrop;
+  final DateTime lastScanDate;
   final Map<String, dynamic> userProfile;
 
   const StatisticsDialogContent({
     super.key,
+    required this.scansPerCrop,
+    required this.lastScanDate,
     required this.userProfile,
   });
 
   @override
-  State<StatisticsDialogContent> createState() => _StatisticsDialogContentState();
-}
-
-class _StatisticsDialogContentState extends State<StatisticsDialogContent> {
-  Map<String, int> _scansPerCrop = {};
-  DateTime _lastScanDate = DateTime.now();
-  int _totalScans = 0;
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserStatistics();
-  }
-
-  Future<void> _loadUserStatistics() async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        // Get user's scan count from profile
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .get();
-
-        final userData = userDoc.data();
-        _totalScans = userData?['scanCount'] ?? 0;
-
-        // Get scan history to calculate crop statistics
-        final scansSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .collection('scans')
-            .orderBy('timestamp', descending: true)
-            .get();
-
-        // Calculate scans per crop
-        final scansPerCrop = <String, int>{};
-        DateTime lastScan = DateTime.now();
-
-        for (final doc in scansSnapshot.docs) {
-          final data = doc.data();
-          final cropType = data['cropType'] ?? 'Unknown';
-          final timestamp = data['timestamp'] is Timestamp
-              ? (data['timestamp'] as Timestamp).toDate()
-              : DateTime.parse(data['timestamp'].toString());
-
-          // Update last scan date
-          if (timestamp.isAfter(lastScan)) {
-            lastScan = timestamp;
-          }
-
-          // Count scans per crop
-          scansPerCrop.update(cropType, (value) => value + 1, ifAbsent: () => 1);
-        }
-
-        setState(() {
-          _scansPerCrop = scansPerCrop;
-          _lastScanDate = lastScan;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _hasError = true;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading statistics: $e');
-      setState(() {
-        _hasError = true;
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _formatScanCount(int count) {
-    if (count == 0) return 'No scans';
-    if (count == 1) return '1 scan';
-    return '$count scans';
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final dateFormatter = DateFormat('MMMM d, yyyy');
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final mediumPadding = AppMeasurements.getResponsivePadding(context);
+    final iconSize = AppMeasurements.getResponsiveIconSizeMedium(context);
+    final fontSizeLarge = AppMeasurements.getResponsiveFontSize(context, baseSize: 20);
+    final fontSizeMedium = AppMeasurements.getResponsiveFontSize(context, baseSize: 16);
+    final fontSizeSmall = AppMeasurements.getResponsiveFontSize(context, baseSize: 14);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-      ),
-      child: Stack(
-        children: [
-          GlassCard(
-            borderRadius: AppMeasurements.getResponsiveBorderRadius(context),
-            blur: isDarkMode ? 15.0 : 10.0,
+      child: GlassCard(
+        useSolidBackground: true,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: AppMeasurements.getResponsiveWidth(context, baseWidth: 420),
+            maxHeight: AppMeasurements.getResponsiveHeight(context, baseHeight: 650),
+          ),
+          child: SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
+              padding: EdgeInsets.all(mediumPadding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Scan Statistics',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(smallPadding),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                              Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.analytics_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: iconSize,
+                        ),
+                      ),
+                      SizedBox(width: smallPadding),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Detailed Statistics',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: fontSizeLarge,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                            Text(
+                              'Last Updated: ${TimeOfDay.fromDateTime(DateTime.now()).format(context)}, ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                fontSize: fontSizeSmall,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          size: iconSize,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                          padding: EdgeInsets.all(smallPadding * 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: mediumPadding),
+
+                  // Scan Breakdown Section
+                  Container(
+                    padding: EdgeInsets.all(mediumPadding),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                      ),
+                      color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Scan Breakdown',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: fontSizeMedium,
+                          ),
+                        ),
+                        SizedBox(height: smallPadding),
+                        if (userProfile['crops'].isEmpty)
+                          _buildEmptyState(context)
+                        else
+                          ...userProfile['crops'].map<Widget>((crop) => Padding(
+                            padding: EdgeInsets.symmetric(vertical: smallPadding * 0.5),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _getCropIcon(crop),
+                                      size: fontSizeSmall,
+                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                                    ),
+                                    SizedBox(width: smallPadding * 0.5),
+                                    Text(
+                                      crop,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontSize: fontSizeMedium,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  '${scansPerCrop[crop] ?? 0} Scans',
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).colorScheme.secondary,
+                                    fontSize: fontSizeMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
+                      ],
                     ),
                   ),
-                  SizedBox(height: AppMeasurements.getResponsivePadding(context)),
+                  SizedBox(height: mediumPadding),
 
-                  if (_isLoading)
-                    _buildLoadingState()
-                  else if (_hasError)
-                    _buildErrorState()
-                  else
-                    _buildStatisticsContent(dateFormatter),
+                  // Last Scan Date
+                  Container(
+                    padding: EdgeInsets.all(mediumPadding),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                      ),
+                      color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: fontSizeSmall,
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                            ),
+                            SizedBox(width: smallPadding * 0.5),
+                            Text(
+                              'Last Scan Date',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: fontSizeMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${lastScanDate.day}/${lastScanDate.month}/${lastScanDate.year}',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontSize: fontSizeMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: mediumPadding),
+
+                  // Close Button
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: mediumPadding * 2,
+                          vertical: smallPadding,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Text(
+                        'Close',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: fontSizeMedium,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          Positioned(
-            right: AppMeasurements.getResponsivePadding(context) / 2,
-            top: AppMeasurements.getResponsivePadding(context) / 2,
-            child: Semantics(
-              label: 'Close dialog',
-              button: true,
-              child: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.of(context).pop();
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildLoadingState() {
-    return const Padding(
-      padding: EdgeInsets.all(40.0),
-      child: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
+  Widget _buildEmptyState(BuildContext context) {
+    final fontSizeMedium = AppMeasurements.getResponsiveFontSize(context, baseSize: 16);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
 
-  Widget _buildErrorState() {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
+    return Container(
+      padding: EdgeInsets.all(smallPadding * 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
+      ),
       child: Column(
         children: [
           Icon(
-            Icons.error_outline,
-            size: 40,
-            color: Theme.of(context).colorScheme.error,
+            Icons.agriculture_rounded,
+            size: AppMeasurements.getResponsiveIconSizeLarge(context),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: smallPadding),
           Text(
-            'Failed to load statistics',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            'No Scans Yet',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface,
+              fontSize: fontSizeMedium,
             ),
           ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: _loadUserStatistics,
-            child: const Text('Try Again'),
+          SizedBox(height: smallPadding * 0.5),
+          Text(
+            'Start scanning crops to see detailed statistics here.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              fontSize: fontSizeMedium,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatisticsContent(DateFormat dateFormatter) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          label: 'Total scans: $_totalScans',
-          child: Text(
-            'Total Scans: $_totalScans',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-            ),
-          ),
-        ),
-        SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
-
-        if (_scansPerCrop.isEmpty)
-          Semantics(
-            label: 'No crop scans available yet',
-            child: Text(
-              'No crop scans available yet. Start scanning to see statistics!',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-              ),
-            ),
-          )
-        else
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Scans by Crop Type:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
-                ),
-              ),
-              SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
-              ..._scansPerCrop.entries.map((entry) => Semantics(
-                label: '${entry.key}: ${_formatScanCount(entry.value)}',
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: AppMeasurements.getResponsiveSmallPadding(context)),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                      ),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppMeasurements.getResponsiveSmallPadding(context),
-                      vertical: AppMeasurements.getResponsiveSmallPadding(context) * 0.5,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _getCropIcon(entry.key),
-                          color: Theme.of(context).colorScheme.primary,
-                          size: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
-                        ),
-                        SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
-                        Expanded(
-                          child: Text(
-                            '${entry.key}: ${_formatScanCount(entry.value)}',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
-                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-                            ),
-                          ),
-                        ),
-                        if (entry.value > 0)
-                          Text(
-                            '${((entry.value / _totalScans) * 100).toStringAsFixed(1)}%',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              )),
-            ],
-          ),
-
-        if (_totalScans > 0) ...[
-          SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
-          Semantics(
-            label: 'Last scan date: ${dateFormatter.format(_lastScanDate)}',
-            child: Text(
-              'Last Scan: ${dateFormatter.format(_lastScanDate)}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-              ),
-            ),
-          ),
-        ],
-
-        SizedBox(height: AppMeasurements.getResponsivePadding(context)),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-              textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-              ),
-            ),
-            child: const Text('OK'),
-          ),
-        ),
-      ],
     );
   }
 

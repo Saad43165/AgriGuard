@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
-import '../../../../../../core/constants/app_measurements.dart';
-
 class GlassCard extends StatelessWidget {
   final Widget child;
   final bool useSolidBackground;
@@ -10,6 +8,8 @@ class GlassCard extends StatelessWidget {
   final double? blur;
   final EdgeInsetsGeometry? padding;
   final double? elevation;
+  final Color? backgroundColor;
+  final Color? borderColor;
 
   const GlassCard({
     super.key,
@@ -19,21 +19,19 @@ class GlassCard extends StatelessWidget {
     this.blur,
     this.padding,
     this.elevation,
+    this.backgroundColor,
+    this.borderColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final effectiveBorderRadius = borderRadius ?? AppMeasurements.getResponsiveBorderRadius(context);
-    final effectiveBlur = blur ?? (isDarkMode ? 20.0 : 15.0); // Increased blur values
-    final effectiveElevation = elevation ?? (isDarkMode ? 8.0 : 4.0);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200), // Smooth transition
+    return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(effectiveBorderRadius),
+        borderRadius: BorderRadius.circular(borderRadius ?? 16),
         color: useSolidBackground
-            ? Theme.of(context).colorScheme.surface.withOpacity(isDarkMode ? 0.8 : 0.9)
+            ? backgroundColor ?? Theme.of(context).colorScheme.surface.withOpacity(isDarkMode ? 0.95 : 0.98)
             : null,
         gradient: !useSolidBackground
             ? LinearGradient(
@@ -41,46 +39,63 @@ class GlassCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDarkMode
               ? [
-            Theme.of(context).colorScheme.surface.withOpacity(0.3),
-            Theme.of(context).colorScheme.surface.withOpacity(0.2),
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
           ]
               : [
-            Colors.white.withOpacity(0.4),
-            Colors.white.withOpacity(0.2),
+            Colors.white.withOpacity(0.7),
+            Colors.white.withOpacity(0.3),
           ],
         )
             : null,
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(isDarkMode ? 0.2 : 0.1),
-          width: 0.5,
+          color: borderColor ??
+              (isDarkMode
+                  ? Colors.white.withOpacity(0.2)
+                  : Colors.white.withOpacity(0.4)),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(isDarkMode ? 0.4 : 0.1),
-            blurRadius: effectiveElevation * 2,
-            spreadRadius: effectiveElevation / 4,
-            offset: Offset(0, effectiveElevation / 2),
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
+            blurRadius: elevation ?? 20,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
           ),
+          if (!useSolidBackground)
+            BoxShadow(
+              color: isDarkMode
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.white.withOpacity(0.6),
+              blurRadius: 1,
+              spreadRadius: 0,
+              offset: const Offset(0, 1),
+            ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(effectiveBorderRadius),
+        borderRadius: BorderRadius.circular(borderRadius ?? 16),
         child: Stack(
           children: [
+            // Backdrop filter for glass effect
             if (!useSolidBackground)
               BackdropFilter(
                 filter: ui.ImageFilter.blur(
-                  sigmaX: effectiveBlur,
-                  sigmaY: effectiveBlur,
+                  sigmaX: blur ?? 10,
+                  sigmaY: blur ?? 10,
                 ),
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.transparent,
                   ),
                 ),
               ),
-            Padding(
-              padding: padding ?? EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
+
+            // Content
+            Container(
+              padding: padding ?? const EdgeInsets.all(20),
               child: child,
             ),
           ],

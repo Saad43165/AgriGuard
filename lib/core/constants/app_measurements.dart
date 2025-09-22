@@ -98,4 +98,11 @@ class AppMeasurements {
     final screenHeight = MediaQuery.of(context).size.height;
     return (baseHeight * (screenHeight / 667)).clamp(baseHeight * 0.5, baseHeight * 1.5); // Scale relative to 667px base height
   }
+
+  static double getResponsiveWidth(BuildContext context, {required int baseWidth}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const referenceWidth = 360.0;
+    final scalingFactor = screenWidth / referenceWidth;
+    return (baseWidth * scalingFactor).clamp(baseWidth * 0.8, baseWidth * 1.5);
+  }
 }
