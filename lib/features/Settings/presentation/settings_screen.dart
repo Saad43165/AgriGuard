@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart'; // If using Provider (optional)
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/widgets/app_themes.dart';
-import 'Tiles/actions_tile.dart';
 import 'Tiles/app_version_tile.dart';
 import 'Tiles/clear_history_tile.dart';
 import 'Tiles/delete_acount_tile.dart';
 import 'components/floating_orb.dart';
-import 'components/glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 import 'components/settings_header.dart';
 import 'Tiles/toggle_tile.dart';
 

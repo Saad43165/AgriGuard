@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import '../../../../core/widgets/glass_card.dart';
 import 'faq_page.dart'; // Import the new FaqPage
 
 /// A model for FAQ items containing a question and answer.

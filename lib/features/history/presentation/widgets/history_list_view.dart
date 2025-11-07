@@ -5,8 +5,8 @@ import 'dart:io';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/severity_indicator.dart';
-import 'glass_card.dart';
 
 class HistoryListView extends StatelessWidget {
   final List<Map<String, dynamic>> scans;

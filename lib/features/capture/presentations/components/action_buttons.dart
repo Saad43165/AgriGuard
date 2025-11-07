@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../Profile/presentation/Components/glass_card.dart';
+import '../../../../core/widgets/glass_card.dart';
 import 'image_Buttons.dart';
 
 class ActionButtons extends StatelessWidget {

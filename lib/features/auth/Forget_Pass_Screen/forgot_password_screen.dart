@@ -6,11 +6,11 @@ import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/widgets/glass_card.dart';
 import 'constants/app_colors.dart';
 import 'widgets/action_button.dart';
 import 'widgets/app_bar.dart';
 import 'widgets/email_form.dart';
-import 'widgets/glass_card.dart';
 import 'widgets/header_section.dart';
 import '/auth_services.dart';
 

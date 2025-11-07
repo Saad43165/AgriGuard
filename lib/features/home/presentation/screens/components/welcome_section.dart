@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 
 class WelcomeSection extends StatelessWidget {
   final bool isFirstTimeUser;

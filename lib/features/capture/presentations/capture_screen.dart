@@ -279,6 +279,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                           scaleAnimation: _scaleAnimation,
                           isLoading: _isLoading,
                         ),
+                        SizedBox(height: 60),
                         ActionButtons(
                           isLoading: _isLoading,
                           isProcessing: _isProcessing,

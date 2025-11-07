@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 import 'scan_card.dart';
 
 class RecentScansSection extends StatelessWidget {

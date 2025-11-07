@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../Profile/presentation/Components/glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 
 class ShareResultsDialogContent extends StatelessWidget {
   final String shareText;
@@ -10,7 +10,6 @@ class ShareResultsDialogContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      useSolidBackground: true,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

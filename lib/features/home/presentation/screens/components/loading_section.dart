@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 
 class LoadingSection extends StatelessWidget {
   const LoadingSection({super.key});

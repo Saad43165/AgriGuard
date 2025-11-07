@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import '../../../../core/widgets/glass_card.dart';
 
 /// A contact form that sends user input to a specified email address.
 class ContactFormCard extends StatefulWidget {

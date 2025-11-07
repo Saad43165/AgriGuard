@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../components/glass_card.dart';
+import '../../../../core/widgets/glass_card.dart';
 
 class ProfileInfo extends StatefulWidget {
   final Map<String, dynamic> userProfile;

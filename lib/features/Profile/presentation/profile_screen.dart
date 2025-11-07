@@ -339,23 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  void _showStatisticsDialog() {
-    final Map<String, int> scansPerCrop = {
-      'Wheat': 10,
-      'Cotton': 8,
-      'Rice': 6,
-    };
-    final DateTime lastScanDate = DateTime.now().subtract(const Duration(days: 1));
 
-    showDialog(
-      context: context,
-      builder: (context) => StatisticsDialogContent(
-        scansPerCrop: scansPerCrop,
-        lastScanDate: lastScanDate,
-        userProfile: _userProfile,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -480,7 +464,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               Flexible(
                                 flex: 1,
                                 child: GestureDetector(
-                                  onTap: _showStatisticsDialog,
                                   child: Statistics(
                                     userProfile: _userProfile,
                                     cardPadding: cardPadding,
@@ -506,7 +489,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               ),
                               SizedBox(height: sectionSpacing),
                               GestureDetector(
-                                onTap: _showStatisticsDialog,
                                 child: Statistics(
                                   userProfile: _userProfile,
                                   cardPadding: cardPadding,

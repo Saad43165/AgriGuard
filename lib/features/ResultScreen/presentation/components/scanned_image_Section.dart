@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../Profile/presentation/Components/glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 import 'section_header.dart';
 
 class ScannedImageSection extends StatefulWidget {

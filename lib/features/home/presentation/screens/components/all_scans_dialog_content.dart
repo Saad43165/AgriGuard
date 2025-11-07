@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart'; // Add this import
 import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../Profile/presentation/Components/glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 import 'delete_confirmation_dialoag_content.dart';
 
 class AllScansDialogContent extends StatelessWidget {

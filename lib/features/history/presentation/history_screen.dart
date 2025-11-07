@@ -9,7 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../HelpSupport/presentation/widgets/glass_card.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../history/presentation/widgets/floating_orb.dart';
 import '../../../auth_services.dart';
 

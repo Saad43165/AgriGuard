@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_measurements.dart';
 import '../../../../../core/constants/app_routes.dart';
+import '../../../../core/widgets/glass_card.dart';
 import 'logout_confirmation_dialog_content.dart';
-import 'glass_card.dart';
 
 class ProfileActions extends StatelessWidget {
   final EdgeInsets padding;
@@ -39,11 +39,8 @@ class ProfileActions extends StatelessWidget {
           context: context,
           builder: (context) => Dialog(
             backgroundColor: Colors.transparent,
-            child: GlassCard(
-              useSolidBackground: true,
-              child: LogoutConfirmationDialogContent(
-                onConfirm: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-              ),
+            child: LogoutConfirmationDialogContent(
+              onConfirm: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
             ),
           ),
         ),

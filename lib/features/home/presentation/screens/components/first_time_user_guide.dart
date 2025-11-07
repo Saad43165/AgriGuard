@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../Profile/presentation/Components/glass_card.dart';
-import 'guide_step.dart';
+import '../../../../../core/widgets/glass_card.dart';
 
 class FirstTimeUserGuide extends StatelessWidget {
   const FirstTimeUserGuide({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import 'glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 
 class ScanOptionsBottomSheet extends StatelessWidget {
   final Map<String, dynamic> scan;

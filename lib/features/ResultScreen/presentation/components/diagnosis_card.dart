@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
 import '../../../../../core/widgets/severity_indicator.dart';
-import '../../../Profile/presentation/Components/glass_card.dart';
+import '../../../../../core/widgets/glass_card.dart';
 import '../screens/results_screen.dart';
 
 class DiagnosisCard extends StatelessWidget {
