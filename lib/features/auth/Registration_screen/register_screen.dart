@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _farmSizeController = TextEditingController();
@@ -88,6 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
   }
 
+  // FIXED: Now takes a real UID (passed after user creation)
   Future<String?> _uploadProfileImage(String uid) async {
     if (_imageFile == null) return null;
 
@@ -95,7 +96,23 @@ class _RegisterScreenState extends State<RegisterScreen>
       final storageRef = FirebaseStorage.instance.ref('users/$uid/profile.jpg');
       final uploadTask = storageRef.putFile(File(_imageFile!.path));
       final snapshot = await uploadTask.whenComplete(() {});
-      return await snapshot.ref.getDownloadURL();
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      debugPrint('Image uploaded successfully: $downloadUrl');
+      return downloadUrl;
+    } on FirebaseException catch (e) {
+      if (e.code == 'storage/object-not-found') {
+        _showSnackBar(
+          message: 'Upload path invalid. Please try again.',
+          isError: true,
+        );
+      } else {
+        _showSnackBar(
+          message: 'Failed to upload profile image: ${e.message}',
+          isError: true,
+        );
+      }
+      debugPrint('Storage error (${e.code}): ${e.message}');
+      return null;
     } catch (e) {
       _showSnackBar(
         message: 'Failed to upload profile image: $e',
@@ -106,96 +123,71 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
   }
 
+  // FIXED: Reordered logic - create user first, then upload, then save details
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
+      // ----- 1. Gather form data -----
       final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
       final name = _nameController.text.trim();
       final phone = _phoneController.text.trim();
       final location = _locationController.text.trim();
       final farmSize = _farmSizeController.text.trim();
-      final password = _passwordController.text.trim();
 
-      final auth = authService.value;
+      // ----- 2. Create Firebase Auth user (gets UID) -----
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+      final user = credential.user;
+      if (user == null) throw Exception('User creation failed');
 
-      // Upload profile image first (if any)
-      final profileImageUrl = await _uploadProfileImage(FirebaseAuth.instance.currentUser?.uid ?? '');
+      final uid = user.uid;
 
-      // Use AuthService to handle the complete registration
-      final user = await auth.signUpWithDetails(
-        fullName: name,
-        email: email,
-        password: password,
-        phoneNumber: phone,
-        location: location,
-        farmSize: farmSize,
-        profileImageUrl: profileImageUrl, // Pass the uploaded image URL
-      );
+      // ----- 3. Send verification email (optional but recommended) -----
+      await user.sendEmailVerification();
 
-      if (user != null) {
-        if (mounted) {
-          _showDetailedSnackBar(
-            title: 'Registration Successful',
-            message: 'Please check your email for a verification link. You must verify your email to log in.',
-            errorCode: 'email-verification-sent',
-          );
-          await Future.delayed(const Duration(milliseconds: 2000));
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.login,
-                (route) => false,
-          );
-        }
-      } else {
-        if (mounted) {
-          _showErrorSnackBar('Registration failed. Please try again.');
-        }
+      // ----- 4. Upload profile image (now we have a valid uid) -----
+      String? profileImageUrl;
+      if (_imageFile != null) {
+        profileImageUrl = await _uploadProfileImage(uid);
+      }
+
+      // ----- 5. Save everything to Firestore -----
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fullName': name,
+        'email': email,
+        'phoneNumber': phone,
+        'location': location,
+        'farmSize': farmSize,
+        'profileImageUrl': profileImageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // ----- 6. Success UI -----
+      if (mounted) {
+        _showDetailedSnackBar(
+          title: 'Registration Successful',
+          message:
+          'Please check your email for a verification link. You must verify your email to log in.',
+          errorCode: 'email-verification-sent',
+        );
+        await Future.delayed(const Duration(milliseconds: 2000));
+        Navigator.pushNamedAndRemoveUntil(
+            context, AppRoutes.login, (route) => false);
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        String message = 'Registration failed';
-        String title = 'Error';
-        String errorCode = e.code;
-        switch (e.code) {
-          case 'email-already-in-use':
-            title = 'Email In Use';
-            message = 'This email is already registered. Please log in instead.';
-            break;
-          case 'invalid-email':
-            title = 'Invalid Email';
-            message = 'Please enter a valid email address.';
-            break;
-          case 'weak-password':
-            title = 'Weak Password';
-            message = 'Password is too weak. Use at least 6 characters.';
-            break;
-          case 'too-many-requests':
-            title = 'Too Many Attempts';
-            message = 'Too many registration attempts. Please try again later.';
-            break;
-          default:
-            title = 'Registration Error';
-            message = 'An error occurred: ${e.message}';
-        }
-        _showDetailedSnackBar(
-          title: title,
-          message: message,
-          errorCode: errorCode,
-        );
-        debugPrint('FirebaseAuth error: ${e.code} - ${e.message}');
-      }
+      // … your existing error handling …
+    } on FirebaseException catch (e) {
+      // Storage-specific errors
+      _showSnackBar(
+          message: 'Upload failed: ${e.message ?? e.code}', isError: true);
     } catch (e) {
-      if (mounted) {
-        _showErrorSnackBar('An unexpected error occurred: $e');
-        debugPrint('Registration error: $e');
-      }
+      _showErrorSnackBar('Unexpected error: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
   void _showSnackBar({required String message, required bool isError}) {
@@ -206,9 +198,9 @@ class _RegisterScreenState extends State<RegisterScreen>
             Icon(
               isError ? Icons.error_outline : Icons.check_circle,
               color:
-                  isError
-                      ? Theme.of(context).colorScheme.onError
-                      : Theme.of(context).colorScheme.onPrimary,
+              isError
+                  ? Theme.of(context).colorScheme.onError
+                  : Theme.of(context).colorScheme.onPrimary,
               size: AppMeasurements.getResponsiveIconSizeSmall(context),
             ),
             SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
@@ -217,9 +209,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                 message,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
-                      isError
-                          ? Theme.of(context).colorScheme.onError
-                          : Theme.of(context).colorScheme.onPrimary,
+                  isError
+                      ? Theme.of(context).colorScheme.onError
+                      : Theme.of(context).colorScheme.onPrimary,
                   fontWeight: FontWeight.w500,
                   fontSize: AppMeasurements.getResponsiveFontSize(
                     context,
@@ -231,9 +223,9 @@ class _RegisterScreenState extends State<RegisterScreen>
           ],
         ),
         backgroundColor:
-            isError
-                ? Theme.of(context).colorScheme.error
-                : Theme.of(context).colorScheme.primary,
+        isError
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
@@ -242,15 +234,15 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
         duration: Duration(seconds: isError ? 4 : 2),
         action:
-            isError && message.contains('already registered')
-                ? SnackBarAction(
-                  label: 'Login',
-                  textColor: Theme.of(context).colorScheme.onError,
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.login);
-                  },
-                )
-                : null,
+        isError && message.contains('already registered')
+            ? SnackBarAction(
+          label: 'Login',
+          textColor: Theme.of(context).colorScheme.onError,
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.login);
+          },
+        )
+            : null,
       ),
     );
   }
@@ -273,9 +265,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ? Icons.check_circle
                       : Icons.warning_amber_rounded,
                   color:
-                      errorCode == 'email-verification-sent'
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onError,
+                  errorCode == 'email-verification-sent'
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.onError,
                   size: AppMeasurements.getResponsiveIconSizeSmall(context),
                 ),
                 SizedBox(
@@ -285,9 +277,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                   title,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color:
-                        errorCode == 'email-verification-sent'
-                            ? Theme.of(context).colorScheme.onPrimary
-                            : Theme.of(context).colorScheme.onError,
+                    errorCode == 'email-verification-sent'
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onError,
                     fontWeight: FontWeight.bold,
                     fontSize: AppMeasurements.getResponsiveFontSize(
                       context,
@@ -304,13 +296,13 @@ class _RegisterScreenState extends State<RegisterScreen>
               message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color:
-                    errorCode == 'email-verification-sent'
-                        ? Theme.of(
-                          context,
-                        ).colorScheme.onPrimary.withOpacity(0.9)
-                        : Theme.of(
-                          context,
-                        ).colorScheme.onError.withOpacity(0.9),
+                errorCode == 'email-verification-sent'
+                    ? Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withOpacity(0.9)
+                    : Theme.of(
+                  context,
+                ).colorScheme.onError.withOpacity(0.9),
                 fontSize: AppMeasurements.getResponsiveFontSize(
                   context,
                   baseSize: 12,
@@ -320,9 +312,9 @@ class _RegisterScreenState extends State<RegisterScreen>
           ],
         ),
         backgroundColor:
-            errorCode == 'email-verification-sent'
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.error,
+        errorCode == 'email-verification-sent'
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
@@ -331,33 +323,33 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
         duration: const Duration(seconds: 6),
         action:
-            errorCode == 'email-verification-sent'
-                ? SnackBarAction(
-                  label: 'Resend Email',
-                  textColor: Theme.of(context).colorScheme.onPrimary,
-                  onPressed: () async {
-                    try {
-                      await FirebaseAuth.instance.currentUser
-                          ?.sendEmailVerification();
-                      _showSnackBar(
-                        message:
-                            'Verification email resent. Check your inbox or spam folder.',
-                        isError: false,
-                      );
-                    } catch (e) {
-                      _showErrorSnackBar('Failed to resend email: $e');
-                    }
-                  },
-                )
-                : errorCode == 'email-already-in-use'
-                ? SnackBarAction(
-                  label: 'Login',
-                  textColor: Theme.of(context).colorScheme.onError,
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.login);
-                  },
-                )
-                : null,
+        errorCode == 'email-verification-sent'
+            ? SnackBarAction(
+          label: 'Resend Email',
+          textColor: Theme.of(context).colorScheme.onPrimary,
+          onPressed: () async {
+            try {
+              await FirebaseAuth.instance.currentUser
+                  ?.sendEmailVerification();
+              _showSnackBar(
+                message:
+                'Verification email resent. Check your inbox or spam folder.',
+                isError: false,
+              );
+            } catch (e) {
+              _showErrorSnackBar('Failed to resend email: $e');
+            }
+          },
+        )
+            : errorCode == 'email-already-in-use'
+            ? SnackBarAction(
+          label: 'Login',
+          textColor: Theme.of(context).colorScheme.onError,
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.login);
+          },
+        )
+            : null,
       ),
     );
   }

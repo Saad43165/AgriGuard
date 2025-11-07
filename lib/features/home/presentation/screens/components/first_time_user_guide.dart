@@ -10,50 +10,97 @@ class FirstTimeUserGuide extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassCard(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-              ).createShader(bounds),
-              child: Text(
-                'How to Get Started',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 22),
+            Row(
+              children: [
+                Icon(
+                  Icons.lightbulb_outline_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
                 ),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  'Quick Start Guide',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: AppMeasurements.getResponsiveFontSize(
+                      context,
+                      baseSize: 16,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            GuideStep(
+            const SizedBox(height: 12),
+            _CompactGuideStep(
               icon: Icons.camera_alt_rounded,
-              title: 'Step 1. Scan Your Plant',
-              description: 'Capture a clear photo of the leaf showing symptoms',
+              title: 'Scan Plant',
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: 20),
-            GuideStep(
+            const SizedBox(height: 8),
+            _CompactGuideStep(
               icon: Icons.analytics_rounded,
-              title: 'Step 2. Get Diagnosis',
-              description: 'Our AI analyzes the symptoms and identifies the disease',
+              title: 'Get AI Diagnosis',
               color: Theme.of(context).colorScheme.secondary,
             ),
-            const SizedBox(height: 20),
-            GuideStep(
+            const SizedBox(height: 8),
+            _CompactGuideStep(
               icon: Icons.medical_services_rounded,
-              title: 'Step 3. View Recommendations',
-              description: 'Receive tailored treatment advice for your plant',
-              color: Theme.of(context).colorScheme.tertiary ?? Theme.of(context).colorScheme.error,
+              title: 'View Treatment',
+              color: Theme.of(context).colorScheme.tertiary ??
+                  Theme.of(context).colorScheme.error,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CompactGuideStep extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+
+  const _CompactGuideStep({
+    required this.icon,
+    required this.title,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: AppMeasurements.getResponsiveFontSize(
+                context,
+                baseSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

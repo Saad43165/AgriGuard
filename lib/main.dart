@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/features/auth/Login_Screen/login_screens.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -42,7 +43,7 @@ class AgriGuardApp extends StatelessWidget {
           }
           if (snapshot.hasData) {
             // User is logged in, go to HomeScreen
-            return const SplashScreen();
+            return const HomeScreen();
           }
           // User is not logged in, go to SplashScreen
           return const SplashScreen();
