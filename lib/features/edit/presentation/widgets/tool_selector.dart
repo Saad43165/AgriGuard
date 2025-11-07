@@ -15,7 +15,7 @@ class ToolSelector extends StatelessWidget {
     super.key,
     required this.currentTool,
     required this.onToolSelected,
-    required this.animation,
+    required this.animation, required bool isHorizontal,
   });
 
   @override

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart'; // Add this import
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 import '../../../../../core/constants/app_measurements.dart';
 import '../../../../Profile/presentation/Components/glass_card.dart';
 import 'delete_confirmation_dialoag_content.dart';
@@ -16,6 +18,52 @@ class AllScansDialogContent extends StatelessWidget {
     required this.onDeleteScan,
     required this.onShowOptions,
   });
+
+  // Add timestamp formatting method
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown Date';
+
+    try {
+      // If it's already a string, return it
+      if (timestamp is String) return timestamp;
+
+      // If it's a Timestamp object, convert to DateTime and format
+      if (timestamp is Timestamp) {
+        return DateFormat('MMM dd, yyyy - HH:mm').format(timestamp.toDate());
+      }
+
+      // If it's a DateTime object, format it directly
+      if (timestamp is DateTime) {
+        return DateFormat('MMM dd, yyyy - HH:mm').format(timestamp);
+      }
+
+      // For any other type, try to convert to string
+      return timestamp.toString();
+    } catch (e) {
+      return 'Invalid Date';
+    }
+  }
+
+  // Safe method to handle any timestamp type
+  String _safeTimestampToString(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown Date';
+
+    // Try to detect and handle Timestamp type dynamically
+    if (timestamp.runtimeType.toString().contains('Timestamp')) {
+      try {
+        // Use reflection-like approach to call toDate() if it exists
+        final dynamic date = timestamp.toDate();
+        if (date is DateTime) {
+          return DateFormat('MMM dd, yyyy').format(date);
+        }
+      } catch (e) {
+        // Fall through to string conversion
+      }
+    }
+
+    // Final fallback
+    return timestamp.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,23 +143,11 @@ class AllScansDialogContent extends StatelessWidget {
                               ],
                             ),
                           ),
-                          child: scan['imageUrl'] != null
-                              ? Image.file(
-                            File(scan['imageUrl']),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.local_florist_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          )
-                              : Icon(
-                            Icons.local_florist_rounded,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                          child: _buildScanImage(scan, context),
                         ),
                       ),
                       title: Text(
-                        scan['diagnosis'] ?? 'Unknown Disease',
+                        scan['diagnosis']?.toString() ?? 'Unknown Disease',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
@@ -119,12 +155,28 @@ class AllScansDialogContent extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Text(
-                        scan['timestamp'] ?? 'Unknown Date',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 12),
-                        ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _formatTimestamp(scan['timestamp']), // FIXED: Use formatted timestamp
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 12),
+                            ),
+                          ),
+                          if (scan['confidence'] != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '${scan['confidence']}% confidence',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: _getConfidenceColor(scan['confidence']),
+                                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 10),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       trailing: IconButton(
                         icon: Icon(
@@ -146,5 +198,47 @@ class AllScansDialogContent extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildScanImage(Map<String, dynamic> scan, BuildContext context) {
+    final imageUrl = scan['imageUrl'];
+    final localImagePath = scan['localImagePath'];
+    final localImageExists = scan['localImageExists'] == true;
+
+    // Try local image first, then fallback to imageUrl
+    if (localImageExists && localImagePath != null) {
+      return Image.file(
+        File(localImagePath),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(context),
+      );
+    } else if (imageUrl != null) {
+      return Image.file(
+        File(imageUrl),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(context),
+      );
+    } else {
+      return _buildFallbackIcon(context);
+    }
+  }
+
+  Widget _buildFallbackIcon(BuildContext context) {
+    return Icon(
+      Icons.local_florist_rounded,
+      color: Theme.of(context).colorScheme.primary,
+      size: 24,
+    );
+  }
+
+  Color _getConfidenceColor(dynamic confidence) {
+    final double conf = double.tryParse(confidence.toString()) ?? 0;
+    if (conf >= 80) {
+      return Colors.green;
+    } else if (conf >= 60) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
   }
 }

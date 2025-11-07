@@ -2,7 +2,7 @@
     package="com.example.agriguard_fyp">
 
     <application
-        android:label="agriguard_fyp"
+        android:label="AgriGuard"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
@@ -31,7 +31,8 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Required to support Flutter's text processing plugin -->
     <queries>
         <intent>

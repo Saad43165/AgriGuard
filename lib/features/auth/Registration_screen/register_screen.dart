@@ -1,16 +1,20 @@
+import 'dart:io';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/login_prompt.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_form.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_header.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../auth_services.dart';
 import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
+import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_strings.dart';
 import '../../../core/widgets/app_themes.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -26,7 +30,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _farmSizeController = TextEditingController();
@@ -70,30 +75,33 @@ class _RegisterScreenState extends State<RegisterScreen>
       if (pickedFile != null) {
         setState(() => _imageFile = pickedFile);
         _showSnackBar(
-          message: 'Profile image selected successfully!',
+          message: 'Profile image selected successfully',
           isError: false,
         );
       }
     } catch (e) {
       HapticFeedback.heavyImpact();
-      _showSnackBar(message: 'Failed to select image', isError: true);
+      _showSnackBar(message: 'Failed to select image: $e', isError: true);
       debugPrint('Image picker error: $e');
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  Future<String?> _uploadProfileImage() async {
+  Future<String?> _uploadProfileImage(String uid) async {
     if (_imageFile == null) return null;
 
     try {
-      // TODO: Implement Firebase Storage upload here
-      // For now, we'll just return a placeholder
-      // You'll need to add firebase_storage package and implement actual upload
-      print('Image selected: ${_imageFile!.path}');
-      return 'https://example.com/profile-image.jpg'; // Replace with actual upload logic
+      final storageRef = FirebaseStorage.instance.ref('users/$uid/profile.jpg');
+      final uploadTask = storageRef.putFile(File(_imageFile!.path));
+      final snapshot = await uploadTask.whenComplete(() {});
+      return await snapshot.ref.getDownloadURL();
     } catch (e) {
-      print('Error uploading image: $e');
+      _showSnackBar(
+        message: 'Failed to upload profile image: $e',
+        isError: true,
+      );
+      debugPrint('Image upload error: $e');
       return null;
     }
   }
@@ -111,113 +119,257 @@ class _RegisterScreenState extends State<RegisterScreen>
       final farmSize = _farmSizeController.text.trim();
       final password = _passwordController.text.trim();
 
-      // Upload profile image if selected
-      final profileImageUrl = await _uploadProfileImage();
+      final auth = authService.value;
 
-      // 🔹 Call AuthService with profile image
-      final user = await authService.value.signUpWithDetails(
+      // Upload profile image first (if any)
+      final profileImageUrl = await _uploadProfileImage(FirebaseAuth.instance.currentUser?.uid ?? '');
+
+      // Use AuthService to handle the complete registration
+      final user = await auth.signUpWithDetails(
         fullName: name,
         email: email,
         password: password,
         phoneNumber: phone,
         location: location,
         farmSize: farmSize,
-        profileImageUrl: profileImageUrl, // Pass the image URL
+        profileImageUrl: profileImageUrl, // Pass the uploaded image URL
       );
 
       if (user != null) {
-        // Save to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_name', name);
-        if (profileImageUrl != null) {
-          await prefs.setString('user_image', profileImageUrl);
+        if (mounted) {
+          _showDetailedSnackBar(
+            title: 'Registration Successful',
+            message: 'Please check your email for a verification link. You must verify your email to log in.',
+            errorCode: 'email-verification-sent',
+          );
+          await Future.delayed(const Duration(milliseconds: 2000));
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+                (route) => false,
+          );
         }
-
-        if (!mounted) return;
-
-        _showSnackBar(
-          message: '✅ Account created successfully!',
-          isError: false,
-        );
-
-        // Navigate to home with proper data structure
-        Navigator.pushReplacementNamed(
-          context,
-          '/home',
-          arguments: {
-            'fullName': name,
-            'email': email,
-            'phoneNumber': phone, // Changed from 'phone' to 'phoneNumber'
-            'location': location,
-            'farmSize': farmSize, // Remove 'acres' suffix
-            'profileImageUrl': profileImageUrl, // Changed from 'imagePath'
-            'createdAt': DateTime.now(), // Changed from 'joinDate'
-            'scanCount': 0,
-            'crops': const [],
-          },
-        );
       } else {
-        _showSnackBar(
-          message: '❌ Registration failed. Please try again.',
-          isError: true,
-        );
+        if (mounted) {
+          _showErrorSnackBar('Registration failed. Please try again.');
+        }
       }
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-
-      String errorMessage;
-      if (e.code == 'email-already-in-use') {
-        errorMessage = '❌ Email already registered. Try logging in.';
-      } else if (e.code == 'weak-password') {
-        errorMessage = '❌ Password is too weak. Use at least 6 characters.';
-      } else {
-        errorMessage = '❌ ${e.message ?? "Registration failed"}';
+      if (mounted) {
+        String message = 'Registration failed';
+        String title = 'Error';
+        String errorCode = e.code;
+        switch (e.code) {
+          case 'email-already-in-use':
+            title = 'Email In Use';
+            message = 'This email is already registered. Please log in instead.';
+            break;
+          case 'invalid-email':
+            title = 'Invalid Email';
+            message = 'Please enter a valid email address.';
+            break;
+          case 'weak-password':
+            title = 'Weak Password';
+            message = 'Password is too weak. Use at least 6 characters.';
+            break;
+          case 'too-many-requests':
+            title = 'Too Many Attempts';
+            message = 'Too many registration attempts. Please try again later.';
+            break;
+          default:
+            title = 'Registration Error';
+            message = 'An error occurred: ${e.message}';
+        }
+        _showDetailedSnackBar(
+          title: title,
+          message: message,
+          errorCode: errorCode,
+        );
+        debugPrint('FirebaseAuth error: ${e.code} - ${e.message}');
       }
-
-      _showSnackBar(message: errorMessage, isError: true);
     } catch (e) {
-      if (!mounted) return;
-      _showSnackBar(
-        message: e.toString().contains('Failed to save user data')
-            ? '❌ Failed to save user data. Check your permissions.'
-            : '❌ Unexpected error: $e',
-        isError: true,
-      );
+      if (mounted) {
+        _showErrorSnackBar('An unexpected error occurred: $e');
+        debugPrint('Registration error: $e');
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-
   void _showSnackBar({required String message, required bool isError}) {
-    final theme = Theme.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: isError ? theme.colorScheme.onError : theme.colorScheme.onPrimary,
-            fontWeight: FontWeight.w600,
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle,
+              color:
+                  isError
+                      ? Theme.of(context).colorScheme.onError
+                      : Theme.of(context).colorScheme.onPrimary,
+              size: AppMeasurements.getResponsiveIconSizeSmall(context),
+            ),
+            SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      isError
+                          ? Theme.of(context).colorScheme.onError
+                          : Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: AppMeasurements.getResponsiveFontSize(
+                    context,
+                    baseSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor:
+            isError
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            AppMeasurements.getResponsiveBorderRadius(context),
           ),
         ),
-        backgroundColor: isError ? theme.colorScheme.error : theme.colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        action: isError && message.contains('Email already registered')
-            ? SnackBarAction(
-          label: 'Login',
-          textColor: theme.colorScheme.onPrimary,
-          onPressed: () {
-            Navigator.pushNamed(context, '/login');
-          },
-        )
-            : null,
+        duration: Duration(seconds: isError ? 4 : 2),
+        action:
+            isError && message.contains('already registered')
+                ? SnackBarAction(
+                  label: 'Login',
+                  textColor: Theme.of(context).colorScheme.onError,
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.login);
+                  },
+                )
+                : null,
       ),
     );
   }
 
+  void _showDetailedSnackBar({
+    required String title,
+    required String message,
+    required String errorCode,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  errorCode == 'email-verification-sent'
+                      ? Icons.check_circle
+                      : Icons.warning_amber_rounded,
+                  color:
+                      errorCode == 'email-verification-sent'
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onError,
+                  size: AppMeasurements.getResponsiveIconSizeSmall(context),
+                ),
+                SizedBox(
+                  width: AppMeasurements.getResponsiveSmallPadding(context),
+                ),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color:
+                        errorCode == 'email-verification-sent'
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.onError,
+                    fontWeight: FontWeight.bold,
+                    fontSize: AppMeasurements.getResponsiveFontSize(
+                      context,
+                      baseSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: AppMeasurements.getResponsiveSmallPadding(context),
+            ),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color:
+                    errorCode == 'email-verification-sent'
+                        ? Theme.of(
+                          context,
+                        ).colorScheme.onPrimary.withOpacity(0.9)
+                        : Theme.of(
+                          context,
+                        ).colorScheme.onError.withOpacity(0.9),
+                fontSize: AppMeasurements.getResponsiveFontSize(
+                  context,
+                  baseSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor:
+            errorCode == 'email-verification-sent'
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            AppMeasurements.getResponsiveBorderRadius(context),
+          ),
+        ),
+        duration: const Duration(seconds: 6),
+        action:
+            errorCode == 'email-verification-sent'
+                ? SnackBarAction(
+                  label: 'Resend Email',
+                  textColor: Theme.of(context).colorScheme.onPrimary,
+                  onPressed: () async {
+                    try {
+                      await FirebaseAuth.instance.currentUser
+                          ?.sendEmailVerification();
+                      _showSnackBar(
+                        message:
+                            'Verification email resent. Check your inbox or spam folder.',
+                        isError: false,
+                      );
+                    } catch (e) {
+                      _showErrorSnackBar('Failed to resend email: $e');
+                    }
+                  },
+                )
+                : errorCode == 'email-already-in-use'
+                ? SnackBarAction(
+                  label: 'Login',
+                  textColor: Theme.of(context).colorScheme.onError,
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.login);
+                  },
+                )
+                : null,
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    _showSnackBar(message: message, isError: true);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -228,46 +380,54 @@ class _RegisterScreenState extends State<RegisterScreen>
         title: ShaderMask(
           shaderCallback: (bounds) => LinearGradient(
             colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.secondary,
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
             ],
           ).createShader(bounds),
           child: Text(
             'Create Account',
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
+              fontSize: AppMeasurements.getResponsiveFontSize(
+                context,
+                baseSize: 24,
+              ),
             ),
           ),
         ),
         actions: [
           Container(
-            margin: EdgeInsets.only(right: AppMeasurements.smallPadding),
+            margin: EdgeInsets.only(right: smallPadding),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+              borderRadius: BorderRadius.circular(
+                AppMeasurements.getResponsiveBorderRadius(context),
+              ),
               gradient: LinearGradient(
                 colors: [
-                  theme.colorScheme.primary.withOpacity(0.2),
-                  theme.colorScheme.secondary.withOpacity(0.2),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  Theme.of(context).colorScheme.secondary.withOpacity(0.2),
                 ],
               ),
               border: Border.all(
-                color: theme.colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 width: 1,
               ),
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
+                borderRadius: BorderRadius.circular(
+                  AppMeasurements.getResponsiveBorderRadius(context),
+                ),
                 onTap: () {
                   HapticFeedback.lightImpact();
                   Navigator.pop(context);
                 },
-                child: const Padding(
-                  padding: EdgeInsets.all(12),
+                child: Padding(
+                  padding: EdgeInsets.all(smallPadding),
                   child: Icon(
                     Icons.arrow_back_rounded,
-                    size: 24,
+                    size: AppMeasurements.getResponsiveIconSizeSmall(context),
                   ),
                 ),
               ),
@@ -277,7 +437,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: themeProvider.isDarkMode
+          gradient: ThemeProvider.of(context).isDarkMode
               ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -293,26 +453,27 @@ class _RegisterScreenState extends State<RegisterScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              theme.colorScheme.background,
-              theme.colorScheme.background.withOpacity(0.9),
-              theme.colorScheme.background.withOpacity(0.8),
-              theme.colorScheme.background,
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(padding),
             child: applyAnimations(
               Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   RegisterHeader(
                     imageFile: _imageFile,
                     onImagePressed: _pickImage,
                     isLoading: _isLoading,
                   ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: padding),
                   RegisterForm(
                     formKey: _formKey,
                     nameController: _nameController,
@@ -325,15 +486,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                     obscurePassword: _obscurePassword,
                     obscureConfirmPassword: _obscureConfirmPassword,
                     onPasswordVisibilityChanged: () => setState(() => _obscurePassword = !_obscurePassword),
-                    onConfirmPasswordVisibilityChanged: () => setState(
-                            () => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    onConfirmPasswordVisibilityChanged: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: smallPadding),
                   RegisterButton(
                     onPressed: _isLoading ? () {} : _register,
                     isLoading: _isLoading,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: smallPadding),
                   const LoginPrompt(),
                 ],
               ),

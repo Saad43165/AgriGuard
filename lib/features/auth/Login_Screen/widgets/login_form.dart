@@ -30,7 +30,7 @@ class _LoginFormState extends State<LoginForm> {
     return Form(
       key: widget.formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'Email Address',
@@ -58,8 +58,28 @@ class _LoginFormState extends State<LoginForm> {
               ),
               filled: true,
               fillColor: Colors.transparent,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
             autofillHints: const [AutofillHints.email],
+            // Removed manual validator - Firebase will handle validation
           ),
           const SizedBox(height: AppMeasurements.defaultPadding),
           Text(
@@ -96,8 +116,28 @@ class _LoginFormState extends State<LoginForm> {
               ),
               filled: true,
               fillColor: Colors.transparent,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
             autofillHints: const [AutofillHints.password],
+            // Removed manual validator - Firebase will handle validation
           ),
           const SizedBox(height: AppMeasurements.smallPadding),
           Align(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ClearHistoryTile extends StatelessWidget {
   final VoidCallback? onHistoryCleared;
@@ -15,50 +16,74 @@ class ClearHistoryTile extends StatelessWidget {
   Future<void> _clearScanHistory(BuildContext context) async {
     HapticFeedback.heavyImpact();
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showError(context, 'You must be logged in to clear history.');
+      return;
+    }
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      // Clear scan history from SharedPreferences
-      await prefs.remove('scanHistory');
+      final batch = FirebaseFirestore.instance.batch();
+      final scansRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('scans');
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Scan history cleared!',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+      final snapshot = await scansRef.get();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Also reset scan count
+      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      batch.update(userRef, {
+        'scanCount': 0,
+        'lastScan': FieldValue.delete(),
+      });
+
+      await batch.commit();
+
+      // Success feedback
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Scan history cleared!',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            duration: const Duration(seconds: 2),
           ),
-          backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+        );
+      }
 
-      // Notify parent widget if needed
       onHistoryCleared?.call();
     } catch (e) {
-      // Show error message if something goes wrong
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to clear history: $e',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onError,
-            ),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (context.mounted) {
+        _showError(context, 'Failed to clear history: $e');
+      }
     }
+  }
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onError,
+          ),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -98,8 +123,11 @@ class ClearHistoryTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Clear History'),
-        content: const Text('Are you sure you want to delete all scan history? This action cannot be undone.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Clear Scan History?'),
+        content: const Text(
+          'This will permanently delete all your scan records. This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -112,9 +140,7 @@ class ClearHistoryTile extends StatelessWidget {
             },
             child: Text(
               'Clear',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-              ),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],

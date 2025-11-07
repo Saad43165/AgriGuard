@@ -88,22 +88,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final scans = await _scanService.fetchRecentScans();
       if (mounted) {
         setState(() {
-          _recentScans
-            ..clear()
-            ..addAll(scans);
-          _isFirstTimeUser = scans.isEmpty;
+          _recentScans.clear();
+          _recentScans.addAll(scans);
           _isLoading = false;
         });
-        await _saveFirstTimeUser();
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showSnackBar('Failed to load scans', true);
+        _showSnackBar('Failed to load scans: $e', true);
       }
     }
   }
 
+  Future<void> _deleteScan(String id) async {
+    try {
+      await _scanService.deleteScan(id);
+      setState(() {
+        _recentScans.removeWhere((scan) => scan['id'] == id);
+        _isFirstTimeUser = _recentScans.isEmpty;
+      });
+      if (mounted) _showSnackBar('Scan deleted!', false);
+    } catch (e) {
+      if (mounted) _showSnackBar('Failed to delete scan: $e', true);
+    }
+  }
   Future<void> _saveFirstTimeUser() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstTimeUser', _isFirstTimeUser);
@@ -159,22 +168,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _deleteScan(String id) async {
-    final index = _recentScans.indexWhere((scan) => scan['id'] == id);
-    if (index != -1) {
-      final scan = _recentScans[index];
-      await _deleteImageFile(scan['imageUrl'] as String?);
-
-      setState(() {
-        _recentScans.removeAt(index);
-        _isFirstTimeUser = _recentScans.isEmpty;
-      });
-
-      await _scanService.deleteScan(id);
-      await _saveFirstTimeUser();
-      if (mounted) _showSnackBar('Scan deleted!', false);
-    }
-  }
 
   Future<void> _deleteImageFile(String? imagePath) async {
     if (imagePath != null && !imagePath.startsWith('assets/')) {

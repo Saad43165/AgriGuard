@@ -4,7 +4,6 @@ import '../../../../../core/constants/app_measurements.dart';
 import '../../../Profile/presentation/Components/glass_card.dart';
 import 'image_Buttons.dart';
 
-
 class ActionButtons extends StatelessWidget {
   final bool isLoading;
   final bool isProcessing;
@@ -23,47 +22,56 @@ class ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16), // Reduced padding
       child: GlassCard(
         child: Padding(
-          padding: const EdgeInsets.all(AppMeasurements.defaultPadding),
+          padding: const EdgeInsets.all(12), // Reduced padding
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Evenly spread buttons
                 children: [
                   Expanded(
-                    child: ImageButton(
-                      icon: Icons.camera_alt_rounded,
-                      label: 'Camera',
-                      isPrimary: true,
-                      isEnabled: !isLoading,
-                      onPressed: () => onPickImage(ImageSource.camera),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4), // Small margin
+                      child: ImageButton(
+                        icon: Icons.camera_alt_rounded,
+                        label: 'Camera',
+                        isPrimary: true,
+                        isEnabled: !isLoading,
+                        onPressed: () => onPickImage(ImageSource.camera),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: AppMeasurements.smallPadding),
                   Expanded(
-                    child: ImageButton(
-                      icon: Icons.photo_library_rounded,
-                      label: 'Gallery',
-                      isPrimary: false,
-                      isEnabled: !isLoading,
-                      onPressed: () => onPickImage(ImageSource.gallery),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4), // Small margin
+                      child: ImageButton(
+                        icon: Icons.photo_library_rounded,
+                        label: 'Gallery',
+                        isPrimary: false,
+                        isEnabled: !isLoading,
+                        onPressed: () => onPickImage(ImageSource.gallery),
+                      ),
                     ),
                   ),
                 ],
               ),
-              if (imageFile != null) const SizedBox(height: AppMeasurements.defaultPadding),
+              if (imageFile != null) const SizedBox(height: 12), // Reduced spacing
               if (imageFile != null)
-                SizedBox(
+                Container(
                   width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 4), // Consistent margin
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                       onTap: isProcessing ? null : onProcess,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16), // Reduced padding
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
                           gradient: LinearGradient(
@@ -78,20 +86,20 @@ class ActionButtons extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Text(
                               'Analyzing...',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 15),
                               ),
                             ),
                           ],
@@ -104,13 +112,13 @@ class ActionButtons extends StatelessWidget {
                               size: AppMeasurements.getResponsiveIconSizeSmall(context),
                               color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'Analyze Leaf',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 15),
                               ),
                             ),
                           ],

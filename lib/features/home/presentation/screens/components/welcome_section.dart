@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/constants/app_measurements.dart';
 import 'glass_card.dart';
 
@@ -13,17 +14,32 @@ class WelcomeSection extends StatelessWidget {
     required this.scaleAnimation,
   });
 
-  Future<String> _getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_name') ?? 'User';
+  Stream<String> _userNameStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Stream.value('User');
+    }
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .map((doc) {
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['fullName'] ?? 'User';
+      }
+      return 'User';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _getUserName(),
+    return StreamBuilder<String>(
+      stream: _userNameStream(),
       builder: (context, snapshot) {
         final fullName = snapshot.data ?? 'User';
+
         return ScaleTransition(
           scale: scaleAnimation,
           child: GlassCard(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io'; // Make sure this import is added
 import '../../../../core/constants/app_routes.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import '../../../home/presentation/screens/components/scan_service.dart';
@@ -30,6 +31,15 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
   void initState() {
     super.initState();
     _initializeAnimations();
+
+    // Debug: Print the received scan data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('=== RESULTS SCREEN SCAN DATA ===');
+      debugPrint(widget.scanData.toString());
+      debugPrint('Image path: ${widget.scanData['imagePath']}');
+      debugPrint('Image URL: ${widget.scanData['imageUrl']}');
+      debugPrint('==============================');
+    });
   }
 
   void _initializeAnimations() {
@@ -57,7 +67,33 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final diagnosisResult = _getDiagnosisResult();
-    final hasImage = widget.scanData['imagePath'] != null || widget.scanData['imageUrl'] != null;
+
+    // FIX: Check both imageUrl and imagePath fields
+    final String? imagePath = widget.scanData['imagePath'] as String?;
+    final String? imageUrl = widget.scanData['imageUrl'] as String?;
+
+    // Debug print to see what we have
+    debugPrint('Building ResultsScreen:');
+    debugPrint('imagePath: $imagePath');
+    debugPrint('imageUrl: $imageUrl');
+
+    // FIX: Check if the file exists - prioritize imageUrl since that's what your data shows
+    String? actualImagePath = imageUrl ?? imagePath;
+    bool hasLocalImage = false;
+
+    if (actualImagePath != null && actualImagePath.isNotEmpty) {
+      try {
+        final file = File(actualImagePath);
+        hasLocalImage = file.existsSync();
+        debugPrint('Local image exists: $hasLocalImage at path: $actualImagePath');
+      } catch (e) {
+        debugPrint('Error checking file existence: $e');
+        hasLocalImage = false;
+      }
+    }
+
+    final bool hasNetworkImage = imageUrl != null && imageUrl.isNotEmpty && imageUrl.startsWith('http');
+    final bool hasImage = hasLocalImage || hasNetworkImage;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -106,33 +142,22 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                     const SizedBox(height: 16),
                     RecommendationsCard(recommendations: diagnosisResult.recommendations),
                     const SizedBox(height: 16),
-                    // In your ResultsScreen build method, change this:
-                    // In your ResultsScreen build method, change this:
-                    if (hasImage) ...[
-                      if ((widget.scanData['imagePath'] as String?)?.isNotEmpty ?? false) ...[
-                        ScannedImageSection(
-                          imagePath: widget.scanData['imagePath'] as String,
-                        )
-                      ] else if ((widget.scanData['imageUrl'] as String?)?.isNotEmpty ?? false) ...[
-                        Image.network(
-                          widget.scanData['imageUrl'] as String,
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                          const Center(child: Text('Failed to load image')),
-                        )
-                      ] else ...[
-                        Container(
-                          height: 200,
-                          child: const Center(child: Text('No image available')),
-                        )
-                      ],
-                      const SizedBox(height: 16),
-                    ],
 
-
-
+                    // FIX: Image display section - use the actual image path
+                    if (hasImage)
+                      Column(
+                        children: [
+                          if (hasLocalImage && actualImagePath != null)
+                            ScannedImageSection(imagePath: actualImagePath)
+                          else if (hasNetworkImage)
+                            _buildNetworkImage(imageUrl!, theme)
+                          else
+                            _buildNoImagePlaceholder(theme),
+                          const SizedBox(height: 16),
+                        ],
+                      )
+                    else
+                      _buildNoImagePlaceholder(theme),
 
                     const NextStepsCard(),
                   ],
@@ -145,6 +170,74 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
       floatingActionButton: FloatingActionButtons(
         onSave: () => _saveReport(context),
         onShare: () => _shareResults(context),
+      ),
+    );
+  }
+
+  Widget _buildNetworkImage(String imageUrl, ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      height: 250,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return _buildNoImagePlaceholder(theme);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoImagePlaceholder(ThemeData theme) {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.photo_library_rounded,
+              size: 48,
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No image available',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -187,8 +280,8 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
             content: const Text('Report saved successfully'),
             behavior: SnackBarBehavior.fixed,
             margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height * 0.1, // Add margin if needed
-            ),// Change from floating to fixed
+              bottom: MediaQuery.of(context).size.height * 0.1,
+            ),
             backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           ),
         );

@@ -2,10 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Profile/presentation/Components/floating_orb.dart';
+import '../../home/presentation/screens/components/scan_service.dart';
 import 'components/app_bar_content.dart';
 import 'components/image_section.dart';
 import 'components/action_buttons.dart';
@@ -98,9 +99,7 @@ class _CaptureScreenState extends State<CaptureScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Image captured successfully!'),
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.secondary.withOpacity(0.9),
+                backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
               ),
             );
           }
@@ -112,10 +111,8 @@ class _CaptureScreenState extends State<CaptureScreen>
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Failed to pick image'),
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.error.withOpacity(0.9),
+              content: Text('Failed to pick image: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
             ),
           );
         }
@@ -133,45 +130,64 @@ class _CaptureScreenState extends State<CaptureScreen>
     setState(() => _isProcessing = true);
 
     try {
-      Directory appDir;
-      try {
-        appDir = await getApplicationDocumentsDirectory();
-      } catch (e) {
-        debugPrint('Failed to get documents directory: $e');
-        appDir = await getTemporaryDirectory();
+      // Get current user
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated. Please log in.');
       }
 
-      final fileName = 'leaf_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final permanentFile = File('${appDir.path}/$fileName');
+      // Convert XFile to File
+      final imageFile = File(_imageFile!.path);
 
-      await File(_imageFile!.path).copy(permanentFile.path);
-
-      if (!await permanentFile.exists()) {
-        throw Exception('Failed to save image to storage');
+      // Check if file exists
+      if (!await imageFile.exists()) {
+        throw Exception('Selected image file does not exist');
       }
 
+      // Create scan data
+      final scanData = {
+        'status': 'pending',
+        'diagnosis': null,
+        'confidence': null,
+        'treatment': null,
+        'cropType': null,
+      };
+
+      // Save scan using ScanService (will store image locally)
+      await ScanService().saveScan(scanData, imageFile: imageFile);
+
+      // Navigate to edit screen with the local file path
       if (mounted) {
         Navigator.pushNamed(
           context,
           AppRoutes.imageEdit,
-          arguments: {'imagePath': permanentFile.path},
+          arguments: {
+            'imagePath': _imageFile!.path, // Use original path for immediate access
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'isLocalImage': true, // Mark as local image
+          },
         );
       }
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Image saved locally!'),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+          ),
+        );
+      }
+
     } catch (e) {
       if (mounted) {
         HapticFeedback.heavyImpact();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Failed to process image'),
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.error.withOpacity(0.9),
-              ),
-            );
-          }
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to process image: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
+          ),
+        );
         debugPrint('Image processing error: $e');
       }
     } finally {
@@ -190,9 +206,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Image cleared. Ready for new capture.'),
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.secondary.withOpacity(0.9),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
           ),
         );
       }
@@ -223,20 +237,19 @@ class _CaptureScreenState extends State<CaptureScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors:
-                Theme.of(context).brightness == Brightness.dark
-                    ? [
-                      const Color(0xFF0F0F23),
-                      const Color(0xFF16213E),
-                      const Color(0xFF1A1A2E),
-                      const Color(0xFF0F0F23),
-                    ]
-                    : [
-                      Theme.of(context).colorScheme.background,
-                      Theme.of(context).colorScheme.background.withOpacity(0.9),
-                      Theme.of(context).colorScheme.background.withOpacity(0.8),
-                      Theme.of(context).colorScheme.background,
-                    ],
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
+            ]
+                : [
+              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.background,
+            ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
@@ -244,7 +257,7 @@ class _CaptureScreenState extends State<CaptureScreen>
           children: [
             ...List.generate(
               8,
-              (index) => FloatingOrb(
+                  (index) => FloatingOrb(
                 index: index,
                 maxWidth: MediaQuery.of(context).size.width,
                 fadeController: _fadeController,

@@ -25,7 +25,7 @@ class ImageButton extends StatelessWidget {
         onTap: isEnabled ? onPressed : null,
         borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12), // Reduced padding
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
             gradient: LinearGradient(
@@ -46,9 +46,10 @@ class ImageButton extends StatelessWidget {
             ),
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10), // Reduced padding
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -65,11 +66,11 @@ class ImageButton extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                  size: AppMeasurements.getResponsiveIconSizeMedium(context) * 0.9, // Slightly smaller
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: AppMeasurements.smallPadding),
+              const SizedBox(height: 6), // Reduced spacing
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -77,8 +78,9 @@ class ImageButton extends StatelessWidget {
                   color: isPrimary
                       ? Theme.of(context).colorScheme.onSurface
                       : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 13), // Smaller font
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

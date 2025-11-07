@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart'; // Add this import
 import '../../../../../core/constants/app_measurements.dart';
 import '../../../../HelpSupport/presentation/widgets/glass_card.dart';
 
@@ -27,6 +29,52 @@ class ScanCard extends StatelessWidget {
     } else {
       return Colors.red;
     }
+  }
+
+  // Add this method to format timestamp
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown Date';
+
+    try {
+      // If it's already a string, return it
+      if (timestamp is String) return timestamp;
+
+      // If it's a Timestamp object, convert to DateTime and format
+      if (timestamp is Timestamp) {
+        return DateFormat('MMM dd, yyyy - HH:mm').format(timestamp.toDate());
+      }
+
+      // If it's a DateTime object, format it directly
+      if (timestamp is DateTime) {
+        return DateFormat('MMM dd, yyyy - HH:mm').format(timestamp);
+      }
+
+      // For any other type, try to convert to string
+      return timestamp.toString();
+    } catch (e) {
+      return 'Invalid Date';
+    }
+  }
+
+  // Alternative safe method if you're not sure about the timestamp type
+  String _safeTimestampToString(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown Date';
+
+    // Try to detect and handle Timestamp type dynamically
+    if (timestamp.runtimeType.toString().contains('Timestamp')) {
+      try {
+        // Use reflection-like approach to call toDate() if it exists
+        final dynamic date = timestamp.toDate();
+        if (date is DateTime) {
+          return DateFormat('MMM dd, yyyy').format(date);
+        }
+      } catch (e) {
+        // Fall through to string conversion
+      }
+    }
+
+    // Final fallback
+    return timestamp.toString();
   }
 
   @override
@@ -106,8 +154,9 @@ class ScanCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
+                            // FIXED: Use the timestamp formatting method
                             Text(
-                              scan['timestamp'] ?? 'Unknown Date',
+                              _formatTimestamp(scan['timestamp']),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                                 fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 12),

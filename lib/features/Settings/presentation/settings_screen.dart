@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart'; // If using Provider (optional)
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/widgets/app_themes.dart';
 import 'Tiles/actions_tile.dart';
 import 'Tiles/app_version_tile.dart';
 import 'Tiles/clear_history_tile.dart';
+import 'Tiles/delete_acount_tile.dart';
 import 'components/floating_orb.dart';
 import 'components/glass_card.dart';
 import 'components/settings_header.dart';
@@ -70,11 +75,13 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-      _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-      _selectedLanguage = prefs.getString('selectedLanguage') ?? 'English';
-    });
+    if (mounted) {
+      setState(() {
+        _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+        _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
+        _selectedLanguage = prefs.getString('selectedLanguage') ?? 'English';
+      });
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -141,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SettingsHeader(title: 'Settings',),
+                          const SettingsHeader(title: 'Settings'),
                           SizedBox(height: padding * 2),
                           _buildSettings(),
                           SizedBox(height: padding * 2),
@@ -199,32 +206,18 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             ),
             SizedBox(height: smallPadding),
 
-            // Language Selection (if needed)
-            // DropdownButtonFormField(
-            //   value: _selectedLanguage,
-            //   items: ['English', 'Spanish', 'French'].map((String value) {
-            //     return DropdownMenuItem<String>(
-            //       value: value,
-            //       child: Text(value),
-            //     );
-            //   }).toList(),
-            //   onChanged: (newValue) {
-            //     setState(() {
-            //       _selectedLanguage = newValue!;
-            //       _saveSettings();
-            //     });
-            //   },
-            // ),
-            // SizedBox(height: smallPadding),
-
             // App Version
             const AppVersionTile(),
             SizedBox(height: smallPadding),
 
             // Clear History
-// Clear History
             const ClearHistoryTile(),
-            SizedBox(height: smallPadding),          ],
+            SizedBox(height: smallPadding),
+
+            // Delete Account
+            const DeleteAccountTile(),
+            SizedBox(height: smallPadding),
+          ],
         ),
       ),
     );
