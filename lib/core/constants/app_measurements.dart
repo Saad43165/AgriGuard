@@ -13,6 +13,8 @@ class AppMeasurements {
   static const double scanCardHeight = 200.0;
   static const double scanImageHeight = 100.0;
 
+  static double mediumPadding = 20.0;
+
   // Responsive sizing methods
   static double getResponsivePadding(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;

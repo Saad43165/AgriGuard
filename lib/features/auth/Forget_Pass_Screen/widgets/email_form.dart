@@ -11,7 +11,7 @@ class EmailForm extends StatelessWidget {
   const EmailForm({
     super.key,
     required this.formKey,
-    required this.emailController,
+    required this.emailController, Future<void> Function()? onSubmit,
   });
 
   @override

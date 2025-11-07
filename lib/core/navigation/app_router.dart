@@ -10,6 +10,7 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/edit/presentation/image_edit_screen.dart';
+import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 
@@ -17,43 +18,30 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final args = settings.arguments as Map<String, dynamic>?;
 
-    Route<dynamic> buildAnimatedRoute({
-      required Widget page,
-      Duration transitionDuration = const Duration(milliseconds: 500),
-    }) {
+    // Light & fast: tiny slide + fade (200ms)
+    Route<dynamic> buildLightRoute(Widget page) {
       return PageRouteBuilder(
         settings: settings,
-        pageBuilder: (context, animation, secondaryAnimation) => page,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const beginSlide = Offset(-1.0, 0.0);
-          const endSlide = Offset.zero;
-          const curve = Curves.easeInOut;
-          var slideTween = Tween(
-            begin: beginSlide,
-            end: endSlide,
-          ).chain(CurveTween(curve: curve));
-          var slideAnimation = animation.drive(slideTween);
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (context, animation, _) => page,
+        transitionsBuilder: (context, animation, _, child) {
+          // Very subtle slide from right
+          final slide = Tween<Offset>(
+            begin: const Offset(0.3, 0.0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
 
-          var fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-          );
-
-          var scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: const Interval(0.0, 0.75, curve: Curves.elasticOut),
-            ),
-          );
+          // Quick fade
+          final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
 
           return FadeTransition(
-            opacity: fadeAnimation,
-            child: ScaleTransition(
-              scale: scaleAnimation,
-              child: SlideTransition(position: slideAnimation, child: child),
+            opacity: fade,
+            child: SlideTransition(
+              position: slide,
+              child: child,
             ),
           );
         },
-        transitionDuration: transitionDuration,
       );
     }
 
@@ -63,51 +51,63 @@ class AppRouter {
           builder: (_) => const SplashScreen(),
           settings: settings,
         );
+
+      case AppRoutes.onboard:
+        return buildLightRoute(const OnboardingScreen());
+
       case AppRoutes.login:
-        return buildAnimatedRoute(page: const LoginScreen());
+        return buildLightRoute(const LoginScreen());
+
       case AppRoutes.register:
-        return buildAnimatedRoute(page: const RegisterScreen());
+        return buildLightRoute(const RegisterScreen());
+
       case AppRoutes.forgotPassword:
-        return buildAnimatedRoute(page: const ForgotPasswordScreen());
+        return buildLightRoute(const ForgotPasswordScreen());
+
       case AppRoutes.home:
-        return buildAnimatedRoute(page: HomeScreen(userData: args));
+        return buildLightRoute(HomeScreen(userData: args));
+
       case AppRoutes.profile:
-        return buildAnimatedRoute(
-          page: ProfileScreen(
-            // No need to pass controllers if loading from Firestore
+        return buildLightRoute(
+          ProfileScreen(
             userData: args is Map<String, dynamic> ? args : null,
           ),
         );
+
       case AppRoutes.history:
-        return buildAnimatedRoute(page: const HistoryScreen());
+        return buildLightRoute(const HistoryScreen());
+
       case AppRoutes.scan:
-        return buildAnimatedRoute(page: const CaptureScreen());
+        return buildLightRoute(const CaptureScreen());
+
       case AppRoutes.imageEdit:
         final imagePath = args?['imagePath'] as String? ?? '';
         if (imagePath.isEmpty) {
-          return MaterialPageRoute(
-            builder:
-                (_) => const Scaffold(
-                  body: Center(child: Text('No image path provided')),
-                ),
+          return buildLightRoute(
+            const Scaffold(
+              body: Center(child: Text('No image path provided')),
+            ),
           );
         }
-        return buildAnimatedRoute(page: ImageEditScreen(imagePath: imagePath));
+        return buildLightRoute(ImageEditScreen(imagePath: imagePath));
+
       case AppRoutes.results:
         final scanData = args?['scanData'] as Map<String, dynamic>? ?? {};
-        return buildAnimatedRoute(page: ResultsScreen(scanData: scanData));
+        return buildLightRoute(ResultsScreen(scanData: scanData));
+
       case AppRoutes.settings:
-        return buildAnimatedRoute(page: const SettingsScreen());
+        return buildLightRoute(const SettingsScreen());
+
       case AppRoutes.help:
-        return buildAnimatedRoute(page: const HelpAndSupportScreen());
+        return buildLightRoute(const HelpAndSupportScreen());
+
       default:
-        return MaterialPageRoute(
-          builder:
-              (_) => Scaffold(
-                body: Center(
-                  child: Text('No route defined for ${settings.name}'),
-                ),
-              ),
+        return buildLightRoute(
+          Scaffold(
+            body: Center(
+              child: Text('No route defined for ${settings.name}'),
+            ),
+          ),
         );
     }
   }

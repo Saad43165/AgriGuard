@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../../core/widgets/app_themes.dart';
 import 'constants/app_colors.dart';
 import 'widgets/action_button.dart';
 import 'widgets/app_bar.dart';
@@ -14,7 +14,6 @@ import 'widgets/glass_card.dart';
 import 'widgets/header_section.dart';
 import '/auth_services.dart';
 
-/// Screen for handling password reset functionality.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -27,7 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
-  late AuthService _authService;
+  late final AuthService _authService;
 
   @override
   void initState() {
@@ -43,216 +42,144 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     super.dispose();
   }
 
-  /// Handles sending a password reset email.
-  Future<void> _resetPassword(String email) async {
+  // ──────────────────────────────────────────────────────────────
+  //  RESET PASSWORD
+  // ──────────────────────────────────────────────────────────────
+  Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
 
     setState(() => _isLoading = true);
 
     try {
       await _authService.resetPassword(email);
-      if (mounted) {
-        _showSuccessSnackBar(AppStrings.resetLinkSent);
-        await Future.delayed(const Duration(milliseconds: 2000));
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.login,
-              (route) => false,
-        );
-      }
+
+      if (!mounted) return;
+
+      _showSuccess(AppStrings.resetLinkSent);
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        String message = 'Password reset failed';
-        String title = 'Error';
-        String errorCode = e.code;
-
-        switch (e.code) {
-          case 'user-not-found':
-            title = 'User Not Found';
-            message = 'No account found with this email address.';
-            break;
-          case 'invalid-email':
-            title = 'Invalid Email';
-            message = 'Please enter a valid email address.';
-            break;
-          case 'too-many-requests':
-            title = 'Too Many Attempts';
-            message = 'Too many reset attempts. Please try again later.';
-            break;
-          default:
-            title = 'Reset Error';
-            message = 'An error occurred: ${e.message}';
-        }
-
-        _showDetailedSnackBar(
-          title: title,
-          message: message,
-          errorCode: errorCode,
-        );
-        debugPrint('Password reset error: ${e.code} - ${e.message}');
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorSnackBar('An unexpected error occurred: $e');
-        debugPrint('Password reset error: $e');
-      }
+      if (!mounted) return;
+      _handleError(e);
+    } catch (_) {
+      if (!mounted) return;
+      _showError(AppStrings.errorUnexpected);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  /// Displays a success snackbar.
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              Icons.check_circle,
-              color: Theme.of(context).colorScheme.onPrimary,
-              size: AppMeasurements.getResponsiveIconSizeSmall(context),
-            ),
-            SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppMeasurements.getResponsiveBorderRadius(context),
-          ),
-        ),
-        duration: const Duration(seconds: 4),
+  // ──────────────────────────────────────────────────────────────
+  //  ERROR HANDLING
+  // ──────────────────────────────────────────────────────────────
+  void _handleError(FirebaseAuthException e) {
+    final (title, message, action) = switch (e.code) {
+      'user-not-found' => (
+      'No Account',
+      'No user found with this email.',
+      SnackBarAction(
+        label: 'Sign Up',
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
       ),
-    );
+      ),
+      'invalid-email' => (
+      'Invalid Email',
+      'Please enter a valid email address.',
+      null,
+      ),
+      'too-many-requests' => (
+      'Too Many Tries',
+      'Please wait a few minutes before trying again.',
+      null,
+      ),
+      _ => (
+      'Reset Failed',
+      e.message ?? 'Try again later.',
+      null,
+      ),
+    };
+
+    _showDetailedError(title, message, action);
   }
 
-  /// Displays an error snackbar.
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: Theme.of(context).colorScheme.onError,
-              size: AppMeasurements.getResponsiveIconSizeSmall(context),
-            ),
-            SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onError,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppMeasurements.getResponsiveBorderRadius(context),
-          ),
-        ),
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
+  // ──────────────────────────────────────────────────────────────
+  //  SNACKBARS
+  // ──────────────────────────────────────────────────────────────
+  void _showSuccess(String msg) => ScaffoldMessenger.of(context).showSnackBar(
+    _snack(msg, Theme.of(context).colorScheme.primary, Icons.check_circle),
+  );
 
-  /// Displays a detailed error snackbar with action buttons.
-  void _showDetailedSnackBar({
-    required String title,
-    required String message,
-    required String errorCode,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
+  void _showError(String msg) => ScaffoldMessenger.of(context).showSnackBar(
+    _snack(msg, Theme.of(context).colorScheme.error, Icons.error_outline),
+  );
+
+  void _showDetailedError(String title, String msg, SnackBarAction? action) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.warning_amber_rounded,
+                color: Theme.of(context).colorScheme.onError,
+                size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+            const SizedBox(width: 8),
+            Text(title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: Theme.of(context).colorScheme.onError,
-                  size: AppMeasurements.getResponsiveIconSizeSmall(context),
-                ),
-                SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onError,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
-            Text(
-              message,
+                  fontWeight: FontWeight.bold,
+                )),
+          ]),
+          const SizedBox(height: 4),
+          Text(msg,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onError.withOpacity(0.9),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppMeasurements.getResponsiveBorderRadius(context),
-          ),
-        ),
-        duration: const Duration(seconds: 6),
-        action: _getSnackBarAction(errorCode),
+              )),
+        ],
       ),
-    );
+      backgroundColor: Theme.of(context).colorScheme.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context))),
+      duration: const Duration(seconds: 6),
+      action: action,
+    ));
   }
 
-  SnackBarAction? _getSnackBarAction(String errorCode) {
-    switch (errorCode) {
-      case 'user-not-found':
-        return SnackBarAction(
-          label: 'Sign Up',
-          textColor: Theme.of(context).colorScheme.onError,
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.register);
-          },
-        );
+  SnackBar _snack(String msg, Color bg, IconData icon) => SnackBar(
+    content: Row(children: [
+      Icon(icon,
+          color: Theme.of(context).colorScheme.onPrimary,
+          size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+      const SizedBox(width: 8),
+      Expanded(
+          child: Text(msg,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary,
+                fontWeight: FontWeight.w500,
+              ))),
+    ]),
+    backgroundColor: bg,
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context))),
+    duration: const Duration(seconds: 4),
+  );
 
-      case 'too-many-requests':
-        return SnackBarAction(
-          label: 'Try Later',
-          textColor: Theme.of(context).colorScheme.onError,
-          onPressed: () {
-            _showSuccessSnackBar('Please wait 15-30 minutes before trying again.');
-          },
-        );
-
-      default:
-        return null;
-    }
-  }
-
+  // ──────────────────────────────────────────────────────────────
+  //  BUILD
+  // ──────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
     final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -268,105 +195,91 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: ThemeProvider.of(context).isDarkMode
-                ? AppColors.darkGradient
-                : AppColors.lightGradient,
+            colors: isDark ? AppColors.darkGradient : AppColors.lightGradient,
             stops: AppColors.gradientStops,
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.all(padding),
-            child: applyAnimations(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const HeaderSection(),
-                  SizedBox(height: padding),
-                  Text(
-                    AppStrings.resetPassword,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppMeasurements.getResponsiveFontSize(
-                        context,
-                        baseSize: 24,
-                      ),
-                    ),
-                    textAlign: TextAlign.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const HeaderSection(),
+                SizedBox(height: padding),
+                Text(
+                  AppStrings.resetPassword,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
                   ),
-                  SizedBox(height: smallPadding),
-                  Text(
-                    AppStrings.resetPasswordSubtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
-                      fontSize: AppMeasurements.getResponsiveFontSize(
-                        context,
-                        baseSize: 14,
-                      ),
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: smallPadding),
+                Text(
+                  AppStrings.resetPasswordSubtitle,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
                   ),
-                  SizedBox(height: padding),
-                  GlassCard(
-                    borderRadius: AppMeasurements.getResponsiveBorderRadius(context),
-                    padding: EdgeInsets.all(padding),
-                    child: EmailForm(
-                      formKey: _formKey,
-                      emailController: _emailController,
-                    ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: padding * 1.5),
+
+                // Email Form inside GlassCard
+                GlassCard(
+                  borderRadius: AppMeasurements.getResponsiveBorderRadius(context),
+                  padding: EdgeInsets.all(padding),
+                  child: EmailForm(
+                    formKey: _formKey,
+                    emailController: _emailController,
+                    onSubmit: _isLoading ? null : _resetPassword,
                   ),
-                  SizedBox(height: padding),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: padding),
-                    child: ActionButton(
-                      isLoading: _isLoading,
-                      onPressed: () => _resetPassword(_emailController.text.trim()),
-                      label: AppStrings.sendResetLink,
-                      icon: Icons.email_rounded,
-                      loadingLabel: 'Sending...',
-                    ),
+                ),
+
+                SizedBox(height: padding),
+
+                // Send Button
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: padding),
+                  child: ActionButton(
+                    isLoading: _isLoading,
+                    onPressed: _resetPassword,
+                    label: AppStrings.sendResetLink,
+                    icon: Icons.send_rounded,
+                    loadingLabel: 'Sending...',
                   ),
-                  SizedBox(height: smallPadding),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                      },
-                      child: RichText(
-                        text: TextSpan(
-                          text: 'Remembered your password? ',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                            fontSize: AppMeasurements.getResponsiveFontSize(
-                              context,
-                              baseSize: 14,
+                ),
+
+                SizedBox(height: smallPadding),
+
+                // Back to Login
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                        ),
+                        children: [
+                          const TextSpan(text: 'Remembered your password? '),
+                          TextSpan(
+                            text: AppStrings.login,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          children: [
-                            TextSpan(
-                              text: AppStrings.login,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: AppMeasurements.getResponsiveFontSize(
-                                  context,
-                                  baseSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

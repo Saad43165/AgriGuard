@@ -102,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   void _navigateToNext() async {
     await Future.delayed(const Duration(seconds: 4));
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, '/onboard');
     }
   }
 

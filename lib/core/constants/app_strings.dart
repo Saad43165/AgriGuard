@@ -184,4 +184,6 @@ class AppStrings {
   static const String results = 'Results';
 
   static const String done = 'Done';
+
+  static String errorUnexpected = 'Unexpected Error';
 }

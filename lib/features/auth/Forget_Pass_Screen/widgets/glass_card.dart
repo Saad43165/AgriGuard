@@ -2,21 +2,24 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_measurements.dart';
 
-/// A reusable glassmorphic card widget with blur and gradient effects.
+/// Glassmorphic card with blur + subtle gradient.
 class GlassCard extends StatelessWidget {
   final Widget child;
   final double borderRadius;
-  final EdgeInsets padding;
+  final EdgeInsets? padding;   // optional padding (inside the blur)
 
   const GlassCard({
     super.key,
     required this.child,
     required this.borderRadius,
-    required this.padding,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.onSurface;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -24,17 +27,14 @@ class GlassCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            surface.withOpacity(0.12),
+            surface.withOpacity(0.06),
           ],
         ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: surface.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
+            color: theme.colorScheme.background.withOpacity(0.3),
             blurRadius: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
             offset: const Offset(0, 8),
           ),
@@ -43,9 +43,9 @@ class GlassCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Padding(
-            padding: padding,
+            padding: padding ?? EdgeInsets.zero,
             child: child,
           ),
         ),

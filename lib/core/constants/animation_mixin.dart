@@ -1,51 +1,32 @@
 import 'package:flutter/material.dart';
 
 mixin ScreenAnimationMixin<T extends StatefulWidget> on State<T>, TickerProviderStateMixin<T> {
-  late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late AnimationController _slideController;
+  late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
 
   void initializeAnimations() {
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 375),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(-1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    // Start animation after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fadeController.forward();
-        _scaleController.forward();
-        _slideController.forward();
-      }
+      if (mounted) _controller.forward();
     });
   }
 
   void disposeAnimations() {
-    _fadeController.dispose();
-    _scaleController.dispose();
-    _slideController.dispose();
+    _controller.dispose();
   }
 
   Widget applyAnimations(Widget child) {
@@ -53,10 +34,7 @@ mixin ScreenAnimationMixin<T extends StatefulWidget> on State<T>, TickerProvider
       opacity: _fadeAnimation,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: child,
-        ),
+        child: child,
       ),
     );
   }

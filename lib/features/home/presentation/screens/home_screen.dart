@@ -233,7 +233,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
                       ScanButton(
-                        pulseAnimation: _pulseAnimation,
                       ),
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),

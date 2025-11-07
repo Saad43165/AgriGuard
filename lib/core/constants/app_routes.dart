@@ -11,4 +11,5 @@ class AppRoutes {
   static const String imageEdit = '/image-edit';
   static const String settings = '/settings';
   static const String help = '/help-and-support';
+  static const String onboard = '/onboard';
 }

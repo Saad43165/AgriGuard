@@ -1,19 +1,19 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
-/// Global notifier – keep it if the rest of your app already uses it.
+/// Global notifier – keep if used elsewhere
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // -----------------------------------------------------------------
-  //  BASIC GETTERS
+  //  GETTERS
   // -----------------------------------------------------------------
-  User? get currentUser => _firebaseAuth.currentUser;
-  Stream<User?> get user => _firebaseAuth.authStateChanges();
+  User? get currentUser => _auth.currentUser;
+  Stream<User?> get user => _auth.authStateChanges();
 
   // -----------------------------------------------------------------
   //  SIGN-UP
@@ -27,21 +27,23 @@ class AuthService {
     String? farmSize,
     String? profileImageUrl,
   }) async {
+    _validateEmail(email);
+    _validatePassword(password);
+    _validateName(fullName);
+
     try {
-      final result = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
+      final result = await _auth.createUserWithEmailAndPassword(
+        email: email.trim(),
         password: password,
       );
 
-      final user = result.user;
-      if (user == null) return null;
-
+      final user = result.user!;
       await user.updateDisplayName(fullName);
       await user.sendEmailVerification();
 
       await _firestore.collection('users').doc(user.uid).set({
         'fullName': fullName,
-        'email': email,
+        'email': email.trim(),
         'phoneNumber': phoneNumber ?? '',
         'location': location ?? '',
         'farmSize': farmSize ?? '',
@@ -52,13 +54,12 @@ class AuthService {
         'lastScan': null,
         'lastUpdated': FieldValue.serverTimestamp(),
         'crops': <String>[],
-      });
+      }, SetOptions(merge: true));
 
       debugPrint('User registered: ${user.uid}');
       return user;
     } on FirebaseAuthException catch (e) {
-      debugPrint('Sign-up error: ${e.message}');
-      throw AuthException(e.message ?? 'Sign up failed');
+      throw _mapAuthError(e, isSignUp: true);
     }
   }
 
@@ -66,25 +67,25 @@ class AuthService {
   //  SIGN-IN
   // -----------------------------------------------------------------
   Future<User?> signInWithEmailAndPassword(String email, String password) async {
+    _validateEmail(email);
+    _validatePassword(password);
+
     try {
-      final result = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
+      final result = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
         password: password,
       );
 
-      final user = result.user;
-      if (user == null) return null;
-
+      final user = result.user!;
       await user.reload();
-      final refreshed = _firebaseAuth.currentUser;
-      if (refreshed != null && !refreshed.emailVerified) {
+
+      if (!user.emailVerified) {
         throw AuthException('Please verify your email before logging in.');
       }
 
       return user;
     } on FirebaseAuthException catch (e) {
-      debugPrint('Sign-in error: ${e.message}');
-      throw AuthException(e.message ?? 'Sign in failed');
+      throw _mapAuthError(e);
     }
   }
 
@@ -92,10 +93,9 @@ class AuthService {
   //  EMAIL VERIFICATION
   // -----------------------------------------------------------------
   Future<void> resendEmailVerification() async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null || user.emailVerified) {
-      throw AuthException('No verification needed or user not found.');
-    }
+    final user = _auth.currentUser;
+    if (user == null) throw AuthException('No user logged in.');
+    if (user.emailVerified) throw AuthException('Email already verified.');
 
     await user.sendEmailVerification();
     debugPrint('Verification email resent to ${user.email}');
@@ -105,8 +105,13 @@ class AuthService {
   //  PASSWORD RESET
   // -----------------------------------------------------------------
   Future<void> resetPassword(String email) async {
-    await _firebaseAuth.sendPasswordResetEmail(email: email);
-    debugPrint('Password reset email sent to $email');
+    _validateEmail(email);
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      debugPrint('Password reset email sent to $email');
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthError(e);
+    }
   }
 
   // -----------------------------------------------------------------
@@ -119,11 +124,10 @@ class AuthService {
     String? farmSize,
     String? profileImageUrl,
   }) async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null) return;
+    final user = _auth.currentUser;
+    if (user == null) throw AuthException('No user logged in.');
 
-    final Map<String, dynamic> updateData = {};
-
+    final updateData = <String, dynamic>{};
     if (fullName != null) {
       await user.updateDisplayName(fullName);
       updateData['fullName'] = fullName;
@@ -133,13 +137,13 @@ class AuthService {
     if (farmSize != null) updateData['farmSize'] = farmSize;
     if (profileImageUrl != null) updateData['profileImageUrl'] = profileImageUrl;
 
-    updateData['lastUpdated'] = FieldValue.serverTimestamp();
-
-    await _firestore.collection('users').doc(user.uid).update(updateData);
-    debugPrint('Profile updated');
+    if (updateData.isNotEmpty) {
+      updateData['lastUpdated'] = FieldValue.serverTimestamp();
+      await _firestore.collection('users').doc(user.uid).set(updateData, SetOptions(merge: true));
+    }
   }
 
-  // Shortcut helpers
+  // Shortcuts
   Future<void> updatePhoneNumber(String v) => updateProfile(phoneNumber: v);
   Future<void> updateLocation(String v) => updateProfile(location: v);
   Future<void> updateFarmSize(String v) => updateProfile(farmSize: v);
@@ -147,7 +151,7 @@ class AuthService {
   Future<void> changeUsername(String v) => updateProfile(fullName: v);
 
   // -----------------------------------------------------------------
-  //  USER DATA FETCH
+  //  USER DATA
   // -----------------------------------------------------------------
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     final snap = await _firestore.collection('users').doc(uid).get();
@@ -155,7 +159,7 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>?> getCurrentUserData() async {
-    final uid = _firebaseAuth.currentUser?.uid;
+    final uid = _auth.currentUser?.uid;
     return uid != null ? getUserData(uid) : null;
   }
 
@@ -166,25 +170,31 @@ class AuthService {
     required String cropType,
     required Map<String, dynamic> scanData,
   }) async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null) return;
+    final user = _auth.currentUser;
+    if (user == null) throw AuthException('No user logged in.');
 
-    await _firestore
+    final scanRef = _firestore
         .collection('users')
         .doc(user.uid)
         .collection('scans')
-        .add({
-      'cropType': cropType,
-      'scanData': scanData,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+        .doc();
 
-    await _firestore.collection('users').doc(user.uid).update({
-      'scanCount': FieldValue.increment(1),
-      'lastScan': FieldValue.serverTimestamp(),
-    });
+    await _firestore.runTransaction((tx) async {
+      tx.set(scanRef, {
+        'cropType': cropType,
+        'scanData': scanData,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
 
-    debugPrint('Scan saved');
+      tx.set(
+        _firestore.collection('users').doc(user.uid),
+        {
+          'scanCount': FieldValue.increment(1),
+          'lastScan': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    });
   }
 
   Future<List<Map<String, dynamic>>> getScanHistory(String uid) async {
@@ -194,7 +204,6 @@ class AuthService {
         .collection('scans')
         .orderBy('timestamp', descending: true)
         .get();
-
     return snap.docs.map((d) => d.data()).toList();
   }
 
@@ -202,71 +211,50 @@ class AuthService {
   //  SIGN-OUT
   // -----------------------------------------------------------------
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
+    await _auth.signOut();
   }
 
   // -----------------------------------------------------------------
   //  ACCOUNT DELETION
   // -----------------------------------------------------------------
-  /// **Deletes the authenticated user** – Firestore data first, then Auth.
   Future<void> deleteAccount() async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null) {
-      throw AuthException('No authenticated user to delete.');
-    }
-
-    final uid = user.uid;
+    final user = _auth.currentUser;
+    if (user == null) throw AuthException('No user is currently logged in.');
 
     try {
-      // 1. Clean Firestore
-      await _deleteUserFirestoreData(uid);
-
-      // 2. (Optional) Clean Storage – uncomment if you store a profile picture
-      // await _deleteProfileImage(uid);
-
-      // 3. Delete Auth record
+      await _deleteUserFirestoreData(user.uid);
       await user.delete();
-
-      debugPrint('Account $uid deleted');
+      debugPrint('Account ${user.uid} deleted');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
         throw AuthException(
-          'For security you must log in again before deleting your account.',
+          'For security, please log in again before deleting your account.',
         );
       }
-      debugPrint('Auth delete error: ${e.message}');
-      throw AuthException(e.message ?? 'Failed to delete account');
+      throw _mapAuthError(e);
     } catch (e) {
-      debugPrint('Unexpected delete error: $e');
-      throw AuthException('Failed to delete account');
+      throw AuthException('Failed to delete account. Try again.');
     }
   }
 
   // -----------------------------------------------------------------
-  //  PRIVATE HELPERS – Firestore batch delete
+  //  PRIVATE: DELETE USER DATA
   // -----------------------------------------------------------------
   Future<void> _deleteUserFirestoreData(String uid) async {
-    var batch = _firestore.batch();
-    int ops = 0;
+    final batch = _firestore.batch();
+    var ops = 0;
 
-    // root user doc
+    // Delete root user doc
     batch.delete(_firestore.collection('users').doc(uid));
     ops++;
 
-    // scans sub-collection
-    final scansSnap = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('scans')
-        .get();
-
-    for (final doc in scansSnap.docs) {
+    // Delete scans
+    final scans = await _firestore.collection('users').doc(uid).collection('scans').get();
+    for (final doc in scans.docs) {
       batch.delete(doc.reference);
       ops++;
-
       if (ops >= 499) {
         await batch.commit();
-        batch = _firestore.batch();
         ops = 0;
       }
     }
@@ -274,19 +262,58 @@ class AuthService {
     if (ops > 0) await batch.commit();
   }
 
-// -----------------------------------------------------------------
-//  PRIVATE HELPERS – Storage (uncomment if you use it)
-// -----------------------------------------------------------------
-/*
-  Future<void> _deleteProfileImage(String uid) async {
-    final ref = FirebaseStorage.instance.ref().child('profileImages/$uid.jpg');
-    try {
-      await ref.delete();
-    } on FirebaseException catch (e) {
-      if (e.code != 'object-not-found') rethrow;
+  // -----------------------------------------------------------------
+  //  VALIDATION
+  // -----------------------------------------------------------------
+  void _validateEmail(String email) {
+    if (email.trim().isEmpty) throw AuthException('Email is required.');
+    if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(email.trim())) {
+      throw AuthException('Enter a valid email address.');
     }
   }
-  */
+
+  void _validatePassword(String password) {
+    if (password.isEmpty) throw AuthException('Password is required.');
+    if (password.length < 6) throw AuthException('Password must be at least 6 characters.');
+  }
+
+  void _validateName(String name) {
+    if (name.trim().isEmpty) throw AuthException('Full name is required.');
+  }
+
+  // -----------------------------------------------------------------
+  //  ERROR MAPPING
+  // -----------------------------------------------------------------
+  AuthException _mapAuthError(FirebaseAuthException e, {bool isSignUp = false}) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return AuthException('An account with this email already exists.');
+      case 'invalid-email':
+        return AuthException('Please enter a valid email address.');
+      case 'weak-password':
+        return AuthException('Password is too weak. Use at least 6 characters.');
+      case 'user-not-found':
+        return AuthException('No account found with this email.');
+      case 'wrong-password':
+        return AuthException('Incorrect password. Please try again.');
+      case 'invalid-credential':
+        return AuthException('Invalid email or password.');
+      case 'user-disabled':
+        return AuthException('This account has been disabled.');
+      case 'too-many-requests':
+        return AuthException('Too many attempts. Please try again later.');
+      case 'operation-not-allowed':
+        return AuthException('Email/password sign-in is disabled.');
+      case 'network-request-failed':
+        return AuthException('No internet connection.');
+      case 'requires-recent-login':
+        return AuthException('Please log in again to continue.');
+      default:
+        return AuthException(isSignUp
+            ? 'Sign up failed. Please try again.'
+            : 'Login failed. Please try again.');
+    }
+  }
 }
 
 // ---------------------------------------------------------------------
