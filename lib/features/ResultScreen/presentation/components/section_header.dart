@@ -4,39 +4,48 @@ import '../../../../../core/constants/app_measurements.dart';
 class SectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
+  final Widget? trailing;
 
-  const SectionHeader({super.key, required this.title, required this.icon});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    required this.icon,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-              ],
-            ),
+            color: theme.colorScheme.primary.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: AppMeasurements.getResponsiveIconSizeSmall(context),
+            color: theme.colorScheme.primary,
+            size: 20,
           ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: AppMeasurements.getResponsiveFontSize(
+                context,
+                baseSize: 18,
+              ),
+              letterSpacing: -0.5,
+            ),
           ),
         ),
+        if (trailing != null) trailing!,
       ],
     );
   }

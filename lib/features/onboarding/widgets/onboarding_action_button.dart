@@ -15,50 +15,54 @@ class OnboardingActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final borderRadius = BorderRadius.circular(12);
 
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: isLoading ? null : onPressed,
+        child: Container(
+          width: double.infinity,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.secondary,
+              ],
+            ),
           ),
-          elevation: 2,
-          shadowColor: colorScheme.primary.withOpacity(0.3),
-        ),
-        child: isLoading
-            ? SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation(colorScheme.onPrimary),
-          ),
-        )
-            : Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              isLastPage ? 'Get Started' : 'Next',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onPrimary,
+          child: isLoading
+              ? Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.onPrimary,
               ),
             ),
-            if (!isLastPage) ...[
-              const SizedBox(width: 8),
+          )
+              : Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               Icon(
-                Icons.arrow_forward_rounded,
+                isLastPage ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
+                color: theme.colorScheme.onPrimary,
                 size: 20,
-                color: colorScheme.onPrimary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isLastPage ? 'Get Started' : 'Next',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );

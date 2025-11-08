@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/widgets/glass_card.dart';
 import 'section_header.dart';
 
 class RecommendationsCard extends StatelessWidget {
@@ -13,13 +11,6 @@ class RecommendationsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: theme.colorScheme.onSurface,
-      fontWeight: FontWeight.w500,
-      fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -27,32 +18,74 @@ class RecommendationsCard extends StatelessWidget {
           title: 'Treatment Recommendations',
           icon: Icons.medical_services_rounded,
         ),
-        const SizedBox(height: AppMeasurements.smallPadding),
-        GlassCard(
-          child: _buildRecommendationsList(context, textStyle),
-        ),
+        const SizedBox(height: 12),
+        _buildRecommendationsCard(context),
       ],
     );
   }
 
-  Widget _buildRecommendationsList(BuildContext context, TextStyle? textStyle) {
-    if (recommendations.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          'No recommendations available',
-          style: textStyle,
-        ),
-      );
-    }
+  Widget _buildRecommendationsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.colorScheme.surface.withOpacity(0.5)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: recommendations.isEmpty
+          ? _buildEmptyState(context)
+          : _buildRecommendationsList(context),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              size: 48,
+              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No recommendations available',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendationsList(BuildContext context) {
     return Column(
       children: List.generate(
         recommendations.length,
             (index) => _buildRecommendationItem(
           context: context,
           text: recommendations[index],
-          textStyle: textStyle,
+          index: index,
           isLast: index == recommendations.length - 1,
         ),
       ),
@@ -62,7 +95,7 @@ class RecommendationsCard extends StatelessWidget {
   Widget _buildRecommendationItem({
     required BuildContext context,
     required String text,
-    required TextStyle? textStyle,
+    required int index,
     required bool isLast,
   }) {
     final theme = Theme.of(context);
@@ -73,48 +106,47 @@ class RecommendationsCard extends StatelessWidget {
             ? null
             : Border(
           bottom: BorderSide(
-            color: theme.colorScheme.onSurface.withOpacity(0.1),
+            color: theme.colorScheme.outline.withOpacity(0.1),
             width: 1,
           ),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildIconContainer(context),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  '${index + 1}',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 text,
-                style: textStyle,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildIconContainer(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withOpacity(0.2),
-            theme.colorScheme.secondary.withOpacity(0.2),
-          ],
-        ),
-      ),
-      child: Icon(
-        Icons.check_circle_rounded,
-        color: theme.colorScheme.secondary,
-        size: AppMeasurements.getResponsiveIconSizeSmall(context),
       ),
     );
   }

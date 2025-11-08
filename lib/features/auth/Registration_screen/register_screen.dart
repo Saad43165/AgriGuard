@@ -9,12 +9,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import '../../../auth_services.dart';
 import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
-import '../../../core/constants/app_strings.dart';
 import '../../../core/widgets/app_themes.dart';
 
 class RegisterScreen extends StatefulWidget {

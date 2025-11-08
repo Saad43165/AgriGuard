@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/widgets/glass_card.dart';
 import 'section_header.dart';
 
 class ScannedImageSection extends StatefulWidget {
@@ -16,13 +14,13 @@ class ScannedImageSection extends StatefulWidget {
    ScannedImageSection({
     super.key,
     required this.imagePath,
-    this.height = 200,
+    this.height = 250,
     this.width,
     this.fit = BoxFit.cover,
     this.onTap,
     this.placeholder,
     this.errorWidget,
-  }): assert(imagePath.isNotEmpty, 'imagePath cannot be empty');
+  }) : assert(imagePath.isNotEmpty, 'imagePath cannot be empty');
 
   @override
   State<ScannedImageSection> createState() => _ScannedImageSectionState();
@@ -49,6 +47,7 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
   }
 
   void _reloadImage() {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -63,15 +62,13 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
     try {
       final file = File(widget.imagePath);
 
-      // Check file existence
       if (!await file.exists()) {
-        throw FileSystemException('File not found', widget.imagePath);
+        throw FileSystemException('Image file not found', widget.imagePath);
       }
 
-      // Verify file can be read and is an image
       final bytes = await file.readAsBytes();
       if (bytes.isEmpty) {
-        throw Exception('File is empty');
+        throw Exception('Image file is empty');
       }
 
       if (mounted) {
@@ -90,7 +87,7 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
           _errorMessage = e.toString();
         });
       }
-      debugPrint('Error loading image file: $e');
+      debugPrint('Error loading image: $e');
       return Future.error(e);
     }
   }
@@ -104,15 +101,16 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
           title: 'Scanned Image',
           icon: Icons.photo_camera_rounded,
         ),
-        const SizedBox(height: AppMeasurements.smallPadding),
-        GlassCard(
-          child: _buildImageContent(context),
-        ),
+        const SizedBox(height: 12),
+        _buildImageContent(context),
       ],
     );
   }
 
   Widget _buildImageContent(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () {
         if (_hasError) {
@@ -120,11 +118,28 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
         }
         widget.onTap?.call();
       },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(
-          AppMeasurements.getResponsiveBorderRadius(context),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surface.withOpacity(0.5)
+              : theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.15),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: _buildImageWidget(context),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: _buildImageWidget(context),
+        ),
       ),
     );
   }
@@ -159,6 +174,7 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
           width: widget.width ?? double.infinity,
           height: widget.height,
           errorBuilder: (context, error, stackTrace) {
+            debugPrint('Image render error: $error');
             return widget.errorWidget ?? _buildErrorPlaceholder(context);
           },
         );
@@ -171,30 +187,49 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
     return Container(
       height: widget.height,
       width: widget.width ?? double.infinity,
-      color: theme.colorScheme.error.withOpacity(0.1),
+      color: theme.colorScheme.error.withOpacity(0.05),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.broken_image_rounded,
-            color: theme.colorScheme.error,
-            size: AppMeasurements.getResponsiveIconSizeLarge(context),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _errorMessage ?? 'Failed to load image',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.error,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.error.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            child: Icon(
+              Icons.broken_image_rounded,
+              color: theme.colorScheme.error,
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to Load Image',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Tap to retry',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error.withOpacity(0.7),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'The image could not be displayed',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _reloadImage,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Retry'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              side: BorderSide(color: theme.colorScheme.error),
             ),
           ),
         ],
@@ -207,17 +242,25 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
     return Container(
       height: widget.height,
       width: widget.width ?? double.infinity,
-      color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: theme.colorScheme.primary),
-            const SizedBox(height: 12),
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'Loading image...',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

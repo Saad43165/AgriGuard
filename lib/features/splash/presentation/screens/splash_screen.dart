@@ -272,8 +272,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         boxShadow: [
                           BoxShadow(
                             color: isDark ? Colors.white.withOpacity(0.2) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            blurRadius: 20,
-                            spreadRadius: 5,
+                            blurRadius: 10,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
