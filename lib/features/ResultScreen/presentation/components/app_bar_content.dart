@@ -18,7 +18,7 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
     this.onBackPressed,
     this.actions,
     this.elevation = 0,
-    this.topPadding = 8.0,
+    this.topPadding = 8.0, IconButton? leading,
   });
 
   @override

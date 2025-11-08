@@ -1,3 +1,4 @@
+// lib/features/home/presentation/screens/home_screen.dart
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,12 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Navbar/presentation/nav_bar.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import '../Species_widgets/species_grid_widget.dart' show SpeciesGridWidget;
+import 'bottom_sheet_widgets/scan_options_bottomsheet.dart';
 import 'components/all_scans_dialog_content.dart';
 import 'components/custom_home_app_bar.dart';
 import 'components/first_time_user_guide.dart';
 import 'components/loading_section.dart';
 import 'components/recent_scan_section.dart';
-import 'components/scan_options_bottomsheet.dart';
 import 'components/scan_service.dart';
 import 'components/share_results_dialog_content.dart';
 import 'components/weather_card.dart';
@@ -55,10 +56,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _loadFirstTimeUser();
     _loadRecentScans();
 
-    // Handle navigation arguments once
+    // Handle initial arguments
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleRouteArguments();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // This runs every time route args change or we pop back
+    final args = (ModalRoute.of(context)?.settings.arguments);
+    if (args == true) {
+      _loadRecentScans(); // Refresh when returning from ResultsScreen
+    }
   }
 
   @override
@@ -158,7 +170,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ..addAll(scans.take(_maxRecentScans));
         _isLoading = false;
 
-        // Only update first-time if no scans exist
         if (_recentScans.isEmpty && _isFirstTimeUser == false) {
           _isFirstTimeUser = true;
           _saveFirstTimeUser();
@@ -179,7 +190,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _showSnackBar('Scans refreshed!', false);
     }
   }
-
   /* --------------------------------------------------------------------- *
    *  Scan Handling
    * --------------------------------------------------------------------- */
@@ -196,7 +206,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    // Mark as not first-time user
     if (_isFirstTimeUser) {
       _isFirstTimeUser = false;
       _saveFirstTimeUser();
@@ -221,7 +230,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
       _showSnackBar('Scan deleted!', false);
 
-      // If no scans left, show first-time guide
       if (_recentScans.isEmpty && !_isFirstTimeUser) {
         _isFirstTimeUser = true;
         _saveFirstTimeUser();
@@ -246,23 +254,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
    * --------------------------------------------------------------------- */
   void _showSnackBar(String message, bool isError) {
     if (!mounted) return;
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final navBarHeight = kBottomNavigationBarHeight; // 56.0
+    final extraPadding = 16.0;
+
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError
             ? Theme.of(context).colorScheme.error
             : Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 90, left: 16, right: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
             AppMeasurements.getResponsiveBorderRadius(context),
           ),
         ),
+        margin: EdgeInsets.only(
+          bottom: bottomInset > 0
+              ? bottomInset + navBarHeight + extraPadding // Keyboard open
+              : navBarHeight + extraPadding,           // Normal
+          left: 16,
+          right: 16,
+        ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
-
   /* --------------------------------------------------------------------- *
    *  Navigation
    * --------------------------------------------------------------------- */
@@ -370,9 +389,9 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
         ),
         child: Stack(
           children: [
-            // Floating Orbs (optimized: fewer, no keys if static)
+            // Floating Orbs
             ...List.generate(
-              6, // Reduced from 8
+              6,
                   (i) => FloatingOrb(
                 index: i,
                 maxWidth: MediaQuery.of(context).size.width,
@@ -391,15 +410,11 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
                   padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, 0),
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    // Weather Card
                     const WeatherCard(),
                     SizedBox(height: padding * 0.8),
-
-                    // Species Grid
                     const SpeciesGridWidget(),
                     SizedBox(height: padding * 0.8),
 
-                    // Conditional Content
                     if (_isLoading)
                       const LoadingSection()
                     else if (_isFirstTimeUser && _recentScans.isEmpty)
@@ -414,8 +429,6 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
                         onShowOptions: _showScanOptionsBottomSheet,
                       ),
 
-                    // FAB bottom padding
-                    SizedBox(height: padding + 80),
                   ],
                 ),
               ),

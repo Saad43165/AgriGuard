@@ -34,7 +34,6 @@ dependencies:
   intl: any
   tflite_flutter:
   pdf:
-  share_plus: ^12.0.1
 
 
 

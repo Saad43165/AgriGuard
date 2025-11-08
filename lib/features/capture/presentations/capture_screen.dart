@@ -44,15 +44,10 @@ class _CaptureScreenState extends State<CaptureScreen>
 
     // LOAD MODEL ON START
     _plantService.loadModel().then((_) {
-      print('AI MODEL LOADED & READY');
+      debugPrint('AI MODEL LOADED & READY');
     }).catchError((e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load AI model: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint('Model load error: $e');
+      // Don't show error - fallback will handle it
     });
   }
 
@@ -100,9 +95,12 @@ class _CaptureScreenState extends State<CaptureScreen>
   // IMAGE PICKER
   // -------------------------------------------------
   Future<void> _pickImage(ImageSource source) async {
+    if (!mounted) return;
+
     try {
       HapticFeedback.lightImpact();
       setState(() => _isLoading = true);
+
       final picked = await ImagePicker().pickImage(
         source: source,
         maxWidth: 1200,
@@ -110,154 +108,134 @@ class _CaptureScreenState extends State<CaptureScreen>
         imageQuality: 85,
         preferredCameraDevice: CameraDevice.rear,
       );
+
+      if (!mounted) return;
+
       if (picked != null) {
         setState(() => _imageFile = picked);
         _scaleController.reset();
         _scaleController.forward();
         HapticFeedback.mediumImpact();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Image captured successfully!'),
-              backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-            ),
-          );
-        }
       }
     } catch (e) {
+      debugPrint('Image picker error: $e');
+      if (!mounted) return;
+
       HapticFeedback.heavyImpact();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to pick image: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-          ),
-        );
-      }
+      _showErrorSnackBar('Failed to pick image. Please try again.');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   // -------------------------------------------------
   // PROCESS + AI + SAVE + NAVIGATE
   // -------------------------------------------------
-  // In your CaptureScreen - replace _processAndSendToEditScreen with this:
   Future<void> _processAndSendToResults() async {
-    if (_imageFile == null || _isProcessing) return;
+    if (!mounted || _imageFile == null || _isProcessing) return;
 
     HapticFeedback.mediumImpact();
     setState(() => _isProcessing = true);
 
     try {
+      // Check authentication
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) throw Exception('User not authenticated.');
+      if (user == null) {
+        throw Exception('Please sign in to continue');
+      }
 
+      // Verify image file exists
       final imageFile = File(_imageFile!.path);
-      if (!await imageFile.exists()) throw Exception('Image file missing.');
+      if (!await imageFile.exists()) {
+        throw Exception('Image file not found');
+      }
 
       // AI INFERENCE
       Map<String, double> aiResult;
       try {
         aiResult = await _plantService.predict(imageFile);
+        debugPrint('AI Prediction successful: ${aiResult.keys.first}');
       } catch (e) {
-        print('AI Prediction failed: $e');
-        // Use fallback result
+        debugPrint('AI Prediction failed, using fallback: $e');
         aiResult = {'Unknown Plant': 0.5};
       }
+
+      if (!mounted) return;
 
       final plantName = aiResult.keys.first;
       final confidence = (aiResult.values.first * 100).toStringAsFixed(1);
 
-      // Create complete scan data with all necessary fields
+      // Create complete scan data
       final scanData = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'status': 'identified',
-        'cropType': plantName, // This will be "Lily", "Tomato", etc.
-        'confidence': confidence, // This will be "90.8%", etc.
+        'cropType': plantName,
         'diagnosis': 'Healthy $plantName plant identified',
-        'treatment': 'Continue regular care. Monitor for any signs of disease or pests.',
+        'confidence': confidence,
+        'treatment': 'Continue regular care. Monitor for any signs of disease or pests. Ensure adequate water and sunlight.',
         'severity': 'Healthy',
-        'imagePath': _imageFile!.path, // Use the original image path
+        'imagePath': _imageFile!.path,
         'timestamp': DateTime.now().toIso8601String(),
-        'isFallback': _plantService.isModelFailed, // Track if fallback was used
+        'userId': user.uid,
+        'isFallback': _plantService.isModelFailed,
       };
 
+      debugPrint('Saving scan data: ${scanData['cropType']}');
+
       // Save to database
-      await ScanService().saveScan(scanData);
+      try {
+        final scanId = await ScanService().saveScan(scanData);
+        debugPrint('Scan saved with ID: $scanId');
 
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_plantService.isModelFailed
-                ? 'Using basic analysis: $plantName'
-                : 'Identified: $plantName ($confidence%)'),
-            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-          ),
-        );
+        // Add the ID to scanData for navigation
+        scanData['id'] = scanId;
+      } catch (e) {
+        debugPrint('Error saving scan: $e');
+        // Continue anyway - we can still show results
       }
 
-      // GO DIRECTLY TO RESULTS SCREEN
-      if (mounted) {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.results,
-          arguments: {
-            'scanData': scanData, // Pass all the plant data
-          },
-        );
-      }
+      if (!mounted) return;
+
+      // Navigate to results screen
+      // Use pushReplacement to prevent back navigation issues
+      await Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.results,
+        arguments: {'scanData': scanData},
+      );
+
+      // Note: Don't show SnackBar after navigation - the widget will be disposed
 
     } catch (e) {
-      print('Process error: $e');
-      if (mounted) {
-        HapticFeedback.heavyImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      debugPrint('Process error: $e');
+
+      if (!mounted) return;
+
+      HapticFeedback.heavyImpact();
+      setState(() => _isProcessing = false);
+
+      _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
     }
-  } void _showResultDialog(String plant, String confidence) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppMeasurements.getResponsiveBorderRadius(context),
-          ),
+  }
+
+  // Helper method to show error messages
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
         ),
-        title: const Text('Plant Identified!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.eco_rounded,
-                size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 12),
-            Text(plant, style: Theme.of(context).textTheme.titleMedium),
-            Text('$confidence% confidence',
-                style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Text('Ready for disease detection?',
-                style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.7),
-                )),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Continue'),
-          ),
-        ],
       ),
     );
   }
@@ -266,27 +244,23 @@ class _CaptureScreenState extends State<CaptureScreen>
   // RETAKE & NAVIGATION
   // -------------------------------------------------
   void _retakeImage() {
+    if (!mounted) return;
+
     HapticFeedback.lightImpact();
     setState(() => _imageFile = null);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Image cleared. Ready for new capture.'),
-          backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-        ),
-      );
-    }
   }
 
   void _handleNavigation(int index) {
-    if (index == 1 || !mounted) return;
+    if (index == 1 || !mounted || _isProcessing) return;
+
     HapticFeedback.lightImpact();
+
     switch (index) {
       case 0:
-        Navigator.pushNamed(context, AppRoutes.home);
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
         break;
       case 2:
-        Navigator.pushNamed(context, AppRoutes.profile);
+        Navigator.pushReplacementNamed(context, AppRoutes.profile);
         break;
     }
   }
@@ -296,75 +270,130 @@ class _CaptureScreenState extends State<CaptureScreen>
   // -------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? const [
-              Color(0xFF0F0F23),
-              Color(0xFF16213E),
-              Color(0xFF1A1A2E),
-              Color(0xFF0F0F23),
-            ]
-                : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
-        child: Stack(
-          children: [
-            ...List.generate(
-              8,
-                  (i) => FloatingOrb(
-                index: i,
-                maxWidth: MediaQuery.of(context).size.width,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              ),
+    return PopScope(
+      canPop: !_isProcessing,
+      onPopInvoked: (didPop) {
+        if (!didPop && _isProcessing) {
+          _showErrorSnackBar('Please wait for processing to complete');
+        }
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? const [
+                Color(0xFF0F0F23),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+                Color(0xFF0F0F23),
+              ]
+                  : [
+                Theme.of(context).colorScheme.background,
+                Theme.of(context).colorScheme.background.withOpacity(0.9),
+                Theme.of(context).colorScheme.background.withOpacity(0.8),
+                Theme.of(context).colorScheme.background,
+              ],
+              stops: const [0.0, 0.3, 0.7, 1.0],
             ),
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  AppBarContent(imageFile: _imageFile, onRetake: _retakeImage),
-                  SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        ImageSection(
-                          imageFile: _imageFile,
-                          scaleAnimation: _scaleAnimation,
-                          isLoading: _isLoading,
+          ),
+          child: Stack(
+            children: [
+              // Floating orbs background
+              ...List.generate(
+                8,
+                    (i) => FloatingOrb(
+                  index: i,
+                  maxWidth: MediaQuery.of(context).size.width,
+                  fadeController: _fadeController,
+                  scaleAnimation: _scaleAnimation,
+                ),
+              ),
+
+              // Main content
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: _isProcessing
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(),
+                  slivers: [
+                    AppBarContent(
+                      imageFile: _imageFile,
+                      onRetake: _isProcessing ? null : _retakeImage,
+                    ),
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          ImageSection(
+                            imageFile: _imageFile,
+                            scaleAnimation: _scaleAnimation,
+                            isLoading: _isLoading,
+                          ),
+                          const SizedBox(height: 60),
+                          ActionButtons(
+                            isLoading: _isLoading,
+                            isProcessing: _isProcessing,
+                            imageFile: _imageFile,
+                            onPickImage: _pickImage,
+                            onProcess: _processAndSendToResults,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Processing overlay
+              if (_isProcessing)
+                Container(
+                  color: Colors.black54,
+                  child: Center(
+                    child: Card(
+                      margin: const EdgeInsets.all(32),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Analyzing plant...',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'This may take a few seconds',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 60),
-                        ActionButtons(
-                          isLoading: _isLoading,
-                          isProcessing: _isProcessing,
-                          imageFile: _imageFile,
-                          onPickImage: _pickImage,
-                          onProcess: _processAndSendToResults,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+            ],
+          ),
         ),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: 1,
-        onTap: _handleNavigation,
+        bottomNavigationBar: _isProcessing
+            ? null
+            : BottomNavBar(
+          selectedIndex: 1,
+          onTap: _handleNavigation,
+        ),
       ),
     );
   }

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'dart:io'; // Make sure this import is added
+import 'dart:io';
 import '../../../../core/constants/app_routes.dart';
-import '../../../../services/pdf_generator_service.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import '../../../home/presentation/screens/components/scan_service.dart';
 import '../../../home/presentation/screens/components/share_results_dialog_content.dart';
@@ -30,20 +27,12 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
   late AnimationController _fadeController;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
-
-    // Debug: Print the received scan data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('=== RESULTS SCREEN SCAN DATA ===');
-      debugPrint(widget.scanData.toString());
-      debugPrint('Image path: ${widget.scanData['imagePath']}');
-      debugPrint('Image URL: ${widget.scanData['imageUrl']}');
-      debugPrint('==============================');
-    });
   }
 
   void _initializeAnimations() {
@@ -72,16 +61,9 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
     final theme = Theme.of(context);
     final diagnosisResult = _getDiagnosisResult();
 
-    // FIX: Check both imageUrl and imagePath fields
     final String? imagePath = widget.scanData['imagePath'] as String?;
     final String? imageUrl = widget.scanData['imageUrl'] as String?;
 
-    // Debug print to see what we have
-    debugPrint('Building ResultsScreen:');
-    debugPrint('imagePath: $imagePath');
-    debugPrint('imageUrl: $imageUrl');
-
-    // FIX: Check if the file exists - prioritize imageUrl since that's what your data shows
     String? actualImagePath = imageUrl ?? imagePath;
     bool hasLocalImage = false;
 
@@ -89,7 +71,6 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
       try {
         final file = File(actualImagePath);
         hasLocalImage = file.existsSync();
-        debugPrint('Local image exists: $hasLocalImage at path: $actualImagePath');
       } catch (e) {
         debugPrint('Error checking file existence: $e');
         hasLocalImage = false;
@@ -99,81 +80,112 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
     final bool hasNetworkImage = imageUrl != null && imageUrl.isNotEmpty && imageUrl.startsWith('http');
     final bool hasImage = hasLocalImage || hasNetworkImage;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const AppBarContent(title: 'Analysis Results'),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: theme.brightness == Brightness.dark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-              const Color(0xFF0F0F23),
-            ]
-                : [
-              theme.colorScheme.surface,
-              theme.colorScheme.surface.withOpacity(0.9),
-              theme.colorScheme.surface.withOpacity(0.8),
-              theme.colorScheme.surface,
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
+    return PopScope(
+      canPop: !_isSaving,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBarContent(
+          title: 'Analysis Results',
+          leading: _isSaving ? null : IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        child: Stack(
-          children: [
-            ...List.generate(
-              8,
-                  (index) => FloatingOrb(
-                index: index,
-                maxWidth: MediaQuery.of(context).size.width,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: theme.brightness == Brightness.dark
+                  ? [
+                const Color(0xFF0F0F23),
+                const Color(0xFF16213E),
+                const Color(0xFF1A1A2E),
+                const Color(0xFF0F0F23),
+              ]
+                  : [
+                theme.colorScheme.surface,
+                theme.colorScheme.surface.withOpacity(0.9),
+                theme.colorScheme.surface.withOpacity(0.8),
+                theme.colorScheme.surface,
+              ],
+              stops: const [0.0, 0.3, 0.7, 1.0],
             ),
-            SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DiagnosisCard(diagnosisResult: diagnosisResult),
-                    const SizedBox(height: 16),
-                    AnalysisDetailsCard(scanData: widget.scanData),
-                    const SizedBox(height: 16),
-                    RecommendationsCard(recommendations: diagnosisResult.recommendations),
-                    const SizedBox(height: 16),
-
-                    // FIX: Image display section - use the actual image path
-                    if (hasImage)
-                      Column(
-                        children: [
-                          if (hasLocalImage && actualImagePath != null)
-                            ScannedImageSection(imagePath: actualImagePath)
-                          else if (hasNetworkImage)
-                            _buildNetworkImage(imageUrl!, theme)
-                          else
-                            _buildNoImagePlaceholder(theme),
-                          const SizedBox(height: 16),
-                        ],
-                      )
-                    else
-                      _buildNoImagePlaceholder(theme),
-
-                    const NextStepsCard(),
-                  ],
+          ),
+          child: Stack(
+            children: [
+              ...List.generate(
+                8,
+                    (index) => FloatingOrb(
+                  index: index,
+                  maxWidth: MediaQuery.of(context).size.width,
+                  fadeController: _fadeController,
+                  scaleAnimation: _scaleAnimation,
                 ),
               ),
-            ),
-          ],
+              SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DiagnosisCard(diagnosisResult: diagnosisResult),
+                      const SizedBox(height: 16),
+                      AnalysisDetailsCard(scanData: widget.scanData),
+                      const SizedBox(height: 16),
+                      RecommendationsCard(recommendations: diagnosisResult.recommendations),
+                      const SizedBox(height: 16),
+
+                      if (hasImage)
+                        Column(
+                          children: [
+                            if (hasLocalImage && actualImagePath != null)
+                              ScannedImageSection(imagePath: actualImagePath)
+                            else if (hasNetworkImage)
+                              _buildNetworkImage(imageUrl!, theme)
+                            else
+                              _buildNoImagePlaceholder(theme),
+                            const SizedBox(height: 16),
+                          ],
+                        )
+                      else
+                        _buildNoImagePlaceholder(theme),
+
+                      const NextStepsCard(),
+                      const SizedBox(height: 80), // Space for FAB
+                    ],
+                  ),
+                ),
+              ),
+
+              // Loading overlay
+              if (_isSaving)
+                Container(
+                  color: Colors.black54,
+                  child: const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Saving report...'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButtons(
-        onSave: () => _saveReport(context),
-        onShare: () => _shareResults(context),
+        floatingActionButton: _isSaving ? null : FloatingActionButtons(
+          heroTagPrefix: 'results_screen', // Unique per screen
+          onSave: () => _saveReport(context),
+          onShare: () => _shareResults(context),
+        ),
       ),
     );
   }
@@ -223,6 +235,9 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+        ),
       ),
       child: Center(
         child: Column(
@@ -253,41 +268,30 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         severity: widget.scanData['severity']?.toString() ?? 'Unknown',
         recommendations: (widget.scanData['treatment']?.toString().split('. ') ?? ['Consult an expert'])
             .where((r) => r.isNotEmpty)
-            .toList(), plantName: '', confidence: '',
+            .toList(),
+        plantName: widget.scanData['plantName']?.toString() ?? '',
+        confidence: widget.scanData['confidence']?.toString() ?? '0',
       );
     } catch (e) {
       debugPrint('Error processing scanData: $e');
       return DiagnosisResult(
         disease: 'Unknown Disease',
         severity: 'Unknown',
-        recommendations: ['Consult an expert for further analysis'], plantName: '', confidence: '',
+        recommendations: ['Consult an expert for further analysis'],
+        plantName: '',
+        confidence: '0',
       );
     }
   }
 
   Future<void> _saveReport(BuildContext context) async {
+    if (_isSaving) return; // Prevent double-tap
+
+    setState(() => _isSaving = true);
+
     HapticFeedback.lightImpact();
 
     try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              const Text('Saving report...'),
-            ],
-          ),
-        ),
-      );
-
-      // Save to scan history
       await ScanService().saveScan({
         'id': widget.scanData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
         'imageUrl': widget.scanData['imageUrl'],
@@ -299,136 +303,41 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         'severity': widget.scanData['severity'] ?? 'Unknown',
       });
 
-      // Generate and save PDF report
-      try {
-        final pdfFile = await PdfShareService.generateScanPdf(widget.scanData);
-        final directory = await getExternalStorageDirectory();
-        if (directory != null) {
-          final downloadsDir = Directory('${directory.path}/Download');
-          if (!await downloadsDir.exists()) {
-            await downloadsDir.create(recursive: true);
-          }
+      if (!mounted) return;
 
-          final fileName = 'AgriGuard_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
-          final newPath = '${downloadsDir.path}/$fileName';
-          await pdfFile.copy(newPath);
+      // Navigate first, then show message
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+            (route) => false,
+        arguments: {'newScan': widget.scanData, 'refreshScans': true},
+      );
 
-          debugPrint('PDF saved to: $newPath');
-        }
-      } catch (pdfError) {
-        debugPrint('PDF save failed: $pdfError');
-        // Continue even if PDF save fails
-      }
-
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(child: Text('Report saved successfully with PDF!')),
-              ],
-            ),
-            behavior: SnackBarBehavior.fixed,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height * 0.1,
-            ),
-            backgroundColor: Colors.green[700],
-          ),
-        );
-
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.home,
-              (route) => false,
-          arguments: {'newScan': widget.scanData, 'refreshScans': true},
-        );
-      }
     } catch (e) {
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save report: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
-          ),
-        );
-      }
       debugPrint('Error saving report: $e');
+
+      if (!mounted) return;
+      Navigator.pop(context, true);
+
+      setState(() => _isSaving = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to save report. Please try again.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () => _saveReport(context),
+          ),
+        ),
+      );
     }
   }
 
   Future<void> _shareResults(BuildContext context) async {
     HapticFeedback.lightImpact();
-
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              const Text('Preparing share...'),
-            ],
-          ),
-        ),
-      );
-
-      // Generate PDF for sharing
-      final pdfFile = await PdfShareService.generateScanPdf(widget.scanData);
-
-      // Create share text
-      final shareText = '''
-🌿 AgriGuard Plant Health Scan Results
-
-Diagnosis: ${widget.scanData['diagnosis'] ?? 'Unknown Disease'}
-Confidence: ${widget.scanData['confidence']?.toString() ?? '85'}%
-Severity: ${widget.scanData['severity'] ?? 'Unknown'}
-Date: ${widget.scanData['timestamp'] != null ? _formatDate(DateTime.parse(widget.scanData['timestamp'])) : _formatDate(DateTime.now())}
-
-Treatment Recommendations:
-${widget.scanData['treatment'] ?? 'Consult an expert for detailed treatment plan'}
-
-Generated by AgriGuard App
-'''.trim();
-
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      // Share using share_plus
-      if (context.mounted) {
-        await Share.shareXFiles(
-          [XFile(pdfFile.path, mimeType: 'application/pdf')],
-          text: shareText,
-          subject: 'AgriGuard Plant Health Report',
-        );
-      }
-    } catch (e) {
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      // Fallback: Share as text only
-      final shareText = '''
+    final shareText = '''
 Plant Health Scan Results
 
 Disease: ${widget.scanData['diagnosis'] ?? 'Unknown Disease'}
@@ -440,18 +349,15 @@ Treatment: ${widget.scanData['treatment'] ?? 'Consult an expert'}
 Generated by Plant Health Scanner
 ''';
 
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => ShareResultsDialogContent(shareText: shareText),
-        );
-      }
+    if (!mounted) return;
 
-      debugPrint('Error sharing results: $e');
-    }
+    showDialog(
+      context: context,
+      builder: (context) => ShareResultsDialogContent(shareText: shareText),
+    );
   }
+
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }
-

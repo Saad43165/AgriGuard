@@ -1,15 +1,17 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../../core/constants/app_measurements.dart';
+
+import '../../../../core/constants/app_measurements.dart';
 
 class AppBarContent extends StatelessWidget {
   final XFile? imageFile;
-  final VoidCallback onRetake;
+  final VoidCallback? onRetake; // Make it nullable
 
   const AppBarContent({
     super.key,
     required this.imageFile,
-    required this.onRetake,
+    this.onRetake, // Now accepts null
   });
 
   @override
@@ -52,7 +54,7 @@ class AppBarContent extends StatelessWidget {
       ),
       pinned: true,
       actions: [
-        if (imageFile != null)
+        if (imageFile != null && onRetake != null) // Check both
           Padding(
             padding: const EdgeInsets.only(right: AppMeasurements.smallPadding),
             child: Container(
@@ -73,7 +75,7 @@ class AppBarContent extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-                  onTap: onRetake,
+                  onTap: onRetake, // Safe: already checked for null
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Icon(

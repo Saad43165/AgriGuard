@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/widgets/glass_card.dart';
 
 class ScanCard extends StatefulWidget {
   final Map<String, dynamic> scan;
@@ -27,11 +26,14 @@ class ScanCard extends StatefulWidget {
   State<ScanCard> createState() => _ScanCardState();
 }
 
-class _ScanCardState extends State<ScanCard> {
+class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin {
   late final Map<String, dynamic> _navigableScan;
   late final String _formattedDate;
   late final Color _confidenceColor;
   late final String _confidenceText;
+  late AnimationController _pressController;
+  late Animation<double> _scaleAnim;
+  bool _isPressed = false;
 
   @override
   void initState() {
@@ -41,15 +43,29 @@ class _ScanCardState extends State<ScanCard> {
     final conf = double.tryParse(widget.scan['confidence'].toString()) ?? 0;
     _confidenceColor = _getConfidenceColor(conf);
     _confidenceText = '${conf.toInt()}%';
+
+    _pressController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _pressController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
   }
 
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
   Color _getConfidenceColor(double confidence) {
-    if (confidence >= 80) return Colors.green;
-    if (confidence >= 60) return Colors.orange;
-    return Colors.red;
+    if (confidence >= 80) return const Color(0xFF10B981);
+    if (confidence >= 60) return const Color(0xFFF59E0B);
+    return const Color(0xFFEF4444);
   }
 
   String _formatTimestamp(dynamic timestamp) {
@@ -100,137 +116,163 @@ class _ScanCardState extends State<ScanCard> {
   // -------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: widget.scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: widget.scaleAnimation.value,
-          child: child,
-        );
+    return GestureDetector(
+      onTapDown: (_) {
+        setState(() => _isPressed = true);
+        _pressController.forward();
       },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(
-          AppMeasurements.getResponsiveBorderRadius(context),
-        ),
-        child: GlassCard(
-          child: InkWell(
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        _pressController.reverse();
+        _onTap();
+      },
+      onTapCancel: () {
+        setState(() => _isPressed = false);
+        _pressController.reverse();
+      },
+      onLongPress: _onLongPress,
+      child: ScaleTransition(
+        scale: _scaleAnim,
+        child: Container(
+          height: 140, // Fixed height to match parent
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(
-              AppMeasurements.getResponsiveBorderRadius(context),
+              AppMeasurements.getResponsiveBorderRadius(context) + 2,
             ),
-            onTap: _onTap,
-            onLongPress: _onLongPress,
-            child: IntrinsicHeight(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 200), // matches parent
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Image ─────────────────────────────────────
-                      AspectRatio(
-                        aspectRatio: 1.3,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: _buildImage(),
+            border: Border.all(
+              color: _isPressed
+                  ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+                  : Theme.of(context).colorScheme.outline.withOpacity(0.1),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(_isPressed ? 0.15 : 0.08),
+                blurRadius: _isPressed ? 12 : 8,
+                offset: Offset(0, _isPressed ? 4 : 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Image with Confidence Badge ───────────────
+              Expanded(
+                flex: 7, // 70% of the card
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(
+                          AppMeasurements.getResponsiveBorderRadius(context) + 1,
+                        ),
+                        topRight: Radius.circular(
+                          AppMeasurements.getResponsiveBorderRadius(context) + 1,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      child: SizedBox.expand(
+                        child: _buildImage(),
+                      ),
+                    ),
+                    // Confidence Badge (top-right)
+                    if (widget.scan['confidence'] != null)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _confidenceColor,
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            _confidenceText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
 
-                      // ── Diagnosis ─────────────────────────────────
+              // ── Content Section ───────────────────────────
+              Expanded(
+                flex: 5, // 50% of the card
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Diagnosis (with flexible space)
                       Flexible(
                         child: Text(
                           widget.scan['diagnosis']?.toString() ?? 'Unknown',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: AppMeasurements.getResponsiveFontSize(
-                              context,
-                              baseSize: 13,
-                            ),
+                            fontSize: 12,
+                            height: 1.2,
+                            letterSpacing: -0.2,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          softWrap: true,
                         ),
                       ),
-                      const SizedBox(height: 4),
-
-                      // ── Date + Confidence ────────────────────────
+SizedBox(height: 4),
+                      // Date (always at bottom)
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Date
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today_rounded,
-                                  size: 12,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.5),
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    _formattedDate,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withOpacity(0.6),
-                                      fontSize: AppMeasurements.getResponsiveFontSize(
-                                        context,
-                                        baseSize: 11,
-                                      ),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 10,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              _formattedDate,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                                fontSize: 12,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-
-                          // Confidence badge (optional)
-                          if (widget.scan['confidence'] != null) ...[
-                            const SizedBox(width: 8),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxHeight: 24),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(6),
-                                  color: _confidenceColor.withOpacity(0.15),
-                                ),
-                                child: Text(
-                                  _confidenceText,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                    color: _confidenceColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: AppMeasurements.getResponsiveFontSize(
-                                      context,
-                                      baseSize: 10,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -248,8 +290,18 @@ class _ScanCardState extends State<ScanCard> {
       return Image.network(
         imageUrl,
         fit: BoxFit.cover,
-        loadingBuilder: (c, child, progress) =>
-        progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        loadingBuilder: (c, child, progress) => progress == null
+            ? child
+            : Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
         errorBuilder: (_, __, ___) => _placeholder(),
       );
     }
@@ -271,11 +323,14 @@ class _ScanCardState extends State<ScanCard> {
   }
 
   Widget _placeholder() {
-    return Center(
-      child: Icon(
-        Icons.local_florist_rounded,
-        size: 32,
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+    return Container(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.local_florist_rounded,
+          size: 28,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+        ),
       ),
     );
   }

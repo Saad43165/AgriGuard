@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/widgets/glass_card.dart';
 import 'delete_confirmation_dialoag_content.dart';
 
 class AllScansDialogContent extends StatelessWidget {
@@ -24,9 +23,7 @@ class AllScansDialogContent extends StatelessWidget {
   // -----------------------------------------------------------------------
   // Convert Firestore Timestamps to JSON-safe strings
   // -----------------------------------------------------------------------
-  Map<String, dynamic> _convertForNavigation(Map<String, dynamic> data
-
-      ) {
+  Map<String, dynamic> _convertForNavigation(Map<String, dynamic> data) {
     final converted = <String, dynamic>{};
     data.forEach((key, value) {
       if (value is Timestamp) {
@@ -57,12 +54,19 @@ class AllScansDialogContent extends StatelessWidget {
     if (timestamp == null) return 'Unknown Date';
     try {
       DateTime? dt;
-      if (timestamp is Timestamp) dt = timestamp.toDate();
-      else if (timestamp is DateTime) dt = timestamp;
-      else if (timestamp is String) dt = DateTime.tryParse(timestamp);
-      return dt != null ? DateFormat('MMM dd, yyyy - HH:mm').format(dt) : 'Invalid Date';
-    } catch (_) {
-      return 'Error';
+      if (timestamp is Timestamp) {
+        dt = timestamp.toDate();
+      } else if (timestamp is DateTime) {
+        dt = timestamp;
+      } else if (timestamp is String) {
+        dt = DateTime.tryParse(timestamp);
+      } else if (timestamp is int) {
+        dt = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      }
+      return dt != null ? DateFormat('MMM dd, yyyy • HH:mm').format(dt) : 'Invalid Date';
+    } catch (e) {
+      debugPrint('Error formatting timestamp: $e');
+      return 'Invalid Date';
     }
   }
 
@@ -71,54 +75,118 @@ class AllScansDialogContent extends StatelessWidget {
   // -----------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    final double pad = AppMeasurements.getResponsivePadding(context);
-    final double smallPad = AppMeasurements.getResponsiveSmallPadding(context);
-    final double radius = AppMeasurements.getResponsiveBorderRadius(context);
-    final double iconSize = AppMeasurements.getResponsiveIconSizeMedium(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return GlassCard(
-      borderRadius: radius * 2,
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+        maxWidth: MediaQuery.of(context).size.width * 0.95,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Header
-          Padding(
-            padding: EdgeInsets.all(pad),
-            child: Text(
-              'All Recent Scans',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 22),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  : theme.colorScheme.primary.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               ),
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.colorScheme.outline.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.history_rounded,
+                    color: theme.colorScheme.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Scan History',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        '${recentScans.length} ${recentScans.length == 1 ? 'scan' : 'scans'} total',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(context).pop(),
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  iconSize: 24,
+                ),
+              ],
             ),
           ),
 
-          // Empty state
+          // Content
           if (recentScans.isEmpty)
-            _buildEmptyState(context, pad, radius, iconSize)
+            _buildEmptyState(context)
           else
             Flexible(
               child: ListView.separated(
-                padding: EdgeInsets.symmetric(horizontal: pad, vertical: smallPad),
+                padding: const EdgeInsets.all(16),
+                physics: const BouncingScrollPhysics(),
                 itemCount: recentScans.length,
-                separatorBuilder: (_, __) => SizedBox(height: smallPad * 0.8),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final scan = recentScans[index];
-                  final String scanId = scan['id']?.toString() ?? 'scan_$index';
+                  final String scanId = scan['id']?.toString() ?? 'scan_${DateTime.now().millisecondsSinceEpoch}_$index';
                   final navigableScan = _convertForNavigation(scan);
-
-                  // DEBUG: See what image keys exist
-                  debugPrint('SCAN $index → imageUrl: ${scan['imageUrl']}');
-                  debugPrint('           localImagePath: ${scan['localImagePath']}');
-                  debugPrint('           imagePath: ${scan['imagePath']}');
 
                   return Dismissible(
                     key: Key(scanId),
                     direction: DismissDirection.endToStart,
-                    background: _buildDismissBackground(context, pad),
+                    background: _buildDismissBackground(context),
                     confirmDismiss: (_) => _showDeleteConfirmation(context),
-                    onDismissed: (_) => onDeleteScan(scanId),
-                    child: _buildScanTile(context, scan, navigableScan, radius, iconSize),
+                    onDismissed: (_) {
+                      HapticFeedback.mediumImpact();
+                      onDeleteScan(scanId);
+                    },
+                    child: _buildScanTile(context, scan, navigableScan),
                   );
                 },
               ),
@@ -131,22 +199,40 @@ class AllScansDialogContent extends StatelessWidget {
   // -----------------------------------------------------------------------
   // Dismiss background
   // -----------------------------------------------------------------------
-  Widget _buildDismissBackground(BuildContext context, double pad) {
-    final cs = Theme.of(context).colorScheme;
-    final r = AppMeasurements.getResponsiveBorderRadius(context);
+  Widget _buildDismissBackground(BuildContext context) {
+    final theme = Theme.of(context);
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: cs.error.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(r * 1.5),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.error.withOpacity(0.1),
+            theme.colorScheme.error.withOpacity(0.3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
       ),
       alignment: Alignment.centerRight,
-      padding: EdgeInsets.only(right: pad),
-      child: Icon(
-        Icons.delete_rounded,
-        color: cs.error,
-        size: AppMeasurements.getResponsiveIconSizeLarge(context) * 0.6,
+      padding: const EdgeInsets.only(right: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.delete_rounded,
+            color: theme.colorScheme.error,
+            size: 28,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Delete',
+            style: TextStyle(
+              color: theme.colorScheme.error,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -158,11 +244,18 @@ class AllScansDialogContent extends StatelessWidget {
     HapticFeedback.mediumImpact();
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       builder: (dialogContext) => Dialog(
         backgroundColor: Colors.transparent,
         child: DeleteConfirmationDialogContent(
-          onConfirm: () => Navigator.pop(dialogContext, true),
-          onCancel: () => Navigator.pop(dialogContext, false),
+          onConfirm: () {
+            HapticFeedback.mediumImpact();
+            Navigator.pop(dialogContext, true);
+          },
+          onCancel: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(dialogContext, false);
+          },
         ),
       ),
     );
@@ -176,124 +269,227 @@ class AllScansDialogContent extends StatelessWidget {
       BuildContext context,
       Map<String, dynamic> scan,
       Map<String, dynamic> navigableScan,
-      double radius,
-      double iconSize,
       ) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final title = scan['diagnosis']?.toString() ?? 'Unknown Disease';
     final timestamp = _formatTimestamp(scan['timestamp']);
-    final confidence = double.tryParse(scan['confidence']?.toString() ?? '');
+    final confidence = double.tryParse(scan['confidence']?.toString() ?? '0') ?? 0;
 
-    // SUPPORT MULTIPLE KEYS
     final imageUrl = scan['imageUrl'] as String?;
     final localPath = scan['localImagePath'] as String?;
-    final imagePath = scan['imagePath'] as String?; // fallback
+    final imagePath = scan['imagePath'] as String?;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius * 1.8),
-        gradient: LinearGradient(
-          colors: [cs.surface.withOpacity(0.4), cs.surface.withOpacity(0.1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: cs.outline.withOpacity(0.2), width: 1.2),
-        boxShadow: [
-          BoxShadow(color: cs.primary.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(AppMeasurements.smallPadding),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(radius),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [cs.primary.withOpacity(0.3), cs.secondary.withOpacity(0.3)],
-              ),
-            ),
-            child: _buildScanImage(imageUrl, localPath, imagePath, context), // PASS ALL
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.pushNamed(
+          context,
+          '/results',
+          arguments: {'scanData': navigableScan},
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surface.withOpacity(0.5)
+              : theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.15),
+            width: 1,
           ),
-        ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 15),
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              timestamp,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: cs.onSurface.withOpacity(0.65),
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 11.5),
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            if (confidence != null) ...[
-              const SizedBox(height: 3),
-              Text(
-                '$confidence% confidence',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: _getConfidenceColor(confidence),
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 10.5),
-                ),
-              ),
-            ],
           ],
         ),
-        trailing: IconButton(
-          icon: Icon(Icons.more_vert_rounded, size: iconSize * 0.9),
-          color: cs.onSurface.withOpacity(0.6),
-          onPressed: () => onShowOptions(scan),
+        child: Row(
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+              ),
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: _buildScanImage(imageUrl, localPath, imagePath, context),
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            timestamp,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getConfidenceColor(confidence).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified_rounded,
+                            size: 10,
+                            color: _getConfidenceColor(confidence),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${confidence.toInt()}% confident',
+                            style: TextStyle(
+                              color: _getConfidenceColor(confidence),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Options button
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onShowOptions(scan);
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.more_vert_rounded,
+                    size: 20,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
         ),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Navigator.pushNamed(context, '/results', arguments: {'scanData': navigableScan});
-        },
       ),
     );
   }
 
   // -----------------------------------------------------------------------
-  // Image loader – SUPPORTS imagePath, localImagePath, imageUrl
+  // Image loader
   // -----------------------------------------------------------------------
-  Widget _buildScanImage(String? imageUrl, String? localPath, String? imagePath, BuildContext context) {
+  Widget _buildScanImage(
+      String? imageUrl,
+      String? localPath,
+      String? imagePath,
+      BuildContext context,
+      ) {
     // 1. Try localImagePath
-    if (localPath != null && localPath.isNotEmpty && File(localPath).existsSync()) {
-      return Image.file(
-        File(localPath),
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _fallbackImage(context),
-      );
+    if (localPath != null && localPath.isNotEmpty) {
+      try {
+        final file = File(localPath);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _fallbackImage(context),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error loading local image: $e');
+      }
     }
 
-    // 2. Try imagePath (common in older data)
-    if (imagePath != null && imagePath.isNotEmpty && File(imagePath).existsSync()) {
-      return Image.file(
-        File(imagePath),
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _fallbackImage(context),
-      );
+    // 2. Try imagePath
+    if (imagePath != null && imagePath.isNotEmpty) {
+      try {
+        final file = File(imagePath);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _fallbackImage(context),
+          );
+        }
+      } catch (e) {
+        debugPrint('Error loading image path: $e');
+      }
     }
 
     // 3. Cloud URL
-    if (imageUrl != null && imageUrl.isNotEmpty && Uri.tryParse(imageUrl)?.hasScheme == true) {
-      return Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        loadingBuilder: (c, child, progress) => progress == null
-            ? child
-            : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-        errorBuilder: (_, __, ___) => _fallbackImage(context),
-      );
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      final uri = Uri.tryParse(imageUrl);
+      if (uri != null && uri.hasScheme) {
+        return Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (c, child, progress) {
+            if (progress == null) return child;
+            return Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value: progress.expectedTotalBytes != null
+                      ? progress.cumulativeBytesLoaded /
+                      progress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (_, __, ___) => _fallbackImage(context),
+        );
+      }
     }
 
     // 4. Fallback
@@ -301,12 +497,15 @@ class AllScansDialogContent extends StatelessWidget {
   }
 
   Widget _fallbackImage(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
-      child: Icon(
-        Icons.local_florist_rounded,
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-        size: 28,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.local_florist_rounded,
+          color: theme.colorScheme.primary.withOpacity(0.4),
+          size: 32,
+        ),
       ),
     );
   }
@@ -315,35 +514,49 @@ class AllScansDialogContent extends StatelessWidget {
   // Confidence color
   // -----------------------------------------------------------------------
   Color _getConfidenceColor(double confidence) {
-    if (confidence >= 80) return Colors.green.shade600;
-    if (confidence >= 60) return Colors.orange.shade700;
-    return Colors.red.shade600;
+    if (confidence >= 80) return const Color(0xFF10B981);
+    if (confidence >= 60) return const Color(0xFFF59E0B);
+    return const Color(0xFFEF4444);
   }
 
   // -----------------------------------------------------------------------
   // Empty state
   // -----------------------------------------------------------------------
-  Widget _buildEmptyState(BuildContext context, double pad, double radius, double iconSize) {
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      padding: EdgeInsets.all(pad * 1.5),
+      padding: const EdgeInsets.all(48),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.scanner_rounded, size: iconSize * 1.8, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35)),
-          SizedBox(height: pad),
-          Text(
-            'No scans yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 17),
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.scanner_rounded,
+              size: 64,
+              color: theme.colorScheme.primary.withOpacity(0.5),
             ),
           ),
-          SizedBox(height: AppMeasurements.smallPadding * 0.5),
+          const SizedBox(height: 24),
           Text(
-            'Your scanned results will appear here',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 13),
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            'No Scans Yet',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your plant scan history will appear here.\nStart by capturing your first plant!',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 14,
+              height: 1.5,
             ),
             textAlign: TextAlign.center,
           ),

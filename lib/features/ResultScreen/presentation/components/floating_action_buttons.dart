@@ -5,18 +5,20 @@ class FloatingActionButtons extends StatelessWidget {
   final VoidCallback onSave;
   final VoidCallback onShare;
   final double? fabSize;
+  final String heroTagPrefix; // Optional: for debugging or future Hero use
 
   const FloatingActionButtons({
     super.key,
     required this.onSave,
     required this.onShare,
     this.fabSize,
+    required this.heroTagPrefix,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: [
         _CustomFab(
           onPressed: onSave,
@@ -54,7 +56,7 @@ class _CustomFab extends StatefulWidget {
   });
 
   @override
-  _CustomFabState createState() => _CustomFabState();
+  State<_CustomFab> createState() => _CustomFabState();
 }
 
 class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMixin {
@@ -81,50 +83,56 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
+    final size = widget.fabSize ?? AppMeasurements.getResponsiveFabSize(context, baseSize: 56);
+    final isMini = size < 40;
+
     return Semantics(
       label: widget.semanticLabel,
       button: true,
       enabled: true,
-      child: GestureDetector(
-        onTapDown: (_) => _controller.forward(),
-        onTapUp: (_) {
-          _controller.reverse();
-          widget.onPressed();
-        },
-        onTapCancel: () => _controller.reverse(),
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: FloatingActionButton(
-            onPressed: widget.onPressed,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            disabledElevation: 0,
-            tooltip: widget.tooltip,
-            mini: widget.fabSize != null && widget.fabSize! < 40,
-            child: Container(
-              width: widget.fabSize ??
-                  AppMeasurements.getResponsiveFabSize(context, baseSize: 56),
-              height: widget.fabSize ??
-                  AppMeasurements.getResponsiveFabSize(context, baseSize: 56),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  widget.icon,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                  semanticLabel: '${widget.semanticLabel} Icon',
+      child: Tooltip(
+        message: widget.tooltip,
+        child: GestureDetector(
+          onTapDown: (_) => _controller.forward(),
+          onTapUp: (_) {
+            _controller.reverse();
+            widget.onPressed();
+          },
+          onTapCancel: _controller.reverse,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Material(
+              shape: const CircleBorder(),
+              elevation: 6,
+              shadowColor: Colors.black.withOpacity(0.3),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(size),
+                onTap: widget.onPressed,
+                child: Container(
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
+                      ],
+                    ),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      widget.icon,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      size: isMini
+                          ? AppMeasurements.getResponsiveIconSizeSmall(context)
+                          : AppMeasurements.getResponsiveIconSizeMedium(context),
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/widgets/glass_card.dart';
 import 'scan_card.dart';
 
 class RecentScansSection extends StatelessWidget {
   final List<Map<String, dynamic>> recentScans;
   final Animation<double> scaleAnimation;
-  final void Function(String?) onDeleteScan;        // ← Fixed: void Function
+  final void Function(String?) onDeleteScan;
   final VoidCallback onShowAllScans;
-  final void Function(Map<String, dynamic>) onShowOptions; // ← Correct
+  final void Function(Map<String, dynamic>) onShowOptions;
 
   const RecentScansSection({
     super.key,
@@ -24,8 +23,6 @@ class RecentScansSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-
     if (recentScans.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -33,58 +30,47 @@ class RecentScansSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
-        GlassCard(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: padding * 1.2,
-              vertical: padding,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                  ).createShader(bounds),
-                  child: Text(
-                    'Recent Scans',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: AppMeasurements.getResponsiveFontSize(
-                        context,
-                        baseSize: 22,
-                      ),
-                    ),
+        // Compact Header
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Recent Scans',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: AppMeasurements.getResponsiveFontSize(
+                    context,
+                    baseSize: 18,
                   ),
+                  letterSpacing: -0.5,
                 ),
-                _buildViewAllButton(context),
-              ],
-            ),
+              ),
+              _buildViewAllButton(context),
+            ],
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
-        // Horizontal List
+        // Compact Horizontal List
         SizedBox(
-          height: 200,
+          height: 140, // Reduced from 200
           child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: padding),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             itemCount: recentScans.length,
             itemBuilder: (context, index) {
               final scan = recentScans[index];
               final scanId = scan['id']?.toString() ?? 'scan_$index';
 
               return Container(
-                width: 160,
+                width: 130, // Reduced from 160
                 margin: EdgeInsets.only(
-                  right: index < recentScans.length - 1 ? 16 : 0,
+                  right: index < recentScans.length - 1 ? 12 : 0,
                 ),
                 child: Hero(
                   tag: 'recent_scan_hero_$scanId',
@@ -101,7 +87,7 @@ class RecentScansSection extends StatelessWidget {
                       scan: scan,
                       index: index,
                       scaleAnimation: scaleAnimation,
-                      onShowOptions: (scanData) => onShowOptions(scanData), // ← CORRECT
+                      onShowOptions: (scanData) => onShowOptions(scanData),
                     ),
                   ),
                 ),
@@ -114,37 +100,42 @@ class RecentScansSection extends StatelessWidget {
   }
 
   Widget _buildViewAllButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-          ],
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onShowAllScans();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'View All',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
-                fontSize: AppMeasurements.getResponsiveFontSize(
-                  context,
-                  baseSize: 14,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onShowAllScans();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'View All',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
-            ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 12,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
           ),
         ),
       ),
