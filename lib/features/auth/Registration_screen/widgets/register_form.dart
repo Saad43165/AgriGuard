@@ -57,6 +57,15 @@ class RegisterForm extends StatelessWidget {
                 controller: nameController,
                 icon: Icons.person_rounded,
                 semanticsLabel: 'Full Name',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your full name';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Name must be at least 2 characters long';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildFormField(
@@ -66,6 +75,18 @@ class RegisterForm extends StatelessWidget {
                 icon: Icons.email_rounded,
                 semanticsLabel: 'Email Address',
                 keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your email address';
+                  }
+                  final emailRegex = RegExp(
+                      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                  );
+                  if (!emailRegex.hasMatch(value.trim())) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildFormField(
@@ -75,6 +96,15 @@ class RegisterForm extends StatelessWidget {
                 icon: Icons.phone_rounded,
                 semanticsLabel: 'Phone Number',
                 keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final phoneRegex = RegExp(r'^[+]*[(]{0,1}[0-9]{1,4}[)]{0,1}[-\s\./0-9]*$');
+                    if (!phoneRegex.hasMatch(value.trim())) {
+                      return 'Please enter a valid phone number';
+                    }
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildFormField(
@@ -83,6 +113,12 @@ class RegisterForm extends StatelessWidget {
                 controller: locationController,
                 icon: Icons.location_on_rounded,
                 semanticsLabel: 'Location',
+                validator: (value) {
+                  if (value != null && value.isNotEmpty && value.trim().length < 2) {
+                    return 'Location must be at least 2 characters long';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildFormField(
@@ -92,6 +128,21 @@ class RegisterForm extends StatelessWidget {
                 icon: Icons.agriculture_rounded,
                 semanticsLabel: 'Farm Size',
                 keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final farmSize = double.tryParse(value);
+                    if (farmSize == null) {
+                      return 'Please enter a valid number';
+                    }
+                    if (farmSize <= 0) {
+                      return 'Farm size must be greater than 0';
+                    }
+                    if (farmSize > 10000) {
+                      return 'Farm size seems too large';
+                    }
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildPasswordField(
@@ -101,6 +152,15 @@ class RegisterForm extends StatelessWidget {
                 obscureText: obscurePassword,
                 semanticsLabel: 'Password',
                 onVisibilityChanged: onPasswordVisibilityChanged,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters long';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               _buildPasswordField(
@@ -110,6 +170,15 @@ class RegisterForm extends StatelessWidget {
                 obscureText: obscureConfirmPassword,
                 semanticsLabel: 'Confirm Password',
                 onVisibilityChanged: onConfirmPasswordVisibilityChanged,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your password';
+                  }
+                  if (value != passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
               ),
             ],
           ),
@@ -125,6 +194,7 @@ class RegisterForm extends StatelessWidget {
         required IconData icon,
         required String semanticsLabel,
         TextInputType? keyboardType,
+        String? Function(String?)? validator,
       }) {
     final theme = Theme.of(context);
     final borderRadius = BorderRadius.circular(12);
@@ -150,8 +220,12 @@ class RegisterForm extends StatelessWidget {
             filled: true,
             fillColor: theme.colorScheme.surface.withOpacity(0.05),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            errorStyle: TextStyle(
+              color: theme.colorScheme.error,
+              fontSize: 12,
+            ),
           ),
-          // No manual validator - Firebase will handle validation
+          validator: validator,
         ),
       ],
     );
@@ -164,6 +238,7 @@ class RegisterForm extends StatelessWidget {
         required bool obscureText,
         required String semanticsLabel,
         required VoidCallback onVisibilityChanged,
+        String? Function(String?)? validator,
       }) {
     final theme = Theme.of(context);
     final borderRadius = BorderRadius.circular(12);
@@ -196,8 +271,12 @@ class RegisterForm extends StatelessWidget {
             filled: true,
             fillColor: theme.colorScheme.surface.withOpacity(0.05),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            errorStyle: TextStyle(
+              color: theme.colorScheme.error,
+              fontSize: 12,
+            ),
           ),
-          // No manual validator - Firebase will handle validation
+          validator: validator,
         ),
       ],
     );

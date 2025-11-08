@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class RegisterHeader extends StatelessWidget {
-  final XFile? imageFile;
+  final File? imageFile;
   final VoidCallback onImagePressed;
   final bool isLoading;
 
