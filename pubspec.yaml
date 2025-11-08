@@ -32,6 +32,12 @@ dependencies:
   url_launcher: ^6.3.2
   package_info_plus: ^8.3.0
   intl: any
+  tflite_flutter:
+  pdf:
+  share_plus: ^12.0.1
+
+
+
 
 dev_dependencies:
   flutter_test:
@@ -44,6 +50,8 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/models/plant_id_model.tflite
+    - assets/models/labels.txt
 
 # Launcher Icon Configuration
 flutter_icons:

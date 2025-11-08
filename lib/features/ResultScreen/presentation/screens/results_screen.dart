@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:io'; // Make sure this import is added
 import '../../../../core/constants/app_routes.dart';
+import '../../../../services/pdf_generator_service.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import '../../../home/presentation/screens/components/scan_service.dart';
 import '../../../home/presentation/screens/components/share_results_dialog_content.dart';
 import '../components/app_bar_content.dart';
 import '../components/analysis_details_card.dart';
 import '../components/diagnosis_card.dart';
+import '../components/diagnosis_result.dart';
 import '../components/reccomendations_card.dart';
 import '../components/next_steps_card.dart';
 import '../components/floating_action_buttons.dart';
@@ -249,21 +253,41 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         severity: widget.scanData['severity']?.toString() ?? 'Unknown',
         recommendations: (widget.scanData['treatment']?.toString().split('. ') ?? ['Consult an expert'])
             .where((r) => r.isNotEmpty)
-            .toList(),
+            .toList(), plantName: '', confidence: '',
       );
     } catch (e) {
       debugPrint('Error processing scanData: $e');
       return DiagnosisResult(
         disease: 'Unknown Disease',
         severity: 'Unknown',
-        recommendations: ['Consult an expert for further analysis'],
+        recommendations: ['Consult an expert for further analysis'], plantName: '', confidence: '',
       );
     }
   }
 
   Future<void> _saveReport(BuildContext context) async {
     HapticFeedback.lightImpact();
+
     try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              const Text('Saving report...'),
+            ],
+          ),
+        ),
+      );
+
+      // Save to scan history
       await ScanService().saveScan({
         'id': widget.scanData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
         'imageUrl': widget.scanData['imageUrl'],
@@ -274,17 +298,51 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         'timestamp': widget.scanData['timestamp'] ?? DateTime.now().toIso8601String(),
         'severity': widget.scanData['severity'] ?? 'Unknown',
       });
+
+      // Generate and save PDF report
+      try {
+        final pdfFile = await PdfShareService.generateScanPdf(widget.scanData);
+        final directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          final downloadsDir = Directory('${directory.path}/Download');
+          if (!await downloadsDir.exists()) {
+            await downloadsDir.create(recursive: true);
+          }
+
+          final fileName = 'AgriGuard_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          final newPath = '${downloadsDir.path}/$fileName';
+          await pdfFile.copy(newPath);
+
+          debugPrint('PDF saved to: $newPath');
+        }
+      } catch (pdfError) {
+        debugPrint('PDF save failed: $pdfError');
+        // Continue even if PDF save fails
+      }
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Report saved successfully'),
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(child: Text('Report saved successfully with PDF!')),
+              ],
+            ),
             behavior: SnackBarBehavior.fixed,
             margin: EdgeInsets.only(
               bottom: MediaQuery.of(context).size.height * 0.1,
             ),
-            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+            backgroundColor: Colors.green[700],
           ),
         );
+
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRoutes.home,
@@ -293,10 +351,15 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         );
       }
     } catch (e) {
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to save report'),
+            content: Text('Failed to save report: ${e.toString()}'),
             backgroundColor: Theme.of(context).colorScheme.error.withOpacity(0.9),
           ),
         );
@@ -307,7 +370,65 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
 
   Future<void> _shareResults(BuildContext context) async {
     HapticFeedback.lightImpact();
-    final shareText = '''
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              const Text('Preparing share...'),
+            ],
+          ),
+        ),
+      );
+
+      // Generate PDF for sharing
+      final pdfFile = await PdfShareService.generateScanPdf(widget.scanData);
+
+      // Create share text
+      final shareText = '''
+🌿 AgriGuard Plant Health Scan Results
+
+Diagnosis: ${widget.scanData['diagnosis'] ?? 'Unknown Disease'}
+Confidence: ${widget.scanData['confidence']?.toString() ?? '85'}%
+Severity: ${widget.scanData['severity'] ?? 'Unknown'}
+Date: ${widget.scanData['timestamp'] != null ? _formatDate(DateTime.parse(widget.scanData['timestamp'])) : _formatDate(DateTime.now())}
+
+Treatment Recommendations:
+${widget.scanData['treatment'] ?? 'Consult an expert for detailed treatment plan'}
+
+Generated by AgriGuard App
+'''.trim();
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Share using share_plus
+      if (context.mounted) {
+        await Share.shareXFiles(
+          [XFile(pdfFile.path, mimeType: 'application/pdf')],
+          text: shareText,
+          subject: 'AgriGuard Plant Health Report',
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Fallback: Share as text only
+      final shareText = '''
 Plant Health Scan Results
 
 Disease: ${widget.scanData['diagnosis'] ?? 'Unknown Disease'}
@@ -319,25 +440,18 @@ Treatment: ${widget.scanData['treatment'] ?? 'Consult an expert'}
 Generated by Plant Health Scanner
 ''';
 
-    showDialog(
-      context: context,
-      builder: (context) => ShareResultsDialogContent(shareText: shareText),
-    );
-  }
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => ShareResultsDialogContent(shareText: shareText),
+        );
+      }
 
+      debugPrint('Error sharing results: $e');
+    }
+  }
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
 }
 
-class DiagnosisResult {
-  final String disease;
-  final String severity;
-  final List<String> recommendations;
-
-  DiagnosisResult({
-    required this.disease,
-    required this.severity,
-    required this.recommendations,
-  });
-}

@@ -8,13 +8,14 @@ import '../../../Navbar/presentation/nav_bar.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import '../Species_widgets/species_grid_widget.dart' show SpeciesGridWidget;
 import 'components/all_scans_dialog_content.dart';
+import 'components/custom_home_app_bar.dart';
 import 'components/first_time_user_guide.dart';
 import 'components/loading_section.dart';
 import 'components/recent_scan_section.dart';
 import 'components/scan_options_bottomsheet.dart';
 import 'components/scan_service.dart';
 import 'components/share_results_dialog_content.dart';
-import 'components/welcome_section.dart';
+import 'components/weather_card.dart';
 import '../../../../core/constants/app_measurements.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,16 +26,16 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   /* --------------------------------------------------------------------- *
    *  State
    * --------------------------------------------------------------------- */
   final List<Map<String, dynamic>> _recentScans = [];
   bool _isFirstTimeUser = true;
   bool _isLoading = false;
-  bool _hasHandledArgs = false;
+  bool _hasHandledRouteArgs = false;
 
+  // Animation controllers
   late final AnimationController _fadeController;
   late final AnimationController _scaleController;
   late final AnimationController _pulseController;
@@ -42,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
   late final Animation<double> _pulseAnimation;
 
   final ScanService _scanService = ScanService();
+  static const int _maxRecentScans = 50;
 
   /* --------------------------------------------------------------------- *
    *  Lifecycle
@@ -49,28 +51,13 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _loadFirstTimeUser();
     _loadRecentScans();
-    _initializeAnimations();
-  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (_hasHandledArgs) return;
-    final args =
-    ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args == null) return;
-
-    _hasHandledArgs = true;
+    // Handle navigation arguments once
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (args.containsKey('newScan')) {
-        _handleNewScan(args['newScan'] as Map<String, dynamic>);
-      }
-      if (args['refreshScans'] == true) {
-        _loadRecentScans();
-      }
+      _handleRouteArguments();
     });
   }
 
@@ -80,6 +67,26 @@ class _HomeScreenState extends State<HomeScreen>
     _scaleController.dispose();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  /* --------------------------------------------------------------------- *
+   *  Route Argument Handling
+   * --------------------------------------------------------------------- */
+  void _handleRouteArguments() {
+    if (_hasHandledRouteArgs) return;
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args == null) return;
+
+    _hasHandledRouteArgs = true;
+
+    if (args.containsKey('newScan')) {
+      final newScan = args['newScan'] as Map<String, dynamic>;
+      _handleNewScan(newScan);
+    }
+
+    if (args['refreshScans'] == true) {
+      _loadRecentScans();
+    }
   }
 
   /* --------------------------------------------------------------------- *
@@ -116,9 +123,9 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _loadFirstTimeUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getBool('isFirstTimeUser');
       if (mounted) {
-        setState(
-                () => _isFirstTimeUser = prefs.getBool('isFirstTimeUser') ?? true);
+        setState(() => _isFirstTimeUser = saved ?? true);
       }
     } catch (e) {
       debugPrint('SharedPreferences error: $e');
@@ -135,20 +142,28 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   /* --------------------------------------------------------------------- *
-   *  Data loading
+   *  Data Loading
    * --------------------------------------------------------------------- */
   Future<void> _loadRecentScans() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
+
     try {
       final scans = await _scanService.fetchRecentScans();
-      if (mounted) {
-        setState(() {
-          _recentScans
-            ..clear()
-            ..addAll(scans);
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _recentScans
+          ..clear()
+          ..addAll(scans.take(_maxRecentScans));
+        _isLoading = false;
+
+        // Only update first-time if no scans exist
+        if (_recentScans.isEmpty && _isFirstTimeUser == false) {
+          _isFirstTimeUser = true;
+          _saveFirstTimeUser();
+        }
+      });
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -160,11 +175,13 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _refreshScans() async {
     HapticFeedback.lightImpact();
     await _loadRecentScans();
-    if (mounted) _showSnackBar('Scans refreshed!', false);
+    if (mounted) {
+      _showSnackBar('Scans refreshed!', false);
+    }
   }
 
   /* --------------------------------------------------------------------- *
-   *  Scan handling
+   *  Scan Handling
    * --------------------------------------------------------------------- */
   void _handleNewScan(Map<String, dynamic> newScan) {
     final id = newScan['id']?.toString();
@@ -174,24 +191,41 @@ class _HomeScreenState extends State<HomeScreen>
 
     setState(() {
       _recentScans.insert(0, newScan);
-      _isFirstTimeUser = false;
+      if (_recentScans.length > _maxRecentScans) {
+        _recentScans.removeLast();
+      }
     });
-    _saveFirstTimeUser();
+
+    // Mark as not first-time user
+    if (_isFirstTimeUser) {
+      _isFirstTimeUser = false;
+      _saveFirstTimeUser();
+    }
+
     _showSnackBar('New scan added!', false);
   }
 
-  Future<void> _deleteScan(String id) async {
-    final scan =
-    _recentScans.firstWhereOrNull((s) => s['id']?.toString() == id);
+  Future<void> _deleteScan(String? id) async {
+    if (id == null || !mounted) return;
+
+    final scan = _recentScans.firstWhereOrNull((s) => s['id']?.toString() == id);
+    if (scan == null) return;
+
     try {
       await _scanService.deleteScan(id);
-      await _deleteImageFile(scan?['imagePath'] as String?);
+      await _deleteImageFile(scan['imagePath'] as String?);
 
       setState(() {
         _recentScans.removeWhere((s) => s['id']?.toString() == id);
-        _isFirstTimeUser = _recentScans.isEmpty && _isFirstTimeUser;
       });
+
       _showSnackBar('Scan deleted!', false);
+
+      // If no scans left, show first-time guide
+      if (_recentScans.isEmpty && !_isFirstTimeUser) {
+        _isFirstTimeUser = true;
+        _saveFirstTimeUser();
+      }
     } catch (e) {
       _showSnackBar('Failed to delete scan: $e', true);
     }
@@ -208,11 +242,11 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   /* --------------------------------------------------------------------- *
-   *  UI helpers
+   *  UI Helpers
    * --------------------------------------------------------------------- */
   void _showSnackBar(String message, bool isError) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError
@@ -251,10 +285,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   /* --------------------------------------------------------------------- *
-   *  Bottom sheets / dialogs
+   *  Bottom Sheets / Dialogs
    * --------------------------------------------------------------------- */
   Future<void> _showAllScansDialog() async {
     HapticFeedback.lightImpact();
+    if (!mounted) return;
+
     await showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -281,8 +317,7 @@ class _HomeScreenState extends State<HomeScreen>
       isScrollControlled: true,
       builder: (_) => ScanOptionsBottomSheet(
         scan: scan,
-        onDelete: () => _deleteScan(scan['id']?.toString() ?? ''),
-        onShare: () => _shareResults(scan),
+        onDelete: () => _deleteScan(scan['id'] as String),
       ),
     );
   }
@@ -293,10 +328,12 @@ Plant Health Scan Results
 
 Disease: ${scan['diagnosis'] ?? 'Unknown'}
 Date: ${scan['timestamp'] ?? 'Unknown'}
-Confidence: ${scan['confidence'] ?? 'N/A'}%
+Confidence: ${scan['confidence']?.toStringAsFixed(1) ?? 'N/A'}%
 
 Treatment: ${scan['treatment'] ?? 'No treatment available'}
 ''';
+
+    if (!mounted) return;
 
     await showDialog(
       context: context,
@@ -312,6 +349,8 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
     final padding = AppMeasurements.getResponsivePadding(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: const CustomHomeAppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -325,20 +364,16 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
             ]
                 : [
               Theme.of(context).colorScheme.background,
-              Theme.of(context)
-                  .colorScheme
-                  .background
-                  .withOpacity(0.9),
+              Theme.of(context).colorScheme.background.withOpacity(0.9),
             ],
           ),
         ),
         child: Stack(
           children: [
-            // Floating orbs
+            // Floating Orbs (optimized: fewer, no keys if static)
             ...List.generate(
-              8,
+              6, // Reduced from 8
                   (i) => FloatingOrb(
-                key: ValueKey('orb_$i'),
                 index: i,
                 maxWidth: MediaQuery.of(context).size.width,
                 fadeController: _fadeController,
@@ -346,55 +381,41 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
               ),
             ),
 
-            // Main content
+            // Main Content
             SafeArea(
               child: RefreshIndicator(
                 onRefresh: _refreshScans,
                 color: Theme.of(context).colorScheme.primary,
                 backgroundColor: Theme.of(context).colorScheme.surface,
-                child: CustomScrollView(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, 0),
                   physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        padding,
-                        padding * 0.5,
-                        padding,
-                        0,
+                  children: [
+                    // Weather Card
+                    const WeatherCard(),
+                    SizedBox(height: padding * 0.8),
+
+                    // Species Grid
+                    const SpeciesGridWidget(),
+                    SizedBox(height: padding * 0.8),
+
+                    // Conditional Content
+                    if (_isLoading)
+                      const LoadingSection()
+                    else if (_isFirstTimeUser && _recentScans.isEmpty)
+                      const FirstTimeUserGuide()
+                    else
+                      RecentScansSection(
+                        key: const ValueKey('recent_scans'),
+                        recentScans: _recentScans,
+                        scaleAnimation: _scaleAnimation,
+                        onDeleteScan: _deleteScan,
+                        onShowAllScans: _showAllScansDialog,
+                        onShowOptions: _showScanOptionsBottomSheet,
                       ),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          // Welcome
-                          WelcomeSection(
-                            isFirstTimeUser: _isFirstTimeUser,
-                            scaleAnimation: _scaleAnimation,
-                          ),
-                          SizedBox(height: padding * 0.8),
 
-                          // Species Grid
-                          const SpeciesGridWidget(),
-                          SizedBox(height: padding * 0.8),
-
-                          // Content
-                          if (_isLoading)
-                            const LoadingSection()
-                          else if (_isFirstTimeUser && _recentScans.isEmpty)
-                            const FirstTimeUserGuide()
-                          else
-                            RecentScansSection(
-                              key: const ValueKey('recent_scans'),
-                              recentScans: _recentScans,
-                              scaleAnimation: _scaleAnimation,
-                              onDeleteScan: _deleteScan,
-                              onShowAllScans: _showAllScansDialog,
-                              onShowOptions: _showScanOptionsBottomSheet,
-                            ),
-
-                          // Bottom padding for FAB
-                          SizedBox(height: padding + 80),
-                        ]),
-                      ),
-                    ),
+                    // FAB bottom padding
+                    SizedBox(height: padding + 80),
                   ],
                 ),
               ),
@@ -402,8 +423,6 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
           ],
         ),
       ),
-      // FAB
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: BottomNavBar(
         selectedIndex: _navHome,
         onTap: _handleNavTap,
@@ -413,7 +432,7 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
 }
 
 /* --------------------------------------------------------------------- *
- *  Helper extension
+ *  Helper Extension
  * --------------------------------------------------------------------- */
 extension IterableX<T> on Iterable<T> {
   T? firstWhereOrNull(bool Function(T) test) {

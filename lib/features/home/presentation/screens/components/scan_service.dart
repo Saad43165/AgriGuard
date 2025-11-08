@@ -1,174 +1,173 @@
-// scan_service.dart
+// lib/features/scan_history/data/scan_service.dart
+import 'dart:async';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 class ScanService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  Future<List<Map<String, dynamic>>> fetchRecentScans() async {
+  // Collection path: users/{uid}/scans
+  CollectionReference _userScansCollection(String uid) =>
+      _firestore.collection('users').doc(uid).collection('scans');
+
+  /* --------------------------------------------------------------------- *
+   *  Fetch Recent Scans
+   * --------------------------------------------------------------------- */
+  Future<List<Map<String, dynamic>>> fetchRecentScans({int limit = 10}) async {
     try {
       final uid = _auth.currentUser?.uid;
-      if (uid == null) {
-        throw Exception('User not authenticated');
-      }
+      if (uid == null) throw Exception('User not authenticated');
 
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('scans')
+      final snapshot = await _userScansCollection(uid)
           .orderBy('timestamp', descending: true)
-          .limit(10)
+          .limit(limit)
           .get();
 
       return snapshot.docs.map((doc) {
-        final data = doc.data();
-        // Check if image exists locally
-        final localPath = data['localImagePath'];
-        if (localPath != null) {
-          final file = File(localPath);
-          data['localImageExists'] = file.existsSync();
-        }
-        return {...data, 'id': doc.id};
+        final data = doc.data() as Map<String, dynamic>;
+        final localPath = data['localImagePath'] as String?;
+        data['id'] = doc.id;
+        data['localImageExists'] = localPath != null && File(localPath).existsSync();
+        return data;
       }).toList();
     } catch (e) {
       debugPrint('Error fetching scans: $e');
-      throw Exception('Failed to fetch recent scans: $e');
-    }
-  }
-
-  Future<void> saveScan(Map<String, dynamic> scan, {File? imageFile}) async {
-    try {
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // Generate scan ID
-      final scanId = _firestore.collection('users').doc(uid).collection('scans').doc().id;
-
-      String? localImagePath;
-
-      // Copy image to app's local directory if provided
-      if (imageFile != null) {
-        localImagePath = await _saveImageLocally(imageFile, scanId);
-        debugPrint('Image saved locally: $localImagePath');
-      }
-
-      // Prepare scan data
-      final scanData = {
-        ...scan,
-        'id': scanId,
-        'userId': uid,
-        'timestamp': FieldValue.serverTimestamp(),
-        'localImagePath': localImagePath, // Store local path
-        'hasCloudImage': false, // Mark as local storage
-        'status': scan['status'] ?? 'pending',
-        'diagnosis': scan['diagnosis'],
-        'confidence': scan['confidence'],
-        'treatment': scan['treatment'],
-        'cropType': scan['cropType'],
-      };
-
-      // Save to Firestore
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('scans')
-          .doc(scanId)
-          .set(scanData);
-
-      // Update user scan count
-      await _updateUserScanCount(uid);
-
-      debugPrint('Scan saved successfully: $scanId');
-    } catch (e) {
-      debugPrint('Error saving scan: $e');
-      throw Exception('Failed to save scan: ${e.toString()}');
-    }
-  }
-
-  Future<String> _saveImageLocally(File imageFile, String scanId) async {
-    try {
-      // Get app's documents directory
-      final directory = await getApplicationDocumentsDirectory();
-      final scansDirectory = Directory('${directory.path}/scans');
-
-      // Create scans directory if it doesn't exist
-      if (!await scansDirectory.exists()) {
-        await scansDirectory.create(recursive: true);
-      }
-
-      // Create unique filename
-      final fileName = 'scan_${scanId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final localPath = '${scansDirectory.path}/$fileName';
-
-      // Copy the file to local storage
-      await imageFile.copy(localPath);
-
-      return localPath;
-    } catch (e) {
-      debugPrint('Error saving image locally: $e');
       rethrow;
     }
   }
 
-  Future<File?> getLocalImage(String localPath) async {
+  /* --------------------------------------------------------------------- *
+   *  Save Scan (with local + cloud sync)
+   * --------------------------------------------------------------------- */
+  Future<String> saveScan(Map<String, dynamic> scanData, {File? imageFile}) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+
+    String? imageUrl;
+    String? localImagePath;
+    String scanId = '';
+
     try {
-      final file = File(localPath);
-      if (await file.exists()) {
-        return file;
+      // 1. Upload image to Firebase Storage
+      if (imageFile != null) {
+        final ref = _storage
+            .ref()
+            .child('scans/${user.uid}/${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final uploadTask = await ref.putFile(imageFile);
+        imageUrl = await uploadTask.ref.getDownloadURL();
       }
-      return null;
+
+      // 2. Save image locally and get path
+      if (imageFile != null) {
+        scanId = _firestore.collection('temp').doc().id; // Pre-generate ID
+        localImagePath = await _saveImageLocally(imageFile, scanId);
+      }
+
+      // 3. Prepare data
+      final data = {
+        ...scanData,
+        'userId': user.uid,
+        'timestamp': FieldValue.serverTimestamp(),
+        'imageUrl': imageUrl,
+        'localImagePath': localImagePath,
+      };
+
+      // 4. Save to Firestore (transaction for safety)
+      await _firestore.runTransaction((transaction) async {
+        final docRef = _userScansCollection(user.uid).doc();
+        scanId = docRef.id; // Use actual ID
+        if (localImagePath != null && imageFile != null) {
+          // Re-save with correct ID
+          final correctedPath = await _saveImageLocally(imageFile, scanId);
+          data['localImagePath'] = correctedPath;
+        }
+        transaction.set(docRef, data);
+      });
+
+      // 5. Update user stats
+      unawaited(_updateUserScanCount(user.uid));
+
+      debugPrint('Scan saved: $scanId');
+      return scanId;
     } catch (e) {
-      debugPrint('Error getting local image: $e');
-      return null;
+      debugPrint('Error saving scan: $e');
+      // Cleanup on failure
+      if (imageUrl != null) {
+        await _storage.refFromURL(imageUrl).delete().catchError((_) {});
+      }
+      if (localImagePath != null) {
+        await _deleteLocalImage(localImagePath).catchError((_) {});
+      }
+      rethrow;
     }
   }
 
+  /* --------------------------------------------------------------------- *
+   *  Delete Scan (Firestore + Storage + Local)
+   * --------------------------------------------------------------------- */
   Future<void> deleteScan(String scanId) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('User not authenticated');
+
     try {
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) {
-        throw Exception('User not authenticated');
-      }
+      final docRef = _userScansCollection(uid).doc(scanId);
+      final doc = await docRef.get();
 
-      // Get scan data first to find local image path
-      final scanDoc = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('scans')
-          .doc(scanId)
-          .get();
+      if (!doc.exists) return;
 
-      if (scanDoc.exists) {
-        final data = scanDoc.data();
-        final localPath = data?['localImagePath'];
+      final data = doc.data() as Map<String, dynamic>;
 
-        // Delete local image file if it exists
-        if (localPath != null) {
-          await _deleteLocalImage(localPath);
-        }
+      // Delete in parallel
+      await Future.wait([
+        // 1. Delete Firestore doc
+        docRef.delete(),
 
-        // Delete scan document from Firestore
-        await _firestore
-            .collection('users')
-            .doc(uid)
-            .collection('scans')
-            .doc(scanId)
-            .delete();
+        // 2. Delete cloud image
+        if (data['imageUrl'] != null)
+          _storage.refFromURL(data['imageUrl'] as String).delete().catchError((_) {}),
 
-        debugPrint('Scan deleted: $scanId');
+        // 3. Delete local image
+        if (data['localImagePath'] != null)
+          _deleteLocalImage(data['localImagePath'] as String),
+      ]);
 
-        // Update user scan count
-        await _decrementUserScanCount(uid);
-      }
+      // 4. Update scan count
+      unawaited(_decrementUserScanCount(uid));
+
+      debugPrint('Scan deleted: $scanId');
     } catch (e) {
       debugPrint('Error deleting scan: $e');
-      throw Exception('Failed to delete scan: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  /* --------------------------------------------------------------------- *
+   *  Local Image Management
+   * --------------------------------------------------------------------- */
+  Future<String> _saveImageLocally(File imageFile, String scanId) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final scansDir = Directory('${directory.path}/scans');
+      if (!await scansDir.exists()) {
+        await scansDir.create(recursive: true);
+      }
+
+      final fileName = 'scan_${scanId}_thumb.jpg';
+      final localPath = '${scansDir.path}/$fileName';
+
+      // Compress & copy
+      final compressed = await imageFile.copy(localPath);
+      debugPrint('Image saved locally: $localPath');
+      return localPath;
+    } catch (e) {
+      debugPrint('Error saving local image: $e');
+      rethrow;
     }
   }
 
@@ -180,88 +179,67 @@ class ScanService {
         debugPrint('Local image deleted: $localPath');
       }
     } catch (e) {
-      debugPrint('Error deleting local image: $e');
-      // Continue even if local deletion fails
+      debugPrint('Failed to delete local image: $e');
     }
   }
 
+  Future<File?> getLocalImage(String localPath) async {
+    try {
+      final file = File(localPath);
+      return await file.exists() ? file : null;
+    } catch (e) {
+      debugPrint('Error reading local image: $e');
+      return null;
+    }
+  }
+
+  /* --------------------------------------------------------------------- *
+   *  Clear Local Cache Only
+   * --------------------------------------------------------------------- */
   Future<void> clearAllLocalScans() async {
     try {
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) return;
-
-      // Get all scans for the user
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('scans')
-          .get();
-
-      // Delete all local images
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final localPath = data['localImagePath'];
-        if (localPath != null) {
-          await _deleteLocalImage(localPath);
-        }
-      }
-
-      // Clear scans directory
       final directory = await getApplicationDocumentsDirectory();
-      final scansDirectory = Directory('${directory.path}/scans');
-      if (await scansDirectory.exists()) {
-        await scansDirectory.delete(recursive: true);
+      final scansDir = Directory('${directory.path}/scans');
+      if (await scansDir.exists()) {
+        await scansDir.delete(recursive: true);
+        debugPrint('Local scans directory cleared');
       }
-
-      debugPrint('All local scans cleared');
     } catch (e) {
       debugPrint('Error clearing local scans: $e');
     }
   }
 
+  /* --------------------------------------------------------------------- *
+   *  User Stats (Scan Count)
+   * --------------------------------------------------------------------- */
   Future<void> _updateUserScanCount(String uid) async {
     try {
-      final userDocRef = _firestore.collection('users').doc(uid);
-
+      final userRef = _firestore.collection('users').doc(uid);
       await _firestore.runTransaction((transaction) async {
-        final userDoc = await transaction.get(userDocRef);
-
-        if (userDoc.exists) {
-          final currentCount = (userDoc.data()?['scanCount'] ?? 0) as int;
-          transaction.update(userDocRef, {
-            'scanCount': currentCount + 1,
-            'lastScan': FieldValue.serverTimestamp(),
-          });
-        } else {
-          transaction.set(userDocRef, {
-            'scanCount': 1,
-            'lastScan': FieldValue.serverTimestamp(),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
+        final snapshot = await transaction.get(userRef);
+        final current = (snapshot.data()?['scanCount'] ?? 0) as int;
+        transaction.set(userRef, {
+          'scanCount': current + 1,
+          'lastScan': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       });
     } catch (e) {
-      debugPrint('Error updating user scan count: $e');
+      debugPrint('Error updating scan count: $e');
     }
   }
 
   Future<void> _decrementUserScanCount(String uid) async {
     try {
-      final userDocRef = _firestore.collection('users').doc(uid);
-
+      final userRef = _firestore.collection('users').doc(uid);
       await _firestore.runTransaction((transaction) async {
-        final userDoc = await transaction.get(userDocRef);
-        if (userDoc.exists) {
-          final currentCount = (userDoc.data()?['scanCount'] ?? 0) as int;
-          final newCount = currentCount > 0 ? currentCount - 1 : 0;
-
-          transaction.update(userDocRef, {
-            'scanCount': newCount,
-          });
-        }
+        final snapshot = await transaction.get(userRef);
+        if (!snapshot.exists) return;
+        final current = (snapshot.data()?['scanCount'] ?? 0) as int;
+        final newCount = current > 0 ? current - 1 : 0;
+        transaction.update(userRef, {'scanCount': newCount});
       });
     } catch (e) {
-      debugPrint('Error decrementing user scan count: $e');
+      debugPrint('Error decrementing scan count: $e');
     }
   }
 }

@@ -8,7 +8,9 @@ class AppRoutes {
   static const String scan = '/ResultScreen';
   static const String results = '/results';
   static const String profile = '/profile';
+/*
   static const String imageEdit = '/image-edit';
+*/
   static const String settings = '/settings';
   static const String help = '/help-and-support';
   static const String onboard = '/onboard';

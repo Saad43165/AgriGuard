@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
 
 class FloatingActionButtons extends StatelessWidget {
-  final VoidCallback? onSave;
-  final VoidCallback? onShare;
+  final VoidCallback onSave;
+  final VoidCallback onShare;
   final double? fabSize;
 
   const FloatingActionButtons({
@@ -39,7 +39,7 @@ class FloatingActionButtons extends StatelessWidget {
 }
 
 class _CustomFab extends StatefulWidget {
-  final VoidCallback? onPressed;
+  final VoidCallback onPressed;
   final IconData icon;
   final String tooltip;
   final String semanticLabel;
@@ -84,16 +84,14 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
     return Semantics(
       label: widget.semanticLabel,
       button: true,
-      enabled: widget.onPressed != null,
+      enabled: true,
       child: GestureDetector(
-        onTapDown: widget.onPressed != null ? (_) => _controller.forward() : null,
-        onTapUp: widget.onPressed != null
-            ? (_) {
+        onTapDown: (_) => _controller.forward(),
+        onTapUp: (_) {
           _controller.reverse();
-          widget.onPressed!();
-        }
-            : null,
-        onTapCancel: widget.onPressed != null ? () => _controller.reverse() : null,
+          widget.onPressed();
+        },
+        onTapCancel: () => _controller.reverse(),
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: FloatingActionButton(
@@ -111,14 +109,9 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: widget.onPressed != null
-                      ? [
+                  colors: [
                     Theme.of(context).colorScheme.primary,
                     Theme.of(context).colorScheme.secondary,
-                  ]
-                      : [
-                    Colors.grey.shade600,
-                    Colors.grey.shade800,
                   ],
                 ),
                 border: Border.all(
@@ -129,9 +122,7 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
               child: Center(
                 child: Icon(
                   widget.icon,
-                  color: widget.onPressed != null
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Colors.grey.shade400,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   size: AppMeasurements.getResponsiveIconSizeMedium(context),
                   semanticLabel: '${widget.semanticLabel} Icon',
                 ),
