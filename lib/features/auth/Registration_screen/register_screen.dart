@@ -1,8 +1,11 @@
+// features/auth/Registration_screen/register_screen.dart
+
 import 'dart:io';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/login_prompt.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_form.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_header.dart';
+import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart'; // ← NEW
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/utils/snackbar_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -105,7 +108,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Check if image is still accessible
     if (_imageFile != null && !await _imageFile!.exists()) {
       SnackbarUtils.showErrorSnackBar(
         context: context,
@@ -117,7 +119,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() => _isLoading = true);
 
     try {
-      // 1. Gather form data
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
       final name = _nameController.text.trim();
@@ -125,7 +126,6 @@ class _RegisterScreenState extends State<RegisterScreen>
       final location = _locationController.text.trim();
       final farmSize = _farmSizeController.text.trim();
 
-      // 2. Create Firebase Auth user
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
       final user = credential.user;
@@ -133,13 +133,11 @@ class _RegisterScreenState extends State<RegisterScreen>
 
       final uid = user.uid;
 
-      // 3. Upload profile image
       String? profileImageUrl;
       if (_imageFile != null && await _imageFile!.exists()) {
         profileImageUrl = await _uploadProfileImage(uid);
       }
 
-      // 4. Save user data to Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'fullName': name,
         'email': email,
@@ -151,19 +149,15 @@ class _RegisterScreenState extends State<RegisterScreen>
         'emailVerified': false,
       });
 
-      // 5. Send verification email
       await user.sendEmailVerification();
 
-      // 6. Success handling
       if (mounted) {
         SnackbarUtils.showRegistrationSuccessSnackBar(context);
-
-        // Navigate to login after delay
         await Future.delayed(const Duration(seconds: 3));
         Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.login,
-                (route) => false
+          context,
+          AppRoutes.login,
+              (route) => false,
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -176,9 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     } catch (e) {
       SnackbarUtils.showUnexpectedErrorSnackBar(context, e.toString());
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -210,7 +202,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
   }
 
-  // ... rest of your build method remains exactly the same ...
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
@@ -218,68 +209,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ).createShader(bounds),
-          child: Text(
-            'Create Account',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: AppMeasurements.getResponsiveFontSize(
-                context,
-                baseSize: 24,
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: EdgeInsets.only(right: smallPadding),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                AppMeasurements.getResponsiveBorderRadius(context),
-              ),
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                ],
-              ),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(
-                  AppMeasurements.getResponsiveBorderRadius(context),
-                ),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(context);
-                },
-                child: Padding(
-                  padding: EdgeInsets.all(smallPadding),
-                  child: Icon(
-                    Icons.arrow_back_rounded,
-                    size: AppMeasurements.getResponsiveIconSizeSmall(context),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: const RegisterAppBar(), // ← NEW: Clean, reusable AppBar
       body: Container(
         decoration: BoxDecoration(
           gradient: ThemeProvider.of(context).isDarkMode

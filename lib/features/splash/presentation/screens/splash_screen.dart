@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../widget/animation_orbs_background.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,89 +10,116 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late AnimationController _slideController;
-  late AnimationController _rotateController;
-  late AnimationController _leafController;
+  late AnimationController _logoController;
+  late AnimationController _textController;
   late AnimationController _progressController;
+  late AnimationController _orbController;
+  late AnimationController _shimmerController;
 
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _rotateAnimation;
-  late Animation<double> _leafAnimation;
+  late Animation<double> _logoScaleAnimation;
+  late Animation<double> _logoFadeAnimation;
+  late Animation<double> _logoRotateAnimation;
+  late Animation<double> _textFadeAnimation;
+  late Animation<Offset> _textSlideAnimation;
   late Animation<double> _progressAnimation;
+  late Animation<double> _orbAnimation;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
+    _startAnimationSequence();
+    _navigateToNext();
+  }
 
-    // Initialize controllers
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _rotateController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    _leafController = AnimationController(
+  void _initializeAnimations() {
+    // Logo animations
+    _logoController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
+
+    _logoScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
+      ),
+    );
+
+    _logoFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeIn),
+      ),
+    );
+
+    _logoRotateAnimation = Tween<double>(begin: -0.2, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutBack),
+      ),
+    );
+
+    // Text animations
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _textFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeIn),
+    );
+
+    _textSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+    );
+
+    // Progress animation
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 2500),
       vsync: this,
     );
 
-    // Initialize animations
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-    _rotateAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.easeInOut),
-    );
-    _leafAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _leafController, curve: Curves.elasticOut),
-    );
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
 
-    _startAnimations();
-    _navigateToNext();
+    // Orb animation
+    _orbController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _orbAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _orbController, curve: Curves.easeInOut),
+    );
+
+    // Shimmer animation
+    _shimmerController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+
+    _shimmerAnimation = Tween<double>(begin: -2, end: 2).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.linear),
+    );
   }
 
-  void _startAnimations() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+  void _startAnimationSequence() async {
+    await Future.delayed(const Duration(milliseconds: 200));
     if (mounted) {
-      _fadeController.forward();
-      _scaleController.forward();
+      _logoController.forward();
 
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future.delayed(const Duration(milliseconds: 600));
       if (mounted) {
-        _slideController.forward();
-        _rotateController.forward();
+        _textController.forward();
 
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 400));
         if (mounted) {
-          _leafController.forward();
           _progressController.forward();
         }
       }
@@ -100,28 +127,45 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   void _navigateToNext() async {
-    await Future.delayed(const Duration(seconds: 4));
+    await Future.delayed(const Duration(milliseconds: 3500));
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/onboard');
     }
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateStatusBar();
+  }
+
+  void _updateStatusBar() {
+    final brightness = Theme.of(context).brightness;
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+        brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+      ),
+    );
+  }
+
+  @override
   void dispose() {
-    _fadeController.dispose();
-    _scaleController.dispose();
-    _slideController.dispose();
-    _rotateController.dispose();
-    _leafController.dispose();
+    _logoController.dispose();
+    _textController.dispose();
     _progressController.dispose();
+    _orbController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Container(
@@ -129,42 +173,41 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-              const Color(0xFF0F0F23),
-            ]
-                : [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.95),
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.background,
+            colors: [
+              colorScheme.background,
+              colorScheme.surface.withOpacity(0.8),
+              colorScheme.background,
             ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
           ),
         ),
         child: Stack(
           children: [
-            // Animated orbs background
-            AnimatedOrbsBackground(scaleAnimation: _scaleAnimation),
-
-            // Floating orbs (consistent with home screen)
-            ...List.generate(8, (index) => _buildFloatingOrb(index)),
+            // Animated background orbs
+            ...List.generate(5, (index) => _buildBackgroundOrb(index, screenWidth, screenHeight, colorScheme)),
 
             // Main content
             SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(padding),
-                      child: _buildMainCard(context),
-                    ),
-                  ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(flex: 2),
+
+                    // Logo section
+                    _buildLogoSection(context, colorScheme),
+
+                    SizedBox(height: AppMeasurements.getResponsiveSize(context, baseSize: 40)),
+
+                    // Text section
+                    _buildTextSection(context, colorScheme),
+
+                    const Spacer(flex: 2),
+
+                    // Progress indicator
+                    _buildProgressIndicator(context, colorScheme),
+
+                    SizedBox(height: AppMeasurements.getResponsiveSize(context, baseSize: 60)),
+                  ],
                 ),
               ),
             ),
@@ -174,30 +217,33 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  Widget _buildFloatingOrb(int index) {
+  Widget _buildBackgroundOrb(int index, double screenWidth, double screenHeight, ColorScheme colorScheme) {
+    final positions = [
+      {'top': screenHeight * 0.1, 'left': screenWidth * 0.1},
+      {'top': screenHeight * 0.2, 'right': screenWidth * 0.1},
+      {'top': screenHeight * 0.6, 'left': screenWidth * 0.05},
+      {'top': screenHeight * 0.7, 'right': screenWidth * 0.15},
+      {'top': screenHeight * 0.4, 'left': screenWidth * 0.5},
+    ];
+
     return AnimatedBuilder(
-      animation: _fadeAnimation,
+      animation: _orbAnimation,
       builder: (context, child) {
         return Positioned(
-          top: (index * 120.0) % MediaQuery.of(context).size.height,
-          left: (index * 80.0) % MediaQuery.of(context).size.width,
+          top: positions[index]['top'] as double?,
+          left: positions[index]['left'] as double?,
+          right: positions[index]['right'] as double?,
           child: Transform.scale(
-            scale: _scaleAnimation.value * (0.8 + (index * 0.1)),
+            scale: _orbAnimation.value,
             child: Container(
-              width: AppMeasurements.getResponsiveSize(context, baseSize: 60 + (index * 15.0)),
-              height: AppMeasurements.getResponsiveSize(context, baseSize: 60 + (index * 15.0)),
+              width: 100 + (index * 40.0),
+              height: 100 + (index * 40.0),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    (index.isEven
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary)
-                        .withOpacity(0.15),
-                    (index.isEven
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary)
-                        .withOpacity(0.05),
+                    (index % 2 == 0 ? colorScheme.primary : colorScheme.secondary)
+                        .withOpacity(0.06),
                     Colors.transparent,
                   ],
                 ),
@@ -209,178 +255,279 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     );
   }
 
-  Widget _buildMainCard(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Theme.of(context).colorScheme.onSurface;
-    final subtleTextColor = isDark ? Colors.white.withOpacity(0.7) : Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+  Widget _buildLogoSection(BuildContext context, ColorScheme colorScheme) {
+    final iconSize = AppMeasurements.getResponsiveIconSizeLarge(context) * 1.5;
 
-    return Container(
-      padding: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-            Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-          ],
-        ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.background.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Logo with rotating animation
-              AnimatedBuilder(
-                animation: _rotateAnimation,
-                builder: (context, child) {
-                  return Transform.rotate(
-                    angle: _rotateAnimation.value * 0.2,
-                    child: Container(
-                      padding: EdgeInsets.all(smallPadding),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            isDark ? Colors.white.withOpacity(0.3) : Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                            isDark ? Colors.white.withOpacity(0.1) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            Colors.transparent,
-                          ],
-                        ),
-                        border: Border.all(
-                          color: isDark ? Colors.white.withOpacity(0.4) : Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark ? Colors.white.withOpacity(0.2) : Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
+    return AnimatedBuilder(
+      animation: _logoController,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _logoFadeAnimation.value,
+          child: Transform.scale(
+            scale: _logoScaleAnimation.value,
+            child: Transform.rotate(
+              angle: _logoRotateAnimation.value,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Outer glow ring
+                  Container(
+                    width: iconSize * 1.4,
+                    height: iconSize * 1.4,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          colorScheme.primary.withOpacity(0.1),
+                          Colors.transparent,
                         ],
                       ),
-                      child: Icon(
-                        Icons.agriculture,
-                        size: AppMeasurements.getResponsiveIconSizeLarge(context),
-                        color: isDark ? Colors.white : Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+
+                  // Middle ring
+                  Container(
+                    width: iconSize * 1.15,
+                    height: iconSize * 1.15,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.primary.withOpacity(0.15),
+                          colorScheme.secondary.withOpacity(0.15),
+                        ],
                       ),
                     ),
-                  );
-                },
-              ),
-
-              SizedBox(height: smallPadding * 1.5),
-
-              // App name with shader
-              ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  'AgriGuard',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 36),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
 
-              SizedBox(height: smallPadding * 0.5),
-
-              // Tagline
-              Text(
-                'Protecting Your Crops',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: subtleTextColor,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              SizedBox(height: smallPadding * 0.5),
-
-              // Subtitle
-              Text(
-                'Smart Agriculture Solutions',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: subtleTextColor,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              SizedBox(height: smallPadding * 2),
-
-              // Progress indicator
-              AnimatedBuilder(
-                animation: _progressAnimation,
-                builder: (context, child) {
-                  return Column(
-                    children: [
-                      Container(
-                        width: AppMeasurements.getResponsiveSize(context, baseSize: 200),
-                        height: AppMeasurements.getResponsiveSize(context, baseSize: 4),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-                          color: isDark ? Colors.white.withOpacity(0.3) : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                  // Main logo container
+                  Container(
+                    width: iconSize,
+                    height: iconSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colorScheme.surface,
+                          colorScheme.surface.withOpacity(0.9),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: colorScheme.primary.withOpacity(0.3),
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 30,
+                          spreadRadius: 5,
                         ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            width: AppMeasurements.getResponsiveSize(context, baseSize: 200) * _progressAnimation.value,
-                            height: AppMeasurements.getResponsiveSize(context, baseSize: 4),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-                              gradient: LinearGradient(
-                                colors: [
-                                  isDark ? Colors.white : Theme.of(context).colorScheme.primary,
-                                  isDark ? Colors.white.withOpacity(0.8) : Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                                ],
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        // Shimmer effect
+                        AnimatedBuilder(
+                          animation: _shimmerAnimation,
+                          builder: (context, child) {
+                            return ClipOval(
+                              child: ShaderMask(
+                                shaderCallback: (bounds) {
+                                  return LinearGradient(
+                                    begin: Alignment(_shimmerAnimation.value - 1, 0),
+                                    end: Alignment(_shimmerAnimation.value, 0),
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.white.withOpacity(0.1),
+                                      Colors.transparent,
+                                    ],
+                                  ).createShader(bounds);
+                                },
+                                child: Container(color: Colors.white),
                               ),
+                            );
+                          },
+                        ),
+
+                        // Icon
+                        Center(
+                          child: ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colorScheme.primary,
+                                colorScheme.secondary,
+                              ],
+                            ).createShader(bounds),
+                            child: Icon(
+                              Icons.eco_rounded,
+                              size: iconSize * 0.5,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: smallPadding),
-                      Text(
-                        'Loading...',
-                        style: TextStyle(
-                          color: subtleTextColor,
-                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 12),
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTextSection(BuildContext context, ColorScheme colorScheme) {
+    return FadeTransition(
+      opacity: _textFadeAnimation,
+      child: SlideTransition(
+        position: _textSlideAnimation,
+        child: Column(
+          children: [
+            // App name
+            ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.secondary,
+                ],
+              ).createShader(bounds),
+              child: Text(
+                'AgriGuard',
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  fontSize: AppMeasurements.getResponsiveFontSize(
+                    context,
+                    baseSize: 42,
+                  ),
+                  letterSpacing: -1,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+
+            SizedBox(height: AppMeasurements.getResponsiveExtraSmallPadding(context)),
+
+            // Tagline
+            Text(
+              'Protecting Your Crops',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.7),
+                fontSize: AppMeasurements.getResponsiveFontSize(
+                  context,
+                  baseSize: 18,
+                ),
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.5,
+              ),
+            ),
+
+            SizedBox(height: AppMeasurements.getResponsiveExtraSmallPadding(context) / 2),
+
+            // Subtitle with icon
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.agriculture_outlined,
+                  size: AppMeasurements.getResponsiveIconSizeSmall(context),
+                  color: colorScheme.primary.withOpacity(0.7),
+                ),
+                SizedBox(width: AppMeasurements.extraSmallPadding / 2),
+                Text(
+                  'Smart Agriculture Solutions',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: AppMeasurements.getResponsiveFontSize(
+                      context,
+                      baseSize: 14,
+                    ),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProgressIndicator(BuildContext context, ColorScheme colorScheme) {
+    return AnimatedBuilder(
+      animation: _progressAnimation,
+      builder: (context, child) {
+        return Column(
+          children: [
+            // Progress bar
+            Container(
+              width: AppMeasurements.getResponsiveSize(context, baseSize: 200),
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: colorScheme.primary.withOpacity(0.2),
+              ),
+              child: Stack(
+                children: [
+                  // Progress fill
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: AppMeasurements.getResponsiveSize(context, baseSize: 200) *
+                          _progressAnimation.value,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.secondary,
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.5),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: AppMeasurements.smallPadding),
+
+            // Loading text
+            Text(
+              'Loading...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.5),
+                fontSize: AppMeasurements.getResponsiveFontSize(
+                  context,
+                  baseSize: 12,
+                ),
+                letterSpacing: 2,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

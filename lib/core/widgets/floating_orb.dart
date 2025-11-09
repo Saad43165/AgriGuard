@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_measurements.dart';
+import '../constants/app_measurements.dart';
 
 class FloatingOrb extends StatelessWidget {
   final int index;
