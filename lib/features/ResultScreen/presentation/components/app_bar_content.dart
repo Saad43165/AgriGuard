@@ -9,6 +9,7 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final double elevation;
   final double topPadding;
+  final Widget? leading; // ← Now a proper field
 
   const AppBarContent({
     super.key,
@@ -17,7 +18,8 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
     this.onBackPressed,
     this.actions,
     this.elevation = 0,
-    this.topPadding = 8.0, IconButton? leading,
+    this.topPadding = 8.0,
+    this.leading, // ← Correctly declared
   });
 
   @override
@@ -30,11 +32,15 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: elevation,
+        centerTitle: true,
+        leading: leading, // ← Respected
+        actions: actions,
         title: Semantics(
-          label: 'App bar with back button',
+          label: 'App bar with title',
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // Title
               ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
                   colors: [
@@ -51,7 +57,9 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
               ),
-              if (showBackButton)
+
+              // Custom Back Button (only if showBackButton AND no leading provided)
+              if (showBackButton && leading == null)
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
@@ -92,12 +100,10 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
             ],
           ),
         ),
-        centerTitle: true,
-        actions: actions,
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8.0); // + topPadding
 }

@@ -329,13 +329,13 @@ class _CaptureScreenState extends State<CaptureScreen>
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 10),
                           ImageSection(
                             imageFile: _imageFile,
                             scaleAnimation: _scaleAnimation,
                             isLoading: _isLoading,
                           ),
-                          const SizedBox(height: 60),
+                          const SizedBox(height: 30),
                           ActionButtons(
                             isLoading: _isLoading,
                             isProcessing: _isProcessing,

@@ -1,4 +1,8 @@
+// app_router.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../../features/HelpSupport/help_support_screen.dart';
 import '../../features/Profile/presentation/profile_screen.dart';
 import '../../features/ResultScreen/presentation/screens/results_screen.dart';
@@ -25,51 +29,49 @@ class AppRouter {
         transitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (context, animation, _) => page,
         transitionsBuilder: (context, animation, _, child) {
-          final slide = Tween<Offset>(
-            begin: const Offset(0.3, 0.0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
-
+          final slide = Tween<Offset>(begin: const Offset(0.3, 0.0), end: Offset.zero)
+              .animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
           final fade = CurvedAnimation(parent: animation, curve: Curves.easeOut);
-
-          return FadeTransition(
-            opacity: fade,
-            child: SlideTransition(
-              position: slide,
-              child: child,
-            ),
-          );
+          return FadeTransition(opacity: fade, child: SlideTransition(position: slide, child: child));
         },
       );
     }
 
+    // AUTH GUARD: Block access to auth screens if already logged in
+    final user = FirebaseAuth.instance.currentUser;
+    final isLoggedIn = user != null;
+
     switch (settings.name) {
       case AppRoutes.splash:
-        return MaterialPageRoute(
-          builder: (_) => const SplashScreen(),
-          settings: settings,
-        );
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
 
       case AppRoutes.onboard:
         return buildLightRoute(const OnboardingScreen());
 
       case AppRoutes.login:
+        if (isLoggedIn) {
+          return buildLightRoute(HomeScreen(userData: {}));
+        }
         return buildLightRoute(const LoginScreen());
 
       case AppRoutes.register:
+        if (isLoggedIn) {
+          return buildLightRoute(HomeScreen(userData: {}));
+        }
         return buildLightRoute(const RegisterScreen());
 
       case AppRoutes.forgotPassword:
+        if (isLoggedIn) {
+          return buildLightRoute(HomeScreen(userData: {}));
+        }
         return buildLightRoute(const ForgotPasswordScreen());
 
       case AppRoutes.home:
-        return buildLightRoute(HomeScreen(userData: args));
+        return buildLightRoute(HomeScreen(userData: args ?? {}));
 
       case AppRoutes.profile:
         return buildLightRoute(
-          ProfileScreen(
-            userData: args is Map<String, dynamic> ? args : null,
-          ),
+          ProfileScreen(userData: args is Map<String, dynamic> ? args : null),
         );
 
       case AppRoutes.history:
@@ -77,9 +79,6 @@ class AppRouter {
 
       case AppRoutes.scan:
         return buildLightRoute(const CaptureScreen());
-
-    // REMOVED: imageEdit case entirely since we're skipping it
-    // If anything tries to navigate to imageEdit, it will fall through to default
 
       case AppRoutes.results:
         final scanData = args?['scanData'] as Map<String, dynamic>? ?? {};
@@ -92,7 +91,6 @@ class AppRouter {
         return buildLightRoute(const HelpAndSupportScreen());
 
       default:
-      // This will catch any attempts to navigate to imageEdit
         return buildLightRoute(
           Scaffold(
             body: Center(
@@ -101,22 +99,12 @@ class AppRouter {
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  Text(
-                    'Screen not found',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Route: ${settings.name}',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                  const Text('Screen not found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Route: ${settings.name}', style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.of(navigatorKey.currentContext!).pushNamedAndRemoveUntil(
-                        AppRoutes.home,
-                            (route) => false,
-                      );
+                      navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
                     },
                     child: const Text('Back to Home'),
                   ),

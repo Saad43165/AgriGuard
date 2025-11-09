@@ -14,187 +14,119 @@ class BottomNavBar extends StatelessWidget {
     this.onTap,
   });
 
+  // DEBOUNCE
+  static bool _isTapping = false;
+
   @override
   Widget build(BuildContext context) {
     final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    // Calculate base height with minimum value constraint
     final responsivePadding = AppMeasurements.getResponsivePadding(context);
     final baseHeight = (responsivePadding * 4.0 + safeAreaBottom).clamp(56.0, double.infinity);
+    final navBarHeight = baseHeight.clamp(56.0, MediaQuery.of(context).size.height * 0.15);
 
-    // Ensure nav bar height doesn't exceed available space
-    final navBarHeight = baseHeight.clamp(
-      (responsivePadding * 3.0 + safeAreaBottom).clamp(56.0, screenHeight * 0.15), // Minimum height with constraints
-      screenHeight * 0.15, // Maximum 15% of screen height to avoid overflow
-    );
-
-    return SizedBox(
-      height: navBarHeight,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Padding(
-                padding: EdgeInsets.only(bottom: safeAreaBottom),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.home_outlined,
-                      activeIcon: Icons.home_rounded,
-                      label: 'Home',
-                      index: 0,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.search_outlined,
-                      activeIcon: Icons.search_rounded,
-                      label: 'Scan',
-                      index: 1,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.person_outline,
-                      activeIcon: Icons.person_rounded,
-                      label: 'Profile',
-                      index: 2,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required BuildContext context,
-    required IconData icon,
-    required IconData activeIcon,
-    required String label,
-    required int index,
-  }) {
-    final isActive = selectedIndex == index;
     final colorScheme = Theme.of(context).colorScheme;
     final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
     final iconSize = AppMeasurements.getResponsiveIconSizeMedium(context);
 
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
-          onTap: () => _handleTap(context, index),
-          splashColor: colorScheme.primary.withOpacity(0.1),
-          highlightColor: colorScheme.primary.withOpacity(0.05),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: smallPadding * 0.5),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  padding: EdgeInsets.all(smallPadding * 0.45),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isActive ? colorScheme.primary : Colors.transparent,
-                  ),
-                  child: Icon(
-                    isActive ? activeIcon : icon,
-                    size: iconSize,
-                    color: isActive
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: isActive
-                        ? colorScheme.primary
-                        : colorScheme.onSurface.withOpacity(0.7),
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 11),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ],
-            ),
+    return Container(
+      height: navBarHeight,
+      decoration: BoxDecoration(
+        color: colorScheme.surface.withOpacity(0.9),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            selectedItemColor: colorScheme.primary,
+            unselectedItemColor: colorScheme.onSurface.withOpacity(0.7),
+            selectedFontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 11),
+            unselectedFontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 11),
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+            currentIndex: selectedIndex,
+            onTap: (index) => _handleTap(context, index),
+            items: [
+              _buildNavItemBottomNav(Icons.home_outlined, Icons.home_rounded, 'Home', colorScheme, smallPadding, iconSize),
+              _buildNavItemBottomNav(Icons.search_outlined, Icons.search_rounded, 'Scan', colorScheme, smallPadding, iconSize),
+              _buildNavItemBottomNav(Icons.person_outline, Icons.person_rounded, 'Profile', colorScheme, smallPadding, iconSize),
+            ],
           ),
         ),
       ),
     );
   }
 
-  void _handleTap(BuildContext context, int index) {
-    if (index == selectedIndex) {
-      return;
-    }
+  // FIXED: Build BottomNavigationBarItem with active circle
+  BottomNavigationBarItem _buildNavItemBottomNav(
+      IconData icon,
+      IconData activeIcon,
+      String label,
+      ColorScheme colorScheme,
+      double smallPadding,
+      double iconSize,
+      ) {
+    return BottomNavigationBarItem(
+      icon: Icon(icon, size: iconSize, color: colorScheme.onSurface.withOpacity(0.7)),
+      activeIcon: Container(
+        padding: EdgeInsets.all(smallPadding * 0.45),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: colorScheme.primary,
+        ),
+        child: Icon(activeIcon, size: iconSize, color: colorScheme.onPrimary),
+      ),
+      label: label,
+    );
+  }
 
+  // SAFE: Handle tap with debounce
+  void _handleTap(BuildContext context, int index) async {
+    if (index == selectedIndex || _isTapping) return;
+
+    _isTapping = true;
     HapticFeedback.lightImpact();
 
     if (onTap != null) {
       onTap!(index);
     } else {
-      _navigateToRoute(context, index);
+      _navigateSafely(context, index);
     }
+
+    await Future.delayed(const Duration(milliseconds: 300));
+    _isTapping = false;
   }
 
-  void _navigateToRoute(BuildContext context, int index) {
+  // SAFE: Navigate without breaking stack
+  void _navigateSafely(BuildContext context, int index) {
     final currentRoute = ModalRoute.of(context)?.settings.name;
     String targetRoute;
 
     switch (index) {
-      case 0:
-        targetRoute = AppRoutes.home;
-        break;
-      case 1:
-        targetRoute = AppRoutes.scan;
-        break;
-      case 2:
-        targetRoute = AppRoutes.profile;
-        break;
-      default:
-        targetRoute = AppRoutes.home;
+      case 0: targetRoute = AppRoutes.home; break;
+      case 1: targetRoute = AppRoutes.scan; break;
+      case 2: targetRoute = AppRoutes.profile; break;
+      default: targetRoute = AppRoutes.home;
     }
 
-    if (currentRoute != targetRoute) {
-      final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (currentRoute == targetRoute) return;
 
-      if (Navigator.canPop(context)) {
-        Navigator.pushReplacementNamed(
-          context,
-          targetRoute,
-          arguments: arguments,
-        );
-      } else {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          targetRoute,
-              (route) => false,
-          arguments: arguments,
-        );
-      }
-    }
+    final args = index == 2 && currentRoute == AppRoutes.scan ? {'fromScan': true} : null;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      targetRoute,
+          (route) => route.settings.name == AppRoutes.home || route.isFirst,
+      arguments: args,
+    );
   }
 }

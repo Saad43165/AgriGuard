@@ -5,6 +5,7 @@ import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/faq_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/custom_app_bar.dart';
 import '../../core/constants/app_measurements.dart';
+import '../../core/constants/app_routes.dart';
 
 class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});
@@ -79,10 +80,14 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
       appBar: CustomAppBar(
         title: 'Help & Support',
         topPadding: 20.0, // Adjust this value for more/less space from top
-        onBackPressed: () {
-          HapticFeedback.lightImpact();
-          Navigator.pop(context);
-        },
+          onBackPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.settings,
+                  (route) => route.settings.name == AppRoutes.settings || route.isFirst,
+            );
+          }
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

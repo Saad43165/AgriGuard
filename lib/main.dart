@@ -51,10 +51,10 @@ class AgriGuardApp extends StatelessWidget {
           }
           if (snapshot.hasData) {
             // User is logged in, go to HomeScreen
-            return const SplashScreen();
+            return const HomeScreen();
           }
           // User is not logged in, go to SplashScreen
-          return const SplashScreen();
+          return const HomeScreen();
         },
       ),
       onGenerateRoute: AppRouter.generateRoute,

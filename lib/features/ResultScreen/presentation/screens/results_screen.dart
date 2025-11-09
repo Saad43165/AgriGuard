@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ADD THIS IMPORT
+
 import '../../../../core/constants/app_routes.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import '../../../home/presentation/screens/components/scan_service.dart';
@@ -23,7 +25,8 @@ class ResultsScreen extends StatefulWidget {
   State<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateMixin {
+class _ResultsScreenState extends State<ResultsScreen>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
@@ -56,6 +59,27 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
     super.dispose();
   }
 
+  // ADD THIS METHOD: Handle both String and Timestamp
+  String _parseTimestamp(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown date';
+
+    try {
+      if (timestamp is Timestamp) {
+        // Handle Firestore Timestamp
+        final date = timestamp.toDate();
+        return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      } else if (timestamp is String) {
+        // Handle string timestamp
+        return timestamp; // Return as-is since it's already formatted
+      } else {
+        return 'Unknown date';
+      }
+    } catch (e) {
+      debugPrint('Timestamp parse error: $e');
+      return 'Invalid date';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -86,10 +110,7 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         extendBodyBehindAppBar: true,
         appBar: AppBarContent(
           title: 'Analysis Results',
-          leading: _isSaving ? null : IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+          showBackButton: !_isSaving,
         ),
         body: Container(
           decoration: BoxDecoration(
@@ -97,11 +118,11 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: theme.brightness == Brightness.dark
-                  ? [
-                const Color(0xFF0F0F23),
-                const Color(0xFF16213E),
-                const Color(0xFF1A1A2E),
-                const Color(0xFF0F0F23),
+                  ? const [
+                Color(0xFF0F0F23),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+                Color(0xFF0F0F23),
               ]
                   : [
                 theme.colorScheme.surface,
@@ -152,13 +173,12 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                         _buildNoImagePlaceholder(theme),
 
                       const NextStepsCard(),
-                      const SizedBox(height: 80), // Space for FAB
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
               ),
 
-              // Loading overlay
               if (_isSaving)
                 Container(
                   color: Colors.black54,
@@ -181,8 +201,10 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
             ],
           ),
         ),
-        floatingActionButton: _isSaving ? null : FloatingActionButtons(
-          heroTagPrefix: 'results_screen', // Unique per screen
+        floatingActionButton: _isSaving
+            ? null
+            : FloatingActionButtons(
+          heroTagPrefix: 'results_screen',
           onSave: () => _saveReport(context),
           onShare: () => _shareResults(context),
         ),
@@ -215,8 +237,7 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
             return Center(
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
                     : null,
               ),
             );
@@ -285,13 +306,18 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
   }
 
   Future<void> _saveReport(BuildContext context) async {
-    if (_isSaving) return; // Prevent double-tap
+    if (_isSaving) return;
 
     setState(() => _isSaving = true);
-
     HapticFeedback.lightImpact();
 
     try {
+      // Handle timestamp conversion for saving
+      dynamic timestampToSave = widget.scanData['timestamp'];
+      if (timestampToSave is Timestamp) {
+        timestampToSave = timestampToSave.toDate().toIso8601String();
+      }
+
       await ScanService().saveScan({
         'id': widget.scanData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
         'imageUrl': widget.scanData['imageUrl'],
@@ -299,25 +325,25 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
         'diagnosis': widget.scanData['diagnosis'] ?? 'Unknown Disease',
         'confidence': widget.scanData['confidence']?.toString() ?? '85',
         'treatment': widget.scanData['treatment'] ?? 'Consult an expert',
-        'timestamp': widget.scanData['timestamp'] ?? DateTime.now().toIso8601String(),
+        'timestamp': timestampToSave ?? DateTime.now().toIso8601String(),
         'severity': widget.scanData['severity'] ?? 'Unknown',
       });
 
       if (!mounted) return;
 
-      // Navigate first, then show message
+      // Go back to previous screen (History, Home, etc.)
+      Navigator.pop(context);
+
+      // Then go to Home with refresh
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRoutes.home,
             (route) => false,
         arguments: {'newScan': widget.scanData, 'refreshScans': true},
       );
-
     } catch (e) {
       debugPrint('Error saving report: $e');
-
       if (!mounted) return;
-      Navigator.pop(context, true);
 
       setState(() => _isSaving = false);
 
@@ -337,11 +363,36 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
 
   Future<void> _shareResults(BuildContext context) async {
     HapticFeedback.lightImpact();
+
+    String dateStr = 'Unknown date';
+    final timestamp = widget.scanData['timestamp'];
+
+    // HANDLE BOTH STRING AND TIMESTAMP
+    if (timestamp is Timestamp) {
+      final date = timestamp.toDate();
+      dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } else if (timestamp is String && timestamp.contains('/')) {
+      try {
+        final parts = timestamp.split(' ');
+        final datePart = parts[0];
+        final dateComponents = datePart.split('/');
+        final day = int.parse(dateComponents[0]);
+        final month = int.parse(dateComponents[1]);
+        final year = int.parse(dateComponents[2]);
+        dateStr = '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/$year';
+      } catch (e) {
+        debugPrint('Failed to parse timestamp: $e');
+        dateStr = _formatDate(DateTime.now());
+      }
+    } else {
+      dateStr = _formatDate(DateTime.now());
+    }
+
     final shareText = '''
 Plant Health Scan Results
 
 Disease: ${widget.scanData['diagnosis'] ?? 'Unknown Disease'}
-Date: ${widget.scanData['timestamp'] != null ? _formatDate(DateTime.parse(widget.scanData['timestamp'])) : _formatDate(DateTime.now())}
+Date: $dateStr
 Confidence: ${widget.scanData['confidence']?.toString() ?? '85'}%
 
 Treatment: ${widget.scanData['treatment'] ?? 'Consult an expert'}
