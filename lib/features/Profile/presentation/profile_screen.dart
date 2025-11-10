@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +11,7 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../auth_services.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Settings/presentation/components/floating_orb.dart';
+import '../../home/presentation/screens/components/custom_home_app_bar.dart';
 import 'Components/profile_info.dart';
 import 'components/profile_header.dart';
 import 'components/profile_picture.dart';
@@ -59,8 +63,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // DEBOUNCE FOR BOTTOM NAV
   bool _navTapInProgress = false;
+
+  // NEW: Force UI rebuild after save
+  final ValueNotifier<bool> _profileChangedNotifier = ValueNotifier(false);
 
   Future<void> _debouncedNavTap(int index) async {
     if (_navTapInProgress) return;
@@ -166,33 +172,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-  Future<void> _saveProfile() async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await authService.value.updateProfile(
-          fullName: _userProfile['name'],
-          phoneNumber: _userProfile['phone'],
-          location: _userProfile['location'],
-          farmSize: _userProfile['farmSize'],
-        );
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Profile updated successfully'),
-          backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving profile: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
   void _initializeAnimations() {
     _fadeController = AnimationController(duration: const Duration(milliseconds: 200), vsync: this);
     _scaleController = AnimationController(duration: const Duration(milliseconds: 150), vsync: this);
@@ -221,33 +200,38 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _fadeController.dispose();
     _scaleController.dispose();
     _slideController.dispose();
+    _profileChangedNotifier.dispose(); // <-- NEW
     super.dispose();
   }
 
   void _toggleEditMode() {
-    if (_isSaving) return; // Prevent multiple saves
+    if (_isSaving) return;
 
     HapticFeedback.lightImpact();
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) {
-        _isSaving = true; // Block until done
+        _isSaving = true;
         _saveProfileWithFeedback();
       }
     });
   }
 
-// NEW: Safe save with single SnackBar
   Future<void> _saveProfileWithFeedback() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         await authService.value.updateProfile(
-          fullName: _nameController.text,
-          phoneNumber: _phoneController.text,
-          location: _locationController.text,
-          farmSize: _farmSizeController.text,
+          fullName: _nameController.text.trim(),
+          phoneNumber: _phoneController.text.trim(),
+          location: _locationController.text.trim(),
+          farmSize: _farmSizeController.text.trim(),
         );
+
+        // NEW: Trigger Home AppBar refresh
+
+        // NEW: Force UI rebuild
+        _profileChangedNotifier.value = !_profileChangedNotifier.value;
       }
 
       _showSingleSnackBar('Profile updated successfully', isError: false);
@@ -258,9 +242,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
-// NEW: Show only one SnackBar at a time
   void _showSingleSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).clearSnackBars(); // Remove old
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -271,21 +254,94 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       ),
     );
   }
+
+// In your ProfileScreen class, update the _pickProfileImage method:
+
   Future<void> _pickProfileImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, maxWidth: 300, maxHeight: 300, imageQuality: 85);
-    if (pickedFile != null) {
-      setState(() => _profileImage = pickedFile);
-      await _uploadProfileImage(pickedFile);
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 300,
+          maxHeight: 300,
+          imageQuality: 85
+      );
+
+      if (pickedFile != null) {
+        setState(() => _profileImage = pickedFile);
+
+        // Upload to Firebase Storage and get download URL
+        final String? downloadUrl = await _uploadProfileImageToFirebase(pickedFile);
+
+        if (downloadUrl != null) {
+          // Update Firestore with the new image URL
+          await _updateProfileImageInFirestore(downloadUrl);
+
+          // Update local state
+          setState(() {
+            _profileImage = XFile(downloadUrl);
+          });
+
+          // Force UI refresh
+          _profileChangedNotifier.value = !_profileChangedNotifier.value;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile picture updated!'),
+              backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+            ),
+          );
+        }
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Profile picture updated!'),
-          backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+          content: Text('Error updating profile image: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
   }
 
+  Future<String?> _uploadProfileImageToFirebase(XFile imageFile) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return null;
+
+      // Upload to Firebase Storage
+      final Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child('$uid.jpg');
+
+      final UploadTask uploadTask = storageRef.putFile(File(imageFile.path));
+      final TaskSnapshot snapshot = await uploadTask;
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
+    }
+  }
+
+  Future<void> _updateProfileImageInFirestore(String imageUrl) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .update({
+          'profileImageUrl': imageUrl,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      print('Error updating Firestore: $e');
+      rethrow;
+    }
+  }
   Future<void> _uploadProfileImage(XFile imageFile) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -294,25 +350,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       }
     } catch (e) {
       print('Error handling profile image: $e');
-    }
-  }
-
-  Future<void> saveScanResult(String cropType, Map<String, dynamic> scanData) async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).collection('scans').add({
-          'cropType': cropType,
-          'scanData': scanData,
-          'timestamp': DateTime.now(),
-        });
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({
-          'scanCount': FieldValue.increment(1),
-          'lastScan': DateTime.now(),
-        });
-      }
-    } catch (e) {
-      print('Error saving scan: $e');
     }
   }
 
@@ -349,68 +386,118 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _buildBody(BuildContext context, bool isTablet, double maxWidth) {
-    final padding = EdgeInsets.symmetric(horizontal: AppMeasurements.getResponsivePadding(context), vertical: AppMeasurements.getResponsivePadding(context));
-    final cardPadding = EdgeInsets.all(AppMeasurements.getResponsivePadding(context) * 0.75);
-    final sectionSpacing = AppMeasurements.getResponsivePadding(context) * 1.5;
+    final sectionSpacing = AppMeasurements.smallPadding * 1.5;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: Theme.of(context).brightness == Brightness.dark
-              ? [const Color(0xFF0F0F23), const Color(0xFF16213E), const Color(0xFF1A1A2E), const Color(0xFF0F0F23)]
-              : [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface.withOpacity(0.9), Theme.of(context).colorScheme.surface.withOpacity(0.8), Theme.of(context).colorScheme.surface],
-          stops: const [0.0, 0.3, 0.7, 1.0],
-        ),
-      ),
-      child: Stack(
-        children: [
-          ...List.generate(6, (i) => FloatingOrb(index: i, maxWidth: maxWidth, fadeController: _fadeController, scaleAnimation: _scaleAnimation)),
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: SingleChildScrollView(
-                  padding: padding,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
-                    child: Column(
-                      children: [
-                        ProfileHeader(onToggleEdit: _toggleEditMode, isEditing: _isEditing),
-                        SizedBox(height: sectionSpacing),
-                        ProfilePicture(profileImage: _profileImage, isEditing: _isEditing, onPickImage: _pickProfileImage, maxWidth: maxWidth, scaleAnimation: _scaleAnimation),
-                        SizedBox(height: sectionSpacing),
-                        if (isTablet)
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+    return ValueListenableBuilder<bool>(
+      valueListenable: _profileChangedNotifier,
+      builder: (context, _, __) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [const Color(0xFF0F0F23), const Color(0xFF16213E), const Color(0xFF1A1A2E), const Color(0xFF0F0F23)]
+                  : [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface.withOpacity(0.9), Theme.of(context).colorScheme.surface.withOpacity(0.8), Theme.of(context).colorScheme.surface],
+              stops: const [0.0, 0.3, 0.7, 1.0],
+            ),
+          ),
+          child: Stack(
+            children: [
+              ...List.generate(6, (i) => FloatingOrb(index: i, maxWidth: maxWidth, fadeController: _fadeController, scaleAnimation: _scaleAnimation)),
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: CustomScrollView(
+                    slivers: [
+                      ProfileHeader(onToggleEdit: _toggleEditMode, isEditing: _isEditing),
+
+                      SliverToBoxAdapter(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
+                          child: Column(
                             children: [
-                              Flexible(flex: 1, child: ProfileInfo(userProfile: _userProfile, isEditing: _isEditing, nameController: _nameController, emailController: _emailController, phoneController: _phoneController, locationController: _locationController, farmSizeController: _farmSizeController, cardPadding: cardPadding, itemSpacing: AppMeasurements.getResponsiveSmallPadding(context) * 1.5)),
-                              SizedBox(width: sectionSpacing),
-                              Flexible(flex: 1, child: Statistics(userProfile: _userProfile, cardPadding: cardPadding, itemSpacing: AppMeasurements.getResponsiveSmallPadding(context) * 1.5)),
-                            ],
-                          )
-                        else
-                          Column(
-                            children: [
-                              ProfileInfo(userProfile: _userProfile, isEditing: _isEditing, nameController: _nameController, emailController: _emailController, phoneController: _phoneController, locationController: _locationController, farmSizeController: _farmSizeController, cardPadding: cardPadding, itemSpacing: AppMeasurements.getResponsiveSmallPadding(context) * 1.5),
                               SizedBox(height: sectionSpacing),
-                              Statistics(userProfile: _userProfile, cardPadding: cardPadding, itemSpacing: AppMeasurements.getResponsiveSmallPadding(context) * 1.5),
+                              ProfilePicture(
+                                profileImage: _profileImage,
+                                isEditing: _isEditing,
+                                onPickImage: _pickProfileImage,
+                                maxWidth: maxWidth,
+                                scaleAnimation: _scaleAnimation,
+                              ),
+                              SizedBox(height: sectionSpacing),
+                              if (isTablet)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: AppMeasurements.defaultPadding),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Flexible(
+                                        flex: 1,
+                                        child: ProfileInfo(
+                                          userProfile: _userProfile,
+                                          isEditing: _isEditing,
+                                          nameController: _nameController,
+                                          emailController: _emailController,
+                                          phoneController: _phoneController,
+                                          locationController: _locationController,
+                                          farmSizeController: _farmSizeController,
+                                          cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                          itemSpacing: AppMeasurements.smallPadding,
+                                        ),
+                                      ),
+                                      SizedBox(width: sectionSpacing),
+                                      Flexible(
+                                        flex: 1,
+                                        child: Statistics(
+                                          userProfile: _userProfile,
+                                          cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                          itemSpacing: AppMeasurements.smallPadding,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                Column(
+                                  children: [
+                                    ProfileInfo(
+                                      userProfile: _userProfile,
+                                      isEditing: _isEditing,
+                                      nameController: _nameController,
+                                      emailController: _emailController,
+                                      phoneController: _phoneController,
+                                      locationController: _locationController,
+                                      farmSizeController: _farmSizeController,
+                                      cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                      itemSpacing: AppMeasurements.smallPadding,
+                                    ),
+                                    SizedBox(height: sectionSpacing),
+                                    Statistics(
+                                      userProfile: _userProfile,
+                                      cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                      itemSpacing: AppMeasurements.smallPadding,
+                                    ),
+                                  ],
+                                ),
+                              SizedBox(height: sectionSpacing),
+                              profile_actions.ProfileActions(
+                                padding: EdgeInsets.all(AppMeasurements.smallPadding),
+                              ),
+                              SizedBox(height: sectionSpacing),
                             ],
                           ),
-                        SizedBox(height: sectionSpacing),
-                        profile_actions.ProfileActions(padding: cardPadding),
-                        SizedBox(height: sectionSpacing),
-                      ],
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

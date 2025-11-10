@@ -1,11 +1,12 @@
 // lib/features/home/presentation/screens/home_screen.dart
 import 'dart:io';
 
+import 'package:agriguard_fyp/features/home/presentation/screens/weather_widget/provider/weather_provider.dart';
 import 'package:agriguard_fyp/features/home/presentation/screens/weather_widget/weather_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart'; // ← ADD THIS
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../Navbar/presentation/nav_bar.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
 import 'Species_widgets/species_grid_widget.dart';
@@ -18,7 +19,8 @@ import 'components/recent_scan_section.dart';
 import 'components/scan_service.dart';
 import 'components/share_results_dialog_content.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/constants/app_routes.dart'; // ← ADDED
+import '../../../../core/constants/app_routes.dart';
+// ADD WEATHER PROVIDER IMPORT
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -364,83 +366,91 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
 
-    return PopScope(
-      canPop: false, // ← PREVENT BACK TO LOGIN
-      onPopInvoked: (didPop) {
-        if (didPop) return;
-        _showExitDialog();
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: const CustomHomeAppBar(),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? const [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-              ]
-                  : [
-                Theme.of(context).colorScheme.background,
-                Theme.of(context).colorScheme.background.withOpacity(0.9),
+    return ChangeNotifierProvider( // ← ADD THIS WRAPPER
+      create: (context) => WeatherProvider(),
+      child: PopScope(
+        canPop: false, // ← PREVENT BACK TO LOGIN
+        onPopInvoked: (didPop) {
+          if (didPop) return;
+          _showExitDialog();
+        },
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          appBar: const CustomHomeAppBar(),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: Theme.of(context).brightness == Brightness.dark
+                    ? const [
+                  Color(0xFF0F0F23),
+                  Color(0xFF16213E),
+                  Color(0xFF1A1A2E),
+                ]
+                    : [
+                  Theme.of(context).colorScheme.background,
+                  Theme.of(context).colorScheme.background.withOpacity(0.9),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                // Floating Orbs
+                ...List.generate(
+                  6,
+                      (i) => FloatingOrb(
+                    index: i,
+                    maxWidth: MediaQuery.of(context).size.width,
+                    fadeController: _fadeController,
+                    scaleAnimation: _scaleAnimation,
+                  ),
+                ),
+
+                // Main Content
+                SafeArea(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshScans,
+                    color: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    child: Consumer<WeatherProvider>( // ← ADD CONSUMER
+                      builder: (context, weatherProvider, child) {
+                        return ListView(
+                          padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, 0),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            WeatherCard(
+                            ),
+                            SizedBox(height: padding * 0.8),
+                            const SpeciesGridWidget(),
+                            SizedBox(height: padding * 0.8),
+
+                            if (_isLoading)
+                              const LoadingSection()
+                            else if (_isFirstTimeUser && _recentScans.isEmpty)
+                              const FirstTimeUserGuide()
+                            else
+                              RecentScansSection(
+                                key: const ValueKey('recent_scans'),
+                                recentScans: _recentScans,
+                                scaleAnimation: _scaleAnimation,
+                                onDeleteScan: _deleteScan,
+                                onShowAllScans: _showAllScansDialog,
+                                onShowOptions: _showScanOptionsBottomSheet,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          child: Stack(
-            children: [
-              // Floating Orbs
-              ...List.generate(
-                6,
-                    (i) => FloatingOrb(
-                  index: i,
-                  maxWidth: MediaQuery.of(context).size.width,
-                  fadeController: _fadeController,
-                  scaleAnimation: _scaleAnimation,
-                ),
-              ),
-
-              // Main Content
-              SafeArea(
-                child: RefreshIndicator(
-                  onRefresh: _refreshScans,
-                  color: Theme.of(context).colorScheme.primary,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: ListView(
-                    padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, 0),
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      const WeatherCard(),
-                      SizedBox(height: padding * 0.8),
-                      const SpeciesGridWidget(),
-                      SizedBox(height: padding * 0.8),
-
-                      if (_isLoading)
-                        const LoadingSection()
-                      else if (_isFirstTimeUser && _recentScans.isEmpty)
-                        const FirstTimeUserGuide()
-                      else
-                        RecentScansSection(
-                          key: const ValueKey('recent_scans'),
-                          recentScans: _recentScans,
-                          scaleAnimation: _scaleAnimation,
-                          onDeleteScan: _deleteScan,
-                          onShowAllScans: _showAllScansDialog,
-                          onShowOptions: _showScanOptionsBottomSheet,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          bottomNavigationBar: BottomNavBar(
+            selectedIndex: _navHome,
+            onTap: _handleNavTap,
           ),
-        ),
-        bottomNavigationBar: BottomNavBar(
-          selectedIndex: _navHome,
-          onTap: _handleNavTap,
         ),
       ),
     );

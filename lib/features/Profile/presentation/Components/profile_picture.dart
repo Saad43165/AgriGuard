@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../../../core/constants/app_measurements.dart';
 
-class ProfilePicture extends StatelessWidget {
+class ProfilePicture extends StatefulWidget {
   final XFile? profileImage;
   final bool isEditing;
   final VoidCallback onPickImage;
@@ -22,127 +22,261 @@ class ProfilePicture extends StatelessWidget {
     required this.scaleAnimation,
   });
 
-  Future<String?> _getProfileImageUrl() async {
-    final prefs = await SharedPreferences.getInstance();
+  @override
+  State<ProfilePicture> createState() => _ProfilePictureState();
+}
 
-    // First check Firestore
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      final snapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (snapshot.exists) {
-        final data = snapshot.data();
-        if (data != null &&
-            data['profileImageUrl'] != null &&
-            data['profileImageUrl'] is String &&
-            data['profileImageUrl'].isNotEmpty) {
-          final url = data['profileImageUrl'] as String;
-          // Only return valid HTTP URLs
-          if (url.startsWith('http')) {
-            return url;
-          }
-        }
+class _ProfilePictureState extends State<ProfilePicture> {
+  String? _currentImageUrl;
+  bool _isLoading = true;
+  bool _hasInitialLoad = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  @override
+  void didUpdateWidget(ProfilePicture oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Reload if profileImage changes (new image selected)
+    if (widget.profileImage != oldWidget.profileImage) {
+      if (widget.profileImage != null) {
+        _currentImageUrl = widget.profileImage!.path;
+        _isLoading = false;
+        setState(() {});
       }
     }
 
-    // Check local storage
-    final localImage = prefs.getString('user_image');
-    if (localImage != null && localImage.isNotEmpty) {
-      return localImage;
+    // Reload if editing mode changes and we haven't loaded yet
+    if (!_hasInitialLoad) {
+      _loadProfileImage();
     }
-
-    return null; // Return null if no valid image
   }
+
+  Future<void> _loadProfileImage() async {
+    if (_hasInitialLoad) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+
+        if (snapshot.exists) {
+          final data = snapshot.data();
+          final firebaseImageUrl = data?['profileImageUrl'] as String?;
+
+          if (firebaseImageUrl != null && firebaseImageUrl.isNotEmpty) {
+            _currentImageUrl = firebaseImageUrl;
+          }
+        }
+      }
+
+      // If we have a new image from widget, use that instead
+      if (widget.profileImage != null) {
+        _currentImageUrl = widget.profileImage!.path;
+      }
+
+      _hasInitialLoad = true;
+    } catch (e) {
+      print('Error loading profile image: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileSize = _calculateProfileSize(context);
-    final innerSize = profileSize - AppMeasurements.getResponsiveSmallPadding(context) * 2;
 
-    return FutureBuilder<String?>(
-      future: _getProfileImageUrl(),
-      builder: (context, snapshot) {
-        final imagePath = snapshot.data;
+    return ScaleTransition(
+      scale: widget.scaleAnimation,
+      child: Semantics(
+        label: 'Profile picture',
+        button: widget.isEditing,
+        child: Center(
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Outer Glow Ring
+              Container(
+                width: profileSize + 20,
+                height: profileSize + 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+              ),
 
-        return ScaleTransition(
-          scale: scaleAnimation,
-          child: Semantics(
-            label: 'Profile picture',
-            button: isEditing,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                _buildBackgroundCircle(context, profileSize),
-                _buildProfileImage(context, innerSize, imagePath),
-                if (isEditing) _buildEditButton(context),
-              ],
-            ),
+              // Middle Ring
+              Container(
+                width: profileSize + 8,
+                height: profileSize + 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Profile Image Container
+              _buildProfileImage(context, profileSize),
+
+              // Edit Button
+              if (widget.isEditing) _buildEditButton(context),
+
+              // Status Badge (Online indicator)
+              if (!widget.isEditing)
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.green,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.surface,
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.5),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   double _calculateProfileSize(BuildContext context) {
     return AppMeasurements.getResponsiveSize(
       context,
-      baseSize: maxWidth * 0.3 > 150 ? 150.0 : maxWidth * 0.3,
+      baseSize: widget.maxWidth * 0.35 > 140 ? 140.0 : widget.maxWidth * 0.35,
     );
   }
 
-  Widget _buildBackgroundCircle(BuildContext context, double size) {
+  Widget _buildProfileImage(BuildContext context, double size) {
     return Container(
       width: size,
-      height: size * 1.07,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.1),
           ],
         ),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.surface,
+          width: 4,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: _isLoading
+            ? Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        )
+            : _currentImageUrl != null && _currentImageUrl!.isNotEmpty
+            ? _buildImageContent()
+            : _buildDefaultAvatar(context),
       ),
     );
   }
 
-  Widget _buildProfileImage(BuildContext context, double size, String? imagePath) {
-    return Container(
-      width: size,
-      height: size * 1.08,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: ClipOval(
-        child: imagePath != null && imagePath.isNotEmpty
-            ? (imagePath.startsWith('http') || imagePath.startsWith('https')
-            ? Image.network(
-          imagePath,
+  Widget _buildImageContent() {
+    final imageUrl = _currentImageUrl!;
+
+    // Check if it's a network URL (from Firebase)
+    if (imageUrl.startsWith('http')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                  loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('Error loading network image: $error');
+          return _buildDefaultAvatar(context);
+        },
+      );
+    }
+    // Check if it's a local file path (newly selected image)
+    else {
+      final file = File(imageUrl);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
           fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            );
+          errorBuilder: (context, error, stackTrace) {
+            print('Error loading local image: $error');
+            return _buildDefaultAvatar(context);
           },
-          errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(context),
-        )
-            : File(File(imagePath).path).existsSync()
-            ? Image.file(
-          File(imagePath),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(context),
-        )
-            : _buildDefaultAvatar(context))
-            : _buildDefaultAvatar(context),
-      ),
-    );
+        );
+      } else {
+        return _buildDefaultAvatar(context);
+      }
+    }
   }
 
   Widget _buildDefaultAvatar(BuildContext context) {
@@ -150,6 +284,8 @@ class ProfilePicture extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Theme.of(context).colorScheme.primary.withOpacity(0.2),
             Theme.of(context).colorScheme.secondary.withOpacity(0.2),
@@ -158,9 +294,9 @@ class ProfilePicture extends StatelessWidget {
       ),
       child: Center(
         child: Icon(
-          Icons.person,
-          size: 40,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          Icons.person_rounded,
+          size: 50,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
         ),
       ),
     );
@@ -177,28 +313,37 @@ class ProfilePicture extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.primary,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.secondary,
+                ],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
+              border: Border.all(
+                color: Theme.of(context).colorScheme.surface,
+                width: 3,
+              ),
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 customBorder: const CircleBorder(),
-                onTap: onPickImage,
-                child: Padding(
-                  padding: EdgeInsets.all(
-                    AppMeasurements.getResponsiveSmallPadding(context) * 0.8,
-                  ),
+                onTap: widget.onPickImage,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.camera_alt_rounded,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    size: AppMeasurements.getResponsiveIconSizeSmall(context) * 0.9,
+                    color: Colors.white,
+                    size: AppMeasurements.getResponsiveIconSizeSmall(context),
                   ),
                 ),
               ),
