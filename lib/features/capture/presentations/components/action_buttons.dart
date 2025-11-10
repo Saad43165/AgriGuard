@@ -155,8 +155,8 @@ class _ChangeImageChipState extends State<_ChangeImageChip>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    theme.colorScheme.primary.withOpacity(0.18),
-                    theme.colorScheme.secondary.withOpacity(0.18),
+                    theme.colorScheme.primary.withOpacity(0.01),
+                    theme.colorScheme.secondary.withOpacity(0.01),
                   ],
                 ),
                 borderRadius: borderRadius,

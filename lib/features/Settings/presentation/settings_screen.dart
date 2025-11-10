@@ -28,7 +28,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
 
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
-  String _selectedLanguage = 'English';
 
   @override
   void initState() {
@@ -36,15 +35,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     _loadSettings();
 
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
     _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
@@ -74,7 +73,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       setState(() {
         _isDarkMode = prefs.getBool('isDarkMode') ?? false;
         _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-        _selectedLanguage = prefs.getString('selectedLanguage') ?? 'English';
       });
     }
   }
@@ -83,7 +81,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', _isDarkMode);
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
-    await prefs.setString('selectedLanguage', _selectedLanguage);
   }
 
   @override

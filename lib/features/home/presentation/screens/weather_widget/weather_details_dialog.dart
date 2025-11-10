@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../core/constants/app_measurements.dart';
 
 class WeatherDetailsDialog extends StatelessWidget {

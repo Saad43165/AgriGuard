@@ -1,7 +1,9 @@
+// lib/core/widgets/custom_app_bar.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../../../core/constants/app_measurements.dart';
+import '../../../../core/constants/app_routes.dart'; // Make sure this exists
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -21,22 +23,49 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.topPadding = 8.0,
   });
 
+  // NEW: Helper to go back to Profile screen
+  void _goBackToProfile(BuildContext context) {
+    HapticFeedback.lightImpact();
+
+    // If custom callback is provided, use it
+    if (onBackPressed != null) {
+      onBackPressed!();
+      return;
+    }
+
+    // Otherwise: pop until we reach the Profile screen
+    Navigator.popUntil(context, (route) {
+      return route.settings.name == AppRoutes.profile;
+    });
+
+    // If Profile is not in stack, fallback to Home
+    if (ModalRoute.of(context)?.settings.name != AppRoutes.profile) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.profile,
+            (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
     final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
 
     return Padding(
-      padding: EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(top: topPadding),
       child: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: elevation,
+        centerTitle: true,
         title: Semantics(
           label: 'App bar with back button',
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // Title
               ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
                   colors: [
@@ -49,10 +78,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white, // ShaderMask needs white base
                   ),
                 ),
               ),
+
+              // Back Button
               if (showBackButton)
                 Container(
                   decoration: BoxDecoration(
@@ -72,14 +103,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        if (onBackPressed != null) {
-                          onBackPressed!();
-                        } else {
-                          Navigator.maybePop(context);
-                        }
-                      },
+                      onTap: () => _goBackToProfile(context), // Fixed navigation
                       child: Padding(
                         padding: EdgeInsets.all(padding * 0.5),
                         child: Icon(
@@ -94,12 +118,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ],
           ),
         ),
-        centerTitle: true,
         actions: actions,
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
 }

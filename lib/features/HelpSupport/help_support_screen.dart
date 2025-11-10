@@ -32,38 +32,42 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
 
   void _initializeAnimations() {
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 400), // Reduced from 600ms
       vsync: this,
     );
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500), // Reduced from 800ms
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _fadeController, curve: Curves.ease), // Changed to easeInOut
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate( // Reduced scale from 0.5 to 0.8
+      CurvedAnimation(parent: _scaleController, curve: Curves.ease), // Changed to easeInOut
     );
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(-1.0, 0.0),
+      begin: const Offset(-1.0, 0.0), // Changed from Offset(-1.0, 0.0) to subtle vertical slide
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.ease)); // Changed to easeInOut
 
+    // Stagger the animations for better flow
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fadeController.forward();
-        _scaleController.forward();
-        _slideController.forward();
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _scaleController.forward();
+        });
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (mounted) _slideController.forward();
+        });
       }
     });
   }
-
   @override
   void dispose() {
     _fadeController.dispose();
@@ -80,15 +84,10 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
       appBar: CustomAppBar(
         title: 'Help & Support',
         topPadding: 20.0, // Adjust this value for more/less space from top
-          onBackPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.settings,
-                  (route) => route.settings.name == AppRoutes.settings || route.isFirst,
-            );
-          }
-      ),
+        onBackPressed: () {
+          HapticFeedback.lightImpact();
+          Navigator.popUntil(context, (route) => route.settings.name == AppRoutes.profile);
+        },      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;

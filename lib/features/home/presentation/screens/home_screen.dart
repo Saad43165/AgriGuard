@@ -1,13 +1,14 @@
 // lib/features/home/presentation/screens/home_screen.dart
 import 'dart:io';
 
+import 'package:agriguard_fyp/features/home/presentation/screens/weather_widget/weather_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Navbar/presentation/nav_bar.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
-import '../Species_widgets/species_grid_widget.dart' show SpeciesGridWidget;
+import 'Species_widgets/species_grid_widget.dart';
 import 'bottom_sheet_widgets/scan_options_bottomsheet.dart';
 import 'components/all_scans_dialog_content.dart';
 import 'components/custom_home_app_bar.dart';
@@ -16,7 +17,6 @@ import 'components/loading_section.dart';
 import 'components/recent_scan_section.dart';
 import 'components/scan_service.dart';
 import 'components/share_results_dialog_content.dart';
-import 'components/weather_card.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart'; // ← ADDED
 
