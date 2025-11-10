@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_measurements.dart';
+import '../../../../core/constants/app_routes.dart'; // ← ADD THIS IMPORT
 
 class LogoutConfirmationDialogContent extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -262,8 +263,8 @@ class LogoutConfirmationDialogContent extends StatelessWidget {
                         AppMeasurements.getResponsiveBorderRadius(context),
                       ),
                       onTap: () {
-                        Navigator.of(context).pop();
-                        onConfirm();
+                        Navigator.of(context).pop(); // Close dialog first
+                        onConfirm(); // Then execute logout
                       },
                       child: Padding(
                         padding: EdgeInsets.symmetric(

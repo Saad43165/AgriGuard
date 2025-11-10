@@ -1,12 +1,14 @@
 // features/auth/Registration_screen/register_screen.dart
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
+import 'package:agriguard_fyp/features/auth/Registration_screen/utils/snackbar_utils.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/login_prompt.dart';
+import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/profile_image.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_form.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_header.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart'; // ← NEW
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/utils/snackbar_utils.dart';
+import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -17,6 +19,7 @@ import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_themes.dart';
+import '../../Profile/utils/profile_image_manager.dart'; // ← CORRECT IMPORT
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -85,26 +88,53 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Future<String?> _uploadProfileImage(String uid) async {
-    if (_imageFile == null) return null;
+    if (_imageFile == null) {
+      debugPrint('❌ No image file to convert');
+      return null;
+    }
 
     try {
-      final storageRef = FirebaseStorage.instance.ref('users/$uid/profile.jpg');
-      final uploadTask = storageRef.putFile(_imageFile!);
-      final snapshot = await uploadTask;
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-      debugPrint('Image uploaded successfully: $downloadUrl');
-      return downloadUrl;
-    } on FirebaseException catch (e) {
-      SnackbarUtils.showUploadErrorSnackBar(context, e.message ?? e.code);
-      debugPrint('Storage error (${e.code}): ${e.message}');
-      return null;
+      debugPrint('🖼️ === CONVERTING IMAGE TO BASE64 ===');
+      debugPrint('📁 Image path: ${_imageFile!.path}');
+
+      // Check if file exists
+      if (!await _imageFile!.exists()) {
+        debugPrint('❌ Image file does not exist');
+        return null;
+      }
+
+      // Read image as bytes
+      final bytes = await _imageFile!.readAsBytes();
+      debugPrint('📊 Original file size: ${bytes.length} bytes');
+
+      // Compress image if too large (optional)
+      Uint8List compressedBytes = bytes;
+      if (bytes.length > 500000) { // 500KB
+        debugPrint('⚡ Compressing large image...');
+        compressedBytes = await _compressImage(bytes);
+        debugPrint('📊 Compressed size: ${compressedBytes.length} bytes');
+      }
+
+      // Convert to base64 string
+      final base64Image = base64Encode(compressedBytes);
+      debugPrint('✅ Image converted to Base64');
+      debugPrint('📊 Base64 string length: ${base64Image.length} characters');
+
+      return base64Image;
+
     } catch (e) {
-      SnackbarUtils.showUploadErrorSnackBar(context, e.toString());
-      debugPrint('Image upload error: $e');
+      debugPrint('❌ Base64 conversion error: $e');
       return null;
     }
   }
 
+// Optional: Image compression function
+  Future<Uint8List> _compressImage(Uint8List bytes) async {
+    final codec = await instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final byteData = await frame.image.toByteData(format: ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -126,18 +156,60 @@ class _RegisterScreenState extends State<RegisterScreen>
       final location = _locationController.text.trim();
       final farmSize = _farmSizeController.text.trim();
 
+      debugPrint('Starting registration for: $email');
+
+      // Create user in Firebase Auth
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
       final user = credential.user;
+
       if (user == null) throw Exception('User creation failed');
 
       final uid = user.uid;
+      debugPrint('User created with UID: $uid');
 
+      // Upload profile image if exists
       String? profileImageUrl;
       if (_imageFile != null && await _imageFile!.exists()) {
+        debugPrint('🖼️ Converting profile image to Base64...');
         profileImageUrl = await _uploadProfileImage(uid);
+
+        if (profileImageUrl != null) {
+          debugPrint('✅ Profile image converted to Base64 successfully!');
+          debugPrint('📊 Base64 data length: ${profileImageUrl.length}');
+        } else {
+          debugPrint('❌ Image conversion failed - setting to null');
+          profileImageUrl = null;
+        }
+      } else {
+        debugPrint('ℹ️ No profile image selected');
+        profileImageUrl = null;
       }
 
+// DEBUG: Check what's being saved
+      debugPrint('🎯 FINAL - profileImageUrl type: ${profileImageUrl.runtimeType}');
+      debugPrint('🎯 FINAL - profileImageUrl is null: ${profileImageUrl == null}');
+      if (profileImageUrl != null) {
+        debugPrint('🎯 FINAL - profileImageUrl length: ${profileImageUrl.length}');
+      }
+
+// Save user data to Firestore
+      debugPrint('💾 Saving user data to Firestore...');
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fullName': name,
+        'email': email,
+        'phoneNumber': phone,
+        'location': location,
+        'farmSize': farmSize,
+        'profileImageUrl': profileImageUrl, // This stores the Base64 string
+        'createdAt': FieldValue.serverTimestamp(),
+        'emailVerified': false,
+        'uid': uid,
+      });
+      debugPrint('✅ User data saved with Base64 image');
+
+      // Save user data to Firestore
+      debugPrint('Saving user data to Firestore...');
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'fullName': name,
         'email': email,
@@ -147,13 +219,47 @@ class _RegisterScreenState extends State<RegisterScreen>
         'profileImageUrl': profileImageUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'emailVerified': false,
+        'uid': uid, // ← ADD THIS for easier queries
       });
 
+      // Send email verification
+      debugPrint('Sending email verification...');
       await user.sendEmailVerification();
+      debugPrint('Email verification sent');
 
       if (mounted) {
+        // Save the image to ProfileImageManager
+        if (_imageFile != null) {
+          ProfileImageManager.setPendingImage(_imageFile!);
+          debugPrint('Profile image saved to manager');
+        }
+
+        // Show success message with email verification info
         SnackbarUtils.showRegistrationSuccessSnackBar(context);
+
+        // Show additional info about email verification
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Account created successfully!', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('Please check your email ($email) for verification link.', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            duration: Duration(seconds: 5),
+            backgroundColor: Colors.green,
+          ),
+        );
+
         await Future.delayed(const Duration(seconds: 3));
+
+        // Sign out the user after registration to force login
+        await FirebaseAuth.instance.signOut();
+        debugPrint('User signed out after registration');
+
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRoutes.login,
@@ -161,20 +267,21 @@ class _RegisterScreenState extends State<RegisterScreen>
         );
       }
     } on FirebaseAuthException catch (e) {
+      debugPrint('Firebase Auth Error: ${e.code} - ${e.message}');
       _handleFirebaseAuthError(e);
     } on FirebaseException catch (e) {
+      debugPrint('Firebase Error: ${e.code} - ${e.message}');
       SnackbarUtils.showErrorSnackBar(
         context: context,
         message: 'Firebase error: ${e.message ?? e.code}',
       );
     } catch (e) {
+      debugPrint('Unexpected Error: $e');
       SnackbarUtils.showUnexpectedErrorSnackBar(context, e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _handleFirebaseAuthError(FirebaseAuthException e) {
+  }  void _handleFirebaseAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
         SnackbarUtils.showEmailAlreadyInUseSnackBar(context);
@@ -209,7 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: const RegisterAppBar(), // ← NEW: Clean, reusable AppBar
+      appBar: const RegisterAppBar(),
       body: Container(
         decoration: BoxDecoration(
           gradient: ThemeProvider.of(context).isDarkMode
@@ -243,7 +350,8 @@ class _RegisterScreenState extends State<RegisterScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  RegisterHeader(
+                  // UPDATED: Using the extracted ProfileImageWidget
+                  ProfileImageWidget(
                     imageFile: _imageFile,
                     onImagePressed: _pickImage,
                     isLoading: _isLoading,

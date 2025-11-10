@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../../../../../../core/constants/app_measurements.dart';
 
 class ProfilePicture extends StatefulWidget {
-  final XFile? profileImage;
+  final File? profileImageFile;
+  final String? profileImageBase64;
   final bool isEditing;
   final VoidCallback onPickImage;
   final double maxWidth;
@@ -15,7 +15,8 @@ class ProfilePicture extends StatefulWidget {
 
   const ProfilePicture({
     super.key,
-    required this.profileImage,
+    this.profileImageFile,
+    this.profileImageBase64,
     required this.isEditing,
     required this.onPickImage,
     required this.maxWidth,
@@ -41,25 +42,37 @@ class _ProfilePictureState extends State<ProfilePicture> {
   void didUpdateWidget(ProfilePicture oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Reload if profileImage changes (new image selected)
-    if (widget.profileImage != oldWidget.profileImage) {
-      if (widget.profileImage != null) {
-        _currentImageUrl = widget.profileImage!.path;
-        _isLoading = false;
-        setState(() {});
-      }
+    // Reload if profile image changes
+    if (widget.profileImageFile != oldWidget.profileImageFile ||
+        widget.profileImageBase64 != oldWidget.profileImageBase64) {
+      _updateCurrentImage();
     }
 
-    // Reload if editing mode changes and we haven't loaded yet
     if (!_hasInitialLoad) {
       _loadProfileImage();
+    }
+  }
+
+  void _updateCurrentImage() {
+    // Priority 1: Newly selected local file
+    if (widget.profileImageFile != null) {
+      _currentImageUrl = widget.profileImageFile!.path;
+      _isLoading = false;
+      if (mounted) setState(() {});
+    }
+    // Priority 2: Base64 image from Firestore
+    else if (widget.profileImageBase64 != null &&
+        widget.profileImageBase64!.isNotEmpty) {
+      _currentImageUrl = 'base64:${widget.profileImageBase64}';
+      _isLoading = false;
+      if (mounted) setState(() {});
     }
   }
 
   Future<void> _loadProfileImage() async {
     if (_hasInitialLoad) return;
 
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
 
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -73,20 +86,24 @@ class _ProfilePictureState extends State<ProfilePicture> {
           final data = snapshot.data();
           final firebaseImageUrl = data?['profileImageUrl'] as String?;
 
-          if (firebaseImageUrl != null && firebaseImageUrl.isNotEmpty) {
+          // Check if it's a Base64 string (not a URL)
+          if (firebaseImageUrl != null &&
+              firebaseImageUrl.isNotEmpty &&
+              !firebaseImageUrl.startsWith('http')) {
+            _currentImageUrl = 'base64:$firebaseImageUrl';
+            debugPrint('📥 Loaded Base64 image from Firestore');
+          } else if (firebaseImageUrl != null && firebaseImageUrl.isNotEmpty) {
+            // It's a URL (legacy support)
             _currentImageUrl = firebaseImageUrl;
           }
         }
       }
 
       // If we have a new image from widget, use that instead
-      if (widget.profileImage != null) {
-        _currentImageUrl = widget.profileImage!.path;
-      }
-
+      _updateCurrentImage();
       _hasInitialLoad = true;
     } catch (e) {
-      print('Error loading profile image: $e');
+      debugPrint('❌ Error loading profile image: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -124,7 +141,10 @@ class _ProfilePictureState extends State<ProfilePicture> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.2),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -224,7 +244,7 @@ class _ProfilePictureState extends State<ProfilePicture> {
         child: _isLoading
             ? Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
+            valueColor: AlwaysStoppedAnimation(
               Theme.of(context).colorScheme.primary,
             ),
           ),
@@ -239,8 +259,27 @@ class _ProfilePictureState extends State<ProfilePicture> {
   Widget _buildImageContent() {
     final imageUrl = _currentImageUrl!;
 
-    // Check if it's a network URL (from Firebase)
-    if (imageUrl.startsWith('http')) {
+    // Check if it's a Base64 image
+    if (imageUrl.startsWith('base64:')) {
+      final base64String = imageUrl.substring(7); // Remove 'base64:' prefix
+      try {
+        return Image.memory(
+          base64Decode(base64String),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('❌ Error decoding Base64 image: $error');
+            return _buildDefaultAvatar(context);
+          },
+        );
+      } catch (e) {
+        debugPrint('❌ Base64 decode error: $e');
+        return _buildDefaultAvatar(context);
+      }
+    }
+    // Check if it's a network URL (from Firebase Storage - legacy)
+    else if (imageUrl.startsWith('http')) {
       return Image.network(
         imageUrl,
         fit: BoxFit.cover,
@@ -256,24 +295,30 @@ class _ProfilePictureState extends State<ProfilePicture> {
           );
         },
         errorBuilder: (context, error, stackTrace) {
-          print('Error loading network image: $error');
+          debugPrint('❌ Error loading network image: $error');
           return _buildDefaultAvatar(context);
         },
       );
     }
     // Check if it's a local file path (newly selected image)
     else {
-      final file = File(imageUrl);
-      if (file.existsSync()) {
-        return Image.file(
-          file,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            print('Error loading local image: $error');
-            return _buildDefaultAvatar(context);
-          },
-        );
-      } else {
+      try {
+        final file = File(imageUrl);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('❌ Error loading local image: $error');
+              return _buildDefaultAvatar(context);
+            },
+          );
+        } else {
+          debugPrint('❌ Local file does not exist: $imageUrl');
+          return _buildDefaultAvatar(context);
+        }
+      } catch (e) {
+        debugPrint('❌ Error creating file from path: $e');
         return _buildDefaultAvatar(context);
       }
     }

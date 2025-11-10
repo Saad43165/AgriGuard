@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/app_routes.dart';
-import '../../../core/constants/app_measurements.dart';
 import '../../../services/plant_id_service.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Profile/presentation/Components/floating_orb.dart';

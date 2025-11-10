@@ -107,6 +107,7 @@ class BottomNavBar extends StatelessWidget {
   }
 
   // SAFE: Navigate without breaking stack
+// In your BottomNavBar, update the _navigateSafely method:
   void _navigateSafely(BuildContext context, int index) {
     final currentRoute = ModalRoute.of(context)?.settings.name;
     String targetRoute;
@@ -120,13 +121,10 @@ class BottomNavBar extends StatelessWidget {
 
     if (currentRoute == targetRoute) return;
 
-    final args = index == 2 && currentRoute == AppRoutes.scan ? {'fromScan': true} : null;
-
-    Navigator.pushNamedAndRemoveUntil(
+    // FIXED: Use pushReplacementNamed instead of pushNamedAndRemoveUntil
+    Navigator.pushReplacementNamed(
       context,
       targetRoute,
-          (route) => route.settings.name == AppRoutes.home || route.isFirst,
-      arguments: args,
+      arguments: index == 2 && currentRoute == AppRoutes.scan ? {'fromScan': true} : null,
     );
-  }
-}
+  }}

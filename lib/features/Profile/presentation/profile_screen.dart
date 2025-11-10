@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
-
-import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,10 +11,10 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../auth_services.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Settings/presentation/components/floating_orb.dart';
-import '../../home/presentation/screens/components/custom_home_app_bar.dart';
+import '../utils/profile_image_manager.dart';
 import 'Components/profile_info.dart';
+import 'Components/profile_picture.dart' show ProfilePicture;
 import 'components/profile_header.dart';
-import 'components/profile_picture.dart';
 import 'components/statistics.dart';
 import 'components/actions.dart' as profile_actions;
 
@@ -30,7 +30,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
   Map<String, dynamic> _userProfile = {
     'name': 'Loading...',
     'email': '',
@@ -41,6 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     'joinDate': '',
     'scanCount': 0,
     'lastUpdated': '',
+    'profileImageUrl': null,
   };
 
   bool _isEditing = false;
@@ -54,7 +56,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   final _locationController = TextEditingController();
   final _farmSizeController = TextEditingController();
 
-  XFile? _profileImage;
+  File? _profileImageFile;
+  String? _profileImageBase64;
 
   late AnimationController _fadeController;
   late AnimationController _scaleController;
@@ -64,14 +67,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   late Animation<Offset> _slideAnimation;
 
   bool _navTapInProgress = false;
-
-  // NEW: Force UI rebuild after save
   final ValueNotifier<bool> _profileChangedNotifier = ValueNotifier(false);
 
   Future<void> _debouncedNavTap(int index) async {
     if (_navTapInProgress) return;
     _navTapInProgress = true;
-
     HapticFeedback.lightImpact();
 
     if (index == 0) {
@@ -107,44 +107,45 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     try {
       setState(() => _isLoading = true);
 
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args.isNotEmpty) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // ALWAYS load from Firestore (source of truth for persistence)
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data()!;
         _userProfile = {
-          'name': args['fullName'] ?? args['name'] ?? 'Loading...',
-          'email': args['email'] ?? '',
-          'phone': args['phoneNumber'] ?? args['phone'] ?? '',
-          'location': args['location'] ?? '',
-          'farmSize': args['farmSize']?.toString() ?? '',
-          'crops': args['crops'] ?? [],
-          'joinDate': args['createdAt']?.toString() ?? args['joinDate'] ?? '',
-          'scanCount': args['scanCount'] ?? 0,
-          'lastUpdated': args['lastUpdated'] ?? '',
+          'name': data['fullName'] ?? data['name'] ?? 'User',
+          'email': data['email'] ?? '',
+          'phone': data['phoneNumber'] ?? data['phone'] ?? '',
+          'location': data['location'] ?? '',
+          'farmSize': data['farmSize']?.toString() ?? '',
+          'crops': data['crops'] ?? [],
+          'joinDate': data['createdAt']?.toString() ?? data['joinDate'] ?? '',
+          'scanCount': data['scanCount'] ?? 0,
+          'lastUpdated': data['lastUpdated']?.toString() ?? '',
+          'profileImageUrl': data['profileImageUrl'],
         };
-        _profileImage = args['profileImageUrl'] != null ? XFile(args['profileImageUrl']) : null;
-      } else {
-        final uid = FirebaseAuth.instance.currentUser?.uid;
-        if (uid != null) {
-          final snapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-          if (snapshot.exists) {
-            final data = snapshot.data()!;
-            _userProfile = {
-              'name': data['fullName'] ?? data['name'] ?? 'Loading...',
-              'email': data['email'] ?? '',
-              'phone': data['phoneNumber'] ?? data['phone'] ?? '',
-              'location': data['location'] ?? '',
-              'farmSize': data['farmSize']?.toString() ?? '',
-              'crops': data['crops'] ?? [],
-              'joinDate': data['createdAt']?.toString() ?? data['joinDate'] ?? '',
-              'scanCount': data['scanCount'] ?? 0,
-              'lastUpdated': data['lastUpdated']?.toString() ?? '',
-            };
-            if (data['profileImageUrl'] != null && data['profileImageUrl'].isNotEmpty) {
-              _profileImage = XFile(data['profileImageUrl']);
-            }
-          }
+
+        // Load Base64 image from Firestore
+        if (data['profileImageUrl'] != null &&
+            data['profileImageUrl'] is String &&
+            data['profileImageUrl'].toString().isNotEmpty) {
+          _profileImageBase64 = data['profileImageUrl'];
+          debugPrint('📥 Profile loaded from Firestore (Image: ${_profileImageBase64!.length} chars)');
+
+          // Sync to ProfileImageManager for home screen
+          _syncImageToManager();
         }
       }
 
+      // Update text controllers with loaded data
       _nameController.text = _userProfile['name'];
       _emailController.text = _userProfile['email'];
       _phoneController.text = _userProfile['phone'];
@@ -152,7 +153,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       _farmSizeController.text = _userProfile['farmSize']?.toString() ?? '';
 
       if (mounted) setState(() => _isLoading = false);
+
+      debugPrint('✅ Profile loaded successfully');
     } catch (e) {
+      debugPrint('❌ Error loading profile: $e');
       if (mounted) {
         setState(() {
           _userProfile = {
@@ -165,21 +169,98 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             'joinDate': '',
             'scanCount': 0,
             'lastUpdated': 'Error: $e',
+            'profileImageUrl': null,
           };
           _isLoading = false;
         });
+        _showSnackBar('Failed to load profile: $e', isError: true);
       }
     }
   }
 
-  void _initializeAnimations() {
-    _fadeController = AnimationController(duration: const Duration(milliseconds: 200), vsync: this);
-    _scaleController = AnimationController(duration: const Duration(milliseconds: 150), vsync: this);
-    _slideController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+  // Sync Base64 to temporary file for ProfileImageManager
+  Future<void> _syncImageToManager() async {
+    if (_profileImageBase64 == null || _profileImageBase64!.isEmpty) return;
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut));
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+    try {
+      // Skip if it's a URL
+      if (_profileImageBase64!.startsWith('http')) return;
+
+      // Decode Base64 to bytes
+      final bytes = base64Decode(_profileImageBase64!);
+
+      // Create temporary file
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/profile_${DateTime.now().millisecondsSinceEpoch}.png');
+      await tempFile.writeAsBytes(bytes);
+
+      // Update ProfileImageManager
+      ProfileImageManager.setPendingImage(tempFile);
+      _profileImageFile = tempFile;
+
+      debugPrint('🔄 Synced Base64 to ProfileImageManager for home screen');
+    } catch (e) {
+      debugPrint('❌ Error syncing image to manager: $e');
+    }
+  }
+
+  Future<String?> _convertImageToBase64(File imageFile) async {
+    try {
+      if (!await imageFile.exists()) {
+        debugPrint('❌ Image file does not exist');
+        return null;
+      }
+
+      final bytes = await imageFile.readAsBytes();
+      debugPrint('📊 Converting image to Base64 (${bytes.length} bytes)');
+
+      Uint8List compressedBytes = bytes;
+      if (bytes.length > 500000) {
+        debugPrint('⚡ Compressing image...');
+        compressedBytes = await _compressImage(bytes);
+      }
+
+      final base64String = base64Encode(compressedBytes);
+      debugPrint('✅ Base64 conversion successful (${base64String.length} chars)');
+      return base64String;
+    } catch (e) {
+      debugPrint('❌ Base64 conversion error: $e');
+      return null;
+    }
+  }
+
+  Future<Uint8List> _compressImage(Uint8List bytes) async {
+    try {
+      final codec = await instantiateImageCodec(
+        bytes,
+        targetWidth: 300,
+        targetHeight: 300,
+      );
+      final frame = await codec.getNextFrame();
+      final byteData = await frame.image.toByteData(format: ImageByteFormat.png);
+      return byteData!.buffer.asUint8List();
+    } catch (e) {
+      debugPrint('❌ Compression failed, using original: $e');
+      return bytes;
+    }
+  }
+
+  void _initializeAnimations() {
+    _fadeController = AnimationController(
+        duration: const Duration(milliseconds: 200), vsync: this);
+    _scaleController = AnimationController(
+        duration: const Duration(milliseconds: 150), vsync: this);
+    _slideController = AnimationController(
+        duration: const Duration(milliseconds: 300), vsync: this);
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut));
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
+    _slideAnimation = Tween<Offset>(
+        begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+        CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -200,17 +281,18 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _fadeController.dispose();
     _scaleController.dispose();
     _slideController.dispose();
-    _profileChangedNotifier.dispose(); // <-- NEW
+    _profileChangedNotifier.dispose();
     super.dispose();
   }
 
   void _toggleEditMode() {
     if (_isSaving) return;
-
     HapticFeedback.lightImpact();
+
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) {
+        // User clicked "Save" button
         _isSaving = true;
         _saveProfileWithFeedback();
       }
@@ -220,136 +302,146 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Future<void> _saveProfileWithFeedback() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await authService.value.updateProfile(
-          fullName: _nameController.text.trim(),
-          phoneNumber: _phoneController.text.trim(),
-          location: _locationController.text.trim(),
-          farmSize: _farmSizeController.text.trim(),
-        );
-
-        // NEW: Trigger Home AppBar refresh
-
-        // NEW: Force UI rebuild
-        _profileChangedNotifier.value = !_profileChangedNotifier.value;
+      if (uid == null) {
+        throw Exception('User not authenticated');
       }
 
-      _showSingleSnackBar('Profile updated successfully', isError: false);
+      debugPrint('💾 Saving profile data...');
+
+      // Validate required fields
+      if (_nameController.text.trim().isEmpty) {
+        throw Exception('Name cannot be empty');
+      }
+
+      // Prepare update data
+      final updateData = <String, dynamic>{
+        'fullName': _nameController.text.trim(),
+        'phoneNumber': _phoneController.text.trim(),
+        'location': _locationController.text.trim(),
+        'farmSize': _farmSizeController.text.trim(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      };
+
+      // Add profile image if changed
+      if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
+        updateData['profileImageUrl'] = _profileImageBase64;
+        debugPrint('💾 Including profile image in update');
+      }
+
+      // Save to Firestore (CRITICAL - This ensures persistence)
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update(updateData);
+
+      debugPrint('✅ Profile saved to Firestore successfully');
+
+      // Update local state
+      setState(() {
+        _userProfile['name'] = _nameController.text.trim();
+        _userProfile['phone'] = _phoneController.text.trim();
+        _userProfile['location'] = _locationController.text.trim();
+        _userProfile['farmSize'] = _farmSizeController.text.trim();
+        _userProfile['profileImageUrl'] = _profileImageBase64;
+      });
+
+      // Force UI rebuild
+      _profileChangedNotifier.value = !_profileChangedNotifier.value;
+
+      // Show success message
+      _showSnackBar(
+        'Profile Changed Successfully!',
+        isError: false,
+      );
     } catch (e) {
-      _showSingleSnackBar('Error saving profile: $e', isError: true);
+      debugPrint('❌ Error saving profile: $e');
+      _showSnackBar('❌ Failed to save: $e', isError: true);
+
+      // Revert edit mode on error
+      setState(() => _isEditing = true);
     } finally {
-      _isSaving = false;
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
-  void _showSingleSnackBar(String message, {bool isError = false}) {
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError
             ? Theme.of(context).colorScheme.error
-            : Theme.of(context).colorScheme.secondary.withOpacity(0.9),
+            : Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        action: isError
+            ? null
+            : SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
       ),
     );
   }
-
-// In your ProfileScreen class, update the _pickProfileImage method:
 
   Future<void> _pickProfileImage() async {
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 300,
-          maxHeight: 300,
-          imageQuality: 85
+        source: ImageSource.gallery,
+        maxWidth: 300,
+        maxHeight: 300,
+        imageQuality: 85,
       );
 
       if (pickedFile != null) {
-        setState(() => _profileImage = pickedFile);
+        final file = File(pickedFile.path);
 
-        // Upload to Firebase Storage and get download URL
-        final String? downloadUrl = await _uploadProfileImageToFirebase(pickedFile);
+        debugPrint('🖼️ Image picked: ${file.path}');
 
-        if (downloadUrl != null) {
-          // Update Firestore with the new image URL
-          await _updateProfileImageInFirestore(downloadUrl);
-
-          // Update local state
+        // Convert to Base64
+        final base64String = await _convertImageToBase64(file);
+        if (base64String != null) {
           setState(() {
-            _profileImage = XFile(downloadUrl);
+            _profileImageFile = file;
+            _profileImageBase64 = base64String;
           });
+
+          // Update ProfileImageManager for instant home screen sync
+          ProfileImageManager.setPendingImage(file);
+
+          // Save immediately to Firestore for persistence
+          final uid = FirebaseAuth.instance.currentUser?.uid;
+          if (uid != null) {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(uid)
+                .update({
+              'profileImageUrl': _profileImageBase64,
+              'lastUpdated': FieldValue.serverTimestamp(),
+            });
+            debugPrint('💾 Profile image saved to Firestore immediately');
+          }
 
           // Force UI refresh
           _profileChangedNotifier.value = !_profileChangedNotifier.value;
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Profile picture updated!'),
-              backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.9),
-            ),
+          _showSnackBar(
+            '✅ Profile picture updated! Will persist after logout.',
+            isError: false,
           );
+        } else {
+          _showSnackBar('❌ Failed to process image', isError: true);
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating profile image: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    }
-  }
-
-  Future<String?> _uploadProfileImageToFirebase(XFile imageFile) async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return null;
-
-      // Upload to Firebase Storage
-      final Reference storageRef = FirebaseStorage.instance
-          .ref()
-          .child('profile_images')
-          .child('$uid.jpg');
-
-      final UploadTask uploadTask = storageRef.putFile(File(imageFile.path));
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-
-      return downloadUrl;
-    } catch (e) {
-      print('Error uploading image: $e');
-      return null;
-    }
-  }
-
-  Future<void> _updateProfileImageInFirestore(String imageUrl) async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .update({
-          'profileImageUrl': imageUrl,
-          'lastUpdated': FieldValue.serverTimestamp(),
-        });
-      }
-    } catch (e) {
-      print('Error updating Firestore: $e');
-      rethrow;
-    }
-  }
-  Future<void> _uploadProfileImage(XFile imageFile) async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await FirebaseFirestore.instance.collection('users').doc(uid).update({'lastUpdated': DateTime.now()});
-      }
-    } catch (e) {
-      print('Error handling profile image: $e');
+      debugPrint('❌ Image picker error: $e');
+      _showSnackBar('❌ Error updating image: $e', isError: true);
     }
   }
 
@@ -359,20 +451,46 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       canPop: true,
       onPopInvoked: (didPop) {
         if (didPop) return;
+
+        // If user tries to go back while editing, ask to save
+        if (_isEditing) {
+          _showUnsavedChangesDialog();
+          return;
+        }
+
         final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         final fromScan = args?['fromScan'] == true;
 
         if (fromScan) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.scan, (r) => r.settings.name == AppRoutes.home);
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.scan,
+                  (r) => r.settings.name == AppRoutes.home);
         } else {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false);
+          Navigator.pushNamedAndRemoveUntil(
+              context, AppRoutes.home, (r) => false);
         }
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,
         body: LayoutBuilder(
           builder: (context, constraints) {
-            if (_isLoading) return const Center(child: CircularProgressIndicator());
+            if (_isLoading) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading profile...',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              );
+            }
+
             final isTablet = MediaQuery.of(context).size.width > 600;
             return _buildBody(context, isTablet, constraints.maxWidth);
           },
@@ -381,6 +499,39 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           selectedIndex: 2,
           onTap: _debouncedNavTap,
         ),
+      ),
+    );
+  }
+
+  void _showUnsavedChangesDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Unsaved Changes'),
+        content: const Text('You have unsaved changes. Do you want to save them before leaving?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _isEditing = false);
+              Navigator.pop(context);
+            },
+            child: const Text('Discard'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _toggleEditMode(); // This will save
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -397,30 +548,50 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: Theme.of(context).brightness == Brightness.dark
-                  ? [const Color(0xFF0F0F23), const Color(0xFF16213E), const Color(0xFF1A1A2E), const Color(0xFF0F0F23)]
-                  : [Theme.of(context).colorScheme.surface, Theme.of(context).colorScheme.surface.withOpacity(0.9), Theme.of(context).colorScheme.surface.withOpacity(0.8), Theme.of(context).colorScheme.surface],
+                  ? [
+                const Color(0xFF0F0F23),
+                const Color(0xFF16213E),
+                const Color(0xFF1A1A2E),
+                const Color(0xFF0F0F23)
+              ]
+                  : [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                Theme.of(context).colorScheme.surface
+              ],
               stops: const [0.0, 0.3, 0.7, 1.0],
             ),
           ),
           child: Stack(
             children: [
-              ...List.generate(6, (i) => FloatingOrb(index: i, maxWidth: maxWidth, fadeController: _fadeController, scaleAnimation: _scaleAnimation)),
+              ...List.generate(
+                  6,
+                      (i) => FloatingOrb(
+                      index: i,
+                      maxWidth: maxWidth,
+                      fadeController: _fadeController,
+                      scaleAnimation: _scaleAnimation)),
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: CustomScrollView(
                     slivers: [
-                      ProfileHeader(onToggleEdit: _toggleEditMode, isEditing: _isEditing),
-
+                      ProfileHeader(
+                        onToggleEdit: _toggleEditMode,
+                        isEditing: _isEditing,
+                      ),
                       SliverToBoxAdapter(
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: isTablet ? 600 : double.infinity),
+                          constraints: BoxConstraints(
+                              maxWidth: isTablet ? 600 : double.infinity),
                           child: Column(
                             children: [
                               SizedBox(height: sectionSpacing),
                               ProfilePicture(
-                                profileImage: _profileImage,
+                                profileImageFile: _profileImageFile,
+                                profileImageBase64: _profileImageBase64,
                                 isEditing: _isEditing,
                                 onPickImage: _pickProfileImage,
                                 maxWidth: maxWidth,
@@ -429,7 +600,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                               SizedBox(height: sectionSpacing),
                               if (isTablet)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: AppMeasurements.defaultPadding),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: AppMeasurements.defaultPadding),
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -443,7 +615,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                           phoneController: _phoneController,
                                           locationController: _locationController,
                                           farmSizeController: _farmSizeController,
-                                          cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                          cardPadding: EdgeInsets.all(
+                                              AppMeasurements.smallPadding),
                                           itemSpacing: AppMeasurements.smallPadding,
                                         ),
                                       ),
@@ -452,7 +625,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                         flex: 1,
                                         child: Statistics(
                                           userProfile: _userProfile,
-                                          cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                          cardPadding: EdgeInsets.all(
+                                              AppMeasurements.smallPadding),
                                           itemSpacing: AppMeasurements.smallPadding,
                                         ),
                                       ),
@@ -470,13 +644,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                       phoneController: _phoneController,
                                       locationController: _locationController,
                                       farmSizeController: _farmSizeController,
-                                      cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                      cardPadding: EdgeInsets.all(
+                                          AppMeasurements.smallPadding),
                                       itemSpacing: AppMeasurements.smallPadding,
                                     ),
                                     SizedBox(height: sectionSpacing),
                                     Statistics(
                                       userProfile: _userProfile,
-                                      cardPadding: EdgeInsets.all(AppMeasurements.smallPadding),
+                                      cardPadding: EdgeInsets.all(
+                                          AppMeasurements.smallPadding),
                                       itemSpacing: AppMeasurements.smallPadding,
                                     ),
                                   ],
@@ -494,6 +670,34 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   ),
                 ),
               ),
+
+              // Show saving indicator
+              if (_isSaving)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black54,
+                    child: Center(
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Saving profile...',
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );

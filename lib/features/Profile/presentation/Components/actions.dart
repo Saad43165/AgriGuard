@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ← ADD THIS IMPORT
 import '../../../../../core/constants/app_measurements.dart';
 import '../../../../../core/constants/app_routes.dart';
+import '../../utils/profile_image_manager.dart';
 import 'logout_confirmation_dialog_content.dart';
 
 class ProfileActions extends StatelessWidget {
@@ -11,6 +13,36 @@ class ProfileActions extends StatelessWidget {
     super.key,
     required this.padding,
   });
+
+  // ← ADD THIS LOGOUT METHOD
+  Future<void> _logout(BuildContext context) async {
+    try {
+      // Clear any pending images
+      ProfileImageManager.clearPendingImage();
+
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Navigate to login screen and clear ALL routes
+      if (context.mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+              (route) => false, // This clears ALL routes from stack
+        );
+      }
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +92,8 @@ class ProfileActions extends StatelessWidget {
         'onTap': () => showDialog(
           context: context,
           builder: (context) => LogoutConfirmationDialogContent(
-            onConfirm: () =>
-                Navigator.pushReplacementNamed(context, AppRoutes.login),
+            // ← FIXED: Use the proper logout method
+            onConfirm: () => _logout(context),
           ),
         ),
       },
