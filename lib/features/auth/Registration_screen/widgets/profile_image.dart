@@ -1,4 +1,4 @@
-// features/auth/Registration_screen/widgets/profile_image_widget.dart
+// features/auth/Registration_screen/weather_screen/profile_image_widget.dart
 
 import 'dart:io';
 import 'package:flutter/material.dart';

@@ -7,7 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/navigation/app_router.dart';
 import 'core/constants/app_routes.dart';
 import 'core/widgets/app_themes.dart';
-import 'features/home/presentation/screens/home_screen.dart';
+import 'features/home/screens/home_screen.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'firebase_options.dart';
 
@@ -51,7 +51,7 @@ class AgriGuardApp extends StatelessWidget {
           }
           if (snapshot.hasData) {
             // User is logged in, go to HomeScreen
-            return const HomeScreen();
+            return const SplashScreen();
           }
           // User is not logged in, go to SplashScreen
           return const SplashScreen();

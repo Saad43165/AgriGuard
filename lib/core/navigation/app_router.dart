@@ -10,7 +10,7 @@ import '../../features/Settings/presentation/settings_screen.dart';
 import '../../features/auth/Login_Screen/login_screens.dart';
 import '../../features/auth/Registration_screen/register_screen.dart';
 import '../../features/auth/Forget_Pass_Screen/forgot_password_screen.dart';
-import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/home/screens/home_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';

@@ -1,4 +1,4 @@
-// features/auth/Registration_screen/widgets/register_app_bar.dart
+// features/auth/Registration_screen/weather_screen/register_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';

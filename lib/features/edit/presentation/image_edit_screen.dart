@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_routes.dart';
-import '../../home/presentation/screens/components/scan_service.dart';
+import '../../home/screens/components/scan_service.dart';
 
 class ImageEditScreen extends StatefulWidget {
   final String imagePath;

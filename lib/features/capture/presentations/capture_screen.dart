@@ -7,7 +7,7 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../services/plant_id_service.dart';
 import '../../Navbar/presentation/nav_bar.dart';
 import '../../Profile/presentation/Components/floating_orb.dart';
-import '../../home/presentation/screens/components/scan_service.dart';
+import '../../home/screens/components/scan_service.dart';
 import 'components/app_bar_content.dart';
 import 'components/image_section.dart';
 import 'components/action_buttons.dart';

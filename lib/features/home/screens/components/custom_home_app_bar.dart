@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/constants/app_measurements.dart';
-import '../../../../Profile/utils/profile_image_manager.dart';
+import '../../../Profile/utils/profile_image_manager.dart';
 
 class CustomHomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   const CustomHomeAppBar({super.key});

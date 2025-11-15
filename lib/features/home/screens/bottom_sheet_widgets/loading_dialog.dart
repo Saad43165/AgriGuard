@@ -1,4 +1,4 @@
-// lib/features/scan_history/presentation/components/scan_options_bottomsheet/widgets/loading_dialog.dart
+// lib/features/scan_history/presentation/components/scan_options_bottomsheet/weather_screen/loading_dialog.dart
 import 'package:flutter/material.dart';
 
 class LoadingDialog extends StatelessWidget {

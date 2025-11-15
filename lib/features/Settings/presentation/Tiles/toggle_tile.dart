@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../../core/constants/app_measurements.dart';
 
-class ToggleTile extends StatelessWidget {
+class ToggleTile extends StatefulWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -11,55 +13,127 @@ class ToggleTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.value,
     required this.onChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+  State<ToggleTile> createState() => _ToggleTileState();
+}
 
+class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleToggle(bool newValue) {
+    _controller.forward().then((_) => _controller.reverse());
+    HapticFeedback.mediumImpact();
+    widget.onChanged(newValue);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Semantics(
-      label: 'Toggle setting for $title',
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(smallPadding),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+      label: 'Toggle setting for ${widget.title}',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: widget.value
+                        ? [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    ]
+                        : [
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                    ],
+                  ),
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: widget.value
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                      color: widget.value
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  if (widget.subtitle != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.subtitle!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            child: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.primary,
-              size: AppMeasurements.getResponsiveIconSizeSmall(context),
-            ),
-          ),
-          SizedBox(width: smallPadding),
-          Expanded(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
-                fontWeight: FontWeight.w500,
+            const SizedBox(width: 12),
+            Transform.scale(
+              scale: 0.95,
+              child: Switch(
+                value: widget.value,
+                onChanged: _handleToggle,
+                activeColor: Theme.of(context).colorScheme.primary,
+                activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                inactiveThumbColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+                  if (states.contains(MaterialState.selected)) {
+                    return Colors.transparent;
+                  }
+                  return Theme.of(context).colorScheme.onSurface.withOpacity(0.2);
+                }),
               ),
             ),
-          ),
-          Switch(
-            value: value,
-            activeColor: Theme.of(context).colorScheme.primary,
-            inactiveThumbColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-            onChanged: onChanged,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

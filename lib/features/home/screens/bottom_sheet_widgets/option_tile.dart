@@ -1,4 +1,4 @@
-// lib/features/scan_history/presentation/components/scan_options_bottomsheet/widgets/option_tile.dart
+// lib/features/scan_history/presentation/components/scan_options_bottomsheet/weather_screen/option_tile.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

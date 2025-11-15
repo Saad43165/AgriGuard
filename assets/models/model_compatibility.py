@@ -1,4 +1,3 @@
-# Run this Python script to check model ops
 import tensorflow as tf
 import numpy as np
 

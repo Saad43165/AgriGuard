@@ -5,8 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // ADD THIS IMPORT
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
-import '../../../home/presentation/screens/components/scan_service.dart';
-import '../../../home/presentation/screens/components/share_results_dialog_content.dart';
+import '../../../home/screens/components/scan_service.dart';
+import '../../../home/screens/components/share_results_dialog_content.dart';
 import '../components/app_bar_content.dart';
 import '../components/analysis_details_card.dart';
 import '../components/diagnosis_card.dart';

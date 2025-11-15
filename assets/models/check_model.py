@@ -5,8 +5,7 @@ import os
 print("🔍 TensorFlow Lite Model Inspector")
 print("===================================")
 
-# Update this path to point to your .tflite file
-MODEL_PATH = "plant_id_model.tflite"  # Change this to your actual file path
+MODEL_PATH = "plant_id_model.tflite"
 
 try:
     # Check if file exists

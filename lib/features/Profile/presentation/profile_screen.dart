@@ -112,7 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen>
         throw Exception('User not authenticated');
       }
 
-      // ALWAYS load from Firestore (source of truth for persistence)
       final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -133,19 +132,15 @@ class _ProfileScreenState extends State<ProfileScreen>
           'profileImageUrl': data['profileImageUrl'],
         };
 
-        // Load Base64 image from Firestore
         if (data['profileImageUrl'] != null &&
             data['profileImageUrl'] is String &&
             data['profileImageUrl'].toString().isNotEmpty) {
           _profileImageBase64 = data['profileImageUrl'];
           debugPrint('📥 Profile loaded from Firestore (Image: ${_profileImageBase64!.length} chars)');
-
-          // Sync to ProfileImageManager for home screen
           _syncImageToManager();
         }
       }
 
-      // Update text controllers with loaded data
       _nameController.text = _userProfile['name'];
       _emailController.text = _userProfile['email'];
       _phoneController.text = _userProfile['phone'];
@@ -178,23 +173,17 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // Sync Base64 to temporary file for ProfileImageManager
   Future<void> _syncImageToManager() async {
     if (_profileImageBase64 == null || _profileImageBase64!.isEmpty) return;
 
     try {
-      // Skip if it's a URL
       if (_profileImageBase64!.startsWith('http')) return;
 
-      // Decode Base64 to bytes
       final bytes = base64Decode(_profileImageBase64!);
-
-      // Create temporary file
       final tempDir = Directory.systemTemp;
       final tempFile = File('${tempDir.path}/profile_${DateTime.now().millisecondsSinceEpoch}.png');
       await tempFile.writeAsBytes(bytes);
 
-      // Update ProfileImageManager
       ProfileImageManager.setPendingImage(tempFile);
       _profileImageFile = tempFile;
 
@@ -292,7 +281,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() {
       _isEditing = !_isEditing;
       if (!_isEditing) {
-        // User clicked "Save" button
         _isSaving = true;
         _saveProfileWithFeedback();
       }
@@ -308,12 +296,10 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       debugPrint('💾 Saving profile data...');
 
-      // Validate required fields
       if (_nameController.text.trim().isEmpty) {
         throw Exception('Name cannot be empty');
       }
 
-      // Prepare update data
       final updateData = <String, dynamic>{
         'fullName': _nameController.text.trim(),
         'phoneNumber': _phoneController.text.trim(),
@@ -322,13 +308,11 @@ class _ProfileScreenState extends State<ProfileScreen>
         'lastUpdated': FieldValue.serverTimestamp(),
       };
 
-      // Add profile image if changed
       if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
         updateData['profileImageUrl'] = _profileImageBase64;
         debugPrint('💾 Including profile image in update');
       }
 
-      // Save to Firestore (CRITICAL - This ensures persistence)
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -336,7 +320,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       debugPrint('✅ Profile saved to Firestore successfully');
 
-      // Update local state
       setState(() {
         _userProfile['name'] = _nameController.text.trim();
         _userProfile['phone'] = _phoneController.text.trim();
@@ -345,10 +328,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         _userProfile['profileImageUrl'] = _profileImageBase64;
       });
 
-      // Force UI rebuild
       _profileChangedNotifier.value = !_profileChangedNotifier.value;
 
-      // Show success message
       _showSnackBar(
         'Profile Changed Successfully!',
         isError: false,
@@ -356,8 +337,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (e) {
       debugPrint('❌ Error saving profile: $e');
       _showSnackBar('❌ Failed to save: $e', isError: true);
-
-      // Revert edit mode on error
       setState(() => _isEditing = true);
     } finally {
       if (mounted) {
@@ -404,7 +383,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
         debugPrint('🖼️ Image picked: ${file.path}');
 
-        // Convert to Base64
         final base64String = await _convertImageToBase64(file);
         if (base64String != null) {
           setState(() {
@@ -412,10 +390,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             _profileImageBase64 = base64String;
           });
 
-          // Update ProfileImageManager for instant home screen sync
           ProfileImageManager.setPendingImage(file);
 
-          // Save immediately to Firestore for persistence
           final uid = FirebaseAuth.instance.currentUser?.uid;
           if (uid != null) {
             await FirebaseFirestore.instance
@@ -428,13 +404,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             debugPrint('💾 Profile image saved to Firestore immediately');
           }
 
-          // Force UI refresh
           _profileChangedNotifier.value = !_profileChangedNotifier.value;
 
-          _showSnackBar(
-            '✅ Profile picture updated! Will persist after logout.',
-            isError: false,
-          );
+
         } else {
           _showSnackBar('❌ Failed to process image', isError: true);
         }
@@ -452,7 +424,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       onPopInvoked: (didPop) {
         if (didPop) return;
 
-        // If user tries to go back while editing, ask to save
         if (_isEditing) {
           _showUnsavedChangesDialog();
           return;
@@ -527,7 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _toggleEditMode(); // This will save
+              _toggleEditMode();
             },
             child: const Text('Save'),
           ),
@@ -537,6 +508,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildBody(BuildContext context, bool isTablet, double maxWidth) {
+    final padding = AppMeasurements.getResponsivePadding(context);
     final sectionSpacing = AppMeasurements.smallPadding * 1.5;
 
     return ValueListenableBuilder<bool>(
@@ -583,86 +555,90 @@ class _ProfileScreenState extends State<ProfileScreen>
                         isEditing: _isEditing,
                       ),
                       SliverToBoxAdapter(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                              maxWidth: isTablet ? 600 : double.infinity),
-                          child: Column(
-                            children: [
-                              SizedBox(height: sectionSpacing),
-                              ProfilePicture(
-                                profileImageFile: _profileImageFile,
-                                profileImageBase64: _profileImageBase64,
-                                isEditing: _isEditing,
-                                onPickImage: _pickProfileImage,
-                                maxWidth: maxWidth,
-                                scaleAnimation: _scaleAnimation,
-                              ),
-                              SizedBox(height: sectionSpacing),
-                              if (isTablet)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: AppMeasurements.defaultPadding),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Padding(
+                          // ← ADDED HORIZONTAL PADDING HERE (Same as home screen: padding * 0.4)
+                          padding: EdgeInsets.symmetric(horizontal: padding * 0.4),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                                maxWidth: isTablet ? 600 : double.infinity),
+                            child: Column(
+                              children: [
+                                SizedBox(height: sectionSpacing),
+                                ProfilePicture(
+                                  profileImageFile: _profileImageFile,
+                                  profileImageBase64: _profileImageBase64,
+                                  isEditing: _isEditing,
+                                  onPickImage: _pickProfileImage,
+                                  maxWidth: maxWidth,
+                                  scaleAnimation: _scaleAnimation,
+                                ),
+                                SizedBox(height: sectionSpacing),
+                                if (isTablet)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: AppMeasurements.defaultPadding),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Flexible(
+                                          flex: 1,
+                                          child: ProfileInfo(
+                                            userProfile: _userProfile,
+                                            isEditing: _isEditing,
+                                            nameController: _nameController,
+                                            emailController: _emailController,
+                                            phoneController: _phoneController,
+                                            locationController: _locationController,
+                                            farmSizeController: _farmSizeController,
+                                            cardPadding: EdgeInsets.all(
+                                                AppMeasurements.smallPadding),
+                                            itemSpacing: AppMeasurements.smallPadding,
+                                          ),
+                                        ),
+                                        SizedBox(width: sectionSpacing),
+                                        Flexible(
+                                          flex: 1,
+                                          child: Statistics(
+                                            userProfile: _userProfile,
+                                            cardPadding: EdgeInsets.all(
+                                                AppMeasurements.smallPadding),
+                                            itemSpacing: AppMeasurements.smallPadding,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  Column(
                                     children: [
-                                      Flexible(
-                                        flex: 1,
-                                        child: ProfileInfo(
-                                          userProfile: _userProfile,
-                                          isEditing: _isEditing,
-                                          nameController: _nameController,
-                                          emailController: _emailController,
-                                          phoneController: _phoneController,
-                                          locationController: _locationController,
-                                          farmSizeController: _farmSizeController,
-                                          cardPadding: EdgeInsets.all(
-                                              AppMeasurements.smallPadding),
-                                          itemSpacing: AppMeasurements.smallPadding,
-                                        ),
+                                      ProfileInfo(
+                                        userProfile: _userProfile,
+                                        isEditing: _isEditing,
+                                        nameController: _nameController,
+                                        emailController: _emailController,
+                                        phoneController: _phoneController,
+                                        locationController: _locationController,
+                                        farmSizeController: _farmSizeController,
+                                        cardPadding: EdgeInsets.all(
+                                            AppMeasurements.smallPadding),
+                                        itemSpacing: AppMeasurements.smallPadding,
                                       ),
-                                      SizedBox(width: sectionSpacing),
-                                      Flexible(
-                                        flex: 1,
-                                        child: Statistics(
-                                          userProfile: _userProfile,
-                                          cardPadding: EdgeInsets.all(
-                                              AppMeasurements.smallPadding),
-                                          itemSpacing: AppMeasurements.smallPadding,
-                                        ),
+                                      SizedBox(height: sectionSpacing),
+                                      Statistics(
+                                        userProfile: _userProfile,
+                                        cardPadding: EdgeInsets.all(
+                                            AppMeasurements.smallPadding),
+                                        itemSpacing: AppMeasurements.smallPadding,
                                       ),
                                     ],
                                   ),
-                                )
-                              else
-                                Column(
-                                  children: [
-                                    ProfileInfo(
-                                      userProfile: _userProfile,
-                                      isEditing: _isEditing,
-                                      nameController: _nameController,
-                                      emailController: _emailController,
-                                      phoneController: _phoneController,
-                                      locationController: _locationController,
-                                      farmSizeController: _farmSizeController,
-                                      cardPadding: EdgeInsets.all(
-                                          AppMeasurements.smallPadding),
-                                      itemSpacing: AppMeasurements.smallPadding,
-                                    ),
-                                    SizedBox(height: sectionSpacing),
-                                    Statistics(
-                                      userProfile: _userProfile,
-                                      cardPadding: EdgeInsets.all(
-                                          AppMeasurements.smallPadding),
-                                      itemSpacing: AppMeasurements.smallPadding,
-                                    ),
-                                  ],
+                                SizedBox(height: sectionSpacing),
+                                profile_actions.ProfileActions(
+                                  padding: EdgeInsets.all(AppMeasurements.smallPadding),
                                 ),
-                              SizedBox(height: sectionSpacing),
-                              profile_actions.ProfileActions(
-                                padding: EdgeInsets.all(AppMeasurements.smallPadding),
-                              ),
-                              SizedBox(height: sectionSpacing),
-                            ],
+                                SizedBox(height: sectionSpacing),
+                              ],
+                            ),
                           ),
                         ),
                       ),

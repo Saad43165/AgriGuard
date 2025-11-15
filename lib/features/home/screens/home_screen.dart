@@ -1,15 +1,16 @@
 // lib/features/home/presentation/screens/home_screen.dart
 import 'dart:io';
 
-import 'package:agriguard_fyp/features/home/presentation/screens/weather_widget/provider/weather_provider.dart';
-import 'package:agriguard_fyp/features/home/presentation/screens/weather_widget/weather_card.dart';
+import 'package:agriguard_fyp/features/home/screens/species/species_grid_widget.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/provider/weather_provider.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_card/weather_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart'; // ← ADD THIS
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../Navbar/presentation/nav_bar.dart';
-import '../../../Profile/presentation/Components/floating_orb.dart';
-import 'Species_widgets/species_grid_widget.dart';
+
+import '../../../core/widgets/floating_orb.dart';
+import '../../Navbar/presentation/nav_bar.dart';
 import 'bottom_sheet_widgets/scan_options_bottomsheet.dart';
 import 'components/all_scans_dialog_content.dart';
 import 'components/custom_home_app_bar.dart';
@@ -20,7 +21,6 @@ import 'components/scan_service.dart';
 import 'components/share_results_dialog_content.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
-// ADD WEATHER PROVIDER IMPORT
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -259,24 +259,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _showSnackBar(String message, bool isError) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).clearSnackBars(); // Prevent spam
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError
             ? Theme.of(context).colorScheme.error
             : Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating, // ← Let Flutter position it
+        behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
             AppMeasurements.getResponsiveBorderRadius(context),
           ),
         ),
-        // REMOVE margin — Flutter handles it
         duration: const Duration(seconds: 2),
       ),
     );
   }
+
   /* --------------------------------------------------------------------- *
    *  Navigation
    * --------------------------------------------------------------------- */
@@ -302,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     await Future.delayed(const Duration(milliseconds: 300));
     _navTapping = false;
   }
+
   /* --------------------------------------------------------------------- *
    *  Bottom Sheets / Dialogs
    * --------------------------------------------------------------------- */
@@ -314,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.all(
-          AppMeasurements.getResponsivePadding(context),
+          AppMeasurements.getResponsivePadding(context) * 0.6, // ← REDUCED PADDING
         ),
         child: AllScansDialogContent(
           recentScans: _recentScans,
@@ -366,10 +367,10 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
 
-    return ChangeNotifierProvider( // ← ADD THIS WRAPPER
+    return ChangeNotifierProvider(
       create: (context) => WeatherProvider(),
       child: PopScope(
-        canPop: false, // ← PREVENT BACK TO LOGIN
+        canPop: false,
         onPopInvoked: (didPop) {
           if (didPop) return;
           _showExitDialog();
@@ -413,18 +414,22 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
                     onRefresh: _refreshScans,
                     color: Theme.of(context).colorScheme.primary,
                     backgroundColor: Theme.of(context).colorScheme.surface,
-                    child: Consumer<WeatherProvider>( // ← ADD CONSUMER
+                    child: Consumer<WeatherProvider>(
                       builder: (context, weatherProvider, child) {
                         return ListView(
-                          padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, 0),
+                          // ← REDUCED HORIZONTAL PADDING FROM padding TO padding * 0.4
+                          padding: EdgeInsets.fromLTRB(
+                            padding * 0.4,
+                            padding * 0.5,
+                            padding * 0.4,
+                            0,
+                          ),
                           physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            WeatherCard(
-                            ),
+                            const WeatherCard(),
                             SizedBox(height: padding * 0.8),
                             const SpeciesGridWidget(),
                             SizedBox(height: padding * 0.8),
-
                             if (_isLoading)
                               const LoadingSection()
                             else if (_isFirstTimeUser && _recentScans.isEmpty)

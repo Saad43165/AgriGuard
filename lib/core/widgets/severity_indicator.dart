@@ -1,4 +1,4 @@
-// lib/core/Species_widgets/severity_indicator.dart
+// lib/core/species/severity_indicator.dart
 import 'package:flutter/material.dart';
 
 /// A widget that displays a severity level with color-coded styling.

@@ -32,7 +32,7 @@ dependencies:
   url_launcher: ^6.3.2
   package_info_plus: ^8.3.0
   intl: any
-  tflite_flutter:
+  tflite_flutter: ^0.12.1
   pdf:
   geolocator: ^14.0.2
 

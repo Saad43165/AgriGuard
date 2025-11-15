@@ -1,0 +1,338 @@
+import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
+import '../models/weather_model.dart';
+import '../services/weather_service.dart';
+
+enum WeatherLoadingState {
+  idle,
+  loading,
+  loaded,
+  error,
+}
+
+enum LocationPermissionState {
+  unknown,
+  checking,
+  granted,
+  denied,
+  deniedForever,
+  serviceDisabled,
+}
+
+class WeatherProvider with ChangeNotifier {
+  final WeatherService _weatherService = WeatherService();
+
+  // Current weather and forecast data (combined)
+  WeatherForecast? _weatherForecast;
+
+  // State management
+  WeatherLoadingState _loadingState = WeatherLoadingState.idle;
+  LocationPermissionState _permissionState = LocationPermissionState.unknown;
+  String? _errorMessage;
+
+  // Location data
+  Position? _lastKnownPosition;
+  String _selectedCity = 'Islamabad'; // Default fallback city
+
+  bool _isDisposed = false;
+
+  // Getters
+  WeatherModel? get currentWeather => _weatherForecast?.current;
+  List<ForecastDay>? get forecastDays => _weatherForecast?.forecast;
+  WeatherLoadingState get loadingState => _loadingState;
+  LocationPermissionState get permissionState => _permissionState;
+  String? get errorMessage => _errorMessage;
+  Position? get lastKnownPosition => _lastKnownPosition;
+  String get selectedCity => _selectedCity;
+
+  bool get isLoading => _loadingState == WeatherLoadingState.loading;
+  bool get hasError => _loadingState == WeatherLoadingState.error;
+  bool get hasData => _weatherForecast != null;
+  bool get hasForecast => _weatherForecast?.forecast.isNotEmpty ?? false;
+
+  // Permission status helpers
+  bool get isLocationGranted => _permissionState == LocationPermissionState.granted;
+  bool get isLocationDenied => _permissionState == LocationPermissionState.denied;
+  bool get isLocationDeniedForever => _permissionState == LocationPermissionState.deniedForever;
+  bool get isLocationServiceDisabled => _permissionState == LocationPermissionState.serviceDisabled;
+
+  String get permissionStatusMessage {
+    switch (_permissionState) {
+      case LocationPermissionState.granted:
+        return 'Location access granted';
+      case LocationPermissionState.denied:
+        return 'Location permission denied';
+      case LocationPermissionState.deniedForever:
+        return 'Location permission permanently denied';
+      case LocationPermissionState.serviceDisabled:
+        return 'Location services are disabled';
+      case LocationPermissionState.checking:
+        return 'Checking location permissions...';
+      default:
+        return 'Location status unknown';
+    }
+  }
+
+  WeatherProvider() {
+    _initialize();
+  }
+
+  /// Initialize the weather provider
+  Future<void> _initialize() async {
+    if (kDebugMode) {
+      print('🌤️  Initializing WeatherProvider...');
+    }
+    await loadWeatherData();
+  }
+
+  /// Main method to load weather data
+  Future<void> loadWeatherData() async {
+    if (_isDisposed) return;
+
+    _updateState(WeatherLoadingState.loading);
+    _clearError();
+
+    try {
+      // Check location permissions
+      await _checkLocationPermission();
+
+      if (_permissionState == LocationPermissionState.granted) {
+        // Try to get location-based weather
+        await _loadWeatherByLocation();
+      } else if (_permissionState == LocationPermissionState.serviceDisabled) {
+        // Service disabled - use default city
+        await _loadWeatherByCity(_selectedCity);
+      } else {
+        // Permission denied - use default city
+        await _loadWeatherByCity(_selectedCity);
+      }
+
+      _updateState(WeatherLoadingState.loaded);
+
+      if (kDebugMode) {
+        print('✅ Weather data loaded successfully');
+        _printWeatherDebug();
+      }
+    } catch (e) {
+      _handleError(e);
+
+      if (kDebugMode) {
+        print('❌ Failed to load weather: $e');
+      }
+    }
+  }
+
+  /// Check and update location permission status
+  Future<void> _checkLocationPermission() async {
+    if (_isDisposed) return;
+
+    _safeSetState(() {
+      _permissionState = LocationPermissionState.checking;
+    });
+
+    try {
+      // Check if location service is enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _safeSetState(() {
+          _permissionState = LocationPermissionState.serviceDisabled;
+        });
+        return;
+      }
+
+      // Check permission status
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      _safeSetState(() {
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
+          _permissionState = LocationPermissionState.granted;
+        } else if (permission == LocationPermission.deniedForever) {
+          _permissionState = LocationPermissionState.deniedForever;
+        } else {
+          _permissionState = LocationPermissionState.denied;
+        }
+      });
+    } catch (e) {
+      _safeSetState(() {
+        _permissionState = LocationPermissionState.denied;
+      });
+      if (kDebugMode) {
+        print('⚠️  Location permission check failed: $e');
+      }
+    }
+  }
+
+  /// Load weather by current location
+  Future<void> _loadWeatherByLocation() async {
+    try {
+      // Get current position with timeout
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      _lastKnownPosition = position;
+
+      if (kDebugMode) {
+        print('📍 Location: ${position.latitude}, ${position.longitude}');
+      }
+
+      // Fetch weather and forecast (combined in one API call)
+      final forecast = await _weatherService.getWeatherByCoordinates(
+        position.latitude,
+        position.longitude,
+        days: 5,
+      );
+
+      _safeSetState(() {
+        _weatherForecast = forecast;
+        _selectedCity = forecast.current.cityName;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️  Location-based weather failed, using default city: $e');
+      }
+      // Fallback to default city
+      await _loadWeatherByCity(_selectedCity);
+    }
+  }
+
+  /// Load weather by city name
+  Future<void> _loadWeatherByCity(String city) async {
+    try {
+      final forecast = await _weatherService.getWeatherByCity(city, days: 5);
+
+      _safeSetState(() {
+        _weatherForecast = forecast;
+        _selectedCity = forecast.current.cityName;
+      });
+
+      if (kDebugMode) {
+        print('🏙️  Weather loaded for city: $city');
+      }
+    } catch (e) {
+      throw Exception('Failed to load weather for $city: $e');
+    }
+  }
+
+  /// Refresh weather data
+  Future<void> refreshWeather() async {
+    if (kDebugMode) {
+      print('🔄 Refreshing weather data...');
+    }
+    await loadWeatherData();
+  }
+
+  /// Load weather for a specific city
+  Future<void> loadWeatherForCity(String city) async {
+    if (_isDisposed) return;
+
+    _updateState(WeatherLoadingState.loading);
+    _clearError();
+
+    try {
+      await _loadWeatherByCity(city);
+      _updateState(WeatherLoadingState.loaded);
+    } catch (e) {
+      _handleError(e);
+    }
+  }
+
+  /// Request location permission
+  Future<bool> requestLocationPermission() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+
+      await _checkLocationPermission();
+
+      if (_permissionState == LocationPermissionState.granted) {
+        await loadWeatherData();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Failed to request permission: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Open app settings
+  Future<void> openAppSettings() async {
+    await Geolocator.openAppSettings();
+  }
+
+  /// Open location settings
+  Future<void> openLocationSettings() async {
+    await Geolocator.openLocationSettings();
+  }
+
+  /// Use default city weather
+  Future<void> useDefaultCity() async {
+    await loadWeatherForCity(_selectedCity);
+  }
+
+  // Helper methods
+  void _updateState(WeatherLoadingState state) {
+    _safeSetState(() {
+      _loadingState = state;
+    });
+  }
+
+  void _clearError() {
+    _safeSetState(() {
+      _errorMessage = null;
+    });
+  }
+
+  void _handleError(dynamic error) {
+    String message;
+
+    if (error is WeatherException) {
+      message = error.message;
+    } else if (error is Exception) {
+      message = error.toString().replaceAll('Exception: ', '');
+    } else {
+      message = error.toString();
+    }
+
+    _safeSetState(() {
+      _loadingState = WeatherLoadingState.error;
+      _errorMessage = message;
+    });
+  }
+
+  void _safeSetState(VoidCallback fn) {
+    if (_isDisposed) return;
+    fn();
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
+
+  void _printWeatherDebug() {
+    if (_weatherForecast == null) return;
+
+    print('=== WEATHER DEBUG INFO ===');
+    print('City: ${_weatherForecast!.current.cityName}');
+    print('Temperature: ${_weatherForecast!.current.temperature}°C');
+    print('Condition: ${_weatherForecast!.current.conditionText}');
+    print('Humidity: ${_weatherForecast!.current.humidity}%');
+    print('Wind Speed: ${_weatherForecast!.current.windSpeed} km/h');
+    print('UV Index: ${_weatherForecast!.current.uvIndex}');
+    print('Forecast Days: ${_weatherForecast!.forecast.length}');
+    print('=========================');
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+}

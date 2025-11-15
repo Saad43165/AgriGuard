@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../../core/constants/app_measurements.dart';
+import '../../../../../../../core/constants/app_measurements.dart';
 
 class WeatherMetricsRow extends StatelessWidget {
   final int humidity;
