@@ -7,9 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/constants/app_routes.dart';
-import '../../../auth_services.dart';
-import '../../Navbar/presentation/nav_bar.dart';
 import '../../Settings/presentation/components/floating_orb.dart';
 import '../utils/profile_image_manager.dart';
 import 'Components/profile_info.dart';
@@ -66,27 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
 
-  bool _navTapInProgress = false;
   final ValueNotifier<bool> _profileChangedNotifier = ValueNotifier(false);
-
-  Future<void> _debouncedNavTap(int index) async {
-    if (_navTapInProgress) return;
-    _navTapInProgress = true;
-    HapticFeedback.lightImpact();
-
-    if (index == 0) {
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (r) => false);
-    } else if (index == 1) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.scan,
-            (r) => r.settings.name == AppRoutes.home,
-      );
-    }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-    _navTapInProgress = false;
-  }
 
   @override
   void initState() {
@@ -405,8 +382,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           }
 
           _profileChangedNotifier.value = !_profileChangedNotifier.value;
-
-
         } else {
           _showSnackBar('❌ Failed to process image', isError: true);
         }
@@ -419,90 +394,31 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvoked: (didPop) {
-        if (didPop) return;
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (_isLoading) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading profile...',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            );
+          }
 
-        if (_isEditing) {
-          _showUnsavedChangesDialog();
-          return;
-        }
-
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-        final fromScan = args?['fromScan'] == true;
-
-        if (fromScan) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.scan,
-                  (r) => r.settings.name == AppRoutes.home);
-        } else {
-          Navigator.pushNamedAndRemoveUntil(
-              context, AppRoutes.home, (r) => false);
-        }
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            if (_isLoading) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading profile...',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final isTablet = MediaQuery.of(context).size.width > 600;
-            return _buildBody(context, isTablet, constraints.maxWidth);
-          },
-        ),
-        bottomNavigationBar: BottomNavBar(
-          selectedIndex: 2,
-          onTap: _debouncedNavTap,
-        ),
-      ),
-    );
-  }
-
-  void _showUnsavedChangesDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Unsaved Changes'),
-        content: const Text('You have unsaved changes. Do you want to save them before leaving?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _isEditing = false);
-              Navigator.pop(context);
-            },
-            child: const Text('Discard'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-            },
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _toggleEditMode();
-            },
-            child: const Text('Save'),
-          ),
-        ],
+          final isTablet = MediaQuery.of(context).size.width > 600;
+          return _buildBody(context, isTablet, constraints.maxWidth);
+        },
       ),
     );
   }
@@ -556,7 +472,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       SliverToBoxAdapter(
                         child: Padding(
-                          // ← ADDED HORIZONTAL PADDING HERE (Same as home screen: padding * 0.4)
                           padding: EdgeInsets.symmetric(horizontal: padding * 0.4),
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
@@ -647,7 +562,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
               ),
 
-              // Show saving indicator
               if (_isSaving)
                 Positioned.fill(
                   child: Container(

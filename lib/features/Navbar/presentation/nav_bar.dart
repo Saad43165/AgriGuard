@@ -1,21 +1,17 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/app_routes.dart';
 import '../../../../core/constants/app_measurements.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int selectedIndex;
-  final Function(int)? onTap;
+  final Function(int) onTap;
 
   const BottomNavBar({
     super.key,
     required this.selectedIndex,
-    this.onTap,
+    required this.onTap,
   });
-
-  // DEBOUNCE
-  static bool _isTapping = false;
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +50,35 @@ class BottomNavBar extends StatelessWidget {
             showSelectedLabels: true,
             showUnselectedLabels: true,
             currentIndex: selectedIndex,
-            onTap: (index) => _handleTap(context, index),
+            onTap: (index) {
+              HapticFeedback.lightImpact();
+              onTap(index);
+            },
             items: [
-              _buildNavItemBottomNav(Icons.home_outlined, Icons.home_rounded, 'Home', colorScheme, smallPadding, iconSize),
-              _buildNavItemBottomNav(Icons.search_outlined, Icons.search_rounded, 'Scan', colorScheme, smallPadding, iconSize),
-              _buildNavItemBottomNav(Icons.person_outline, Icons.person_rounded, 'Profile', colorScheme, smallPadding, iconSize),
+              _buildNavItemBottomNav(
+                Icons.home_outlined,
+                Icons.home_rounded,
+                'Home',
+                colorScheme,
+                smallPadding,
+                iconSize,
+              ),
+              _buildNavItemBottomNav(
+                Icons.search_outlined,
+                Icons.search_rounded,
+                'Scan',
+                colorScheme,
+                smallPadding,
+                iconSize,
+              ),
+              _buildNavItemBottomNav(
+                Icons.person_outline,
+                Icons.person_rounded,
+                'Profile',
+                colorScheme,
+                smallPadding,
+                iconSize,
+              ),
             ],
           ),
         ),
@@ -66,7 +86,6 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  // FIXED: Build BottomNavigationBarItem with active circle
   BottomNavigationBarItem _buildNavItemBottomNav(
       IconData icon,
       IconData activeIcon,
@@ -88,43 +107,4 @@ class BottomNavBar extends StatelessWidget {
       label: label,
     );
   }
-
-  // SAFE: Handle tap with debounce
-  void _handleTap(BuildContext context, int index) async {
-    if (index == selectedIndex || _isTapping) return;
-
-    _isTapping = true;
-    HapticFeedback.lightImpact();
-
-    if (onTap != null) {
-      onTap!(index);
-    } else {
-      _navigateSafely(context, index);
-    }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-    _isTapping = false;
-  }
-
-  // SAFE: Navigate without breaking stack
-// In your BottomNavBar, update the _navigateSafely method:
-  void _navigateSafely(BuildContext context, int index) {
-    final currentRoute = ModalRoute.of(context)?.settings.name;
-    String targetRoute;
-
-    switch (index) {
-      case 0: targetRoute = AppRoutes.home; break;
-      case 1: targetRoute = AppRoutes.scan; break;
-      case 2: targetRoute = AppRoutes.profile; break;
-      default: targetRoute = AppRoutes.home;
-    }
-
-    if (currentRoute == targetRoute) return;
-
-    // FIXED: Use pushReplacementNamed instead of pushNamedAndRemoveUntil
-    Navigator.pushReplacementNamed(
-      context,
-      targetRoute,
-      arguments: index == 2 && currentRoute == AppRoutes.scan ? {'fromScan': true} : null,
-    );
-  }}
+}

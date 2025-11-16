@@ -1,21 +1,18 @@
 // app_router.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../features/HelpSupport/help_support_screen.dart';
-import '../../features/Profile/presentation/profile_screen.dart';
 import '../../features/ResultScreen/presentation/screens/results_screen.dart';
 import '../../features/Settings/presentation/settings_screen.dart';
 import '../../features/auth/Login_Screen/login_screens.dart';
 import '../../features/auth/Registration_screen/register_screen.dart';
 import '../../features/auth/Forget_Pass_Screen/forgot_password_screen.dart';
-import '../../features/home/screens/home_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
-import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
+import '../navigation/main_navigation_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -37,7 +34,7 @@ class AppRouter {
       );
     }
 
-    // AUTH GUARD: Block access to auth screens if already logged in
+    // AUTH GUARD
     final user = FirebaseAuth.instance.currentUser;
     final isLoggedIn = user != null;
 
@@ -50,35 +47,50 @@ class AppRouter {
 
       case AppRoutes.login:
         if (isLoggedIn) {
-          return buildLightRoute(HomeScreen(userData: {}));
+          return buildLightRoute(MainNavigationScreen(userData: {}));
         }
         return buildLightRoute(const LoginScreen());
 
       case AppRoutes.register:
         if (isLoggedIn) {
-          return buildLightRoute(HomeScreen(userData: {}));
+          return buildLightRoute(MainNavigationScreen(userData: {}));
         }
         return buildLightRoute(const RegisterScreen());
 
       case AppRoutes.forgotPassword:
         if (isLoggedIn) {
-          return buildLightRoute(HomeScreen(userData: {}));
+          return buildLightRoute(MainNavigationScreen(userData: {}));
         }
         return buildLightRoute(const ForgotPasswordScreen());
 
+    // MAIN NAVIGATION ROUTES - All go to MainNavigationScreen with different tabs
       case AppRoutes.home:
-        return buildLightRoute(HomeScreen(userData: args ?? {}));
+        return buildLightRoute(
+          MainNavigationScreen(
+            initialIndex: 0,
+            userData: args ?? {},
+          ),
+        );
+
+      case AppRoutes.scan:
+        return buildLightRoute(
+          MainNavigationScreen(
+            initialIndex: 1,
+            userData: args ?? {},
+          ),
+        );
 
       case AppRoutes.profile:
         return buildLightRoute(
-          ProfileScreen(userData: args is Map<String, dynamic> ? args : null),
+          MainNavigationScreen(
+            initialIndex: 2,
+            userData: args ?? {},
+          ),
         );
 
+    // SEPARATE SCREENS (Not part of bottom navigation)
       case AppRoutes.history:
         return buildLightRoute(const HistoryScreen());
-
-      case AppRoutes.scan:
-        return buildLightRoute(const CaptureScreen());
 
       case AppRoutes.results:
         final scanData = args?['scanData'] as Map<String, dynamic>? ?? {};

@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../services/plant_id_service.dart';
-import '../../Navbar/presentation/nav_bar.dart';
 import '../../Profile/presentation/Components/floating_orb.dart';
 import '../../home/screens/components/scan_service.dart';
 import 'components/app_bar_content.dart';
@@ -46,7 +45,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       debugPrint('AI MODEL LOADED & READY');
     }).catchError((e) {
       debugPrint('Model load error: $e');
-      // Don't show error - fallback will handle it
     });
   }
 
@@ -187,25 +185,19 @@ class _CaptureScreenState extends State<CaptureScreen>
       try {
         final scanId = await ScanService().saveScan(scanData);
         debugPrint('Scan saved with ID: $scanId');
-
-        // Add the ID to scanData for navigation
         scanData['id'] = scanId;
       } catch (e) {
         debugPrint('Error saving scan: $e');
-        // Continue anyway - we can still show results
       }
 
       if (!mounted) return;
 
       // Navigate to results screen
-      // Use pushReplacement to prevent back navigation issues
       await Navigator.pushReplacementNamed(
         context,
         AppRoutes.results,
         arguments: {'scanData': scanData},
       );
-
-      // Note: Don't show SnackBar after navigation - the widget will be disposed
 
     } catch (e) {
       debugPrint('Process error: $e');
@@ -219,7 +211,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     }
   }
 
-  // Helper method to show error messages
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
 
@@ -240,28 +231,13 @@ class _CaptureScreenState extends State<CaptureScreen>
   }
 
   // -------------------------------------------------
-  // RETAKE & NAVIGATION
+  // RETAKE
   // -------------------------------------------------
   void _retakeImage() {
     if (!mounted) return;
 
     HapticFeedback.lightImpact();
     setState(() => _imageFile = null);
-  }
-
-  void _handleNavigation(int index) {
-    if (index == 1 || !mounted || _isProcessing) return;
-
-    HapticFeedback.lightImpact();
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, AppRoutes.profile);
-        break;
-    }
   }
 
   // -------------------------------------------------
@@ -386,12 +362,6 @@ class _CaptureScreenState extends State<CaptureScreen>
                 ),
             ],
           ),
-        ),
-        bottomNavigationBar: _isProcessing
-            ? null
-            : BottomNavBar(
-          selectedIndex: 1,
-          onTap: _handleNavigation,
         ),
       ),
     );

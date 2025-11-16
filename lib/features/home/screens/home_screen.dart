@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/widgets/floating_orb.dart';
-import '../../Navbar/presentation/nav_bar.dart';
 import 'bottom_sheet_widgets/scan_options_bottomsheet.dart';
 import 'components/all_scans_dialog_content.dart';
 import 'components/custom_home_app_bar.dart';
@@ -20,7 +19,6 @@ import 'components/recent_scan_section.dart';
 import 'components/scan_service.dart';
 import 'components/share_results_dialog_content.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/constants/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -278,32 +276,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   /* --------------------------------------------------------------------- *
-   *  Navigation
-   * --------------------------------------------------------------------- */
-  static const int _navHome = 0;
-  static const int _navScans = 1;
-  static const int _navProfile = 2;
-  bool _navTapping = false;
-
-  void _handleNavTap(int index) async {
-    if (index == _navHome || _navTapping) return;
-    _navTapping = true;
-    HapticFeedback.lightImpact();
-
-    switch (index) {
-      case _navScans:
-        Navigator.pushNamed(context, AppRoutes.scan);
-        break;
-      case _navProfile:
-        Navigator.pushNamed(context, AppRoutes.profile, arguments: widget.userData);
-        break;
-    }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-    _navTapping = false;
-  }
-
-  /* --------------------------------------------------------------------- *
    *  Bottom Sheets / Dialogs
    * --------------------------------------------------------------------- */
   Future<void> _showAllScansDialog() async {
@@ -315,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.all(
-          AppMeasurements.getResponsivePadding(context) * 0.6, // ← REDUCED PADDING
+          AppMeasurements.getResponsivePadding(context) * 0.6,
         ),
         child: AllScansDialogContent(
           recentScans: _recentScans,
@@ -369,117 +341,82 @@ Treatment: ${scan['treatment'] ?? 'No treatment available'}
 
     return ChangeNotifierProvider(
       create: (context) => WeatherProvider(),
-      child: PopScope(
-        canPop: false,
-        onPopInvoked: (didPop) {
-          if (didPop) return;
-          _showExitDialog();
-        },
-        child: Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: const CustomHomeAppBar(),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: Theme.of(context).brightness == Brightness.dark
-                    ? const [
-                  Color(0xFF0F0F23),
-                  Color(0xFF16213E),
-                  Color(0xFF1A1A2E),
-                ]
-                    : [
-                  Theme.of(context).colorScheme.background,
-                  Theme.of(context).colorScheme.background.withOpacity(0.9),
-                ],
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Floating Orbs
-                ...List.generate(
-                  6,
-                      (i) => FloatingOrb(
-                    index: i,
-                    maxWidth: MediaQuery.of(context).size.width,
-                    fadeController: _fadeController,
-                    scaleAnimation: _scaleAnimation,
-                  ),
-                ),
-
-                // Main Content
-                SafeArea(
-                  child: RefreshIndicator(
-                    onRefresh: _refreshScans,
-                    color: Theme.of(context).colorScheme.primary,
-                    backgroundColor: Theme.of(context).colorScheme.surface,
-                    child: Consumer<WeatherProvider>(
-                      builder: (context, weatherProvider, child) {
-                        return ListView(
-                          // ← REDUCED HORIZONTAL PADDING FROM padding TO padding * 0.4
-                          padding: EdgeInsets.fromLTRB(
-                            padding * 0.4,
-                            padding * 0.5,
-                            padding * 0.4,
-                            0,
-                          ),
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            const WeatherCard(),
-                            SizedBox(height: padding * 0.8),
-                            const SpeciesGridWidget(),
-                            SizedBox(height: padding * 0.8),
-                            if (_isLoading)
-                              const LoadingSection()
-                            else if (_isFirstTimeUser && _recentScans.isEmpty)
-                              const FirstTimeUserGuide()
-                            else
-                              RecentScansSection(
-                                key: const ValueKey('recent_scans'),
-                                recentScans: _recentScans,
-                                scaleAnimation: _scaleAnimation,
-                                onDeleteScan: _deleteScan,
-                                onShowAllScans: _showAllScansDialog,
-                                onShowOptions: _showScanOptionsBottomSheet,
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: const CustomHomeAppBar(),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? const [
+                Color(0xFF0F0F23),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+              ]
+                  : [
+                Theme.of(context).colorScheme.background,
+                Theme.of(context).colorScheme.background.withOpacity(0.9),
               ],
             ),
           ),
-          bottomNavigationBar: BottomNavBar(
-            selectedIndex: _navHome,
-            onTap: _handleNavTap,
+          child: Stack(
+            children: [
+              // Floating Orbs
+              ...List.generate(
+                6,
+                    (i) => FloatingOrb(
+                  index: i,
+                  maxWidth: MediaQuery.of(context).size.width,
+                  fadeController: _fadeController,
+                  scaleAnimation: _scaleAnimation,
+                ),
+              ),
+
+              // Main Content
+              SafeArea(
+                child: RefreshIndicator(
+                  onRefresh: _refreshScans,
+                  color: Theme.of(context).colorScheme.primary,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  child: Consumer<WeatherProvider>(
+                    builder: (context, weatherProvider, child) {
+                      return ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          padding * 0.4,
+                          padding * 0.5,
+                          padding * 0.4,
+                          0,
+                        ),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          const WeatherCard(),
+                          SizedBox(height: padding * 0.8),
+                          const SpeciesGridWidget(),
+                          SizedBox(height: padding * 0.8),
+                          if (_isLoading)
+                            const LoadingSection()
+                          else if (_isFirstTimeUser && _recentScans.isEmpty)
+                            const FirstTimeUserGuide()
+                          else
+                            RecentScansSection(
+                              key: const ValueKey('recent_scans'),
+                              recentScans: _recentScans,
+                              scaleAnimation: _scaleAnimation,
+                              onDeleteScan: _deleteScan,
+                              onShowAllScans: _showAllScansDialog,
+                              onShowOptions: _showScanOptionsBottomSheet,
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  /* --------------------------------------------------------------------- *
-   *  Exit Dialog
-   * --------------------------------------------------------------------- */
-  void _showExitDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Exit App'),
-        content: const Text('Are you sure you want to exit?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => SystemNavigator.pop(),
-            child: const Text('Exit'),
-          ),
-        ],
       ),
     );
   }
