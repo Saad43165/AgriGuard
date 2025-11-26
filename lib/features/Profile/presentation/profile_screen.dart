@@ -395,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      // REMOVED: extendBodyBehindAppBar - this was causing the overlap!
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (_isLoading) {

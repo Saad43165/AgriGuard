@@ -64,7 +64,7 @@ class ProfileImageWidget extends StatelessWidget {
           if (!isLoading)
             Positioned(
               bottom: 0,
-              right: 0,
+              right: 115,
               child: Container(
                 width: 36,
                 height: 36,

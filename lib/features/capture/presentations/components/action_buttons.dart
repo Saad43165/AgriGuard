@@ -46,7 +46,7 @@ class ActionButtons extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 90),
+          const SizedBox(height: 20),
 
           // Analyze Button
           if (imageFile != null)
@@ -87,8 +87,8 @@ class ActionButtons extends StatelessWidget {
   }
 }
 
-/// BEAUTIFUL, MATCHING, LARGER CHANGE IMAGE CHIP
-class _ChangeImageChip extends StatefulWidget {
+/// Compact Change Image Chip
+class _ChangeImageChip extends StatelessWidget {
   final VoidCallback onCamera;
   final VoidCallback onGallery;
   final bool isLoading;
@@ -100,116 +100,67 @@ class _ChangeImageChip extends StatefulWidget {
   });
 
   @override
-  State<_ChangeImageChip> createState() => _ChangeImageChipState();
-}
-
-class _ChangeImageChipState extends State<_ChangeImageChip>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
-    );
-    // Pulse once when first shown
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _pulseController.forward().then((_) => _pulseController.reverse());
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final borderRadius = BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context) * 1.2);
+    final borderRadius = BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context));
 
     return Center(
       key: const ValueKey('change_chip'),
-      child: ScaleTransition(
-        scale: _pulseAnimation,
-        child: GestureDetector(
-          onTap: widget.isLoading ? null : () => _showSourceSheet(context),
-          child: Opacity(
-            opacity: widget.isLoading ? 0.65 : 1.0,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppMeasurements.defaultPadding * 1.1,
-                vertical: AppMeasurements.smallPadding * 0.9,
+      child: GestureDetector(
+        onTap: isLoading ? null : () => _showSourceSheet(context),
+        child: Opacity(
+          opacity: isLoading ? 0.65 : 1.0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.08),
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.3),
+                width: 1.5,
               ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.colorScheme.primary.withOpacity(0.01),
-                    theme.colorScheme.secondary.withOpacity(0.01),
-                  ],
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
-                borderRadius: borderRadius,
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.4),
-                  width: 1.8,
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.secondary,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.sync_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onPrimary,
+                  ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.22),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                const SizedBox(width: 10),
+                Text(
+                  'Change Image',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+                    letterSpacing: 0.3,
                   ),
-                  BoxShadow(
-                    color: theme.colorScheme.secondary.withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Gradient icon badge
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.secondary,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.sync_rounded,
-                      size: 18,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Change Image',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                      fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 15),
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -250,7 +201,7 @@ class _ChangeImageChipState extends State<_ChangeImageChip>
               label: 'Take Photo',
               onTap: () {
                 Navigator.pop(context);
-                widget.onCamera();
+                onCamera();
               },
             ),
             _buildSheetOption(
@@ -259,7 +210,7 @@ class _ChangeImageChipState extends State<_ChangeImageChip>
               label: 'Choose from Gallery',
               onTap: () {
                 Navigator.pop(context);
-                widget.onGallery();
+                onGallery();
               },
             ),
             const SizedBox(height: 20),
@@ -295,11 +246,7 @@ class _ChangeImageChipState extends State<_ChangeImageChip>
   }
 }
 
-// ————————————————————————
-// KEEP YOUR _TipsSection & _AnalyzeButton UNCHANGED
-// ————————————————————————
-
-/// A private widget to display scanning tips.
+/// Tips Section
 class _TipsSection extends StatelessWidget {
   const _TipsSection();
 
@@ -314,14 +261,14 @@ class _TipsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(AppMeasurements.smallPadding * 0.8),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.08),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.08),
+            Theme.of(context).colorScheme.primary.withOpacity(0.06),
+            Theme.of(context).colorScheme.secondary.withOpacity(0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
@@ -329,23 +276,14 @@ class _TipsSection extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context),
-          SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context) * 0.8),
+          const SizedBox(height: 12),
           ..._tips.map((tip) => Padding(
-            padding: EdgeInsets.only(
-              bottom: AppMeasurements.getResponsiveExtraSmallPadding(context) * 0.8,
-            ),
+            padding: const EdgeInsets.only(bottom: 8),
             child: _buildTipItem(
               context,
               icon: tip['icon'] as IconData,
@@ -370,17 +308,10 @@ class _TipsSection extends StatelessWidget {
               ],
             ),
             borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Icon(
             Icons.tips_and_updates_rounded,
-            size: AppMeasurements.getResponsiveIconSizeSmall(context) * 0.9,
+            size: 18,
             color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
@@ -416,14 +347,10 @@ class _TipsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-              width: 1,
-            ),
           ),
           child: Icon(
             icon,
@@ -448,7 +375,7 @@ class _TipsSection extends StatelessWidget {
   }
 }
 
-/// Analyze Button
+/// Analyze Button (Compact)
 class _AnalyzeButton extends StatelessWidget {
   final bool isProcessing;
   final VoidCallback onProcess;
@@ -475,9 +402,9 @@ class _AnalyzeButton extends StatelessWidget {
         onTap: isProcessing ? null : onProcess,
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            vertical: AppMeasurements.smallPadding,
-            horizontal: AppMeasurements.getResponsivePadding(context),
+          padding: const EdgeInsets.symmetric(
+            vertical: 14,
+            horizontal: 20,
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context)),
@@ -490,8 +417,8 @@ class _AnalyzeButton extends StatelessWidget {
                 ? []
                 : [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.4),
-                blurRadius: 12,
+                color: theme.colorScheme.primary.withOpacity(0.3),
+                blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -501,8 +428,8 @@ class _AnalyzeButton extends StatelessWidget {
             children: [
               if (isProcessing)
                 const SizedBox(
-                  width: 20,
-                  height: 20,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
                     color: Colors.white,
@@ -511,16 +438,16 @@ class _AnalyzeButton extends StatelessWidget {
               else
                 Icon(
                   Icons.auto_fix_high_rounded,
-                  size: AppMeasurements.getResponsiveIconSizeSmall(context),
+                  size: 20,
                   color: theme.colorScheme.onPrimary,
                 ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Text(
                 isProcessing ? 'Analyzing...' : 'Analyze Leaf',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onPrimary,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 15),
                   letterSpacing: 0.3,
                 ),
               ),

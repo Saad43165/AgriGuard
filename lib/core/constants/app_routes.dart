@@ -5,7 +5,7 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
   static const String history = '/history';
-  static const String scan = '/ResultScreen';
+  static const String scan = '/capture';
   static const String results = '/results';
   static const String profile = '/profile';
 /*

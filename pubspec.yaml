@@ -52,6 +52,7 @@ flutter:
     - assets/logo.png
     - assets/models/plant_id_model.tflite
     - assets/models/labels.txt
+    - assets/images/
 
 # Launcher Icon Configuration
 flutter_icons:

@@ -40,7 +40,7 @@ class AppRouter {
 
     switch (settings.name) {
       case AppRoutes.splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
+        return MaterialPageRoute(builder: (_) => SplashScreen(isLoggedIn: isLoggedIn));
 
       case AppRoutes.onboard:
         return buildLightRoute(const OnboardingScreen());

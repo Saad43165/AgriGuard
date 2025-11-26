@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart'; // ADD THIS IMPORT
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../Profile/presentation/Components/floating_orb.dart';
@@ -31,11 +31,14 @@ class _ResultsScreenState extends State<ResultsScreen>
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
   bool _isSaving = false;
+  bool _isAutoSaved = false;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    // Auto-save the scan when the screen loads
+    _autoSaveScan();
   }
 
   void _initializeAnimations() {
@@ -59,24 +62,94 @@ class _ResultsScreenState extends State<ResultsScreen>
     super.dispose();
   }
 
-  // ADD THIS METHOD: Handle both String and Timestamp
+  // Auto-save scan when screen loads
+  Future<void> _autoSaveScan() async {
+    // Small delay to let the UI render first
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    try {
+      // Handle timestamp conversion for saving
+      dynamic timestampToSave = widget.scanData['timestamp'];
+      if (timestampToSave is Timestamp) {
+        timestampToSave = timestampToSave.toDate().toIso8601String();
+      }
+
+      await ScanService().saveScan({
+        'id': widget.scanData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'imageUrl': widget.scanData['imageUrl'],
+        'imagePath': widget.scanData['imagePath'],
+        'diagnosis': widget.scanData['diagnosis'] ?? 'Unknown Disease',
+        'confidence': widget.scanData['confidence']?.toString() ?? '85',
+        'treatment': widget.scanData['treatment'] ?? 'Consult an expert',
+        'timestamp': timestampToSave ?? DateTime.now().toIso8601String(),
+        'severity': widget.scanData['severity'] ?? 'Unknown',
+        'plantName': widget.scanData['plantName'] ?? 'Unknown',
+        'cropType': widget.scanData['cropType'] ?? 'Unknown',
+      });
+
+      if (mounted) {
+        setState(() {
+          _isAutoSaved = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Auto-save error: $e');
+      // Don't show error to user for auto-save failure
+    }
+  }
+
   String _parseTimestamp(dynamic timestamp) {
     if (timestamp == null) return 'Unknown date';
 
     try {
       if (timestamp is Timestamp) {
-        // Handle Firestore Timestamp
         final date = timestamp.toDate();
         return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
       } else if (timestamp is String) {
-        // Handle string timestamp
-        return timestamp; // Return as-is since it's already formatted
+        return timestamp;
       } else {
         return 'Unknown date';
       }
     } catch (e) {
       debugPrint('Timestamp parse error: $e');
       return 'Invalid date';
+    }
+  }
+
+  // FIXED: Proper back navigation handling
+  void _handleBackNavigation() {
+    if (_isSaving) return;
+
+    HapticFeedback.lightImpact();
+
+    // Check if we came from a specific screen
+    final previousRoute = widget.scanData['previousRoute'] as String?;
+    final fromCapture = widget.scanData['fromCapture'] as bool? ?? false;
+
+    if (fromCapture) {
+      // If coming from capture screen, go back to scan tab
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.scan,
+            (route) => false,
+      );
+    } else if (previousRoute != null) {
+      // If we have a previous route, navigate to it
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        previousRoute,
+            (route) => false,
+      );
+    } else {
+      // Default: Try to pop, if can't pop go to home
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.home,
+              (route) => false,
+        );
+      }
     }
   }
 
@@ -105,12 +178,18 @@ class _ResultsScreenState extends State<ResultsScreen>
     final bool hasImage = hasLocalImage || hasNetworkImage;
 
     return PopScope(
-      canPop: !_isSaving,
+      canPop: false, // Prevent default back behavior
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          _handleBackNavigation();
+        }
+      },
       child: Scaffold(
         extendBodyBehindAppBar: true,
         appBar: AppBarContent(
           title: 'Analysis Results',
           showBackButton: !_isSaving,
+          onBackPressed: _handleBackNavigation,
         ),
         body: Container(
           decoration: BoxDecoration(
@@ -207,6 +286,8 @@ class _ResultsScreenState extends State<ResultsScreen>
           heroTagPrefix: 'results_screen',
           onSave: () => _saveReport(context),
           onShare: () => _shareResults(context),
+          isAutoSaved: _isAutoSaved,
+          isSaveLoading: _isSaving,
         ),
       ),
     );
@@ -308,6 +389,7 @@ class _ResultsScreenState extends State<ResultsScreen>
   Future<void> _saveReport(BuildContext context) async {
     if (_isSaving) return;
 
+    // If already auto-saved, save another copy
     setState(() => _isSaving = true);
     HapticFeedback.lightImpact();
 
@@ -318,8 +400,11 @@ class _ResultsScreenState extends State<ResultsScreen>
         timestampToSave = timestampToSave.toDate().toIso8601String();
       }
 
+      // Create a new ID for the duplicate save
+      final newId = DateTime.now().millisecondsSinceEpoch.toString();
+
       await ScanService().saveScan({
-        'id': widget.scanData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'id': newId,
         'imageUrl': widget.scanData['imageUrl'],
         'imagePath': widget.scanData['imagePath'],
         'diagnosis': widget.scanData['diagnosis'] ?? 'Unknown Disease',
@@ -327,20 +412,29 @@ class _ResultsScreenState extends State<ResultsScreen>
         'treatment': widget.scanData['treatment'] ?? 'Consult an expert',
         'timestamp': timestampToSave ?? DateTime.now().toIso8601String(),
         'severity': widget.scanData['severity'] ?? 'Unknown',
+        'plantName': widget.scanData['plantName'] ?? 'Unknown',
+        'cropType': widget.scanData['cropType'] ?? 'Unknown',
       });
 
       if (!mounted) return;
 
-      // Go back to previous screen (History, Home, etc.)
-      Navigator.pop(context);
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isAutoSaved ? 'Copy saved successfully!' : 'Report saved successfully!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
 
-      // Then go to Home with refresh
-      Navigator.pushNamedAndRemoveUntil(
-        context,
+      // Navigate to home with refresh flag
+      Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.home,
             (route) => false,
-        arguments: {'newScan': widget.scanData, 'refreshScans': true},
+        arguments: {'refreshScans': true},
       );
+
     } catch (e) {
       debugPrint('Error saving report: $e');
       if (!mounted) return;
@@ -351,6 +445,7 @@ class _ResultsScreenState extends State<ResultsScreen>
         SnackBar(
           content: const Text('Failed to save report. Please try again.'),
           backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
             label: 'Retry',
             textColor: Colors.white,
@@ -367,7 +462,6 @@ class _ResultsScreenState extends State<ResultsScreen>
     String dateStr = 'Unknown date';
     final timestamp = widget.scanData['timestamp'];
 
-    // HANDLE BOTH STRING AND TIMESTAMP
     if (timestamp is Timestamp) {
       final date = timestamp.toDate();
       dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';

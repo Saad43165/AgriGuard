@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
+import '../../../../core/constants/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final bool isLoggedIn; // Add this parameter
+
+  const SplashScreen({super.key, required this.isLoggedIn}); // Update constructor
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -126,13 +129,19 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     }
   }
 
+
   void _navigateToNext() async {
     await Future.delayed(const Duration(milliseconds: 3500));
     if (mounted) {
-      Navigator.pushReplacementNamed(context, '/onboard');
+      if (widget.isLoggedIn) {
+        // User is logged in, go directly to home
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      } else {
+        // User is not logged in, show onboarding
+        Navigator.pushReplacementNamed(context, AppRoutes.onboard);
+      }
     }
   }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();

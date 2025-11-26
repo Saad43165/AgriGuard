@@ -5,7 +5,9 @@ class FloatingActionButtons extends StatelessWidget {
   final VoidCallback onSave;
   final VoidCallback onShare;
   final double? fabSize;
-  final String heroTagPrefix; // Optional: for debugging or future Hero use
+  final String heroTagPrefix;
+  final bool isSaveLoading;
+  final bool isAutoSaved;
 
   const FloatingActionButtons({
     super.key,
@@ -13,6 +15,8 @@ class FloatingActionButtons extends StatelessWidget {
     required this.onShare,
     this.fabSize,
     required this.heroTagPrefix,
+    this.isSaveLoading = false,
+    this.isAutoSaved = false,
   });
 
   @override
@@ -20,12 +24,15 @@ class FloatingActionButtons extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (isAutoSaved) _buildAutoSavedBadge(context),
         _CustomFab(
           onPressed: onSave,
-          icon: Icons.save_rounded,
-          tooltip: 'Save Report',
+          icon: isSaveLoading ? Icons.hourglass_top : Icons.save_rounded,
+          tooltip: isAutoSaved ? 'Save Another Copy' : 'Save Report',
           semanticLabel: 'Save Report',
           fabSize: fabSize,
+          isLoading: isSaveLoading,
+          isSuccess: isAutoSaved,
         ),
         const SizedBox(height: AppMeasurements.defaultPadding),
         _CustomFab(
@@ -38,6 +45,39 @@ class FloatingActionButtons extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildAutoSavedBadge(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle, color: Colors.white, size: 14),
+          SizedBox(width: 6),
+          Text(
+            'Auto-saved',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _CustomFab extends StatefulWidget {
@@ -46,6 +86,8 @@ class _CustomFab extends StatefulWidget {
   final String tooltip;
   final String semanticLabel;
   final double? fabSize;
+  final bool isLoading;
+  final bool isSuccess;
 
   const _CustomFab({
     required this.onPressed,
@@ -53,6 +95,8 @@ class _CustomFab extends StatefulWidget {
     required this.tooltip,
     required this.semanticLabel,
     this.fabSize,
+    this.isLoading = false,
+    this.isSuccess = false,
   });
 
   @override
@@ -86,17 +130,23 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
     final size = widget.fabSize ?? AppMeasurements.getResponsiveFabSize(context, baseSize: 56);
     final isMini = size < 40;
 
+    Color fabColor = widget.isSuccess
+        ? Colors.green
+        : Theme.of(context).colorScheme.primary;
+
     return Semantics(
       label: widget.semanticLabel,
       button: true,
-      enabled: true,
+      enabled: !widget.isLoading,
       child: Tooltip(
         message: widget.tooltip,
         child: GestureDetector(
-          onTapDown: (_) => _controller.forward(),
+          onTapDown: (_) => !widget.isLoading ? _controller.forward() : null,
           onTapUp: (_) {
             _controller.reverse();
-            widget.onPressed();
+            if (!widget.isLoading) {
+              widget.onPressed();
+            }
           },
           onTapCancel: _controller.reverse,
           child: ScaleTransition(
@@ -107,15 +157,17 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
               shadowColor: Colors.black.withOpacity(0.3),
               child: InkWell(
                 borderRadius: BorderRadius.circular(size),
-                onTap: widget.onPressed,
+                onTap: widget.isLoading ? null : widget.onPressed,
                 child: Container(
                   width: size,
                   height: size,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
+                      colors: widget.isSuccess
+                          ? [Colors.green, Colors.green.shade600]
+                          : [
+                        fabColor,
                         Theme.of(context).colorScheme.secondary,
                       ],
                     ),
@@ -125,7 +177,16 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
                     ),
                   ),
                   child: Center(
-                    child: Icon(
+                    child: widget.isLoading
+                        ? SizedBox(
+                      width: isMini ? 16 : 20,
+                      height: isMini ? 16 : 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    )
+                        : Icon(
                       widget.icon,
                       color: Theme.of(context).colorScheme.onPrimary,
                       size: isMini

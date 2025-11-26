@@ -24,7 +24,6 @@ class _CaptureScreenState extends State<CaptureScreen>
   bool _isLoading = false;
   bool _isProcessing = false;
 
-  // ---------- ANIMATIONS ----------
   late AnimationController _fadeController;
   late AnimationController _scaleController;
   late AnimationController _slideController;
@@ -32,7 +31,6 @@ class _CaptureScreenState extends State<CaptureScreen>
   late Animation<double> _scaleAnimation;
   final ScrollController _scrollController = ScrollController();
 
-  // ---------- PLANT-ID ----------
   final PlantIdService _plantService = PlantIdService();
 
   @override
@@ -40,7 +38,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     super.initState();
     _initializeAnimations();
 
-    // LOAD MODEL ON START
     _plantService.loadModel().then((_) {
       debugPrint('AI MODEL LOADED & READY');
     }).catchError((e) {
@@ -88,9 +85,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     super.dispose();
   }
 
-  // -------------------------------------------------
-  // IMAGE PICKER
-  // -------------------------------------------------
   Future<void> _pickImage(ImageSource source) async {
     if (!mounted) return;
 
@@ -127,9 +121,7 @@ class _CaptureScreenState extends State<CaptureScreen>
     }
   }
 
-  // -------------------------------------------------
-  // PROCESS + AI + SAVE + NAVIGATE
-  // -------------------------------------------------
+  // FIXED: Navigate to results with proper routing context
   Future<void> _processAndSendToResults() async {
     if (!mounted || _imageFile == null || _isProcessing) return;
 
@@ -137,19 +129,16 @@ class _CaptureScreenState extends State<CaptureScreen>
     setState(() => _isProcessing = true);
 
     try {
-      // Check authentication
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('Please sign in to continue');
       }
 
-      // Verify image file exists
       final imageFile = File(_imageFile!.path);
       if (!await imageFile.exists()) {
         throw Exception('Image file not found');
       }
 
-      // AI INFERENCE
       Map<String, double> aiResult;
       try {
         aiResult = await _plantService.predict(imageFile);
@@ -164,7 +153,7 @@ class _CaptureScreenState extends State<CaptureScreen>
       final plantName = aiResult.keys.first;
       final confidence = (aiResult.values.first * 100).toStringAsFixed(1);
 
-      // Create complete scan data
+      // Create complete scan data with routing context
       final scanData = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'status': 'identified',
@@ -177,27 +166,28 @@ class _CaptureScreenState extends State<CaptureScreen>
         'timestamp': DateTime.now().toIso8601String(),
         'userId': user.uid,
         'isFallback': _plantService.isModelFailed,
+        'fromCapture': true, // Mark that we came from capture screen
+        'previousRoute': AppRoutes.scan, // Store the route to return to
       };
 
-      debugPrint('Saving scan data: ${scanData['cropType']}');
-
-      // Save to database
-      try {
-        final scanId = await ScanService().saveScan(scanData);
-        debugPrint('Scan saved with ID: $scanId');
-        scanData['id'] = scanId;
-      } catch (e) {
-        debugPrint('Error saving scan: $e');
-      }
+      debugPrint('Navigating to results with scan data: ${scanData['cropType']}');
 
       if (!mounted) return;
 
       // Navigate to results screen
-      await Navigator.pushReplacementNamed(
+      await Navigator.pushNamed(
         context,
         AppRoutes.results,
         arguments: {'scanData': scanData},
       );
+
+      // When returning from results, reset the capture screen
+      if (mounted) {
+        setState(() {
+          _imageFile = null;
+          _isProcessing = false;
+        });
+      }
 
     } catch (e) {
       debugPrint('Process error: $e');
@@ -230,9 +220,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     );
   }
 
-  // -------------------------------------------------
-  // RETAKE
-  // -------------------------------------------------
   void _retakeImage() {
     if (!mounted) return;
 
@@ -240,9 +227,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     setState(() => _imageFile = null);
   }
 
-  // -------------------------------------------------
-  // BUILD UI
-  // -------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -277,7 +261,6 @@ class _CaptureScreenState extends State<CaptureScreen>
           ),
           child: Stack(
             children: [
-              // Floating orbs background
               ...List.generate(
                 8,
                     (i) => FloatingOrb(
@@ -288,7 +271,6 @@ class _CaptureScreenState extends State<CaptureScreen>
                 ),
               ),
 
-              // Main content
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: CustomScrollView(
@@ -326,7 +308,6 @@ class _CaptureScreenState extends State<CaptureScreen>
                 ),
               ),
 
-              // Processing overlay
               if (_isProcessing)
                 Container(
                   color: Colors.black54,

@@ -33,7 +33,7 @@ class SpeciesGridWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Tap to learn more about each plant',
+                      'Tap to view detailed information',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontSize: AppMeasurements.getResponsiveFontSize(
@@ -81,7 +81,7 @@ class SpeciesGridWidget extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 100,
+          height: 120,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -163,7 +163,7 @@ class _SpeciesCardState extends State<_SpeciesCard>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          width: 80,
+          width: 95,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
@@ -187,31 +187,39 @@ class _SpeciesCardState extends State<_SpeciesCard>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icon
               Hero(
                 tag: 'species_${widget.species.name}',
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
-                    color: widget.species.color.withOpacity(0.15),
-                    shape: BoxShape.circle,
+                    color: widget.species.color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    widget.species.icon,
-                    color: widget.species.color,
-                    size: 24,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Image.asset(
+                      widget.species.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.eco,
+                          color: widget.species.color,
+                          size: 32,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
-              // Name
+              const SizedBox(height: 8),
               Text(
                 widget.species.name,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  height: 1.1,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
                   letterSpacing: -0.2,
                 ),
                 maxLines: 2,
@@ -229,103 +237,226 @@ class _SpeciesCardState extends State<_SpeciesCard>
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(2),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
               ),
-            ),
-            const SizedBox(height: 24),
-            // Icon
-            Hero(
-              tag: 'species_${widget.species.name}',
-              child: Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      widget.species.color.withOpacity(0.2),
-                      widget.species.color.withOpacity(0.1),
+            ],
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              children: [
+                // Handle
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Image and Title Section
+                      Center(
+                        child: Column(
+                          children: [
+                            Hero(
+                              tag: 'species_${widget.species.name}',
+                              child: Container(
+                                width: 140,
+                                height: 140,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      widget.species.color.withOpacity(0.15),
+                                      widget.species.color.withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: widget.species.color.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(20),
+                                child: Image.asset(
+                                  widget.species.imagePath,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.eco,
+                                      color: widget.species.color,
+                                      size: 60,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              widget.species.name,
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: widget.species.color,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.species.scientificName,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Description Section
+                      _InfoSection(
+                        icon: Icons.info_outline,
+                        title: 'About',
+                        color: widget.species.color,
+                        content: widget.species.description,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Growth Information Section
+                      _InfoSection(
+                        icon: Icons.wb_sunny_outlined,
+                        title: 'Growth Requirements',
+                        color: widget.species.color,
+                        content: widget.species.growthInfo,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Common Diseases Section
+                      _InfoSection(
+                        icon: Icons.bug_report_outlined,
+                        title: 'Common Diseases',
+                        color: widget.species.color,
+                        content: widget.species.commonDiseases,
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Action Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, '/capture');
+                          },
+                          icon: const Icon(Icons.camera_alt_rounded, size: 20),
+                          label: const Text('Start Disease Detection'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: widget.species.color,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.species.color.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final String content;
+
+  const _InfoSection({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.content,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  widget.species.icon,
-                  color: widget.species.color,
-                  size: 56,
+                  icon,
+                  color: color,
+                  size: 20,
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            // Name
-            Text(
-              widget.species.name,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: widget.species.color,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Description
-            Text(
-              'This plant can be detected by our AI system. Capture a photo to identify diseases and get treatment recommendations.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Action Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.camera_alt_rounded),
-                label: const Text('Start Detection'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.species.color,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            content,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              height: 1.5,
             ),
-            const SizedBox(height: 12),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

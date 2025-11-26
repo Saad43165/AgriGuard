@@ -49,15 +49,11 @@ class AgriGuardApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          if (snapshot.hasData) {
-            // User is logged in, go to HomeScreen
-            return const SplashScreen();
-          }
-          // User is not logged in, go to SplashScreen
-          return const SplashScreen();
+
+          // Return SplashScreen which will handle the navigation logic
+          return SplashScreen(isLoggedIn: snapshot.hasData);
         },
-      ),
-      onGenerateRoute: AppRouter.generateRoute,
+      ),      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }
