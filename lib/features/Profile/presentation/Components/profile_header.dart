@@ -304,7 +304,7 @@ class _DebouncedEditButtonState extends State<_DebouncedEditButton>
                   children: [
                     AnimatedRotation(
                       duration: const Duration(milliseconds: 300),
-                      turns: widget.isEditing ? 0 : 0.5,
+                      turns: widget.isEditing ? 0 : 0,
                       child: Icon(
                         widget.isEditing
                             ? Icons.check_circle_rounded

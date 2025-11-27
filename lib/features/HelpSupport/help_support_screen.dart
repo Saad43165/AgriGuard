@@ -18,10 +18,8 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _scaleController;
-  late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -32,49 +30,48 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
 
   void _initializeAnimations() {
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
     _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 400), // Reduced from 600ms
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 500), // Reduced from 800ms
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.ease), // Changed to easeInOut
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate( // Reduced scale from 0.5 to 0.8
-      CurvedAnimation(parent: _scaleController, curve: Curves.ease), // Changed to easeInOut
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(-1.0, 0.0), // Changed from Offset(-1.0, 0.0) to subtle vertical slide
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.ease)); // Changed to easeInOut
 
-    // Stagger the animations for better flow
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _fadeController.forward();
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (mounted) _scaleController.forward();
-        });
-        Future.delayed(const Duration(milliseconds: 150), () {
-          if (mounted) _slideController.forward();
-        });
+        _scaleController.forward();
       }
     });
   }
+
   @override
   void dispose() {
     _fadeController.dispose();
     _scaleController.dispose();
-    _slideController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // FIXED: Proper back navigation
+  void _handleBackPressed() {
+    HapticFeedback.lightImpact();
+
+    // Try to pop first
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      // If can't pop, navigate to profile screen
+      Navigator.pushReplacementNamed(context, AppRoutes.profile);
+    }
   }
 
   @override
@@ -83,11 +80,9 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
       extendBodyBehindAppBar: true,
       appBar: CustomAppBar(
         title: 'Help & Support',
-        topPadding: 20.0, // Adjust this value for more/less space from top
-        onBackPressed: () {
-          HapticFeedback.lightImpact();
-          Navigator.popUntil(context, (route) => route.settings.name == AppRoutes.profile);
-        },      ),
+        topPadding: 20.0,
+        onBackPressed: _handleBackPressed,
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
@@ -120,30 +115,27 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
               ),
             ),
             child: SafeArea(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: padding,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: isTablet ? 600 : double.infinity,
-                  ),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: padding,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: isTablet ? 600 : double.infinity,
+                    ),
                     child: ScaleTransition(
                       scale: _scaleAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 20), // Additional space if needed
-                            ContactFormCard(itemSpacing: screenWidth * 0.02),
-                            SizedBox(height: sectionSpacing),
-                            ContactInfoCard(itemSpacing: screenWidth * 0.02),
-                            SizedBox(height: sectionSpacing),
-                            FaqCard(itemSpacing: screenWidth * 0.02),
-                          ],
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          ContactFormCard(itemSpacing: screenWidth * 0.02),
+                          SizedBox(height: sectionSpacing),
+                          ContactInfoCard(itemSpacing: screenWidth * 0.02),
+                          SizedBox(height: sectionSpacing),
+                          FaqCard(itemSpacing: screenWidth * 0.02),
+                        ],
                       ),
                     ),
                   ),

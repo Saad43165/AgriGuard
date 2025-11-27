@@ -1,14 +1,13 @@
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_empty_state.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_list_view.dart';
-import 'package:agriguard_fyp/features/history/presentation/widgets/history_measurements.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_theme_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_measurements.dart'; // ← ADD THIS IMPORT
 import '../../history/presentation/widgets/floating_orb.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -143,15 +142,20 @@ class _HistoryScreenState extends State<HistoryScreen>
       SnackBar(
         content: Text(
           _userScans.isEmpty ? 'No scans found' : 'Refreshed',
-          style: const TextStyle(fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+          ),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(HistoryMeasurements.snackBarBorderRadius),
+          borderRadius: BorderRadius.circular(
+            AppMeasurements.getResponsiveBorderRadius(context),
+          ),
         ),
         duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(HistoryMeasurements.snackBarMargin),
+        margin: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
       ),
     );
   }
@@ -166,6 +170,9 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final isLargeScreen = AppMeasurements.isLargeScreen(context);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -199,17 +206,17 @@ class _HistoryScreenState extends State<HistoryScreen>
                       SliverToBoxAdapter(
                         child: ScaleTransition(
                           scale: _scaleAnimation,
-                          child: _buildHeader(),
+                          child: _buildHeader(context),
                         ),
                       ),
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(
-                          HistoryMeasurements.contentPaddingHorizontal,
-                          HistoryMeasurements.contentPaddingTop,
-                          HistoryMeasurements.contentPaddingHorizontal,
-                          HistoryMeasurements.contentPaddingBottom,
+                        padding: EdgeInsets.fromLTRB(
+                          padding,
+                          smallPadding,
+                          padding,
+                          padding,
                         ),
-                        sliver: _buildContent(),
+                        sliver: _buildContent(context),
                       ),
                     ],
                   ),
@@ -222,15 +229,19 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(
-        HistoryMeasurements.headerMarginHorizontal,
-        HistoryMeasurements.headerMarginTop,
-        HistoryMeasurements.headerMarginHorizontal,
-        HistoryMeasurements.headerMarginBottom,
+      margin: EdgeInsets.fromLTRB(
+        padding,
+        isLargeScreen ? padding * 1.5 : padding,
+        padding,
+        smallPadding,
       ),
-      padding: const EdgeInsets.all(HistoryMeasurements.headerPadding),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -238,7 +249,9 @@ class _HistoryScreenState extends State<HistoryScreen>
             Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
           ],
         ),
-        borderRadius: BorderRadius.circular(HistoryMeasurements.headerBorderRadius),
+        borderRadius: BorderRadius.circular(
+          AppMeasurements.getResponsiveBorderRadius(context) * 1.5,
+        ),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
         ),
@@ -246,7 +259,7 @@ class _HistoryScreenState extends State<HistoryScreen>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(HistoryMeasurements.headerIconPadding),
+            padding: EdgeInsets.all(smallPadding),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -258,13 +271,13 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
             child: Icon(
               Icons.history_rounded,
-              size: HistoryMeasurements.headerIconSize,
+              size: AppMeasurements.getResponsiveIconSizeLarge(context) * 0.7,
               color: Theme.of(context).brightness == Brightness.light
                   ? Theme.of(context).colorScheme.primary.withOpacity(0.9)
                   : Theme.of(context).colorScheme.primary,
             ),
           ),
-          const SizedBox(height: HistoryMeasurements.headerSpacing),
+          SizedBox(height: smallPadding),
           ShaderMask(
             shaderCallback: (bounds) => LinearGradient(
               colors: [
@@ -277,27 +290,35 @@ class _HistoryScreenState extends State<HistoryScreen>
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: Colors.white,
+                fontSize: AppMeasurements.getResponsiveFontSize(
+                  context,
+                  baseSize: isLargeScreen ? 28 : 24,
+                ),
               ),
             ),
           ),
-          const SizedBox(height: HistoryMeasurements.headerSmallSpacing),
+          SizedBox(height: smallPadding / 2),
           Text(
             'Your crop health scans',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              fontSize: AppMeasurements.getResponsiveFontSize(
+                context,
+                baseSize: isLargeScreen ? 16 : 14,
+              ),
             ),
           ),
           if (_userScans.isNotEmpty) ...[
-            const SizedBox(height: HistoryMeasurements.headerSpacing),
+            SizedBox(height: smallPadding),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: HistoryMeasurements.scanCountBadgePadding,
-                vertical: HistoryMeasurements.scanCountBadgeVerticalPadding,
+              padding: EdgeInsets.symmetric(
+                horizontal: smallPadding,
+                vertical: smallPadding / 2,
               ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(
-                  HistoryMeasurements.scanCountBadgeBorderRadius,
+                  AppMeasurements.getResponsiveBorderRadius(context) * 2,
                 ),
               ),
               child: Text(
@@ -305,6 +326,10 @@ class _HistoryScreenState extends State<HistoryScreen>
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.primary.withOpacity(1),
+                  fontSize: AppMeasurements.getResponsiveFontSize(
+                    context,
+                    baseSize: 12,
+                  ),
                 ),
               ),
             ),
@@ -314,13 +339,15 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+
     if (_isLoading) {
-      return SliverToBoxAdapter(child: _buildLoadingState());
+      return SliverToBoxAdapter(child: _buildLoadingState(context));
     }
 
     if (_hasError) {
-      return SliverToBoxAdapter(child: _buildErrorState());
+      return SliverToBoxAdapter(child: _buildErrorState(context));
     }
 
     if (_userScans.isEmpty) {
@@ -335,9 +362,9 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(HistoryMeasurements.loadingPadding),
+      padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
       child: Center(
         child: CircularProgressIndicator(
           strokeWidth: 3,
@@ -349,35 +376,56 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(BuildContext context) {
+    final padding = AppMeasurements.getResponsivePadding(context);
+    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+
     return Container(
-      padding: const EdgeInsets.all(HistoryMeasurements.errorPadding),
+      padding: EdgeInsets.all(padding),
       child: Column(
         children: [
           Icon(
             Icons.error_outline_rounded,
-            size: HistoryMeasurements.errorIconSize,
+            size: AppMeasurements.getResponsiveIconSizeLarge(context),
             color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(height: HistoryMeasurements.errorSpacing),
+          SizedBox(height: smallPadding),
           Text(
             'Failed to load scans',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
+              fontSize: AppMeasurements.getResponsiveFontSize(
+                context,
+                baseSize: isLargeScreen ? 22 : 18,
+              ),
             ),
           ),
-          const SizedBox(height: HistoryMeasurements.errorSmallSpacing),
+          SizedBox(height: smallPadding / 2),
           Text(
             'Check your connection',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontSize: AppMeasurements.getResponsiveFontSize(
+                context,
+                baseSize: 14,
+              ),
             ),
           ),
-          const SizedBox(height: HistoryMeasurements.errorButtonSpacing),
+          SizedBox(height: smallPadding),
           FilledButton.icon(
             onPressed: _loadUserScans,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Try Again'),
+            icon: Icon(Icons.refresh_rounded,
+                size: AppMeasurements.getResponsiveIconSizeSmall(context)),
+            label: Text(
+              'Try Again',
+              style: TextStyle(
+                fontSize: AppMeasurements.getResponsiveFontSize(
+                  context,
+                  baseSize: 14,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -392,14 +440,31 @@ class _HistoryScreenState extends State<HistoryScreen>
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(HistoryMeasurements.dialogBorderRadius),
+          borderRadius: BorderRadius.circular(
+            AppMeasurements.getResponsiveBorderRadius(context),
+          ),
         ),
-        title: const Text('Delete Scan?'),
-        content: Text('Delete "$diagnosis"? This cannot be undone.'),
+        title: Text(
+          'Delete Scan?',
+          style: TextStyle(
+            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
+          ),
+        ),
+        content: Text(
+          'Delete "$diagnosis"? This cannot be undone.',
+          style: TextStyle(
+            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () {
@@ -409,7 +474,12 @@ class _HistoryScreenState extends State<HistoryScreen>
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(
+              'Delete',
+              style: TextStyle(
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+              ),
+            ),
           ),
         ],
       ),
@@ -443,15 +513,21 @@ class _HistoryScreenState extends State<HistoryScreen>
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Scan deleted'),
+            content: Text(
+              'Scan deleted',
+              style: TextStyle(
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+              ),
+            ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius:
-              BorderRadius.circular(HistoryMeasurements.snackBarBorderRadius),
+              borderRadius: BorderRadius.circular(
+                AppMeasurements.getResponsiveBorderRadius(context),
+              ),
             ),
             duration: const Duration(seconds: 2),
-            margin: const EdgeInsets.all(HistoryMeasurements.snackBarMargin),
+            margin: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
           ),
         );
       }
@@ -459,14 +535,20 @@ class _HistoryScreenState extends State<HistoryScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to delete'),
+            content: Text(
+              'Failed to delete',
+              style: TextStyle(
+                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
+              ),
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius:
-              BorderRadius.circular(HistoryMeasurements.snackBarBorderRadius),
+              borderRadius: BorderRadius.circular(
+                AppMeasurements.getResponsiveBorderRadius(context),
+              ),
             ),
-            margin: const EdgeInsets.all(HistoryMeasurements.snackBarMargin),
+            margin: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
           ),
         );
       }

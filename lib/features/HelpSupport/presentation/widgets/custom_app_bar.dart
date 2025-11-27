@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/constants/app_routes.dart'; // Make sure this exists
+import '../../../../core/constants/app_routes.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -23,8 +23,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.topPadding = 8.0,
   });
 
-  // NEW: Helper to go back to Profile screen
-  void _goBackToProfile(BuildContext context) {
+  // FIXED: Proper navigation back
+  void _handleBack(BuildContext context) {
     HapticFeedback.lightImpact();
 
     // If custom callback is provided, use it
@@ -33,25 +33,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       return;
     }
 
-    // Otherwise: pop until we reach the Profile screen
-    Navigator.popUntil(context, (route) {
-      return route.settings.name == AppRoutes.profile;
-    });
-
-    // If Profile is not in stack, fallback to Home
-    if (ModalRoute.of(context)?.settings.name != AppRoutes.profile) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.profile,
-            (route) => false,
-      );
+    // Default behavior: try to pop, otherwise go to profile
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushReplacementNamed(context, AppRoutes.profile);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
-    final borderRadius = AppMeasurements.getResponsiveBorderRadius(context);
 
     return Padding(
       padding: EdgeInsets.only(top: topPadding),
@@ -83,7 +75,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // Back Button
+              // Back Button - Original Style
               if (showBackButton)
                 Container(
                   decoration: BoxDecoration(
@@ -103,7 +95,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(10),
-                      onTap: () => _goBackToProfile(context), // Fixed navigation
+                      onTap: () => _handleBack(context),
                       child: Padding(
                         padding: EdgeInsets.all(padding * 0.5),
                         child: Icon(

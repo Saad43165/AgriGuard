@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_measurements.dart';
 
 class FloatingActionButtons extends StatelessWidget {
-  final VoidCallback onSave;
+  final VoidCallback onViewHistory;
   final VoidCallback onShare;
   final double? fabSize;
   final String heroTagPrefix;
-  final bool isSaveLoading;
+  final bool isProcessing;
   final bool isAutoSaved;
 
   const FloatingActionButtons({
     super.key,
-    required this.onSave,
+    required this.onViewHistory,
     required this.onShare,
     this.fabSize,
     required this.heroTagPrefix,
-    this.isSaveLoading = false,
+    this.isProcessing = false,
     this.isAutoSaved = false,
   });
 
@@ -26,13 +26,13 @@ class FloatingActionButtons extends StatelessWidget {
       children: [
         if (isAutoSaved) _buildAutoSavedBadge(context),
         _CustomFab(
-          onPressed: onSave,
-          icon: isSaveLoading ? Icons.hourglass_top : Icons.save_rounded,
-          tooltip: isAutoSaved ? 'Save Another Copy' : 'Save Report',
-          semanticLabel: 'Save Report',
+          onPressed: onViewHistory,
+          icon: Icons.history_rounded,
+          tooltip: 'View Scan History',
+          semanticLabel: 'View History',
           fabSize: fabSize,
-          isLoading: isSaveLoading,
-          isSuccess: isAutoSaved,
+          isLoading: isProcessing,
+          backgroundColor: Colors.blue,
         ),
         const SizedBox(height: AppMeasurements.defaultPadding),
         _CustomFab(
@@ -41,6 +41,8 @@ class FloatingActionButtons extends StatelessWidget {
           tooltip: 'Share Results',
           semanticLabel: 'Share Results',
           fabSize: fabSize,
+          isLoading: isProcessing,
+          backgroundColor: Colors.purple,
         ),
       ],
     );
@@ -57,15 +59,15 @@ class FloatingActionButtons extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle, color: Colors.white, size: 14),
-          SizedBox(width: 6),
+          const Icon(Icons.check_circle, color: Colors.white, size: 14),
+          const SizedBox(width: 6),
           Text(
             'Auto-saved',
             style: TextStyle(
@@ -87,7 +89,7 @@ class _CustomFab extends StatefulWidget {
   final String semanticLabel;
   final double? fabSize;
   final bool isLoading;
-  final bool isSuccess;
+  final Color backgroundColor;
 
   const _CustomFab({
     required this.onPressed,
@@ -96,7 +98,7 @@ class _CustomFab extends StatefulWidget {
     required this.semanticLabel,
     this.fabSize,
     this.isLoading = false,
-    this.isSuccess = false,
+    required this.backgroundColor,
   });
 
   @override
@@ -130,10 +132,6 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
     final size = widget.fabSize ?? AppMeasurements.getResponsiveFabSize(context, baseSize: 56);
     final isMini = size < 40;
 
-    Color fabColor = widget.isSuccess
-        ? Colors.green
-        : Theme.of(context).colorScheme.primary;
-
     return Semantics(
       label: widget.semanticLabel,
       button: true,
@@ -164,17 +162,24 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: widget.isSuccess
-                          ? [Colors.green, Colors.green.shade600]
-                          : [
-                        fabColor,
-                        Theme.of(context).colorScheme.secondary,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        widget.backgroundColor,
+                        widget.backgroundColor.withOpacity(0.8),
                       ],
                     ),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                      width: 1,
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.backgroundColor.withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: widget.isLoading
@@ -183,12 +188,12 @@ class _CustomFabState extends State<_CustomFab> with SingleTickerProviderStateMi
                       height: isMini ? 16 : 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: Colors.white,
                       ),
                     )
                         : Icon(
                       widget.icon,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: Colors.white,
                       size: isMini
                           ? AppMeasurements.getResponsiveIconSizeSmall(context)
                           : AppMeasurements.getResponsiveIconSizeMedium(context),

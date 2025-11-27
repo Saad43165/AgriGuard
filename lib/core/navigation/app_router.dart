@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/HelpSupport/help_support_screen.dart';
-import '../../features/ResultScreen/presentation/screens/results_screen.dart';
+import '../../features/ResultScreen/presentation/results_screen.dart';
 import '../../features/Settings/presentation/settings_screen.dart';
 import '../../features/auth/Login_Screen/login_screens.dart';
 import '../../features/auth/Registration_screen/register_screen.dart';

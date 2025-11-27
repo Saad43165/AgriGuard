@@ -313,24 +313,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _shareResults(Map<String, dynamic> scan) async {
-    final shareText = '''
-Plant Health Scan Results
-
-Disease: ${scan['diagnosis'] ?? 'Unknown'}
-Date: ${scan['timestamp'] ?? 'Unknown'}
-Confidence: ${scan['confidence']?.toStringAsFixed(1) ?? 'N/A'}%
-
-Treatment: ${scan['treatment'] ?? 'No treatment available'}
-''';
-
-    if (!mounted) return;
-
-    await showDialog(
-      context: context,
-      builder: (_) => ShareResultsDialogContent(shareText: shareText),
-    );
-  }
 
   /* --------------------------------------------------------------------- *
    *  Build
