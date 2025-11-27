@@ -1,12 +1,12 @@
+Tomato
 Apple
 Bell_pepper
 Cedar_Apple_Rust
-Cherry
 Corn
+Cherry
 Grape
 Peach
 Potato
 Soybean
 Strawberry
-Tomato
 Wheat
