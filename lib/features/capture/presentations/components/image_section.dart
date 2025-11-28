@@ -9,6 +9,7 @@ class ImageSection extends StatefulWidget {
   final XFile? imageFile;
   final Animation<double> scaleAnimation;
   final bool isLoading;
+  final bool modelReady;
   final String? imageUrl;
   final dynamic timestamp;
 
@@ -17,6 +18,7 @@ class ImageSection extends StatefulWidget {
     required this.imageFile,
     required this.scaleAnimation,
     required this.isLoading,
+    this.modelReady = false,
     this.imageUrl,
     this.timestamp,
   });
@@ -34,12 +36,13 @@ class _ImageSectionState extends State<ImageSection>
   int _tapCount = 0;
   DateTime? _lastTapTime;
 
-  // AI Analysis suggestions
+  // AI Analysis suggestions - Updated for MobileNetV3
   final List<String> _aiSuggestions = [
-    'Ensure good lighting for best results',
-    'Focus on the affected area',
-    'Keep camera 6-12 inches away',
-    'Capture the whole leaf if possible',
+    '🌿 12 plant species supported',
+    '📸 Ensure good lighting for best results',
+    '🔍 Focus on leaves and stems',
+    '📏 Keep camera 6-12 inches away',
+    '🎯 MobileNetV3Large AI ready',
   ];
   int _currentSuggestionIndex = 0;
 
@@ -155,9 +158,12 @@ class _ImageSectionState extends State<ImageSection>
                       ),
                     ),
                     Text(
-                      'Image quality looks good!',
+                      widget.modelReady ? 'Ready for AI analysis' : 'Model not ready',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: widget.modelReady
+                            ? Colors.green
+                            : Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -166,9 +172,9 @@ class _ImageSectionState extends State<ImageSection>
             ],
           ),
           const SizedBox(height: 24),
-          _buildCheckItem('Lighting', true, 'Excellent'),
-          _buildCheckItem('Focus', true, 'Sharp'),
-          _buildCheckItem('Framing', true, 'Well centered'),
+          _buildCheckItem('AI Model', widget.modelReady, widget.modelReady ? 'Ready' : 'Not Ready'),
+          _buildCheckItem('Image Quality', true, 'Good'),
+          _buildCheckItem('File Size', true, 'Optimal'),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
@@ -177,12 +183,12 @@ class _ImageSectionState extends State<ImageSection>
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Looks Great!'),
+                Icon(widget.modelReady ? Icons.check_circle : Icons.warning, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(widget.modelReady ? 'Ready to Analyze!' : 'Model Loading...'),
               ],
             ),
           ),
@@ -461,7 +467,7 @@ class _ImageSectionState extends State<ImageSection>
             ),
             const SizedBox(height: 24),
             Text(
-              'No image selected',
+              widget.modelReady ? 'Ready to Scan' : 'Loading AI Model...',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -492,6 +498,7 @@ class _ImageSectionState extends State<ImageSection>
       scaleAnimation: widget.scaleAnimation,
       imageUrl: widget.imageUrl,
       scanTimestamp: widget.timestamp,
+      modelReady: widget.modelReady,
     );
   }
 }

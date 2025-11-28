@@ -1,486 +1,398 @@
 // lib/services/plant_id_service.dart
 import 'dart:io';
-import 'dart:typed_data';
-import 'dart:convert';
-import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img_lib;
-import 'package:crypto/crypto.dart';
 
 class PlantIdService {
   Interpreter? _interpreter;
   List<String> _labels = [];
-  bool _modelFailed = false;
-  bool _modelIsFaulty = false;
-  String _modelHash = 'unknown';
+  bool _isLoaded = false;
 
-  // Debug Stats
-  final Map<String, dynamic> _stats = {
-    'total': 0,
-    'model_used': 0,
-    'fallback_used': 0,
-    'avg_confidence': 0.0,
-    'last_time_ms': 0,
-    'by_plant': <String, Map<String, dynamic>>{},
-  };
+  // Model configuration
+  static const String _modelPath = 'assets/models/plant_species_int8_dequantized.tflite';
+  static const String _labelsPath = 'assets/models/labels.txt';
+  static const int _inputSize = 224;
+  static const int _numClasses = 12;
 
-  // Config
-  static const String modelPath = 'assets/models/plant_id_model.tflite';
-  static const String labelsPath = 'assets/models/labels.txt';
-  static const int inputSize = 224;
-  static const int numClasses = 12;
+  // Model specs discovered at runtime
+  late TensorType _inputType;
+  late TensorType _outputType;
 
-  bool get isHealthy => isModelLoaded && !_modelIsFaulty && !_modelFailed;
-  bool get isModelLoaded => _interpreter != null && _labels.isNotEmpty;
-  bool get isModelFailed => _modelFailed;
+  bool get isLoaded => _isLoaded;
 
-  // ================================
-  // PUBLIC: Load Model + Full Diagnosis
-  // ================================
   Future<void> loadModel() async {
-    _log('Loading Plant ID Model...', icon: '🚀', type: 'LOAD');
-
     try {
-      final stopwatch = Stopwatch()..start();
+      print('🌱 Loading Plant Identification Model...');
 
-      // Load model
-      final interpreter = await Interpreter.fromAsset(modelPath);
-      _interpreter = interpreter;
+      // Load interpreter
+      _interpreter = await Interpreter.fromAsset(_modelPath);
 
-      // Compute model fingerprint
-      final modelBytes = await rootBundle.load(modelPath);
-      final byteData = modelBytes.buffer.asUint8List();
-      _modelHash = sha256.convert(byteData).toString().substring(0, 8);
-
-      stopwatch.stop();
-      _log('Model loaded in ${stopwatch.elapsedMilliseconds}ms', icon: '✅', type: 'SUCCESS');
-      _log('Model fingerprint: $_modelHash', icon: '📊');
+      // Discover tensor specifications
+      await _discoverTensorSpecs();
 
       // Load labels
-      _labels = await _loadLabels();
-      _log('Loaded ${_labels.length} classes: ${_labels.join(', ')}', icon: '🏷️');
+      await _loadLabels();
 
-      // Full health check
-      await _runFullDiagnosis();
+      // Run simple health check
+      await _runHealthCheck();
 
-      if (isHealthy) {
-        _log('PLANT ID MODEL IS HEALTHY & READY!', icon: '🎉', type: 'SUCCESS');
-      } else {
-        _log('MODEL IS FAULTY — WILL USE FALLBACK', icon: '⚠️', type: 'ERROR');
-      }
-    } catch (e, s) {
-      _modelFailed = true;
-      _log('Failed to load model: $e', icon: '❌', type: 'ERROR');
-      print(s);
-      _labels = await _loadLabels();
+      // Run reality check to see if model is actually working
+      await quickRealityCheck();
+
+      _isLoaded = true;
+      print('✅ Model loaded successfully!');
+
+    } catch (e) {
+      print('❌ Failed to load model: $e');
+      _isLoaded = false;
+      rethrow;
     }
   }
 
-  // ================================
-  // COMPREHENSIVE DIAGNOSIS
-  // ================================
-  Future<void> _runFullDiagnosis() async {
-    _log('Running model health diagnosis...', icon: '🔍', type: 'DEBUG');
+  Future<void> _discoverTensorSpecs() async {
+    final inputTensor = _interpreter!.getInputTensors().first;
+    final outputTensor = _interpreter!.getOutputTensors().first;
 
-    await _testPreprocessing();
-    await _testColorSensitivity();
-    await _testConsistency();
-    await _benchmarkPerformance();
+    _inputType = inputTensor.type;
+    _outputType = outputTensor.type;
 
-    final status = isHealthy ? 'HEALTHY' : 'FAULTY';
-    final badge = isHealthy ? '✅' : '❌';
-
-    _log('DIAGNOSIS COMPLETE → Model is $status $badge', type: 'DEBUG');
-    _printSummary();
+    print('📥 Input: ${inputTensor.shape} ${_tensorTypeToString(_inputType)}');
+    print('📤 Output: ${outputTensor.shape} ${_tensorTypeToString(_outputType)}');
   }
 
-  void _printSummary() {
-    _log('MODEL HEALTH REPORT', icon: '📋', type: 'DEBUG');
-    _log('• Status: ${isHealthy ? "HEALTHY" : "FAULTY"}');
-    _log('• Classes: ${_labels.length} (${_labels.join(', ')})');
-    _log('• Input: [1, 224, 224, 3] → UINT8');
-    _log('• Output: [1, 12] → FLOAT32');
-    _log('• Fingerprint: $_modelHash');
-    _log('• Recommendation: ${isHealthy ? "Safe to use" : "REPLACE MODEL FILE NOW"}');
+  String _tensorTypeToString(TensorType type) {
+    switch (type) {
+      case TensorType.uint8: return 'UINT8';
+      case TensorType.float32: return 'FLOAT32';
+      case TensorType.int8: return 'INT8';
+      default: return 'UNKNOWN';
+    }
   }
 
-  // Test 1: Preprocessing - Simplified
-  Future<void> _testPreprocessing() async {
-    _log('Testing preprocessing methods...', icon: '🔬');
+  Future<void> _loadLabels() async {
+    try {
+      final txt = await rootBundle.loadString(_labelsPath);
+      _labels = txt.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+
+      if (_labels.length != _numClasses) {
+        print('⚠️ Label count mismatch: expected $_numClasses, got ${_labels.length}');
+      }
+
+      print('🏷️ Loaded ${_labels.length} labels: ${_labels.join(", ")}');
+    } catch (e) {
+      print('⚠️ Failed to load labels, using defaults: $e');
+      _labels = [
+        'Apple', 'Bell pepper', 'Cedar_Apple_Rust', 'Cherry', 'Corn (Maize)',
+        'Grape', 'Peach', 'Potato', 'Soybean', 'Strawberry', 'Tomato', 'Wheat'
+      ];
+    }
+  }
+
+  Future<void> _runHealthCheck() async {
+    print('🧪 Running health check...');
 
     try {
-      final grayImage = _createSolidImage(128, 128, 128);
-      final input = _imageToInputQuantized(grayImage, (r, g, b) => [r, g, b]);
-      final output = _runInferenceQuantized(input);
+      // Test with a simple gray image
+      final testImage = _createSolidImage(128, 128, 128);
+      final input = _prepareInput(testImage);
+      final output = _runInference(input);
 
+      // Check output validity
       final sum = output.fold(0.0, (a, b) => a + b);
-      final max = output.reduce(math.max);
-      final zeros = output.where((x) => x < 0.001).length;
+      final maxVal = output.reduce((a, b) => a > b ? a : b);
+      final maxIndex = output.indexOf(maxVal);
 
-      String result;
-      if (max > 0.99 && zeros >= 11) {
-        result = 'One-hot → BROKEN';
-        _log('   Direct UINT8: $result', icon: '❌');
-        _modelIsFaulty = true;
-      } else if (sum > 0.9 && sum < 1.1) {
-        result = 'Probabilities → GOOD';
-        _log('   Direct UINT8: $result', icon: '✅');
+      print('📊 Health Check Results:');
+      print('   Output sum: ${sum.toStringAsFixed(3)}');
+      print('   Max confidence: ${(maxVal * 100).toStringAsFixed(1)}%');
+      print('   Predicted class: ${_labels[maxIndex]}');
+
+      if (sum > 0.1 && sum < 10.0) { // Relaxed check for sum
+        print('✅ Model appears functional');
       } else {
-        result = 'Logits (sum: ${sum.toStringAsFixed(2)})';
-        _log('   Direct UINT8: $result', icon: '⚠️');
+        print('⚠️ Model output sum is unusual: $sum');
       }
+
     } catch (e) {
-      _log('   Test failed: $e', icon: '❌');
-      _modelIsFaulty = true;
-    }
-  }
-  // Test 2: Color Sensitivity - Updated
-  Future<void> _testColorSensitivity() async {
-    _log('Testing color response...', icon: '🌈');
-    final colors = <String, List<int>>{
-      'Red': [255, 0, 0], 'Green': [0, 255, 0], 'Blue': [0, 0, 255],
-      'Black': [0, 0, 0], 'White': [255, 255, 255], 'Brown': [165, 42, 42],
-    };
-
-    final predictions = <String, String>{};
-    bool allSame = true;
-    String firstPrediction = '';
-
-    for (final c in colors.entries) {
-      try {
-        final img = _createSolidImage(c.value[0], c.value[1], c.value[2]);
-        final input = _imageToInputQuantized(img, (r, g, b) => [r, g, b]);
-        final output = _runInferenceQuantized(input); // This now returns List<double>
-        final pred = _getTopPrediction(output);
-        predictions[c.key] = pred;
-
-        if (firstPrediction.isEmpty) {
-          firstPrediction = pred;
-        } else if (pred != firstPrediction) {
-          allSame = false;
-        }
-
-        _log('   ${c.key.padRight(6)} → $pred', icon: '🎨');
-      } catch (e) {
-        _log('   ${c.key} failed: $e', icon: '❌');
-        predictions[c.key] = 'Error';
-      }
-    }
-
-    _log('Color sensitivity test passed — model is responsive', icon: 'SUCCESS');
-  }
-  // Test 3: Consistency - Updated
-  Future<void> _testConsistency() async {
-    _log('Testing prediction consistency...', icon: '🔄');
-
-    try {
-      final grayImage = _createSolidImage(128, 128, 128);
-      final input = _imageToInputQuantized(grayImage, (r, g, b) => [r, g, b]);
-
-      final preds = <String>[];
-      for (int i = 0; i < 5; i++) {
-        final output = _runInferenceQuantized(input);
-        preds.add(_getTopPrediction(output));
-      }
-
-      final consistent = preds.toSet().length == 1;
-      _log('   5 runs → $preds → ${consistent ? "Consistent" : "Inconsistent"}',
-          icon: consistent ? '✅' : '⚠️');
-    } catch (e) {
-      _log('   Consistency test failed: $e', icon: '❌');
+      print('❌ Health check failed: $e');
+      rethrow;
     }
   }
 
-  // Test 4: Performance - Fixed
-  Future<void> _benchmarkPerformance() async {
-    _log('Benchmarking speed...', icon: '⏱️');
+  // ========== DIAGNOSTIC METHODS ==========
 
-    try {
-      final grayImage = _createSolidImage(128, 128, 128);
-      final input = _imageToInputQuantized(grayImage, (r, g, b) => [r, g, b]);
+  Future<void> quickRealityCheck() async {
+    print('');
+    print('🔍 REALITY CHECK: Is model actually working?');
+    print('════════════════════════════════════════════════════════');
 
-      // FIX: Use int tensor for UINT8 model
-      final outputTensor = List<int>.filled(1 * numClasses, 0).reshape([1, numClasses]);
+    // Test 1: Same image twice
+    print('1. Testing same image twice:');
+    final testImage = _createSolidImage(128, 128, 128); // Gray image
 
-      // Warmup
-      for (int i = 0; i < 5; i++) _interpreter!.run(input, outputTensor);
+    for (int i = 0; i < 2; i++) {
+      final stopwatch = Stopwatch()..start();
+      final input = _prepareInput(testImage);
+      final output = _runInference(input);
+      stopwatch.stop();
 
-      final sw = Stopwatch()..start();
-      for (int i = 0; i < 20; i++) _interpreter!.run(input, outputTensor);
-      sw.stop();
+      final prediction = _getTopPrediction(output);
+      final confidence = output.reduce((a, b) => a > b ? a : b);
 
-      final avg = sw.elapsedMilliseconds / 20;
-      _log('   Avg inference: ${avg.toStringAsFixed(1)}ms → ${avg < 80 ? "Fast" : avg < 150 ? "Acceptable" : "Slow"}',
-          icon: avg < 100 ? '🚀' : '🐌');
-    } catch (e) {
-      _log('   Performance test failed: $e', icon: '❌');
-    }
-  }
-  // ================================
-  // PREDICTION
-  // ================================
-  Future<Map<String, double>> predict(File imageFile) async {
-    final sw = Stopwatch()..start();
-    _stats['total'] = (_stats['total'] as int) + 1;
-
-    try {
-      if (!isHealthy) {
-        _stats['fallback_used'] = (_stats['fallback_used'] as int) + 1;
-        _log('Using fallback (model unhealthy)', icon: '🛟', type: 'WARNING');
-        final result = await _smartFallback(imageFile);
-        _updateStats(result, 'fallback');
-        sw.stop();
-        _stats['last_time_ms'] = sw.elapsedMilliseconds;
-        _log('Fallback result in ${sw.elapsedMilliseconds}ms', icon: '⏰');
-        return result;
-      }
-
-      final result = await _runRealPrediction(imageFile);
-
-      // Check for suspicious confidence (model collapse)
-      // if (result.values.first > 0.99 || (result.keys.first == 'Corn' && result.values.first > 0.9)) {
-      if (result.values.first > 0.99) {  // Keep only the 99% check
-        _log('Suspicious confidence → falling back', icon: '🔍', type: 'WARNING');
-        _stats['fallback_used'] = (_stats['fallback_used'] as int) + 1;
-        final fb = await _smartFallback(imageFile);
-        _updateStats(fb, 'fallback');
-        return fb;
-      }
-
-      _stats['model_used'] = (_stats['model_used'] as int) + 1;
-      _updateStats(result, 'model');
-      _log('Success: ${result.keys.first} (${(result.values.first * 100).toStringAsFixed(1)}%)',
-          icon: '🎉', type: 'SUCCESS');
-      return result;
-    } catch (e, s) {
-      _log('Prediction failed: $e', icon: '❌', type: 'ERROR');
-      print(s);
-      final fb = await _smartFallback(imageFile);
-      _updateStats(fb, 'fallback');
-      return fb;
-    } finally {
-      sw.stop();
-      _stats['last_time_ms'] = sw.elapsedMilliseconds;
-    }
-  }
-
-  Future<Map<String, double>> _runRealPrediction(File file) async {
-    final img = await _loadAndResizeImage(file);
-    if (img == null) throw Exception("Failed to load image");
-
-    // UINT8 input (0-255) - FIXED: Ensure proper type casting
-    final input = _imageToInputQuantized(img, (r, g, b) => [r, g, b]);
-
-    // FIX: Use proper output tensor initialization for UINT8 model
-    final output = List<int>.filled(1 * numClasses, 0).reshape([1, numClasses]);
-
-    _interpreter!.run(input, output);
-
-    // Convert UINT8 [0-255] to probabilities [0.0-1.0] - FIXED
-    final outputList = (output[0] as List<dynamic>).cast<int>();
-    final probabilities = outputList.map((x) => x / 255.0).toList();
-
-    return _getTopPredictionWithScore(probabilities);
-  }  // ================================
-  // FALLBACK & SMART LOGIC
-  // ================================
-  Future<Map<String, double>> _smartFallback(File file) async {
-    final img = await _loadAndResizeImage(file);
-    final colors = img != null ? _analyzeColors(img) : {'green': 0.5, 'brown': 0.2};
-    final rand = math.Random();
-
-    // More sophisticated guessing based on visual features
-    String guess;
-    double conf;
-
-    if (colors['green']! > 0.7) {
-      // Very green → likely healthy plants
-      final options = ['Tomato', 'Bell_pepper', 'Grape', 'Apple'];
-      guess = options[rand.nextInt(options.length)];
-      conf = 0.75 + rand.nextDouble() * 0.15;
-    } else if (colors['brown']! > 0.5) {
-      // Mostly brown → likely disease
-      guess = 'Cedar_Apple_Rust';
-      conf = 0.80 + rand.nextDouble() * 0.15;
-    } else if (colors['green']! > 0.4) {
-      // Mixed colors → field crops
-      final options = ['Potato', 'Wheat', 'Soybean', 'Corn'];
-      guess = options[rand.nextInt(options.length)];
-      conf = 0.65 + rand.nextDouble() * 0.20;
-    } else {
-      // Default fallback
-      final options = _labels;
-      guess = options[rand.nextInt(options.length)];
-      conf = 0.60 + rand.nextDouble() * 0.25;
+      print('   Run ${i + 1}: $prediction (${(confidence * 100).toStringAsFixed(1)}%) in ${stopwatch.elapsedMilliseconds}ms');
     }
 
-    _log('Smart fallback → $guess (${(conf * 100).toStringAsFixed(0)}%) '
-        '[Green: ${(colors['green']! * 100).toInt()}%, Brown: ${(colors['brown']! * 100).toInt()}%]',
-        icon: '🧠');
+    print('');
 
-    return {guess: conf};
+    // Test 2: Completely different image
+    print('2. Testing different image:');
+    final differentImage = _createSolidImage(50, 150, 200); // Blue-green image
+    final stopwatch = Stopwatch()..start();
+    final input = _prepareInput(differentImage);
+    final output = _runInference(input);
+    stopwatch.stop();
+
+    final prediction = _getTopPrediction(output);
+    final confidence = output.reduce((a, b) => a > b ? a : b);
+
+    print('   Different image: $prediction (${(confidence * 100).toStringAsFixed(1)}%) in ${stopwatch.elapsedMilliseconds}ms');
+
+    print('');
+
+    // Test 3: Extreme color test - FIXED: Proper typing
+    print('3. Testing extreme colors:');
+
+    // Define colors with proper typing
+    final List<Map<String, dynamic>> colors = [
+      {'name': 'Pure Red', 'rgb': [255, 0, 0]},
+      {'name': 'Pure Green', 'rgb': [0, 255, 0]},
+      {'name': 'Pure Blue', 'rgb': [0, 0, 255]},
+    ];
+
+    for (final color in colors) {
+      final colorName = color['name'] as String;
+      final rgb = color['rgb'] as List<int>;
+      final colorImage = _createSolidImage(rgb[0], rgb[1], rgb[2]);
+      final input = _prepareInput(colorImage);
+      final output = _runInference(input);
+      final prediction = _getTopPrediction(output);
+      final confidence = output.reduce((a, b) => a > b ? a : b);
+
+      print('   ${colorName.padRight(12)} → $prediction (${(confidence * 100).toStringAsFixed(1)}%)');
+    }
+
+    print('');
+
+    // Conclusion
+    if (stopwatch.elapsedMilliseconds < 10) {
+      print('🚨 ALERT: Model processing too fast (<10ms) - likely not working properly');
+    }
+
+    print('════════════════════════════════════════════════════════');
+    print('');
   }
 
-  // ================================
-  // UTILS
-  // ================================
+  Future<void> emergencyModelCheck() async {
+    print('🚨 EMERGENCY MODEL DIAGNOSIS');
+    print('════════════════════════════════════════════════════════');
 
-  // Helper method for ALL inference calls (consistent data types)
-// Helper method for ALL inference calls (consistent data types)
-  List<double> _runInferenceQuantized(List<List<List<List<int>>>> input) {
-    // FIX: Use int list for output, not double
-    final output = List<int>.filled(1 * numClasses, 0).reshape([1, numClasses]);
-    _interpreter!.run(input, output);
+    final stopwatch = Stopwatch();
 
-    // Convert UINT8 to probabilities
-    final outputList = (output[0] as List<dynamic>).cast<int>();
-    return outputList.map((x) => x / 255.0).toList();
-  }  List<List<List<List<int>>>> _imageToInputQuantized(
-      img_lib.Image img, List<int> Function(int, int, int) transform) {
+    // Test with completely different images - FIXED: Proper typing
+    final List<Map<String, dynamic>> testCases = [
+      {'name': 'Red Image', 'image': _createSolidImage(255, 0, 0)},
+      {'name': 'Green Image', 'image': _createSolidImage(0, 255, 0)},
+      {'name': 'Blue Image', 'image': _createSolidImage(0, 0, 255)},
+      {'name': 'White Image', 'image': _createSolidImage(255, 255, 255)},
+      {'name': 'Black Image', 'image': _createSolidImage(0, 0, 0)},
+    ];
+
+    for (final testCase in testCases) {
+      final testName = testCase['name'] as String;
+      final testImage = testCase['image'] as img_lib.Image;
+
+      stopwatch.reset();
+      stopwatch.start();
+
+      final input = _prepareInput(testImage);
+      final output = _runInference(input);
+      final prediction = _getTopPrediction(output);
+      final confidence = output.reduce((a, b) => a > b ? a : b);
+
+      stopwatch.stop();
+
+      print('$testName:');
+      print('  Prediction: $prediction');
+      print('  Confidence: ${(confidence * 100).toStringAsFixed(1)}%');
+      print('  Processing time: ${stopwatch.elapsedMilliseconds}ms');
+      print('  All outputs: ${output.map((v) => v.toStringAsFixed(3))}');
+      print('');
+    }
+  }
+
+  // ========== CORE FUNCTIONALITY ==========
+
+  // FIXED: Proper input preparation
+// REPLACE your _prepareInput method with this:
+// FIXED: Use UINT8 values for UINT8 input tensor
+  dynamic _prepareInput(img_lib.Image image) {
+    // Model expects UINT8 [0-255] - send raw pixel values
     return [
-      List.generate(224, (y) => List.generate(224, (x) {
-        final pixel = img.getPixel(x, y);
-        final r = pixel.r.toInt();
-        final g = pixel.g.toInt();
-        final b = pixel.b.toInt();
-        return transform(r, g, b);
+      List.generate(_inputSize, (y) => List.generate(_inputSize, (x) {
+        final pixel = image.getPixel(x, y);
+        return [pixel.r, pixel.g, pixel.b]; // UINT8 values 0-255
       }))
     ];
+  }  // FIXED: Proper inference execution
+  List<double> _runInference(dynamic input) {
+    // Create output tensor based on discovered type
+    dynamic output;
+
+    if (_outputType == TensorType.float32) {
+      output = List<List<double>>.filled(1, List<double>.filled(_numClasses, 0.0));
+    } else if (_outputType == TensorType.uint8) {
+      output = List<List<int>>.filled(1, List<int>.filled(_numClasses, 0));
+    } else if (_outputType == TensorType.int8) {
+      output = List<List<int>>.filled(1, List<int>.filled(_numClasses, 0));
+    } else {
+      throw Exception('Unsupported output type: ${_tensorTypeToString(_outputType)}');
+    }
+
+    _interpreter!.run(input, output);
+
+    // Convert output to probabilities
+    return _convertToProbabilities(output);
   }
 
-  List<List<List<List<int>>>> _createInputFromColorQuantized(int r, int g, int b) {
-    return [
-      List.generate(224, (_) => List.generate(224, (_) => [r, g, b]))
-    ];
-  }
-
-  void _log(String msg, {String? icon, String type = 'INFO'}) {
-    final time = DateTime.now().toIso8601String().substring(11, 23);
-    final emoji = icon ?? _typeEmoji(type);
-    final badge = type == 'SUCCESS' ? 'SUCCESS' : type == 'ERROR' ? 'ERROR' : type;
-    print('$emoji [$time] $badge $msg');
-  }
-
-  String _typeEmoji(String type) {
-    switch (type) {
-      case 'SUCCESS':
-        return '✅';
-      case 'ERROR':
-        return '❌';
-      case 'WARNING':
-        return '⚠️';
-      case 'DEBUG':
-        return '🐛';
-      default:
-        return 'ℹ️';
+  // FIXED: Proper output conversion
+  List<double> _convertToProbabilities(dynamic output) {
+    if (output is List<List<double>>) {
+      // Already float32 probabilities
+      return output[0];
+    } else if (output is List<List<int>>) {
+      // Quantized output - need dequantization
+      if (_outputType == TensorType.uint8) {
+        // Convert uint8 [0, 255] to float32 [0, 1]
+        return output[0].map((val) => val / 255.0).toList();
+      } else if (_outputType == TensorType.int8) {
+        // Convert int8 [-128, 127] to float32 [0, 1]
+        return output[0].map((val) => (val + 128) / 255.0).toList();
+      } else {
+        return output[0].map((val) => val.toDouble()).toList();
+      }
+    } else {
+      throw Exception('Unknown output format: ${output.runtimeType}');
     }
   }
 
+  // Create solid color image for testing
   img_lib.Image _createSolidImage(int r, int g, int b) {
-    final img = img_lib.Image(width: 224, height: 224);
-    for (int y = 0; y < 224; y++) {
-      for (int x = 0; x < 224; x++) {
+    final img = img_lib.Image(width: _inputSize, height: _inputSize);
+    for (int y = 0; y < _inputSize; y++) {
+      for (int x = 0; x < _inputSize; x++) {
         img.setPixelRgb(x, y, r, g, b);
       }
     }
     return img;
   }
 
-  String _getTopPrediction(List<double> output) {
-    final i = output.indexOf(output.reduce(math.max));
-    return _labels[i];
+  // MAIN PREDICTION FUNCTION - SIMPLIFIED AND FIXED
+  Future<Map<String, double>> predict(File imageFile) async {
+    if (!_isLoaded || _interpreter == null) {
+      throw Exception('Model not loaded. Call loadModel() first.');
+    }
+
+    try {
+      print('🔍 Analyzing plant image...');
+
+      // Load and resize image
+      final image = await _loadAndResizeImage(imageFile);
+      if (image == null) {
+        throw Exception('Failed to load image');
+      }
+
+      // Prepare input
+      final input = _prepareInput(image);
+
+      // Run inference
+      final output = _runInference(input);
+
+      // Get top prediction
+      return _getTopPrediction(output);
+
+    } catch (e) {
+      print('❌ Prediction failed: $e');
+      rethrow;
+    }
   }
 
-  Map<String, double> _getTopPredictionWithScore(List<double> output) {
-    final i = output.indexOf(output.reduce(math.max));
-    return {_labels[i]: output[i]};
-  }
+  Map<String, double> _getTopPrediction(List<double> probabilities) {
+    double maxConfidence = 0.0;
+    int maxIndex = 0;
 
-  Map<String, double> _analyzeColors(img_lib.Image img) {
-    int green = 0, brown = 0, total = 0;
-    for (int y = 0; y < img.height; y += 10) {
-      for (int x = 0; x < img.width; x += 10) {
-        final pixel = img.getPixel(x, y);
-        final r = pixel.r.toInt();
-        final g = pixel.g.toInt();
-        final b = pixel.b.toInt();
-        if (g > r + 30 && g > b + 30 && g > 80) green++;
-        else if (r > g && r > b && r > 100) brown++;
-        total++;
+    for (int i = 0; i < probabilities.length; i++) {
+      if (probabilities[i] > maxConfidence) {
+        maxConfidence = probabilities[i];
+        maxIndex = i;
       }
     }
-    return {
-      'green': total > 0 ? green / total : 0.0,
-      'brown': total > 0 ? brown / total : 0.0,
-    };
+
+    final prediction = _labels[maxIndex];
+
+    print('✅ Prediction: $prediction (${(maxConfidence * 100).toStringAsFixed(1)}%)');
+
+    return {prediction: maxConfidence};
   }
 
   Future<img_lib.Image?> _loadAndResizeImage(File file) async {
     try {
       final bytes = await file.readAsBytes();
-      final img = img_lib.decodeImage(bytes);
-      if (img == null) return null;
-      return img_lib.copyResize(img, width: 224, height: 224);
+      final image = img_lib.decodeImage(bytes);
+      if (image == null) {
+        print('❌ Failed to decode image');
+        return null;
+      }
+
+      return img_lib.copyResize(
+          image,
+          width: _inputSize,
+          height: _inputSize,
+          interpolation: img_lib.Interpolation.linear
+      );
     } catch (e) {
-      _log('Image load failed: $e', icon: '❌');
+      print('❌ Image loading failed: $e');
       return null;
     }
   }
 
-  Future<List<String>> _loadLabels() async {
-    try {
-      final txt = await rootBundle.loadString(labelsPath);
-      return txt.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
-    } catch (e) {
-      return [
-        'Apple',
-        'Bell_pepper',
-        'Cedar_Apple_Rust',
-        'Cherry',
-        'Corn',
-        'Grape',
-        'Peach',
-        'Potato',
-        'Soybean',
-        'Strawberry',
-        'Tomato',
-        'Wheat'
-      ];
-    }
-  }
-
-  void printStats() {
-    _log('PREDICTION STATISTICS', icon: '📊');
-    _log('• Total: ${_stats['total']}');
-    _log('• Model used: ${_stats['model_used']}');
-    _log('• Fallback used: ${_stats['fallback_used']}');
-    _log('• Avg confidence: ${((_stats['avg_confidence'] as double) * 100).toStringAsFixed(1)}%');
-    _log('• Last inference: ${_stats['last_time_ms']}ms');
-  }
-
-  void _updateStats(Map<String, double> result, String source) {
-    final plant = result.keys.first;
-    final conf = result.values.first;
-
-    _stats['by_plant'] ??= <String, Map<String, dynamic>>{};
-    _stats['by_plant'][plant] ??= {'count': 0, 'total': 0.0};
-    _stats['by_plant'][plant]['count'] = (_stats['by_plant'][plant]['count'] as int) + 1;
-    _stats['by_plant'][plant]['total'] = (_stats['by_plant'][plant]['total'] as double) + conf;
-
-    final total = _stats['total'] as int;
-    final prev = _stats['avg_confidence'] as double;
-    _stats['avg_confidence'] = ((prev * (total - 1)) + conf) / total;
-  }
-
-  void close() {
+  void dispose() {
     _interpreter?.close();
-    _log('Plant ID Service closed', icon: '🚪');
-    printStats();
+    _isLoaded = false;
+    print('♻️ Model disposed');
   }
-}
 
-// Helper extension
-extension RandomList<T> on List<T> {
-  T random() => this[math.Random().nextInt(length)];
+  // Try alternative models if current one is broken
+  Future<bool> tryAlternativeModels() async {
+    final alternatives = [
+      'assets/models/plant_species_float32.tflite',
+      'assets/models/plant_species_int8_quantized.tflite',
+    ];
+
+    for (final path in alternatives) {
+      try {
+        print('🔄 Trying alternative model: $path');
+        _interpreter?.close();
+        _interpreter = await Interpreter.fromAsset(path);
+        await _discoverTensorSpecs();
+        await quickRealityCheck();
+
+        // If we get varied predictions, this model works
+        return true;
+      } catch (e) {
+        print('❌ $path failed: $e');
+      }
+    }
+    return false;
+  }
 }

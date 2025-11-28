@@ -33,16 +33,61 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   final PlantIdService _plantService = PlantIdService();
 
+  // In your CaptureScreen's initState
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _initializeModel();
+  }
 
-    _plantService.loadModel().then((_) {
-      debugPrint('AI MODEL LOADED & READY');
-    }).catchError((e) {
-      debugPrint('Model load error: $e');
-    });
+  Future<void> _initializeModel() async {
+    try {
+      await _plantService.loadModel();
+
+      // Check if model is actually working
+      if (_plantService.isLoaded) {
+        // Run emergency check to see if model is broken
+        await _plantService.emergencyModelCheck();
+      }
+
+    } catch (e) {
+      debugPrint('Model initialization error: $e');
+      // You can show a user-friendly message here
+    }
+  }
+
+// Add this method to handle model issues
+  Future<void> _handleModelIssue() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Model Issue Detected'),
+        content: Text('The plant identification model appears to be not working correctly. Would you like to try alternative models?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await _plantService.tryAlternativeModels();
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Model fixed! Please try again.')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Unable to fix model. Please check your model files.')),
+                );
+              }
+            },
+            child: Text('Try Fix'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _initializeAnimations() {
@@ -81,7 +126,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     _scaleController.dispose();
     _slideController.dispose();
     _scrollController.dispose();
-    _plantService.close();
     super.dispose();
   }
 
@@ -165,7 +209,6 @@ class _CaptureScreenState extends State<CaptureScreen>
         'imagePath': _imageFile!.path,
         'timestamp': DateTime.now().toIso8601String(),
         'userId': user.uid,
-        'isFallback': _plantService.isModelFailed,
         'fromCapture': true, // Mark that we came from capture screen
         'previousRoute': AppRoutes.scan, // Store the route to return to
       };

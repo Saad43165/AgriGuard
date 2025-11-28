@@ -15,7 +15,7 @@ class ImagePreview extends StatefulWidget {
     required this.imageFile,
     required this.scaleAnimation,
     this.imageUrl,
-    this.scanTimestamp,
+    this.scanTimestamp, required bool modelReady,
   });
 
   @override
