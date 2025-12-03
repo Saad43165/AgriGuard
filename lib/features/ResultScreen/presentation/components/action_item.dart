@@ -53,8 +53,8 @@ class ActionItem extends StatelessWidget {
                       theme.colorScheme.secondary.withOpacity(0.2),
                     ]
                         : [
-                      theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                      theme.colorScheme.surfaceVariant.withOpacity(0.2),
+                      theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
                     ],
                   ),
                 ),

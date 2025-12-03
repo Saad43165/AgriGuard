@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/constants/app_measurements.dart';
 
 class CropPanel extends StatelessWidget {
   final bool isCropping;

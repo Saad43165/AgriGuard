@@ -311,10 +311,10 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
                   const Color(0xFF16213E).withOpacity(0.9),
                 ]
                     : [
-                  Theme.of(context).colorScheme.background,
+                  Theme.of(context).colorScheme.surface,
                   Theme.of(context)
                       .colorScheme
-                      .background
+                      .surface
                       .withOpacity(0.95),
                 ],
               ),

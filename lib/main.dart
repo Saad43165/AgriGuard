@@ -1,13 +1,10 @@
-import 'package:agriguard_fyp/features/auth/Login_Screen/login_screens.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/navigation/app_router.dart';
-import 'core/constants/app_routes.dart';
 import 'core/widgets/app_themes.dart';
-import 'features/home/screens/home_screen.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'firebase_options.dart';
 

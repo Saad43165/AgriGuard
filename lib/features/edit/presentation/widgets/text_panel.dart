@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/constants/app_measurements.dart';
 
 class TextPanel extends StatefulWidget {
   final Function(String, Color) onTextAdded;

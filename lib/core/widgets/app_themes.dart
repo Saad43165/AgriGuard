@@ -44,8 +44,7 @@ class AppTheme {
       secondary: Color(0xFF6C63FF), // Purple for secondary actions
       onSecondary: Colors.white, // White text on secondary background
       surface: Color(0xFFF5F7FA), // Light gray surface for cards and sheets
-      onSurface: Color(0xFF2C3E50), // Dark slate for text, better contrast
-      background: Color(0xFFF9FBFD), // Very light background for a clean look
+      onSurface: Color(0xFF2C3E50), // Very light background for a clean look
       error: Color(0xFFD32F2F), // Vibrant red for errors
       onError: Colors.white, // White text on error background
     ),
@@ -135,7 +134,6 @@ class AppTheme {
       onSecondary: Colors.black,
       surface: Color(0xFF1A1A2E),
       onSurface: Colors.white,
-      background: Color(0xFF16213E),
       error: Color(0xFFCF6679),
       onError: Colors.black,
     ),

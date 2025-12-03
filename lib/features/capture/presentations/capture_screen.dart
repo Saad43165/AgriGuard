@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../services/plant_id_service.dart';
 import '../../Profile/presentation/Components/floating_orb.dart';
-import '../../home/screens/components/scan_service.dart';
 import 'components/capture_appbar.dart';
 import 'components/image_section.dart';
 import 'components/action_buttons.dart';
@@ -33,7 +32,6 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   final PlantIdService _plantService = PlantIdService();
 
-  // In your CaptureScreen's initState
   @override
   void initState() {
     super.initState();
@@ -43,51 +41,23 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   Future<void> _initializeModel() async {
     try {
+      debugPrint('🌱 Initializing plant identification model...');
       await _plantService.loadModel();
 
-      // Check if model is actually working
       if (_plantService.isLoaded) {
-        // Run emergency check to see if model is broken
-        await _plantService.emergencyModelCheck();
+        debugPrint('✅ Model loaded successfully');
+      } else {
+        debugPrint('⚠️ Model failed to load');
+        if (mounted) {
+          _showErrorSnackBar('Model initialization failed. Some features may not work.');
+        }
       }
-
     } catch (e) {
-      debugPrint('Model initialization error: $e');
-      // You can show a user-friendly message here
+      debugPrint('❌ Model initialization error: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to load AI model. Please restart the app.');
+      }
     }
-  }
-
-// Add this method to handle model issues
-  Future<void> _handleModelIssue() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Model Issue Detected'),
-        content: Text('The plant identification model appears to be not working correctly. Would you like to try alternative models?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final success = await _plantService.tryAlternativeModels();
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Model fixed! Please try again.')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Unable to fix model. Please check your model files.')),
-                );
-              }
-            },
-            child: Text('Try Fix'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _initializeAnimations() {
@@ -122,6 +92,7 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   @override
   void dispose() {
+    _plantService.dispose();
     _fadeController.dispose();
     _scaleController.dispose();
     _slideController.dispose();
@@ -153,7 +124,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         HapticFeedback.mediumImpact();
       }
     } catch (e) {
-      debugPrint('Image picker error: $e');
+      debugPrint('❌ Image picker error: $e');
       if (!mounted) return;
 
       HapticFeedback.heavyImpact();
@@ -165,7 +136,6 @@ class _CaptureScreenState extends State<CaptureScreen>
     }
   }
 
-  // FIXED: Navigate to results with proper routing context
   Future<void> _processAndSendToResults() async {
     if (!mounted || _imageFile == null || _isProcessing) return;
 
@@ -173,47 +143,93 @@ class _CaptureScreenState extends State<CaptureScreen>
     setState(() => _isProcessing = true);
 
     try {
+      // Check authentication
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('Please sign in to continue');
       }
 
+      // Verify image file exists
       final imageFile = File(_imageFile!.path);
       if (!await imageFile.exists()) {
         throw Exception('Image file not found');
       }
 
-      Map<String, double> aiResult;
+      debugPrint('📸 Processing image: ${imageFile.path}');
+
+      // Run AI prediction
+      Map<String, dynamic> predictionResult;
       try {
-        aiResult = await _plantService.predict(imageFile);
-        debugPrint('AI Prediction successful: ${aiResult.keys.first}');
+        // FIXED: Changed from Map<String, double> to Map<String, dynamic>
+        predictionResult = await _plantService.predict(imageFile);
+        debugPrint('✅ AI Prediction successful');
+        debugPrint('   Label: ${predictionResult['label']}');
+        debugPrint('   Confidence: ${predictionResult['confidence']}');
+        
+        // Optional: Run diagnostics if prediction seems wrong
+        if (predictionResult['confidence'] < 0.3) {
+          debugPrint('⚠️ Low confidence detected, running diagnostics...');
+          await _plantService.runDiagnostics(imageFile);
+        }
+        
       } catch (e) {
-        debugPrint('AI Prediction failed, using fallback: $e');
-        aiResult = {'Unknown Plant': 0.5};
+        debugPrint('❌ AI Prediction failed: $e');
+        // Use fallback
+        predictionResult = {
+          'label': 'Unknown Plant',
+          'confidence': 0.5,
+          'isUnknown': true,
+          'allPredictions': [],
+          'inferenceTime': 0,
+        };
       }
 
       if (!mounted) return;
 
-      final plantName = aiResult.keys.first;
-      final confidence = (aiResult.values.first * 100).toStringAsFixed(1);
+      // Extract results
+      final plantName = predictionResult['label'] as String;
+      final confidence = predictionResult['confidence'] as double;
+      final isUnknown = predictionResult['isUnknown'] as bool? ?? false;
+      final confidencePercent = (confidence * 100).toStringAsFixed(1);
 
-      // Create complete scan data with routing context
+      // Determine diagnosis based on confidence
+      String diagnosis;
+      String severity;
+      String treatment;
+
+      if (isUnknown || confidence < 0.5) {
+        diagnosis = 'Unable to identify plant with confidence';
+        severity = 'Unknown';
+        treatment = 'Please try taking a clearer photo focusing on distinctive features like leaves, flowers, or stems.';
+      } else {
+        diagnosis = 'Healthy $plantName plant identified';
+        severity = 'Healthy';
+        treatment = 'Continue regular care. Monitor for any signs of disease or pests. Ensure adequate water and sunlight.';
+      }
+
+      // Create complete scan data
       final scanData = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'status': 'identified',
         'cropType': plantName,
-        'diagnosis': 'Healthy $plantName plant identified',
-        'confidence': confidence,
-        'treatment': 'Continue regular care. Monitor for any signs of disease or pests. Ensure adequate water and sunlight.',
-        'severity': 'Healthy',
+        'diagnosis': diagnosis,
+        'confidence': confidencePercent,
+        'treatment': treatment,
+        'severity': severity,
         'imagePath': _imageFile!.path,
         'timestamp': DateTime.now().toIso8601String(),
         'userId': user.uid,
-        'fromCapture': true, // Mark that we came from capture screen
-        'previousRoute': AppRoutes.scan, // Store the route to return to
+        'fromCapture': true,
+        'previousRoute': AppRoutes.scan,
+        'isUnknown': isUnknown,
+        'allPredictions': predictionResult['allPredictions'] ?? [],
+        'inferenceTime': predictionResult['inferenceTime'] ?? 0,
       };
 
-      debugPrint('Navigating to results with scan data: ${scanData['cropType']}');
+      debugPrint('📊 Navigating to results with:');
+      debugPrint('   Plant: $plantName');
+      debugPrint('   Confidence: $confidencePercent%');
+      debugPrint('   Unknown: $isUnknown');
 
       if (!mounted) return;
 
@@ -224,7 +240,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         arguments: {'scanData': scanData},
       );
 
-      // When returning from results, reset the capture screen
+      // Reset when returning from results
       if (mounted) {
         setState(() {
           _imageFile = null;
@@ -232,8 +248,9 @@ class _CaptureScreenState extends State<CaptureScreen>
         });
       }
 
-    } catch (e) {
-      debugPrint('Process error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Process error: $e');
+      debugPrint('Stack trace: $stackTrace');
 
       if (!mounted) return;
 
@@ -252,6 +269,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: 'Dismiss',
           textColor: Colors.white,
@@ -288,25 +306,26 @@ class _CaptureScreenState extends State<CaptureScreen>
               end: Alignment.bottomRight,
               colors: Theme.of(context).brightness == Brightness.dark
                   ? const [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-                Color(0xFF0F0F23),
-              ]
+                      Color(0xFF0F0F23),
+                      Color(0xFF16213E),
+                      Color(0xFF1A1A2E),
+                      Color(0xFF0F0F23),
+                    ]
                   : [
-                Theme.of(context).colorScheme.background,
-                Theme.of(context).colorScheme.background.withOpacity(0.9),
-                Theme.of(context).colorScheme.background.withOpacity(0.8),
-                Theme.of(context).colorScheme.background,
-              ],
+                      Theme.of(context).colorScheme.surface,
+                      Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                      Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                      Theme.of(context).colorScheme.surface,
+                    ],
               stops: const [0.0, 0.3, 0.7, 1.0],
             ),
           ),
           child: Stack(
             children: [
+              // Floating orbs for decoration
               ...List.generate(
                 8,
-                    (i) => FloatingOrb(
+                (i) => FloatingOrb(
                   index: i,
                   maxWidth: MediaQuery.of(context).size.width,
                   fadeController: _fadeController,
@@ -314,6 +333,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                 ),
               ),
 
+              // Main content
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: CustomScrollView(
@@ -351,12 +371,14 @@ class _CaptureScreenState extends State<CaptureScreen>
                 ),
               ),
 
+              // Processing overlay
               if (_isProcessing)
                 Container(
                   color: Colors.black54,
                   child: Center(
                     child: Card(
                       margin: const EdgeInsets.all(32),
+                      elevation: 8,
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
@@ -372,11 +394,11 @@ class _CaptureScreenState extends State<CaptureScreen>
                             Text(
                               'This may take a few seconds',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.6),
-                              ),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.6),
+                                  ),
                             ),
                           ],
                         ),

@@ -362,7 +362,7 @@ class StatisticsDialogContent extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -420,7 +420,7 @@ class StatisticsDialogContent extends StatelessWidget {
                     ),
                   ),
                 ).copyWith(
-                  backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                  backgroundColor: WidgetStateProperty.all(Colors.transparent),
                 ),
                 child: Ink(
                   decoration: BoxDecoration(

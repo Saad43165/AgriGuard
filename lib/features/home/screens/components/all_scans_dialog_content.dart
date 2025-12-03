@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../../../core/constants/app_measurements.dart';
 import 'delete_confirmation_dialoag_content.dart';
 
 class AllScansDialogContent extends StatelessWidget {

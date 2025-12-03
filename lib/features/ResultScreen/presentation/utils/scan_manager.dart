@@ -49,8 +49,8 @@ class ScanManager {
     dynamic timestampToSave = scanData['timestamp'];
     if (timestampToSave is Timestamp) {
       timestampToSave = timestampToSave.toDate().toIso8601String();
-    } else if (timestampToSave == null) {
-      timestampToSave = DateTime.now().toIso8601String();
+    } else {
+      timestampToSave ??= DateTime.now().toIso8601String();
     }
 
     return {

@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
-import 'package:vector_math/vector_math_64.dart' show Matrix4;
 
 import '../utils/constants.dart';
 import 'crop_overlay_painter.dart';

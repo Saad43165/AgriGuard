@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/widgets/glass_card.dart';
 import '../models/faq_category.dart';
 import '../models/faq_data.dart';
 import '../models/faq_items.dart';
@@ -53,8 +52,6 @@ class _FaqPageState extends State<FaqPage> with TickerProviderStateMixin {
       String query = _searchController.text.toLowerCase();
       _filteredFaqItems = FaqData.allFaqItems.where((faq) {
         // Add null safety checks
-        if (faq == null) return false;
-
         bool matchesCategory = _selectedCategory == null || faq.category == _selectedCategory;
         bool matchesSearch = query.isEmpty ||
             faq.question.toLowerCase().contains(query) ||
@@ -161,8 +158,8 @@ class _FaqPageState extends State<FaqPage> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,

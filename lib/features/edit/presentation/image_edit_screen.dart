@@ -2,7 +2,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../home/screens/components/scan_service.dart';
 

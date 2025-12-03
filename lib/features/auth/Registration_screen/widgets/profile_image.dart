@@ -72,7 +72,7 @@ class ProfileImageWidget extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: Theme.of(context).colorScheme.primary,
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.background,
+                    color: Theme.of(context).colorScheme.surface,
                     width: 3,
                   ),
                   boxShadow: [

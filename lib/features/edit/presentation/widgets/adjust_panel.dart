@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/constants/app_measurements.dart';
 import 'slider_widget.dart';
 
 class AdjustPanel extends StatelessWidget {

@@ -32,7 +32,7 @@ class WeatherMetricsRow extends StatelessWidget {
           context,
           Icons.air_rounded,
           'Wind',
-          '${windSpeed.toStringAsFixed(1)}',
+          windSpeed.toStringAsFixed(1),
           Colors.cyan,
         ),
         _buildDivider(context),

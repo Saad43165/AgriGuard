@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_strings.dart';
 

@@ -480,11 +480,11 @@ class Math {
 
 extension on double {
   double cos() {
-    return this.cosValue();
+    return cosValue();
   }
 
   double sin() {
-    return this.sinValue();
+    return sinValue();
   }
 
   double cosValue() {

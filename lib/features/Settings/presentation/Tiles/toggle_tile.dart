@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../../core/constants/app_measurements.dart';
 
 class ToggleTile extends StatefulWidget {
   final IconData icon;
@@ -124,8 +123,8 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                 inactiveThumbColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                trackOutlineColor: MaterialStateProperty.resolveWith((states) {
-                  if (states.contains(MaterialState.selected)) {
+                trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
                     return Colors.transparent;
                   }
                   return Theme.of(context).colorScheme.onSurface.withOpacity(0.2);

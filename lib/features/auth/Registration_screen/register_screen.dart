@@ -11,7 +11,6 @@ import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -335,10 +334,10 @@ class _RegisterScreenState extends State<RegisterScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.9),
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).colorScheme.surface.withOpacity(0.9),
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
+              Theme.of(context).colorScheme.surface,
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),

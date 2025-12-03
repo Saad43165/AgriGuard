@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/widgets/glass_card.dart';
 
 
 class FaqSearchBar extends StatelessWidget {

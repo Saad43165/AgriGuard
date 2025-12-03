@@ -194,7 +194,7 @@ class ProfileActions extends StatelessWidget {
             final action = entry.value;
             final isLast = index == actions.length - 1;
             return _buildActionTile(action, context, isLast);
-          }).toList(),
+          }),
         ],
       ),
     );

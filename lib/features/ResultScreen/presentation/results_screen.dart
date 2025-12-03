@@ -12,7 +12,6 @@ import 'components/analysis_details_Card.dart';
 
 import 'components/diagnosis_card.dart';
 import 'components/diagnosis_result.dart';
-import 'components/floating_action_buttons.dart';
 import 'components/reccomendations_card.dart';
 import 'components/scanned_image_Section.dart';
 
@@ -243,7 +242,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                             if (hasLocalImage && actualImagePath != null)
                               ScannedImageSection(imagePath: actualImagePath)
                             else if (hasNetworkImage)
-                              _buildNetworkImage(imageUrl!, theme)
+                              _buildNetworkImage(imageUrl, theme)
                             else
                               _buildNoImagePlaceholder(theme),
                             const SizedBox(height: 16),

@@ -17,7 +17,6 @@ import 'components/first_time_user_guide.dart';
 import 'components/loading_section.dart';
 import 'components/recent_scan_section.dart';
 import 'components/scan_service.dart';
-import 'components/share_results_dialog_content.dart';
 import '../../../../core/constants/app_measurements.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -338,8 +337,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 Color(0xFF1A1A2E),
               ]
                   : [
-                Theme.of(context).colorScheme.background,
-                Theme.of(context).colorScheme.background.withOpacity(0.9),
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surface.withOpacity(0.9),
               ],
             ),
           ),

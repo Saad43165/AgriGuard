@@ -183,9 +183,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              colorScheme.background,
+              colorScheme.surface,
               colorScheme.surface.withOpacity(0.8),
-              colorScheme.background,
+              colorScheme.surface,
             ],
           ),
         ),
@@ -239,9 +239,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       animation: _orbAnimation,
       builder: (context, child) {
         return Positioned(
-          top: positions[index]['top'] as double?,
-          left: positions[index]['left'] as double?,
-          right: positions[index]['right'] as double?,
+          top: positions[index]['top'],
+          left: positions[index]['left'],
+          right: positions[index]['right'],
           child: Transform.scale(
             scale: _orbAnimation.value,
             child: Container(

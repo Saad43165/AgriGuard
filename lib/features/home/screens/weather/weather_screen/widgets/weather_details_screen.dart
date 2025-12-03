@@ -4,7 +4,6 @@ import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widge
 import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/weather_background.dart';
 import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/weather_info_grid.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/weather_model.dart';

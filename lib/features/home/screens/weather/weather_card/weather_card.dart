@@ -281,7 +281,7 @@ class WeatherCard extends StatelessWidget {
                           _buildInlineMetric(
                             context,
                             Icons.air_rounded,
-                            '${weatherData.windSpeed.toStringAsFixed(0)}',
+                            weatherData.windSpeed.toStringAsFixed(0),
                             'Wind',
                           ),
                           Container(

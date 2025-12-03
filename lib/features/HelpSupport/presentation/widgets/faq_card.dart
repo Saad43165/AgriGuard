@@ -22,7 +22,7 @@ class FaqCard extends StatelessWidget {
   });
 
   // Sample FAQ data (replace with real data source, e.g., API or file)
-  static List<FaqItem> _faqItems = [
+  static final List<FaqItem> _faqItems = [
     FaqItem(
       question: 'How do I scan a plant for diseases?',
       answer: 'Open the app, tap the scan button, and point your camera at the plant. Ensure good lighting for accurate results.',

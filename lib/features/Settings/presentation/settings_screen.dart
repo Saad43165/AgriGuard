@@ -8,7 +8,6 @@ import 'Tiles/clear_history_tile.dart';
 import 'Tiles/delete_acount_tile.dart';
 import 'components/floating_orb.dart';
 import 'components/settings_header.dart';
-import 'Tiles/toggle_tile.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
