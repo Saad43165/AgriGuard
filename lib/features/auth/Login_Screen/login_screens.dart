@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/features/auth/Login_Screen/services/guest_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,11 +28,13 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  final GuestService _guestService = GuestService();
 
   @override
   void initState() {
     super.initState();
     initializeAnimations();
+    _guestService.initialize();
   }
 
   @override
@@ -40,6 +43,198 @@ class _LoginScreenState extends State<LoginScreen>
     _passwordController.dispose();
     disposeAnimations();
     super.dispose();
+  }
+
+  /// Handles guest mode login
+  Future<void> _handleGuestLogin() async {
+    HapticFeedback.mediumImpact();
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            AppMeasurements.getResponsiveBorderRadius(context),
+          ),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
+            const Text('Guest Mode'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'In guest mode, you can:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+            _buildFeatureItem(
+              context,
+              Icons.check_circle_outline,
+              'Capture leaf images (5 scans only)',
+              true,
+            ),
+            _buildFeatureItem(
+              context,
+              Icons.check_circle_outline,
+              'View scan results',
+              true,
+            ),
+            SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+            Text(
+              'You will NOT be able to:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+            _buildFeatureItem(
+              context,
+              Icons.cancel_outlined,
+              'View profile',
+              false,
+            ),
+            _buildFeatureItem(
+              context,
+              Icons.cancel_outlined,
+              'Save scan history',
+              false,
+            ),
+            _buildFeatureItem(
+              context,
+              Icons.cancel_outlined,
+              'Share results',
+              false,
+            ),
+            SizedBox(height: AppMeasurements.getResponsivePadding(context)),
+            Container(
+              padding: EdgeInsets.all(
+                AppMeasurements.getResponsiveSmallPadding(context),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(
+                  AppMeasurements.getResponsiveBorderRadius(context) * 0.6,
+                ),
+                border: Border.all(
+                  color: Colors.orange.shade300,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: AppMeasurements.getResponsiveIconSizeSmall(context),
+                    color: Colors.orange.shade700,
+                  ),
+                  SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context)),
+                  Expanded(
+                    child: Text(
+                      'Sign up for unlimited scans and full access!',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  AppMeasurements.getResponsiveBorderRadius(context) * 0.6,
+                ),
+              ),
+            ),
+            child: const Text('Continue as Guest'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+
+      try {
+        await _guestService.enableGuestMode();
+
+        if (mounted) {
+          HapticFeedback.mediumImpact();
+          _showSuccessSnackBar('Welcome! You have 5 free scans.');
+          await Future.delayed(const Duration(milliseconds: 1500));
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.home,
+                (route) => false,
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showErrorSnackBar('Failed to enter guest mode: $e');
+        }
+      }
+    }
+  }
+
+  Widget _buildFeatureItem(
+      BuildContext context,
+      IconData icon,
+      String text,
+      bool isAvailable,
+      ) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: AppMeasurements.getResponsiveSmallPadding(context) * 0.5,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: AppMeasurements.getResponsiveIconSizeSmall(context) * 0.8,
+            color: isAvailable ? Colors.green : Colors.red.shade400,
+          ),
+          SizedBox(width: AppMeasurements.getResponsiveSmallPadding(context) * 0.5),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Handles login action.
@@ -66,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen>
             _showDetailedSnackBar(
               title: 'Email Not Verified',
               message:
-                  'Please verify your email to log in. Check your inbox or spam folder.',
+              'Please verify your email to log in. Check your inbox or spam folder.',
               errorCode: 'email-not-verified',
             );
             await refreshedUser.sendEmailVerification();
@@ -74,13 +269,16 @@ class _LoginScreenState extends State<LoginScreen>
           return;
         }
 
+        // Disable guest mode if user logs in
+        await _guestService.disableGuestMode();
+
         if (mounted) {
           _showSuccessSnackBar('Login successful. Redirecting to home...');
           await Future.delayed(const Duration(milliseconds: 1500));
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.home,
-            (route) => false,
+                (route) => false,
           );
         }
       } else {
@@ -97,12 +295,12 @@ class _LoginScreenState extends State<LoginScreen>
           case 'user-not-found':
             title = 'User Not Found';
             message =
-                'No account found with this email. Would you like to create one?';
+            'No account found with this email. Would you like to create one?';
             break;
           case 'wrong-password':
             title = 'Incorrect Password';
             message =
-                'The password is incorrect. Please try again or reset your password.';
+            'The password is incorrect. Please try again or reset your password.';
             break;
           case 'invalid-email':
             title = 'Invalid Email';
@@ -277,15 +475,15 @@ class _LoginScreenState extends State<LoginScreen>
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label:
-              errorCode == 'email-not-verified'
-                  ? 'Resend Email'
-                  : errorCode == 'user-not-found'
-                  ? 'Sign Up'
-                  : errorCode == 'wrong-password'
-                  ? 'Reset Password'
-                  : errorCode == 'user-disabled'
-                  ? 'Contact Support'
-                  : 'Dismiss',
+          errorCode == 'email-not-verified'
+              ? 'Resend Email'
+              : errorCode == 'user-not-found'
+              ? 'Sign Up'
+              : errorCode == 'wrong-password'
+              ? 'Reset Password'
+              : errorCode == 'user-disabled'
+              ? 'Contact Support'
+              : 'Dismiss',
           textColor: Theme.of(context).colorScheme.onError,
           onPressed: () async {
             if (errorCode == 'email-not-verified') {
@@ -393,6 +591,45 @@ class _LoginScreenState extends State<LoginScreen>
                       loadingLabel: 'Signing In...',
                     ),
                   ),
+                  SizedBox(height: smallPadding * 0.8),
+
+                  // Guest Mode Button
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: padding),
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleGuestLogin,
+                      icon: Icon(
+                        Icons.person_outline_rounded,
+                        size: AppMeasurements.getResponsiveIconSizeSmall(context),
+                      ),
+                      label: Text(
+                        'Continue as Guest',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppMeasurements.getResponsiveFontSize(
+                            context,
+                            baseSize: 14,
+                          ),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                          width: 1.5,
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppMeasurements.getResponsivePadding(context) * 0.8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppMeasurements.getResponsiveBorderRadius(context),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                   SizedBox(height: smallPadding),
                   Center(
                     child: TextButton(

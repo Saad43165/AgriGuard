@@ -9,7 +9,7 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final double elevation;
   final double topPadding;
-  final Widget? leading; // ← Now a proper field
+  final Widget? leading;
 
   const AppBarContent({
     super.key,
@@ -19,7 +19,7 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.elevation = 0,
     this.topPadding = 8.0,
-    this.leading, // ← Correctly declared
+    this.leading,
   });
 
   @override
@@ -32,16 +32,57 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: elevation,
-        centerTitle: true,
-        leading: leading, // ← Respected
-        actions: actions,
-        title: Semantics(
-          label: 'App bar with title',
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Title
-              ShaderMask(
+        centerTitle: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Custom Back Button on LEFT SIDE (only if showBackButton AND no leading provided)
+            if (showBackButton && leading == null)
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      if (onBackPressed != null) {
+                        onBackPressed!();
+                      } else {
+                        Navigator.maybePop(context);
+                      }
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.all(padding * 0.5),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else if (leading != null)
+              leading!
+            else
+              Container(width: 50), // Spacer to maintain layout
+
+            // Title in Center with Gradient
+            Expanded(
+              child: ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
                   colors: [
                     Theme.of(context).colorScheme.primary,
@@ -50,60 +91,31 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
                 ).createShader(bounds),
                 child: Text(
                   title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                   ),
                 ),
               ),
+            ),
 
-              // Custom Back Button (only if showBackButton AND no leading provided)
-              if (showBackButton && leading == null)
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        if (onBackPressed != null) {
-                          onBackPressed!();
-                        } else {
-                          Navigator.maybePop(context);
-                        }
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.all(padding * 0.5),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            // Actions or Empty Spacer on RIGHT SIDE
+            if (actions != null && actions!.isNotEmpty)
+              Row(
+                children: actions!,
+              )
+            else
+              Container(width: 50), // Spacer to maintain layout
+          ],
         ),
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8.0); // + topPadding
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8.0);
 }

@@ -7,13 +7,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/app_measurements.dart';
-import '../../Settings/presentation/components/floating_orb.dart';
+import '../../../../core/constants/app_routes.dart';
+import '../../../../core/widgets/floating_orb.dart';
+import '../../auth/Login_Screen/services/guest_service.dart';
 import '../utils/profile_image_manager.dart';
+import 'Components/actions.dart';
 import 'Components/profile_info.dart';
 import 'Components/profile_picture.dart' show ProfilePicture;
-import 'components/profile_header.dart';
 import 'components/statistics.dart';
-import 'components/actions.dart' as profile_actions;
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -38,14 +39,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     'crops': [],
     'joinDate': '',
     'scanCount': 0,
+    'reportCount': 0,
     'lastUpdated': '',
     'profileImageUrl': null,
   };
 
-  bool _isEditing = false;
   bool _isLoading = true;
   bool _hasLoaded = false;
-  bool _isSaving = false;
+  bool _isEditing = false;
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -64,11 +65,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   late Animation<Offset> _slideAnimation;
 
   final ValueNotifier<bool> _profileChangedNotifier = ValueNotifier(false);
+  final GuestService _guestService = GuestService();
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _initializeGuestService();
+  }
+
+  Future<void> _initializeGuestService() async {
+    await _guestService.initialize();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -76,7 +86,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.didChangeDependencies();
     if (!_hasLoaded) {
       _hasLoaded = true;
-      _loadProfile();
+      if (!_guestService.isGuestMode) {
+        _loadProfile();
+      } else {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -105,6 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           'crops': data['crops'] ?? [],
           'joinDate': data['createdAt']?.toString() ?? data['joinDate'] ?? '',
           'scanCount': data['scanCount'] ?? 0,
+          'reportCount': data['reportCount'] ?? 0,
           'lastUpdated': data['lastUpdated']?.toString() ?? '',
           'profileImageUrl': data['profileImageUrl'],
         };
@@ -113,7 +128,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             data['profileImageUrl'] is String &&
             data['profileImageUrl'].toString().isNotEmpty) {
           _profileImageBase64 = data['profileImageUrl'];
-          debugPrint('📥 Profile loaded from Firestore (Image: ${_profileImageBase64!.length} chars)');
           _syncImageToManager();
         }
       }
@@ -125,8 +139,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       _farmSizeController.text = _userProfile['farmSize']?.toString() ?? '';
 
       if (mounted) setState(() => _isLoading = false);
-
-      debugPrint('✅ Profile loaded successfully');
     } catch (e) {
       debugPrint('❌ Error loading profile: $e');
       if (mounted) {
@@ -140,6 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             'crops': [],
             'joinDate': '',
             'scanCount': 0,
+            'reportCount': 0,
             'lastUpdated': 'Error: $e',
             'profileImageUrl': null,
           };
@@ -163,8 +176,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       ProfileImageManager.setPendingImage(tempFile);
       _profileImageFile = tempFile;
-
-      debugPrint('🔄 Synced Base64 to ProfileImageManager for home screen');
     } catch (e) {
       debugPrint('❌ Error syncing image to manager: $e');
     }
@@ -173,21 +184,16 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<String?> _convertImageToBase64(File imageFile) async {
     try {
       if (!await imageFile.exists()) {
-        debugPrint('❌ Image file does not exist');
         return null;
       }
 
       final bytes = await imageFile.readAsBytes();
-      debugPrint('📊 Converting image to Base64 (${bytes.length} bytes)');
-
       Uint8List compressedBytes = bytes;
       if (bytes.length > 500000) {
-        debugPrint('⚡ Compressing image...');
         compressedBytes = await _compressImage(bytes);
       }
 
       final base64String = base64Encode(compressedBytes);
-      debugPrint('✅ Base64 conversion successful (${base64String.length} chars)');
       return base64String;
     } catch (e) {
       debugPrint('❌ Base64 conversion error: $e');
@@ -206,27 +212,36 @@ class _ProfileScreenState extends State<ProfileScreen>
       final byteData = await frame.image.toByteData(format: ImageByteFormat.png);
       return byteData!.buffer.asUint8List();
     } catch (e) {
-      debugPrint('❌ Compression failed, using original: $e');
       return bytes;
     }
   }
 
   void _initializeAnimations() {
     _fadeController = AnimationController(
-        duration: const Duration(milliseconds: 200), vsync: this);
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
     _scaleController = AnimationController(
-        duration: const Duration(milliseconds: 150), vsync: this);
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
     _slideController = AnimationController(
-        duration: const Duration(milliseconds: 300), vsync: this);
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut));
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-        CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut));
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
     _slideAnimation = Tween<Offset>(
-        begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(
-        CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -251,27 +266,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
-  void _toggleEditMode() {
-    if (_isSaving) return;
-    HapticFeedback.lightImpact();
-
-    setState(() {
-      _isEditing = !_isEditing;
-      if (!_isEditing) {
-        _isSaving = true;
-        _saveProfileWithFeedback();
-      }
-    });
-  }
-
-  Future<void> _saveProfileWithFeedback() async {
+  Future<void> _saveProfile() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) {
         throw Exception('User not authenticated');
       }
-
-      debugPrint('💾 Saving profile data...');
 
       if (_nameController.text.trim().isEmpty) {
         throw Exception('Name cannot be empty');
@@ -287,7 +287,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
         updateData['profileImageUrl'] = _profileImageBase64;
-        debugPrint('💾 Including profile image in update');
       }
 
       await FirebaseFirestore.instance
@@ -295,30 +294,20 @@ class _ProfileScreenState extends State<ProfileScreen>
           .doc(uid)
           .update(updateData);
 
-      debugPrint('✅ Profile saved to Firestore successfully');
-
       setState(() {
         _userProfile['name'] = _nameController.text.trim();
         _userProfile['phone'] = _phoneController.text.trim();
         _userProfile['location'] = _locationController.text.trim();
         _userProfile['farmSize'] = _farmSizeController.text.trim();
         _userProfile['profileImageUrl'] = _profileImageBase64;
+        _isEditing = false;
       });
 
       _profileChangedNotifier.value = !_profileChangedNotifier.value;
-
-      _showSnackBar(
-        'Profile Changed Successfully!',
-        isError: false,
-      );
+      _showSnackBar('Profile saved successfully!', isError: false);
     } catch (e) {
       debugPrint('❌ Error saving profile: $e');
-      _showSnackBar('❌ Failed to save: $e', isError: true);
-      setState(() => _isEditing = true);
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      _showSnackBar('Failed to save: $e', isError: true);
     }
   }
 
@@ -334,18 +323,13 @@ class _ProfileScreenState extends State<ProfileScreen>
             : Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
-        action: isError
-            ? null
-            : SnackBarAction(
-          label: 'OK',
-          textColor: Colors.white,
-          onPressed: () {},
-        ),
       ),
     );
   }
 
   Future<void> _pickProfileImage() async {
+    if (!_isEditing) return;
+
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
@@ -358,8 +342,6 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (pickedFile != null) {
         final file = File(pickedFile.path);
 
-        debugPrint('🖼️ Image picked: ${file.path}');
-
         final base64String = await _convertImageToBase64(file);
         if (base64String != null) {
           setState(() {
@@ -368,36 +350,59 @@ class _ProfileScreenState extends State<ProfileScreen>
           });
 
           ProfileImageManager.setPendingImage(file);
-
-          final uid = FirebaseAuth.instance.currentUser?.uid;
-          if (uid != null) {
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(uid)
-                .update({
-              'profileImageUrl': _profileImageBase64,
-              'lastUpdated': FieldValue.serverTimestamp(),
-            });
-            debugPrint('💾 Profile image saved to Firestore immediately');
-          }
-
           _profileChangedNotifier.value = !_profileChangedNotifier.value;
         } else {
-          _showSnackBar('❌ Failed to process image', isError: true);
+          _showSnackBar('Failed to process image', isError: true);
         }
       }
     } catch (e) {
       debugPrint('❌ Image picker error: $e');
-      _showSnackBar('❌ Error updating image: $e', isError: true);
+      _showSnackBar('Error updating image: $e', isError: true);
     }
+  }
+
+  Future<void> _logout() async {
+    try {
+      ProfileImageManager.clearPendingImage();
+      await FirebaseAuth.instance.signOut();
+
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+              (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      if (mounted) {
+        _showSnackBar('Logout failed: $e', isError: true);
+      }
+    }
+  }
+
+  void _toggleEditMode() {
+    setState(() {
+      _isEditing = !_isEditing;
+      if (!_isEditing) {
+        // Reset to original values
+        _nameController.text = _userProfile['name'];
+        _phoneController.text = _userProfile['phone'];
+        _locationController.text = _userProfile['location'] ?? '';
+        _farmSizeController.text = _userProfile['farmSize']?.toString() ?? '';
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // REMOVED: extendBodyBehindAppBar - this was causing the overlap!
       body: LayoutBuilder(
         builder: (context, constraints) {
+          if (_guestService.isGuestMode) {
+            return _buildGuestRestrictionScreen(constraints.maxWidth);
+          }
+
           if (_isLoading) {
             return Center(
               child: Column(
@@ -416,182 +421,376 @@ class _ProfileScreenState extends State<ProfileScreen>
             );
           }
 
-          final isTablet = MediaQuery.of(context).size.width > 600;
-          return _buildBody(context, isTablet, constraints.maxWidth);
+          return _buildBody(context, constraints.maxWidth);
         },
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, bool isTablet, double maxWidth) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final sectionSpacing = AppMeasurements.smallPadding * 1.5;
-
-    return ValueListenableBuilder<bool>(
-      valueListenable: _profileChangedNotifier,
-      builder: (context, _, __) {
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? [
-                const Color(0xFF0F0F23),
-                const Color(0xFF16213E),
-                const Color(0xFF1A1A2E),
-                const Color(0xFF0F0F23)
-              ]
-                  : [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surface.withOpacity(0.9),
-                Theme.of(context).colorScheme.surface.withOpacity(0.8),
-                Theme.of(context).colorScheme.surface
+  Widget _buildGuestRestrictionScreen(double maxWidth) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+            const Color(0xFF0F0F23),
+            const Color(0xFF16213E),
+            const Color(0xFF1A1A2E),
+            const Color(0xFF0F0F23),
+          ]
+              : [
+            Theme.of(context).colorScheme.surface,
+            Theme.of(context).colorScheme.surface.withOpacity(0.9),
+            Theme.of(context).colorScheme.surface.withOpacity(0.8),
+            Theme.of(context).colorScheme.surface,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_off_rounded,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Profile Not Available',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _guestService.getRestrictionMessage('view_profile'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.login,
+                          (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.login_rounded),
+                  label: const Text('Sign In / Sign Up'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
               ],
-              stops: const [0.0, 0.3, 0.7, 1.0],
             ),
           ),
-          child: Stack(
-            children: [
-              ...List.generate(
-                  6,
-                      (i) => FloatingOrb(
-                      index: i,
-                      maxWidth: maxWidth,
-                      fadeController: _fadeController,
-                      scaleAnimation: _scaleAnimation)),
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: CustomScrollView(
-                    slivers: [
-                      ProfileHeader(
-                        onToggleEdit: _toggleEditMode,
-                        isEditing: _isEditing,
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: padding * 0.4),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                                maxWidth: isTablet ? 600 : double.infinity),
-                            child: Column(
-                              children: [
-                                SizedBox(height: sectionSpacing),
-                                ProfilePicture(
-                                  profileImageFile: _profileImageFile,
-                                  profileImageBase64: _profileImageBase64,
-                                  isEditing: _isEditing,
-                                  onPickImage: _pickProfileImage,
-                                  maxWidth: maxWidth,
-                                  scaleAnimation: _scaleAnimation,
-                                ),
-                                SizedBox(height: sectionSpacing),
-                                if (isTablet)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: AppMeasurements.defaultPadding),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Flexible(
-                                          flex: 1,
-                                          child: ProfileInfo(
-                                            userProfile: _userProfile,
-                                            isEditing: _isEditing,
-                                            nameController: _nameController,
-                                            emailController: _emailController,
-                                            phoneController: _phoneController,
-                                            locationController: _locationController,
-                                            farmSizeController: _farmSizeController,
-                                            cardPadding: EdgeInsets.all(
-                                                AppMeasurements.smallPadding),
-                                            itemSpacing: AppMeasurements.smallPadding,
-                                          ),
-                                        ),
-                                        SizedBox(width: sectionSpacing),
-                                        Flexible(
-                                          flex: 1,
-                                          child: Statistics(
-                                            userProfile: _userProfile,
-                                            cardPadding: EdgeInsets.all(
-                                                AppMeasurements.smallPadding),
-                                            itemSpacing: AppMeasurements.smallPadding,
-                                          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, double maxWidth) {
+    return Stack(
+      children: [
+        // Floating Orbs in background
+        ...List.generate(
+          8,
+              (i) => FloatingOrb(
+            index: i,
+            maxWidth: maxWidth,
+            fadeController: _fadeController,
+            scaleAnimation: _scaleAnimation,
+          ),
+        ),
+
+        // Main content
+        ValueListenableBuilder<bool>(
+          valueListenable: _profileChangedNotifier,
+          builder: (context, _, __) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: Theme.of(context).brightness == Brightness.dark
+                      ? [
+                    const Color(0xFF0F0F23).withOpacity(0.95),
+                    const Color(0xFF16213E).withOpacity(0.9),
+                    const Color(0xFF1A1A2E).withOpacity(0.95),
+                    const Color(0xFF0F0F23).withOpacity(0.95),
+                  ]
+                      : [
+                    const Color(0xFFF5F5F5).withOpacity(0.95),
+                    const Color(0xFFE8E8E8).withOpacity(0.9),
+                    const Color(0xFFEAEAEA).withOpacity(0.95),
+                    const Color(0xFFF0F0F0).withOpacity(0.95),
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Column(
+                      children: [
+                        // Back and Menu buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              onPressed: () => _showLogoutConfirmation(context),
+                              icon: Icon(
+                                Icons.logout_rounded,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Profile Picture with edit overlay
+                        Stack(
+                          children: [
+                            GestureDetector(
+                              onTap: _isEditing ? _pickProfileImage : null,
+                              child: ProfilePicture(
+                                profileImageFile: _profileImageFile,
+                                profileImageBase64: _profileImageBase64,
+                                isEditing: _isEditing,
+                                scaleAnimation: _scaleAnimation,
+                              ),
+                            ),
+                            if (!_isEditing)
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: _toggleEditMode,
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Theme.of(context).colorScheme.primary,
+                                          Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.8),
+                                        ],
+                                      ),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
                                         ),
                                       ],
                                     ),
-                                  )
-                                else
-                                  Column(
-                                    children: [
-                                      ProfileInfo(
-                                        userProfile: _userProfile,
-                                        isEditing: _isEditing,
-                                        nameController: _nameController,
-                                        emailController: _emailController,
-                                        phoneController: _phoneController,
-                                        locationController: _locationController,
-                                        farmSizeController: _farmSizeController,
-                                        cardPadding: EdgeInsets.all(
-                                            AppMeasurements.smallPadding),
-                                        itemSpacing: AppMeasurements.smallPadding,
-                                      ),
-                                      SizedBox(height: sectionSpacing),
-                                      Statistics(
-                                        userProfile: _userProfile,
-                                        cardPadding: EdgeInsets.all(
-                                            AppMeasurements.smallPadding),
-                                        itemSpacing: AppMeasurements.smallPadding,
-                                      ),
-                                    ],
+                                    child: Icon(
+                                      Icons.edit_rounded,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                SizedBox(height: sectionSpacing),
-                                profile_actions.ProfileActions(
-                                  padding: EdgeInsets.all(AppMeasurements.smallPadding),
                                 ),
-                                SizedBox(height: sectionSpacing),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              if (_isSaving)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black54,
-                    child: Center(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(
-                                color: Theme.of(context).colorScheme.primary,
                               ),
-                              const SizedBox(height: 16),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Name and email
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: Column(
+                            children: [
                               Text(
-                                'Saving profile...',
-                                style: Theme.of(context).textTheme.bodyLarge,
+                                _userProfile['name'] ?? 'User',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _userProfile['email'] ?? '',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.6),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
+
+                        const SizedBox(height: 30),
+
+                        // Statistics Cards
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Statistics(
+                            userProfile: _userProfile,
+                            cardPadding: const EdgeInsets.all(16),
+                            itemSpacing: 12,
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // Profile Information Section
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: ProfileInfo(
+                            userProfile: _userProfile,
+                            isEditing: _isEditing,
+                            nameController: _nameController,
+                            emailController: _emailController,
+                            phoneController: _phoneController,
+                            locationController: _locationController,
+                            farmSizeController: _farmSizeController,
+                            onSave: _saveProfile,
+                            onCancel: _toggleEditMode,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Profile Actions
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: ProfileActions(
+                            padding: const EdgeInsets.all(16),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
                 ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
             ],
           ),
-        );
-      },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                size: 60,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Logout Confirmation',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to logout?',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _logout();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Logout'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -56,6 +56,11 @@ class AppMeasurements {
     return (screenWidth * 0.04).clamp(12.0, 24.0); // 4% of screen width, capped
   }
 
+  // ADDED METHOD: Main icon size method (alias for getResponsiveIconSizeMedium)
+  static double getResponsiveIconSize(BuildContext context) {
+    return getResponsiveIconSizeMedium(context);
+  }
+
   static double getResponsiveScanCardWidth(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     return (screenWidth * 0.4).clamp(120.0, 300.0); // 40% of screen width, with min/max limits
@@ -106,5 +111,56 @@ class AppMeasurements {
     const referenceWidth = 360.0;
     final scalingFactor = screenWidth / referenceWidth;
     return (baseWidth * scalingFactor).clamp(baseWidth * 0.8, baseWidth * 1.5);
+  }
+
+  // ADDED METHOD: Get responsive button height
+  static double getResponsiveButtonHeight(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return (screenHeight * 0.06).clamp(48.0, 72.0); // 6% of screen height, clamped
+  }
+
+  // ADDED METHOD: Get responsive dialog width
+  static double getResponsiveDialogWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 1024) {
+      return screenWidth * 0.4; // Desktop: 40% width
+    } else if (screenWidth > 768) {
+      return screenWidth * 0.6; // Tablet: 60% width
+    } else {
+      return screenWidth * 0.85; // Mobile: 85% width
+    }
+  }
+
+  // ADDED METHOD: Get responsive list item height
+  static double getResponsiveListItemHeight(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return (screenHeight * 0.1).clamp(64.0, 96.0); // 10% of screen height, clamped
+  }
+
+  // ADDED METHOD: Get responsive spacing
+  static double getResponsiveSpacing(BuildContext context, {double multiplier = 1.0}) {
+    return getResponsivePadding(context) * multiplier;
+  }
+
+  // ADDED METHOD: Check if device is tablet
+  static bool isTablet(BuildContext context) {
+    return MediaQuery.of(context).size.width >= 768;
+  }
+
+  // ADDED METHOD: Check if device is desktop
+  static bool isDesktop(BuildContext context) {
+    return MediaQuery.of(context).size.width >= 1024;
+  }
+
+  // ADDED METHOD: Get responsive image size
+  static double getResponsiveImageSize(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return (screenWidth * 0.3).clamp(120.0, 240.0); // 30% of screen width, clamped
+  }
+
+  // ADDED METHOD: Get responsive icon size based on multiplier
+  static double getResponsiveIconSizeWithMultiplier(BuildContext context, double multiplier) {
+    final baseSize = getResponsiveIconSizeMedium(context);
+    return baseSize * multiplier;
   }
 }

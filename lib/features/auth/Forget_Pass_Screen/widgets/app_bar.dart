@@ -1,4 +1,4 @@
-// features/auth/forgot_password/weather_screen/custom_app_bar.dart
+// features/auth/forgot_password/weather_screen/support_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_icons.dart';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../../../../core/constants/app_measurements.dart';
 
 class SettingsHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -25,31 +24,17 @@ class SettingsHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
 
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.transparent,
-      elevation: elevation,
-      title: Semantics(
-        label: 'Settings header with back button',
-        child: Row(
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: elevation,
+        centerTitle: false,
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.secondary,
-                ],
-              ).createShader(bounds),
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
+            // Back Button on LEFT SIDE
             if (showBackButton)
               Container(
                 decoration: BoxDecoration(
@@ -87,15 +72,46 @@ class SettingsHeader extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                 ),
+              )
+            else
+              Container(width: 50), // Spacer to maintain layout
+
+            // Title in Center with Gradient
+            Expanded(
+              child: ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
+                    color: Colors.white,
+                  ),
+                ),
               ),
+            ),
+
+            // Actions or Empty Spacer on RIGHT SIDE
+            if (actions != null && actions!.isNotEmpty)
+              Row(
+                children: actions!,
+              )
+            else
+              Container(width: 50), // Spacer to maintain layout
           ],
         ),
       ),
-      centerTitle: true,
-      actions: actions,
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
 }

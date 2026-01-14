@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_form_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_info_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/faq_card.dart';
-import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/custom_app_bar.dart';
+import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/support_app_bar.dart';
 import '../../core/constants/app_measurements.dart';
 import '../../core/constants/app_routes.dart';
 

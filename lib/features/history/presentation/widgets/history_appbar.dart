@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../../../core/constants/app_measurements.dart';
 
 class HistoryAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -31,12 +30,55 @@ class HistoryAppBar extends StatelessWidget implements PreferredSizeWidget {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: elevation,
-        title: Semantics(
-          label: 'History app bar with back button',
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              ShaderMask(
+        centerTitle: false,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Back Button on LEFT SIDE
+            if (showBackButton)
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      if (onBackPressed != null) {
+                        onBackPressed!();
+                      } else {
+                        Navigator.maybePop(context);
+                      }
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.all(padding * 0.5),
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(width: 50), // Spacer to maintain layout
+
+            // Title in Center with Gradient
+            Expanded(
+              child: ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
                   colors: [
                     Theme.of(context).colorScheme.primary,
@@ -45,61 +87,31 @@ class HistoryAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ).createShader(bounds),
                 child: Text(
                   title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                   ),
-                  overflow: TextOverflow.visible,
                 ),
               ),
-              if (showBackButton)
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        if (onBackPressed != null) {
-                          onBackPressed!();
-                        } else {
-                          Navigator.maybePop(context);
-                        }
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.all(padding * 0.5),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            ),
+
+            // Actions or Empty Spacer on RIGHT SIDE
+            if (actions != null && actions!.isNotEmpty)
+              Row(
+                children: actions!,
+              )
+            else
+              Container(width: 50), // Spacer to maintain layout
+          ],
         ),
-        centerTitle: true,
-        actions: actions,
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
 }

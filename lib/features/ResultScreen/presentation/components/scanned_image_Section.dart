@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'section_header.dart';
 
 class ScannedImageSection extends StatefulWidget {
   final String imagePath;
@@ -8,34 +7,29 @@ class ScannedImageSection extends StatefulWidget {
   final double? width;
   final BoxFit fit;
   final VoidCallback? onTap;
-  final Widget? placeholder;
-  final Widget? errorWidget;
 
-   ScannedImageSection({
+  const ScannedImageSection({
     super.key,
     required this.imagePath,
-    this.height = 250,
+    this.height = 280,
     this.width,
     this.fit = BoxFit.cover,
     this.onTap,
-    this.placeholder,
-    this.errorWidget,
-  }) : assert(imagePath.isNotEmpty, 'imagePath cannot be empty');
+  }) : assert(imagePath != '', 'imagePath cannot be empty');
 
   @override
   State<ScannedImageSection> createState() => _ScannedImageSectionState();
 }
 
 class _ScannedImageSectionState extends State<ScannedImageSection> {
-  late Future<File> _imageFileFuture;
   bool _isLoading = true;
   bool _hasError = false;
-  String? _errorMessage;
+  File? _imageFile;
 
   @override
   void initState() {
     super.initState();
-    _imageFileFuture = _loadImageFile();
+    _loadImageFile();
   }
 
   @override
@@ -51,13 +45,13 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
     setState(() {
       _isLoading = true;
       _hasError = false;
-      _errorMessage = null;
-      _imageFileFuture = _loadImageFile();
+      _imageFile = null;
     });
+    _loadImageFile();
   }
 
-  Future<File> _loadImageFile() async {
-    if (!mounted) return Future.error('Widget not mounted');
+  Future<void> _loadImageFile() async {
+    if (!mounted) return;
 
     try {
       final file = File(widget.imagePath);
@@ -73,44 +67,24 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
 
       if (mounted) {
         setState(() {
+          _imageFile = file;
           _isLoading = false;
           _hasError = false;
         });
       }
-
-      return file;
     } catch (e) {
+      debugPrint('Error loading image: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
           _hasError = true;
-          _errorMessage = e.toString();
         });
       }
-      debugPrint('Error loading image: $e');
-      return Future.error(e);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(
-          title: 'Scanned Image',
-          icon: Icons.photo_camera_rounded,
-        ),
-        const SizedBox(height: 12),
-        _buildImageContent(context),
-      ],
-    );
-  }
-
-  Widget _buildImageContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: () {
         if (_hasError) {
@@ -118,81 +92,131 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
         }
         widget.onTap?.call();
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? theme.colorScheme.surface.withOpacity(0.5)
-              : theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.15),
-            width: 1,
+      child: _buildImageContent(context),
+    );
+  }
+
+  Widget _buildImageContent(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      height: widget.height,
+      width: widget.width ?? double.infinity,
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.colorScheme.surface.withOpacity(0.5)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: _buildImageWidget(context),
-        ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: _buildImageWidget(context),
       ),
     );
   }
 
   Widget _buildImageWidget(BuildContext context) {
     if (_isLoading) {
-      return widget.placeholder ?? _buildLoadingIndicator(context);
+      return _buildLoadingIndicator(context);
     }
 
-    if (_hasError) {
-      return widget.errorWidget ?? _buildErrorPlaceholder(context);
+    if (_hasError || _imageFile == null) {
+      return _buildErrorPlaceholder(context);
     }
 
-    return FutureBuilder<File>(
-      future: _imageFileFuture,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return widget.errorWidget ?? _buildErrorPlaceholder(context);
-        }
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return widget.placeholder ?? _buildLoadingIndicator(context);
-        }
-
-        if (!snapshot.hasData) {
-          return widget.errorWidget ?? _buildErrorPlaceholder(context);
-        }
-
-        return Image.file(
-          snapshot.data!,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.file(
+          _imageFile!,
           fit: widget.fit,
-          width: widget.width ?? double.infinity,
-          height: widget.height,
           errorBuilder: (context, error, stackTrace) {
             debugPrint('Image render error: $error');
-            return widget.errorWidget ?? _buildErrorPlaceholder(context);
+            return _buildErrorPlaceholder(context);
           },
-        );
-      },
+        ),
+        // Gradient overlay for better text readability
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.6),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // Scanned Image Label
+        Positioned(
+          bottom: 16,
+          left: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.photo_camera_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Scanned Image',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildErrorPlaceholder(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      height: widget.height,
-      width: widget.width ?? double.infinity,
       color: theme.colorScheme.error.withOpacity(0.05),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: theme.colorScheme.error.withOpacity(0.1),
               shape: BoxShape.circle,
@@ -222,7 +246,7 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           OutlinedButton.icon(
             onPressed: _reloadImage,
             icon: const Icon(Icons.refresh_rounded, size: 18),
@@ -230,6 +254,7 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.colorScheme.error,
               side: BorderSide(color: theme.colorScheme.error),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
         ],
@@ -240,22 +265,20 @@ class _ScannedImageSectionState extends State<ScannedImageSection> {
   Widget _buildLoadingIndicator(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      height: widget.height,
-      width: widget.width ?? double.infinity,
       color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 40,
-              height: 40,
+              width: 50,
+              height: 50,
               child: CircularProgressIndicator(
                 strokeWidth: 3,
                 color: theme.colorScheme.primary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               'Loading image...',
               style: theme.textTheme.bodyMedium?.copyWith(

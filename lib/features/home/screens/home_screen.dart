@@ -10,10 +10,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/widgets/floating_orb.dart';
+import '../../auth/Login_Screen/services/guest_service.dart';
 import 'bottom_sheet_widgets/scan_options_bottomsheet.dart';
 import 'components/all_scans_dialog_content.dart';
 import 'components/custom_home_app_bar.dart';
 import 'components/first_time_user_guide.dart';
+import 'components/guest_mode_banner.dart';
 import 'components/loading_section.dart';
 import 'components/recent_scan_section.dart';
 import 'components/scan_service.dart';
@@ -44,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late final Animation<double> _pulseAnimation;
 
   final ScanService _scanService = ScanService();
+  final GuestService _guestService = GuestService();
   static const int _maxRecentScans = 50;
 
   /* --------------------------------------------------------------------- *
@@ -53,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeAnimations();
+    _initializeGuestService();
     _loadFirstTimeUser();
     _loadRecentScans();
 
@@ -60,6 +64,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleRouteArguments();
     });
+  }
+
+  Future<void> _initializeGuestService() async {
+    await _guestService.initialize();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -157,6 +168,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
    *  Data Loading
    * --------------------------------------------------------------------- */
   Future<void> _loadRecentScans() async {
+    // Guest users cannot view history
+    if (_guestService.isGuestMode) {
+      if (mounted) {
+        setState(() {
+          _recentScans.clear();
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
     if (!mounted) return;
     setState(() => _isLoading = true);
 
@@ -184,6 +206,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _refreshScans() async {
+    if (_guestService.isGuestMode) {
+      _showSnackBar(
+        _guestService.getRestrictionMessage('view_history'),
+        true,
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
     await _loadRecentScans();
     if (mounted) {
@@ -195,6 +225,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
    *  Scan Handling
    * --------------------------------------------------------------------- */
   void _handleNewScan(Map<String, dynamic> newScan) {
+    // Guests cannot save scans
+    if (_guestService.isGuestMode) return;
+
     final id = newScan['id']?.toString();
     if (id == null || _recentScans.any((s) => s['id']?.toString() == id)) {
       return;
@@ -269,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             AppMeasurements.getResponsiveBorderRadius(context),
           ),
         ),
-        duration: const Duration(seconds: 2),
+        duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
   }
@@ -278,6 +311,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
    *  Bottom Sheets / Dialogs
    * --------------------------------------------------------------------- */
   Future<void> _showAllScansDialog() async {
+    if (_guestService.isGuestMode) {
+      _showSnackBar(
+        _guestService.getRestrictionMessage('view_history'),
+        true,
+      );
+      return;
+    }
+
     HapticFeedback.lightImpact();
     if (!mounted) return;
 
@@ -311,7 +352,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-
 
   /* --------------------------------------------------------------------- *
    *  Build
@@ -372,23 +412,35 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         physics: const AlwaysScrollableScrollPhysics(),
                         children: [
+                          // Guest Mode Banner
+                          ListenableBuilder(
+                            listenable: _guestService,
+                            builder: (context, _) {
+                              return GuestModeBanner(guestService: _guestService);
+                            },
+                          ),
+
                           const WeatherCard(),
                           SizedBox(height: padding * 0.8),
                           const SpeciesGridWidget(),
                           SizedBox(height: padding * 0.8),
-                          if (_isLoading)
+
+                          // Show appropriate content based on guest mode
+                          if (_guestService.isGuestMode)
+                            _buildGuestModeContent()
+                          else if (_isLoading)
                             const LoadingSection()
                           else if (_isFirstTimeUser && _recentScans.isEmpty)
-                            const FirstTimeUserGuide()
-                          else
-                            RecentScansSection(
-                              key: const ValueKey('recent_scans'),
-                              recentScans: _recentScans,
-                              scaleAnimation: _scaleAnimation,
-                              onDeleteScan: _deleteScan,
-                              onShowAllScans: _showAllScansDialog,
-                              onShowOptions: _showScanOptionsBottomSheet,
-                            ),
+                              const FirstTimeUserGuide()
+                            else
+                              RecentScansSection(
+                                key: const ValueKey('recent_scans'),
+                                recentScans: _recentScans,
+                                scaleAnimation: _scaleAnimation,
+                                onDeleteScan: _deleteScan,
+                                onShowAllScans: _showAllScansDialog,
+                                onShowOptions: _showScanOptionsBottomSheet,
+                              ),
                         ],
                       );
                     },
@@ -398,6 +450,50 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildGuestModeContent() {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: AppMeasurements.getResponsivePadding(context) * 0.4,
+      ),
+      padding: EdgeInsets.all(
+        AppMeasurements.getResponsivePadding(context),
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(
+          AppMeasurements.getResponsiveBorderRadius(context),
+        ),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.history_rounded,
+            size: 48,
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+          ),
+          SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context)),
+          Text(
+            'History Not Available',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: AppMeasurements.getResponsiveSmallPadding(context) * 0.5),
+          Text(
+            'Scan history is only available for registered users. Sign in to save and view your scan history.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

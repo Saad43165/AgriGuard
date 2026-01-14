@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'section_header.dart';
 
 class NextStepsCard extends StatelessWidget {
   final List<ActionItemData> actionItems;
@@ -10,29 +9,27 @@ class NextStepsCard extends StatelessWidget {
       ActionItemData(
         icon: Icons.history_rounded,
         title: 'Monitor Progress',
-        subtitle: 'Check back in 3-5 days',
+        subtitle: 'Check back in 3-5 days to track healing progress',
+        color: Colors.blue,
       ),
       ActionItemData(
         icon: Icons.local_pharmacy_rounded,
-        title: 'Purchase Treatment',
-        subtitle: 'Find recommended products',
+        title: 'Get Treatment Products',
+        subtitle: 'Find recommended products at your local store',
+        color: Colors.green,
+      ),
+      ActionItemData(
+        icon: Icons.people_rounded,
+        title: 'Consult Expert',
+        subtitle: 'Contact a specialist if symptoms worsen',
+        color: Colors.orange,
       ),
     ],
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader(
-          title: 'Next Steps',
-          icon: Icons.next_plan_rounded,
-        ),
-        const SizedBox(height: 12),
-        _buildNextStepsCard(context),
-      ],
-    );
+    return _buildNextStepsCard(context);
   }
 
   Widget _buildNextStepsCard(BuildContext context) {
@@ -46,7 +43,7 @@ class NextStepsCard extends StatelessWidget {
             : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.15),
+          color: theme.colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
@@ -57,9 +54,51 @@ class NextStepsCard extends StatelessWidget {
           ),
         ],
       ),
-      child: actionItems.isEmpty
-          ? _buildEmptyState(context)
-          : _buildActionItemsList(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.next_plan_rounded,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Next Steps',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          actionItems.isEmpty
+              ? _buildEmptyState(context)
+              : _buildActionItemsList(context),
+        ],
+      ),
     );
   }
 
@@ -67,7 +106,7 @@ class NextStepsCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       child: Center(
         child: Column(
           children: [
@@ -110,6 +149,7 @@ class NextStepsCard extends StatelessWidget {
     required bool isLast,
   }) {
     final theme = Theme.of(context);
+    final itemColor = item.color ?? theme.colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -122,54 +162,82 @@ class NextStepsCard extends StatelessWidget {
           ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Icon(
-                  item.icon,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: item.onTap,
+          borderRadius: BorderRadius.only(
+            bottomLeft: isLast ? const Radius.circular(16) : Radius.zero,
+            bottomRight: isLast ? const Radius.circular(16) : Radius.zero,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon Badge
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        itemColor.withOpacity(0.2),
+                        itemColor.withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: itemColor.withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
-                  if (item.subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      item.subtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      ),
+                  child: Center(
+                    child: Icon(
+                      item.icon,
+                      size: 22,
+                      color: itemColor,
                     ),
-                  ],
-                ],
-              ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      if (item.subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          item.subtitle,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                // Arrow
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -181,11 +249,13 @@ class ActionItemData {
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final Color? color;
 
   const ActionItemData({
     required this.icon,
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.color,
   });
 }
