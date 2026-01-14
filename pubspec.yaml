@@ -54,6 +54,9 @@ flutter:
     - assets/models/plant_species_dynamic_quant.tflite
     - assets/models/labels.txt
     - assets/images/
+    - assets/models/plant_disease_dynamic_quant.tflite
+    - assets/models/disease_labels.txt
+    - assets/data/disease_mapping.json
 
 # Launcher Icon Configuration
 flutter_icons:

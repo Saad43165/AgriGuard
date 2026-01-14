@@ -16,7 +16,7 @@ class PlantIdService {
   static const String _labelsPath = 'assets/models/labels.txt';
   static const int _inputSize = 224;
   static const int _numClasses = 12;
-  static const double _oodThreshold = 0.70; // Lowered threshold for testing
+  static const double _oodThreshold = 0.80; // Lowered threshold for testing
 
   // Model specs discovered at runtime
   late TensorType _inputType;

@@ -1,0 +1,401 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Plant disease causes database - compact version with only causes",
+    "last_updated": "2026-01-14",
+    "usage": "Use plant species and disease name to lookup specific causes"
+  },
+
+  "plant_disease_causes": {
+    "Apple___Apple_scab": {
+      "plant": "Apple",
+      "disease": "Apple scab",
+      "causes": [
+        "Fungal infection caused by Venturia inaequalis",
+        "Thrives in cool, wet spring weather (15-24°C)",
+        "Spreads through water splash and wind-dispersed spores",
+        "Overwintering fungus in fallen infected leaves",
+        "High humidity (>90%) and prolonged leaf wetness (6+ hours)"
+      ]
+    },
+
+    "Apple___Black_rot": {
+      "plant": "Apple",
+      "disease": "Black rot",
+      "causes": [
+        "Fungal pathogen Botryosphaeria obtusa",
+        "Infects through wounds, cuts, or natural openings in bark",
+        "Warm, humid weather (20-28°C) promotes infection",
+        "Spreads via rain splash and wind",
+        "Overwinters in mummified fruit and branch cankers"
+      ]
+    },
+
+    "Apple___Cedar_apple_rust": {
+      "plant": "Apple",
+      "disease": "Cedar apple rust",
+      "causes": [
+        "Fungal disease requiring two hosts: apple trees and Eastern red cedar/juniper",
+        "Spores travel from cedar galls during wet spring weather",
+        "Cool, moist spring conditions (10-20°C) favor infection",
+        "Wind-dispersed spores can travel several miles from cedar trees",
+        "Proximity to Eastern red cedar or juniper increases risk significantly"
+      ]
+    },
+
+    "Apple___healthy": {
+      "plant": "Apple",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Bell_pepper___Bacterial_spot": {
+      "plant": "Bell pepper",
+      "disease": "Bacterial spot",
+      "causes": [
+        "Bacterial pathogen Xanthomonas campestris pv. vesicatoria",
+        "Enters plant through stomata, hydathodes, and wounds",
+        "Spread by water splash from rain and overhead irrigation",
+        "Warm temperatures (24-30°C) with high humidity",
+        "Contaminated seeds, transplants, or infected plant debris"
+      ]
+    },
+
+    "Bell_pepper___healthy": {
+      "plant": "Bell pepper",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Cherry___Powdery_mildew": {
+      "plant": "Cherry",
+      "disease": "Powdery mildew",
+      "causes": [
+        "Fungal pathogen Podosphaera clandestina",
+        "Warm days (21-27°C) and cool nights (15-21°C) favor development",
+        "Does not require water on leaf surface (unlike most fungi)",
+        "Spreads by wind-borne spores (conidia)",
+        "Poor air circulation and dense canopy increase severity"
+      ]
+    },
+
+    "Cherry___healthy": {
+      "plant": "Cherry",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Corn_(Maize)___Cercospora_leaf_spot": {
+      "plant": "Corn (Maize)",
+      "disease": "Cercospora leaf spot (Gray leaf spot)",
+      "causes": [
+        "Fungal pathogen Cercospora zeae-maydis",
+        "Warm temperatures (22-30°C) with high humidity (>90%)",
+        "Extended periods of leaf wetness and dew",
+        "Overwinters in corn crop residue on soil surface",
+        "Spreads by wind-blown spores and rain splash"
+      ]
+    },
+
+    "Corn_(Maize)___Common_rust": {
+      "plant": "Corn (Maize)",
+      "disease": "Common rust",
+      "causes": [
+        "Fungal pathogen Puccinia sorghi",
+        "Cool to moderate temperatures (16-25°C)",
+        "High humidity and leaf wetness from dew or rain",
+        "Spores blown in from southern regions by wind currents",
+        "Cannot overwinter in cold climates (needs living host)"
+      ]
+    },
+
+    "Corn_(Maize)___Northern_Leaf_Blight": {
+      "plant": "Corn (Maize)",
+      "disease": "Northern Leaf Blight",
+      "causes": [
+        "Fungal pathogen Exserohilum turcicum (Setosphaeria turcica)",
+        "Moderate temperatures (18-27°C)",
+        "Prolonged leaf wetness (6-18 hours) from rain or dew",
+        "Overwinters in corn debris and crop residue",
+        "Spreads by wind-blown spores during humid conditions"
+      ]
+    },
+
+    "Corn_(Maize)___healthy": {
+      "plant": "Corn (Maize)",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Grape___Black_rot": {
+      "plant": "Grape",
+      "disease": "Black rot",
+      "causes": [
+        "Fungal pathogen Guignardia bidwellii",
+        "Warm, wet weather (25-30°C) during bloom and fruit set",
+        "Overwinters in mummified berries on ground and infected canes",
+        "Spores released during rain events and spread by splashing water",
+        "High humidity and frequent rainfall promote rapid spread"
+      ]
+    },
+
+    "Grape___Esca_(Black_Measles)": {
+      "plant": "Grape",
+      "disease": "Esca (Black Measles)",
+      "causes": [
+        "Complex of wood-rotting fungi including Phaeomoniella chlamydospora and Phaeoacremonium species",
+        "Enters vines through pruning wounds and natural cracks",
+        "Heat stress and water deficit during summer trigger symptom expression",
+        "Spreads through infected propagation material and pruning tools",
+        "Older vines (8+ years) are more susceptible"
+      ]
+    },
+
+    "Grape___Leaf_blight": {
+      "plant": "Grape",
+      "disease": "Leaf blight (Isariopsis leaf spot)",
+      "causes": [
+        "Fungal pathogen Pseudocercospora vitis",
+        "Warm, humid conditions (24-28°C) with high moisture",
+        "Poor air circulation in dense canopies",
+        "Extended periods of leaf wetness from rain or dew",
+        "Spreads by rain splash and infected plant debris"
+      ]
+    },
+
+    "Grape___healthy": {
+      "plant": "Grape",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Peach___Bacterial_spot": {
+      "plant": "Peach",
+      "disease": "Bacterial spot",
+      "causes": [
+        "Bacterial pathogen Xanthomonas arboricola pv. pruni",
+        "Enters through stomata, lenticels, and mechanical wounds",
+        "Warm, wet spring weather (24-30°C) promotes spread",
+        "Overwinters in twig cankers, bud scales, and infected tissues",
+        "Wind-driven rain spreads bacteria between trees"
+      ]
+    },
+
+    "Peach___healthy": {
+      "plant": "Peach",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Potato___Early_blight": {
+      "plant": "Potato",
+      "disease": "Early blight",
+      "causes": [
+        "Fungal pathogen Alternaria solani",
+        "Warm temperatures (24-29°C) with alternating wet and dry periods",
+        "High humidity and frequent rain or dew",
+        "Stressed plants (nutrient deficiency, drought) are more susceptible",
+        "Overwinters in infected crop debris and soil"
+      ]
+    },
+
+    "Potato___Late_blight": {
+      "plant": "Potato",
+      "disease": "Late blight",
+      "causes": [
+        "Oomycete pathogen Phytophthora infestans (water mold, not true fungus)",
+        "Cool, wet weather (10-25°C) with very high humidity (>90%)",
+        "Overcast conditions and frequent rain or heavy dew",
+        "Spreads rapidly by wind-blown sporangia over long distances",
+        "Can originate from infected seed potatoes or volunteer plants"
+      ]
+    },
+
+    "Potato___healthy": {
+      "plant": "Potato",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Soybean___Bacterial_blight": {
+      "plant": "Soybean",
+      "disease": "Bacterial blight",
+      "causes": [
+        "Bacterial pathogen Pseudomonas syringae pv. glycinea",
+        "Cool, wet weather (18-24°C) favors disease development",
+        "Enters plants through stomata and leaf wounds",
+        "Seed-borne pathogen spreads to new plantings",
+        "Mechanical damage from hail, wind, or equipment increases infection"
+      ]
+    },
+
+    "Strawberry___Leaf_scorch": {
+      "plant": "Strawberry",
+      "disease": "Leaf scorch",
+      "causes": [
+        "Fungal pathogen Diplocarpon earlianum",
+        "Warm, humid weather (24-28°C)",
+        "Spreads by rain splash and overhead irrigation",
+        "Overwinters in infected leaves and plant debris",
+        "Older, mature leaves are more susceptible than young leaves"
+      ]
+    },
+
+    "Strawberry___healthy": {
+      "plant": "Strawberry",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Tomato___Bacterial_spot": {
+      "plant": "Tomato",
+      "disease": "Bacterial spot",
+      "causes": [
+        "Bacterial pathogens: four Xanthomonas species (X. euvesicatoria, X. vesicatoria, X. perforans, X. gardneri)",
+        "Warm, wet weather (24-30°C) with high humidity",
+        "Spread by water splash from rain, irrigation, and wind-driven rain",
+        "Seed-borne and can be introduced via infected transplants",
+        "Enters through stomata and wounds on leaves, stems, and fruit"
+      ]
+    },
+
+    "Tomato___Early_blight": {
+      "plant": "Tomato",
+      "disease": "Early blight",
+      "causes": [
+        "Fungal pathogen Alternaria solani",
+        "Warm temperatures (24-29°C) with alternating wet and dry conditions",
+        "High humidity and leaf wetness from rain or dew",
+        "Plant stress from nutrient deficiency or drought increases susceptibility",
+        "Overwinters in crop debris and infected plant material in soil"
+      ]
+    },
+
+    "Tomato___Late_blight": {
+      "plant": "Tomato",
+      "disease": "Late blight",
+      "causes": [
+        "Oomycete pathogen Phytophthora infestans",
+        "Cool, wet weather (10-25°C) with very high humidity (>90%)",
+        "Prolonged leaf wetness from rain, dew, or fog",
+        "Wind-dispersed sporangia can travel miles from infected plants",
+        "Can spread from nearby infected potato fields or volunteer potato plants"
+      ]
+    },
+
+    "Tomato___Septoria_leaf_spot": {
+      "plant": "Tomato",
+      "disease": "Septoria leaf spot",
+      "causes": [
+        "Fungal pathogen Septoria lycopersici",
+        "Warm, wet weather (20-25°C) with high humidity",
+        "Spreads by rain splash and overhead watering",
+        "Overwinters in infected crop debris and soil",
+        "Requires extended periods of leaf wetness (48+ hours)"
+      ]
+    },
+
+    "Tomato___Yellow_Leaf_Curl_Virus": {
+      "plant": "Tomato",
+      "disease": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+      "causes": [
+        "Viral disease (Begomovirus) transmitted exclusively by silverleaf whitefly (Bemisia tabaci)",
+        "Cannot be cured once plant is infected",
+        "Warm weather (25-30°C) increases whitefly populations",
+        "Whiteflies acquire virus by feeding on infected plants (15-30 minutes)",
+        "Spreads rapidly in greenhouse conditions with poor whitefly control"
+      ]
+    },
+
+    "Tomato___healthy": {
+      "plant": "Tomato",
+      "disease": "Healthy",
+      "causes": []
+    },
+
+    "Wheat___Stripe_rust": {
+      "plant": "Wheat",
+      "disease": "Stripe rust (Yellow rust)",
+      "causes": [
+        "Fungal pathogen Puccinia striiformis f. sp. tritici",
+        "Cool, moist conditions (10-15°C) with high humidity",
+        "Spreads by wind-borne urediniospores over hundreds of miles",
+        "Can travel intercontinentally on air currents",
+        "Most damaging in cool wheat-growing regions"
+      ]
+    }
+  },
+
+  "general_disease_causes": {
+    "bacterial_spot": {
+      "disease_type": "Bacterial disease",
+      "general_causes": [
+        "Caused by Xanthomonas bacteria species",
+        "Warm, wet weather conditions promote spread",
+        "Enters plants through natural openings (stomata) and wounds",
+        "Spread by water splash, rain, and contaminated tools",
+        "Can be seed-borne or introduced via infected transplants"
+      ]
+    },
+
+    "fungal_leaf_spot": {
+      "disease_type": "Fungal disease",
+      "general_causes": [
+        "Various fungal pathogens (Alternaria, Cercospora, Septoria species)",
+        "High humidity and prolonged leaf wetness",
+        "Warm temperatures varying by specific pathogen",
+        "Spreads by rain splash and wind-blown spores",
+        "Overwinters in crop debris and soil"
+      ]
+    },
+
+    "rust_disease": {
+      "disease_type": "Fungal disease (Rust)",
+      "general_causes": [
+        "Caused by Puccinia or related rust fungi",
+        "Moderate temperatures with high humidity",
+        "Wind disperses spores over long distances",
+        "Some rust diseases require alternate host plants",
+        "Extended periods of leaf wetness from dew or rain"
+      ]
+    },
+
+    "blight": {
+      "disease_type": "Fungal/Oomycete disease",
+      "general_causes": [
+        "Various pathogens (Alternaria, Phytophthora, Exserohilum species)",
+        "Specific weather conditions vary by pathogen type",
+        "Rapid spread under favorable conditions",
+        "Can be devastating if left uncontrolled",
+        "Overwinters in crop debris, soil, or infected plant material"
+      ]
+    },
+
+    "powdery_mildew": {
+      "disease_type": "Fungal disease",
+      "general_causes": [
+        "Various powdery mildew fungi",
+        "Warm days with cool nights",
+        "Does not require water on leaf surface (unique among fungi)",
+        "Spreads by wind-borne spores",
+        "Poor air circulation increases severity"
+      ]
+    },
+
+    "viral_disease": {
+      "disease_type": "Viral disease",
+      "general_causes": [
+        "Transmitted by insect vectors (whiteflies, aphids, leafhoppers)",
+        "Cannot be cured once plant is infected",
+        "Spread by infected transplants and propagation material",
+        "Vector insects move virus between plants while feeding",
+        "Warm weather often increases vector populations"
+      ]
+    }
+  },
+
+  "unknown_plant_response": {
+    "message": "Plant species not identified. Disease-specific causes shown below.",
+    "recommendation": "For accurate diagnosis, please identify the plant species first using the species identification feature."
+  }
+}
