@@ -1,435 +1,305 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/app_routes.dart';
-import '../../../../core/widgets/severity_indicator.dart';
-import 'history_measurements.dart';
-import 'history_theme_config.dart';
+import '../../../../core/constants/app_measurements.dart';
+import '../../../ResultScreen/presentation/results_screen.dart';
+import '../../../advance_result_screen/advanced_result_screen.dart';
 
-/// Individual history card widget
 class HistoryCardWidget extends StatelessWidget {
   final Map<String, dynamic> scan;
   final int index;
   final VoidCallback onDelete;
+  final VoidCallback? onTap; // Add this
 
   const HistoryCardWidget({
     super.key,
     required this.scan,
     required this.index,
     required this.onDelete,
+    this.onTap, // Add this
   });
 
-  String _formatTimestamp(dynamic timestamp) {
+  // Check if scan is advanced
+  bool _isAdvancedScan() {
+    return scan['isAdvanced'] as bool? ??
+        scan['scanType']?.toString() == 'advanced' ||
+            scan['analysisSource']?.toString() == 'gemini' ||
+            scan['analysisSource']?.toString() == 'plantid' ||
+            scan['analysisSource']?.toString() == 'plantId';
+  }
+
+  // Convert treatment to list
+  List<String> _convertTreatmentToList(dynamic treatment) {
+    if (treatment == null) return [];
+    if (treatment is List) return List<String>.from(treatment);
+    if (treatment is String) {
+      return treatment.split('. ').where((s) => s.isNotEmpty).toList();
+    }
+    return [];
+  }
+
+  // Format date
+  String _formatDate(dynamic date) {
+    if (date == null) return 'Unknown';
     try {
-      DateTime dateTime;
-
-      if (timestamp is Timestamp) {
-        dateTime = timestamp.toDate();
-      } else if (timestamp is String) {
-        dateTime = DateTime.parse(timestamp);
-      } else if (timestamp is DateTime) {
-        dateTime = timestamp;
-      } else {
-        return 'Unknown date';
+      DateTime? dt;
+      if (date is int) {
+        dt = DateTime.fromMillisecondsSinceEpoch(date);
+      } else if (date is String) {
+        dt = DateTime.tryParse(date);
+      } else if (date is DateTime) {
+        dt = date;
       }
-
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inDays == 0) {
-        if (difference.inHours == 0) {
-          if (difference.inMinutes == 0) return 'Just now';
-          return '${difference.inMinutes}m ago';
-        }
-        return '${difference.inHours}h ago';
-      }
-
-      if (difference.inDays == 1) return 'Yesterday';
-      if (difference.inDays < 7) return '${difference.inDays}d ago';
-
-      return DateFormat('MMM d').format(dateTime);
-    } catch (e) {
-      return 'Unknown';
+      return dt != null ? DateFormat('MMM dd, yyyy').format(dt) : 'Invalid';
+    } catch (_) {
+      return 'Error';
     }
   }
 
-  Map<String, dynamic> _convertScanForNavigation(Map<String, dynamic> data) {
-    final converted = Map<String, dynamic>.from(data);
-    final timestamp = data['originalTimestamp'] ?? data['timestamp'];
-
-    if (timestamp is Timestamp) {
-      converted['timestamp'] = timestamp.toDate().toIso8601String();
-    } else if (timestamp is DateTime) {
-      converted['timestamp'] = timestamp.toIso8601String();
+  // Get severity color
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'critical':
+        return Colors.red;
+      case 'high':
+        return Colors.deepOrange;
+      case 'medium':
+        return Colors.orange;
+      case 'low':
+        return Colors.yellow.shade700;
+      case 'healthy':
+      case 'none':
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
-
-    return converted;
   }
+
+  // Get advanced data
+  Map<String, dynamic>? _getAdvancedData() {
+    if (_isAdvancedScan()) {
+      return scan['advancedData'] is Map
+          ? Map<String, dynamic>.from(scan['advancedData'])
+          : scan['rawData'] is Map
+          ? Map<String, dynamic>.from(scan['rawData'])
+          : null;
+    }
+    return null;
+  }
+
+  // Navigation handlers - FIXED: Use the onTap callback instead of local navigation
+  void _handleTap(BuildContext context) {
+    HapticFeedback.lightImpact();
+
+    // IMPORTANT: Use the provided onTap callback which comes from HistoryScreen
+    // This ensures proper data is passed with all history flags
+    if (onTap != null) {
+      onTap!();
+    } else {
+      // Fallback: Show error if onTap is not provided
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: Navigation not configured'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // REMOVE THESE METHODS - They are causing the problem!
+  // The navigation should be handled by HistoryScreen, not HistoryCardWidget
+  // void _navigateToAdvancedResults(BuildContext context) {
+  //   // REMOVED - This causes duplicates because it doesn't pass IDs properly
+  // }
+
+  // void _navigateToRegularResults(BuildContext context) {
+  //   // REMOVED - This causes duplicates because it doesn't pass IDs properly
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-    final cardStyle = HistoryThemeConfig.getCardStyle(isDark, colorScheme);
-
-    final diagnosis = scan['diagnosis']?.toString() ?? 'Unknown Disease';
-    final severity = scan['severity']?.toString() ?? 'Unknown';
+    final theme = Theme.of(context);
+    final isAdvanced = _isAdvancedScan();
+    final diagnosis = scan['diagnosis']?.toString() ?? 'Unknown';
+    final plantName = scan['plantName']?.toString() ?? 'Unknown Plant';
+    final severity = scan['severity']?.toString() ?? 'Medium';
     final confidence = scan['confidence']?.toString() ?? '0';
-    final cropType = scan['cropType']?.toString() ?? 'Unknown';
-    final plantName = scan['plantName']?.toString() ?? '';
-    final timestamp = scan['originalTimestamp'] ?? scan['timestamp'];
-    final displayTime = _formatTimestamp(timestamp);
+    final date = _formatDate(scan['timestamp'] ?? scan['scanDate']);
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: cardStyle['backgroundColors'],
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isAdvanced
+              ? theme.colorScheme.primary.withOpacity(0.3)
+              : theme.colorScheme.outline.withOpacity(0.1),
+          width: isAdvanced ? 2 : 1,
         ),
-        borderRadius: BorderRadius.circular(HistoryMeasurements.cardBorderRadius),
-        border: Border.all(color: cardStyle['borderColor']),
         boxShadow: [
           BoxShadow(
-            color: cardStyle['shadowColor'],
-            blurRadius: HistoryMeasurements.cardBlurRadius,
-            offset: HistoryMeasurements.cardShadowOffset,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            final navigableScan = _convertScanForNavigation(scan);
-            Navigator.pushNamed(
-              context,
-              AppRoutes.results,
-              arguments: {'scanData': navigableScan},
-            );
-          },
-          borderRadius: BorderRadius.circular(HistoryMeasurements.cardBorderRadius),
+          onTap: () => _handleTap(context),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(HistoryMeasurements.cardPadding),
-            child: Row(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildScanImage(context, isDark),
-                const SizedBox(width: HistoryMeasurements.contentSpacingExtraLarge),
-                Expanded(
-                  child: _buildCardContent(
-                    context,
-                    isDark,
-                    colorScheme,
-                    diagnosis,
-                    severity,
-                    confidence,
-                    cropType,
-                    plantName,
-                    displayTime,
-                  ),
+                // Header row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Plant name and advanced badge
+                    Row(
+                      children: [
+                        Text(
+                          plantName,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: AppMeasurements.getResponsiveFontSize(
+                                context, baseSize: 16
+                            ),
+                          ),
+                        ),
+                        if (isAdvanced) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'AI',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+
+                    // Confidence
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getSeverityColor(severity).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getSeverityColor(severity).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        '$confidence%',
+                        style: TextStyle(
+                          color: _getSeverityColor(severity),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: HistoryMeasurements.contentSpacingLarge),
-                _buildDeleteButton(context),
+
+                const SizedBox(height: 8),
+
+                // Diagnosis and severity
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        diagnosis,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppMeasurements.getResponsiveFontSize(
+                              context, baseSize: 14
+                          ),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getSeverityColor(severity).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        severity.toUpperCase(),
+                        style: TextStyle(
+                          color: _getSeverityColor(severity),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Date and source
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          date,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    Text(
+                      isAdvanced
+                          ? (scan['analysisSource']?.toString() ?? 'AI Scan')
+                          : 'On-Device Scan',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildScanImage(BuildContext context, bool isDark) {
-    final imagePath = scan['imagePath'] as String?;
-
-    Widget imageWidget;
-
-    if (imagePath == null || imagePath.isEmpty) {
-      imageWidget = _buildPlaceholderImage(context, isDark);
-    } else {
-      final file = File(imagePath);
-      if (!file.existsSync()) {
-        imageWidget = _buildPlaceholderImage(context, isDark);
-      } else {
-        imageWidget = ClipRRect(
-          borderRadius: BorderRadius.circular(HistoryMeasurements.imageBorderRadius),
-          child: Image.file(
-            file,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildPlaceholderImage(context, isDark),
-          ),
-        );
-      }
-    }
-
-    return Container(
-      width: HistoryMeasurements.imageSize,
-      height: HistoryMeasurements.imageSize,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(HistoryMeasurements.imageBorderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
-                : Colors.black.withOpacity(0.1),
-            blurRadius: HistoryMeasurements.imageBlurRadius,
-            offset: HistoryMeasurements.imageShadowOffset,
-          ),
-        ],
-      ),
-      child: imageWidget,
-    );
-  }
-
-  Widget _buildPlaceholderImage(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-            Theme.of(context).colorScheme.primary.withOpacity(0.15),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.15),
-          ]
-              : [
-            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(HistoryMeasurements.imageBorderRadius),
-        border: Border.all(
-          color: isDark
-              ? Theme.of(context).colorScheme.outline.withOpacity(0.1)
-              : Theme.of(context).colorScheme.outline.withOpacity(0.15),
-        ),
-      ),
-      child: Icon(
-        Icons.spa_rounded,
-        size: HistoryMeasurements.placeholderIconSize,
-        color: isDark
-            ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-            : Theme.of(context).colorScheme.primary.withOpacity(0.4),
-      ),
-    );
-  }
-
-  Widget _buildCardContent(
-      BuildContext context,
-      bool isDark,
-      ColorScheme colorScheme,
-      String diagnosis,
-      String severity,
-      String confidence,
-      String cropType,
-      String plantName,
-      String displayTime,
-      ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Plant Name Badge
-        if (plantName.isNotEmpty &&
-            plantName != 'Unknown' &&
-            plantName != 'Unknown Plant')
-          _buildPlantNameBadge(context, isDark, plantName),
-
-        // Disease name
-        Text(
-          diagnosis,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            height: HistoryMeasurements.titleLineHeight,
-            color: HistoryThemeConfig.getTextColor(isDark),
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: HistoryMeasurements.contentSpacingMedium),
-
-        // Badges row
-        Row(
-          children: [
-            Flexible(
-              child: _buildCropTypeBadge(context, isDark, colorScheme, cropType),
-            ),
-            const SizedBox(width: HistoryMeasurements.badgeSpacing),
-            _buildConfidenceBadge(context, isDark, confidence),
-          ],
-        ),
-        const SizedBox(height: HistoryMeasurements.contentSpacingMedium),
-
-        // Severity indicator
-        SeverityIndicator(severity: severity),
-        const SizedBox(height: HistoryMeasurements.contentSpacingMedium),
-
-        // Timestamp
-        _buildTimestamp(context, isDark, displayTime),
-      ],
-    );
-  }
-
-  Widget _buildPlantNameBadge(BuildContext context, bool isDark, String plantName) {
-    final style = HistoryThemeConfig.getPlantNameBadgeStyle(isDark);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: HistoryMeasurements.contentSpacingSmall),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: HistoryMeasurements.badgeHorizontalPadding,
-          vertical: HistoryMeasurements.badgeVerticalPadding,
-        ),
-        decoration: BoxDecoration(
-          color: style['backgroundColor'],
-          borderRadius:
-          BorderRadius.circular(HistoryMeasurements.badgeBorderRadius),
-          border: Border.all(
-            color: style['borderColor'],
-            width: HistoryMeasurements.badgeBorderWidth,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.eco_rounded,
-              size: HistoryMeasurements.plantNameBadgeIconSize,
-              color: style['iconColor'],
-            ),
-            const SizedBox(width: HistoryMeasurements.contentSpacingSmall),
-            Flexible(
-              child: Text(
-                plantName,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: style['textColor'],
-                  fontWeight: FontWeight.w700,
-                  fontSize: HistoryMeasurements.plantNameBadgeFontSize,
-                  letterSpacing: 0.2,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCropTypeBadge(
-      BuildContext context,
-      bool isDark,
-      ColorScheme colorScheme,
-      String cropType,
-      ) {
-    final style = HistoryThemeConfig.getCropTypeBadgeStyle(isDark, colorScheme);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: HistoryMeasurements.badgeHorizontalPadding,
-        vertical: HistoryMeasurements.badgeVerticalPadding,
-      ),
-      decoration: BoxDecoration(
-        color: style['backgroundColor'],
-        borderRadius: BorderRadius.circular(HistoryMeasurements.badgeBorderRadius),
-        border: Border.all(
-          color: style['borderColor'],
-          width: HistoryMeasurements.badgeBorderWidth,
-        ),
-      ),
-      child: Text(
-        cropType,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontSize: HistoryMeasurements.cropTypeBadgeFontSize,
-          fontWeight: FontWeight.w700,
-          color: style['textColor'],
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-
-  Widget _buildConfidenceBadge(BuildContext context, bool isDark, String confidence) {
-    final style = HistoryThemeConfig.getConfidenceBadgeStyle(isDark);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: HistoryMeasurements.confidenceBadgeHorizontalPadding,
-        vertical: HistoryMeasurements.badgeVerticalPadding,
-      ),
-      decoration: BoxDecoration(
-        color: style['backgroundColor'],
-        borderRadius: BorderRadius.circular(HistoryMeasurements.badgeBorderRadius),
-        border: Border.all(
-          color: style['borderColor'],
-          width: HistoryMeasurements.badgeBorderWidth,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.verified_rounded,
-            size: HistoryMeasurements.confidenceBadgeIconSize,
-            color: style['iconColor'],
-          ),
-          const SizedBox(width: 3),
-          Text(
-            '$confidence%',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontSize: HistoryMeasurements.confidenceBadgeFontSize,
-              fontWeight: FontWeight.w800,
-              color: style['textColor'],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimestamp(BuildContext context, bool isDark, String displayTime) {
-    return Row(
-      children: [
-        Icon(
-          Icons.access_time_rounded,
-          size: HistoryMeasurements.timestampIconSize,
-          color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
-        ),
-        const SizedBox(width: HistoryMeasurements.contentSpacingSmall),
-        Text(
-          displayTime,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontSize: HistoryMeasurements.timestampFontSize,
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDeleteButton(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        Icons.delete_outline_rounded,
-        size: HistoryMeasurements.deleteButtonSize,
-        color: Theme.of(context).colorScheme.error,
-      ),
-      onPressed: () {
-        HapticFeedback.mediumImpact();
-        onDelete();
-      },
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(
-        minWidth: HistoryMeasurements.deleteButtonMinWidth,
-        minHeight: HistoryMeasurements.deleteButtonMinHeight,
-      ),
-      tooltip: 'Delete',
     );
   }
 }

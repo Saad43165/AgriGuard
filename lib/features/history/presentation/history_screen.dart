@@ -1,14 +1,13 @@
-import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_empty_state.dart';
-import 'package:agriguard_fyp/features/history/presentation/widgets/history_list_view.dart';
-import 'package:agriguard_fyp/features/history/presentation/widgets/history_theme_config.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_scan_card.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_stats_card.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_tab_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../../../core/constants/app_measurements.dart'; // ← ADD THIS IMPORT
-import '../../history/presentation/widgets/floating_orb.dart';
+import '../../../core/widgets/floating_orb.dart';
+import '../../ResultScreen/presentation/results_screen.dart';
+import '../../advance_result_screen/advanced_result_screen.dart';
+import '../../../../core/repositories/scan_repository.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -24,14 +23,18 @@ class _HistoryScreenState extends State<HistoryScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  List<Map<String, dynamic>> _userScans = [];
+  List<Map<String, dynamic>> _onDeviceScans = [];
+  List<Map<String, dynamic>> _advancedScans = [];
   bool _isLoading = true;
   bool _hasError = false;
+  String _selectedTab = 'onDevice';
+  late final ScanRepository _scanRepository;
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _scanRepository = ScanRepository();
     _loadUserScans();
   }
 
@@ -67,62 +70,29 @@ class _HistoryScreenState extends State<HistoryScreen>
         _hasError = false;
       });
 
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-        });
-        return;
+      final onDeviceScans = await _scanRepository.getOnDeviceScans();
+      final advancedScans = await _scanRepository.getAdvancedScans();
+
+      final List<Map<String, dynamic>> onDeviceUiScans = [];
+      final List<Map<String, dynamic>> advancedUiScans = [];
+
+      for (final scan in onDeviceScans) {
+        onDeviceUiScans.add(scan.toHistoryMap());
       }
 
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('scans')
-          .orderBy('timestamp', descending: true)
-          .get();
-
-      final List<Map<String, dynamic>> scans = [];
-
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final scanData = data['scanData'] as Map<String, dynamic>?;
-        final Map<String, dynamic> resolved = scanData ?? data;
-
-        if (resolved['diagnosis'] == null) continue;
-
-        String confidenceStr = '0';
-        final conf = resolved['confidence'];
-        if (conf is num) {
-          confidenceStr = conf.toStringAsFixed(0);
-        } else if (conf is String) {
-          final numValue = num.tryParse(conf);
-          confidenceStr = numValue != null ? numValue.toStringAsFixed(0) : '0';
-        }
-
-        final originalTimestamp = data['timestamp'];
-
-        scans.add({
-          'id': doc.id,
-          'diagnosis': resolved['diagnosis']?.toString() ?? 'Unknown Disease',
-          'severity': resolved['severity']?.toString() ?? 'Unknown',
-          'confidence': confidenceStr,
-          'treatment': resolved['treatment']?.toString() ?? 'No treatment',
-          'imagePath': resolved['imagePath']?.toString() ?? '',
-          'cropType': resolved['cropType']?.toString() ?? 'Unknown',
-          'plantName': resolved['plantName']?.toString() ?? 'Unknown',
-          'originalTimestamp': originalTimestamp,
-        });
+      for (final scan in advancedScans) {
+        advancedUiScans.add(scan.toHistoryMap());
       }
 
       if (mounted) {
         setState(() {
-          _userScans = scans;
+          _onDeviceScans = onDeviceUiScans;
+          _advancedScans = advancedUiScans;
           _isLoading = false;
         });
       }
     } catch (e) {
+      debugPrint('Error loading scans: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -138,24 +108,28 @@ class _HistoryScreenState extends State<HistoryScreen>
 
     if (!mounted) return;
 
+    final currentScans = _selectedTab == 'onDevice' ? _onDeviceScans : _advancedScans;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          _userScans.isEmpty ? 'No scans found' : 'Refreshed',
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-          ),
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            SizedBox(width: 12),
+            Text(
+              currentScans.isEmpty ? 'No scans found' : 'Refreshed successfully',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppMeasurements.getResponsiveBorderRadius(context),
-          ),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
-        margin: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
+        margin: EdgeInsets.all(16),
       ),
     );
   }
@@ -167,264 +141,294 @@ class _HistoryScreenState extends State<HistoryScreen>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
-    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+  List<Map<String, dynamic>> get _currentScans {
+    return _selectedTab == 'onDevice' ? _onDeviceScans : _advancedScans;
+  }
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const HistoryAppBar(title: 'Scan History'),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: HistoryThemeConfig.getBackgroundGradient(isDark),
-          ),
-        ),
-        child: Stack(
-          children: [
-            ...List.generate(
-              4,
-                  (index) => FloatingOrb(
-                index: index,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              ),
-            ),
-            SafeArea(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: RefreshIndicator(
-                  onRefresh: _refreshScans,
-                  color: Theme.of(context).colorScheme.primary,
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: ScaleTransition(
-                          scale: _scaleAnimation,
-                          child: _buildHeader(context),
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          padding,
-                          smallPadding,
-                          padding,
-                          padding,
-                        ),
-                        sliver: _buildContent(context),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+  void _onScanTap(int index) {
+    final scan = _currentScans[index];
+
+    if (scan['isAdvanced'] == true) {
+      _openAdvancedScan(scan);
+    } else {
+      _openOnDeviceScan(scan);
+    }
+  }
+
+  void _openOnDeviceScan(Map<String, dynamic> scan) {
+    final scanData = {
+      ...scan,
+      'isFromHistory': true,
+      'skipSave': true,
+      'alreadySaved': true,
+      'originalId': scan['id'],
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultsScreen(scanData: scanData),
+      ),
+    );
+  }
+
+  void _openAdvancedScan(Map<String, dynamic> scan) {
+    final analysisResult = {
+      'source': scan['analysisSource']?.toString() ?? 'Gemini',
+      'data': scan['advancedData'] ?? scan['rawData']?['data'] ?? {
+        'plant': scan['plantName'] ?? 'Unknown Plant',
+        'disease': scan['diseaseName'] ?? scan['diagnosis'] ?? 'Unknown Disease',
+        'confidence': scan['confidence'] ?? '0',
+        'severity': scan['severity'] ?? 'Medium',
+        'symptoms': scan['symptoms'] ?? [],
+        'remediation': scan['treatments'] ?? scan['remediation'] ?? [],
+        'precautions': scan['precautions'] ?? [],
+      },
+      'success': true,
+      'hasDiseaseInfo': true,
+      'scanId': scan['id'],
+    };
+
+    final originalScanData = {
+      'imagePath': scan['imagePath'],
+      'imageUrl': scan['imageUrl'],
+      'imageBase64': scan['imageBase64'],
+      'isFromHistory': true,
+      'skipSave': true,
+      'alreadySaved': true,
+      'id': scan['id'],
+      'originalId': scan['id'],
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdvancedResultsScreen(
+          analysisResult: analysisResult,
+          originalScanData: originalScanData,
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
-    final isLargeScreen = AppMeasurements.isLargeScreen(context);
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
 
-    return Container(
-      margin: EdgeInsets.fromLTRB(
-        padding,
-        isLargeScreen ? padding * 1.5 : padding,
-        padding,
-        smallPadding,
-      ),
-      padding: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-            Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(
-          AppMeasurements.getResponsiveBorderRadius(context) * 1.5,
-        ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(smallPadding),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                ],
-              ),
-            ),
-            child: Icon(
-              Icons.history_rounded,
-              size: AppMeasurements.getResponsiveIconSizeLarge(context) * 0.7,
-              color: Theme.of(context).brightness == Brightness.light
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.9)
-                  : Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          SizedBox(height: smallPadding),
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                Color(0xFF1A1F3A).withOpacity(0.95),
+                Color(0xFF0F172A).withOpacity(0.95),
+              ]
+                  : [
+                Color(0xFFFAFAFA).withOpacity(0.95),
+                Color(0xFFF5F5F5).withOpacity(0.95),
               ],
-            ).createShader(bounds),
-            child: Text(
-              'Scan History',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                fontSize: AppMeasurements.getResponsiveFontSize(
-                  context,
-                  baseSize: isLargeScreen ? 28 : 24,
-                ),
-              ),
             ),
           ),
-          SizedBox(height: smallPadding / 2),
-          Text(
-            'Your crop health scans',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              fontSize: AppMeasurements.getResponsiveFontSize(
-                context,
-                baseSize: isLargeScreen ? 16 : 14,
-              ),
+        ),
+        title: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ).createShader(bounds),
+          child: Text(
+            'Scan History',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-          if (_userScans.isNotEmpty) ...[
-            SizedBox(height: smallPadding),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: smallPadding,
-                vertical: smallPadding / 2,
+        ),
+        leading: Padding(
+          padding: EdgeInsets.all(8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                color: Theme.of(context).colorScheme.primary,
               ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.all(8),
+            child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(
-                  AppMeasurements.getResponsiveBorderRadius(context) * 2,
-                ),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                '${_userScans.length} ${_userScans.length == 1 ? 'scan' : 'scans'}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(1),
-                  fontSize: AppMeasurements.getResponsiveFontSize(
-                    context,
-                    baseSize: 12,
-                  ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: _refreshScans,
+                tooltip: 'Refresh',
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+              Color(0xFF0A0E27),
+              Color(0xFF1A1F3A),
+              Color(0xFF0F172A),
+            ]
+                : [
+              Color(0xFFFAFAFA),
+              Color(0xFFF5F5F5),
+              Color(0xFFFFFFFF),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Floating orbs
+            ...List.generate(
+              3,
+                  (i) => FloatingOrb(
+                index: i,
+                maxWidth: size.width,
+                fadeController: _fadeController,
+                scaleAnimation: _scaleAnimation,
+              ),
+            ),
+
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: [
+                    SizedBox(height: 8),
+
+                    // Stats Card
+                    ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: HistoryStatsCard(
+                        totalScans: _onDeviceScans.length + _advancedScans.length,
+                        onDeviceCount: _onDeviceScans.length,
+                        advancedCount: _advancedScans.length,
+                        isLoading: _isLoading,
+                      ),
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // Tab Selector
+                    HistoryTabSelector(
+                      selectedTab: _selectedTab,
+                      onDeviceCount: _onDeviceScans.length,
+                      advancedCount: _advancedScans.length,
+                      onTabChanged: (tab) {
+                        setState(() => _selectedTab = tab);
+                        HapticFeedback.selectionClick();
+                      },
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // Content
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshScans,
+                        color: Theme.of(context).colorScheme.primary,
+                        child: _buildContent(context),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildContent(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-
     if (_isLoading) {
-      return SliverToBoxAdapter(child: _buildLoadingState(context));
+      return _buildLoadingState();
     }
 
     if (_hasError) {
-      return SliverToBoxAdapter(child: _buildErrorState(context));
+      return _buildErrorState();
     }
 
-    if (_userScans.isEmpty) {
-      return const SliverToBoxAdapter(child: HistoryEmptyState());
+    if (_currentScans.isEmpty) {
+      return HistoryEmptyStateWidget(
+        isAdvanced: _selectedTab == 'advanced',
+      );
     }
 
-    return SliverToBoxAdapter(
-      child: HistoryListView(
-        scans: _userScans,
-        onDelete: _showDeleteConfirmationDialog,
-      ),
+    return ListView.builder(
+      physics: BouncingScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: _currentScans.length,
+      itemBuilder: (context, index) {
+        return HistoryScanCard(
+          scan: _currentScans[index],
+          index: index,
+          onTap: () => _onScanTap(index),
+          onDelete: () => _showDeleteConfirmationDialog(index),
+        );
+      },
     );
   }
 
-  Widget _buildLoadingState(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 3,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
-    final isLargeScreen = AppMeasurements.isLargeScreen(context);
-
-    return Container(
-      padding: EdgeInsets.all(padding),
+  Widget _buildLoadingState() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: AppMeasurements.getResponsiveIconSizeLarge(context),
-            color: Theme.of(context).colorScheme.error,
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
-          SizedBox(height: smallPadding),
+          SizedBox(height: 24),
           Text(
-            'Failed to load scans',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            'Loading your scans...',
+            style: TextStyle(
+              fontSize: 16,
               fontWeight: FontWeight.w600,
-              fontSize: AppMeasurements.getResponsiveFontSize(
-                context,
-                baseSize: isLargeScreen ? 22 : 18,
-              ),
-            ),
-          ),
-          SizedBox(height: smallPadding / 2),
-          Text(
-            'Check your connection',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              fontSize: AppMeasurements.getResponsiveFontSize(
-                context,
-                baseSize: 14,
-              ),
-            ),
-          ),
-          SizedBox(height: smallPadding),
-          FilledButton.icon(
-            onPressed: _loadUserScans,
-            icon: Icon(Icons.refresh_rounded,
-                size: AppMeasurements.getResponsiveIconSizeSmall(context)),
-            label: Text(
-              'Try Again',
-              style: TextStyle(
-                fontSize: AppMeasurements.getResponsiveFontSize(
-                  context,
-                  baseSize: 14,
-                ),
-              ),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],
@@ -432,39 +436,97 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Failed to load scans',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Please check your connection and try again',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: _loadUserScans,
+              style: FilledButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: Icon(Icons.refresh_rounded),
+              label: Text('Try Again', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showDeleteConfirmationDialog(int index) async {
-    final scan = _userScans[index];
+    final scan = _currentScans[index];
     final diagnosis = scan['diagnosis']?.toString() ?? 'this scan';
 
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            AppMeasurements.getResponsiveBorderRadius(context),
-          ),
-        ),
-        title: Text(
-          'Delete Scan?',
-          style: TextStyle(
-            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
-          ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.delete_outline_rounded,
+                color: Theme.of(context).colorScheme.error,
+                size: 24,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text('Delete Scan?', style: TextStyle(fontSize: 20)),
+          ],
         ),
         content: Text(
-          'Delete "$diagnosis"? This cannot be undone.',
-          style: TextStyle(
-            fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-          ),
+          'Are you sure you want to delete "$diagnosis"? This action cannot be undone.',
+          style: TextStyle(fontSize: 15),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-              ),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
+            child: Text('Cancel', style: TextStyle(fontSize: 15)),
           ),
           FilledButton(
             onPressed: () {
@@ -473,13 +535,9 @@ class _HistoryScreenState extends State<HistoryScreen>
             },
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
-            child: Text(
-              'Delete',
-              style: TextStyle(
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-              ),
-            ),
+            child: Text('Delete', style: TextStyle(fontSize: 15)),
           ),
         ],
       ),
@@ -488,67 +546,54 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Future<void> _deleteScan(int index) async {
     try {
-      final scan = _userScans[index];
+      final scan = _currentScans[index];
       final scanId = scan['id'] as String?;
-      final uid = FirebaseAuth.instance.currentUser?.uid;
 
-      if (uid == null || scanId == null) return;
+      if (scanId != null) {
+        await _scanRepository.deleteScan(scanId);
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('scans')
-          .doc(scanId)
-          .delete();
-
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        'scanCount': FieldValue.increment(-1),
-      });
-
-      if (mounted) {
         setState(() {
-          _userScans.removeAt(index);
+          if (_selectedTab == 'onDevice') {
+            _onDeviceScans.removeAt(index);
+          } else {
+            _advancedScans.removeAt(index);
+          }
         });
 
         HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Scan deleted',
-              style: TextStyle(
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-              ),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 12),
+                Text('Scan deleted successfully', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              ],
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                AppMeasurements.getResponsiveBorderRadius(context),
-              ),
-            ),
-            duration: const Duration(seconds: 2),
-            margin: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: Duration(seconds: 2),
+            margin: EdgeInsets.all(16),
           ),
         );
       }
     } catch (e) {
+      debugPrint('Error deleting scan: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Failed to delete',
-              style: TextStyle(
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-              ),
+            content: Row(
+              children: [
+                Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 12),
+                Text('Failed to delete scan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              ],
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                AppMeasurements.getResponsiveBorderRadius(context),
-              ),
-            ),
-            margin: EdgeInsets.all(AppMeasurements.getResponsiveSmallPadding(context)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: EdgeInsets.all(16),
           ),
         );
       }

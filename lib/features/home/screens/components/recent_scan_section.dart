@@ -1,4 +1,3 @@
-// lib/features/scan_history/presentation/components/recent_scans_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +10,8 @@ class RecentScansSection extends StatelessWidget {
   final void Function(String?) onDeleteScan;
   final VoidCallback onShowAllScans;
   final void Function(Map<String, dynamic>) onShowOptions;
+  final String sectionTitle;
+  final bool showAdvancedBadge;
 
   const RecentScansSection({
     super.key,
@@ -19,10 +20,14 @@ class RecentScansSection extends StatelessWidget {
     required this.onDeleteScan,
     required this.onShowAllScans,
     required this.onShowOptions,
+    required this.sectionTitle,
+    required this.showAdvancedBadge,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (recentScans.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -30,36 +35,65 @@ class RecentScansSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Compact Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+        // Section Header - REMOVED SCAN COUNT
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Recent Scans',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppMeasurements.getResponsiveFontSize(
-                    context,
-                    baseSize: 18,
+              // Title with icon - WITHOUT COUNT
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: _getSectionColor(theme),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      showAdvancedBadge ? Icons.cloud : Icons.phone_android,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                   ),
-                  letterSpacing: -0.5,
-                ),
+                  const SizedBox(width: 8),
+                  Text(
+                    sectionTitle,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: AppMeasurements.getResponsiveFontSize(
+                        context,
+                        baseSize: 18,
+                      ),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  // REMOVED: Scan count container
+                ],
               ),
+
+              // View All Button
               _buildViewAllButton(context),
             ],
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-        // Compact Horizontal List
+        // Horizontal Scans List
         SizedBox(
-          height: 140, // Reduced from 200
+          height: 160,
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.only(left: 20, right: 20),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             itemCount: recentScans.length,
@@ -68,9 +102,9 @@ class RecentScansSection extends StatelessWidget {
               final scanId = scan['id']?.toString() ?? 'scan_$index';
 
               return Container(
-                width: 130, // Reduced from 160
+                width: 140,
                 margin: EdgeInsets.only(
-                  right: index < recentScans.length - 1 ? 12 : 0,
+                  right: index < recentScans.length - 1 ? 12 : 20,
                 ),
                 child: Hero(
                   tag: 'recent_scan_hero_$scanId',
@@ -88,6 +122,7 @@ class RecentScansSection extends StatelessWidget {
                       index: index,
                       scaleAnimation: scaleAnimation,
                       onShowOptions: (scanData) => onShowOptions(scanData),
+                      showFullPlantName: false,
                     ),
                   ),
                 ),
@@ -95,15 +130,19 @@ class RecentScansSection extends StatelessWidget {
             },
           ),
         ),
+
+        const SizedBox(height: 8),
       ],
     );
   }
 
   Widget _buildViewAllButton(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           HapticFeedback.lightImpact();
           onShowAllScans();
@@ -111,10 +150,15 @@ class RecentScansSection extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.1),
+                theme.colorScheme.secondary.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              color: theme.colorScheme.primary.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -123,8 +167,8 @@ class RecentScansSection extends StatelessWidget {
             children: [
               Text(
                 'View All',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
                 ),
@@ -133,12 +177,19 @@ class RecentScansSection extends StatelessWidget {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 12,
-                color: Theme.of(context).colorScheme.primary,
+                color: theme.colorScheme.primary,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Color _getSectionColor(ThemeData theme) {
+    if (showAdvancedBadge) {
+      return Colors.blue;
+    }
+    return theme.colorScheme.primary;
   }
 }

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import '../../../home/screens/components/scan_service.dart';
+import '../../../../core/services/scan_service.dart';
 
 /// Manages scan operations including saving, retrieving, and validating scans
 class ScanManager {

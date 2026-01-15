@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../../../../services/pdf_generator_service.dart';
+import '../../../../../core/services/pdf_generator_service.dart';
 import '../loading_dialog.dart';
 
 class PdfActionsService {

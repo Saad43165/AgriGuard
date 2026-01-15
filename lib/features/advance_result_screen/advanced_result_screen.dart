@@ -1,14 +1,20 @@
 // lib/features/ResultScreen/presentation/advanced_results_screen.dart
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../../core/constants/app_measurements.dart';
 import '../../../core/widgets/floating_orb.dart';
+import '../../core/models/scan_model.dart';
 import 'components/additional_info_card.dart';
 import 'components/diagnosis_card.dart';
 import 'components/image_preview_results.dart';
-
 import 'components/section_card.dart';
 import 'components/source_badge.dart';
+import '../../../../core/repositories/scan_repository.dart';
 
 class AdvancedResultsScreen extends StatefulWidget {
   final Map<String, dynamic> analysisResult;
@@ -30,10 +36,22 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
 
+  late final ScanRepository _scanRepository;
+
+  bool _isProcessing = false;
+  bool _isAlreadySaved = false;
+  String? _generatedScanId;
+
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
+    _scanRepository = ScanRepository();
+
+    // Safe auto-save after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndAutoSaveScan();
+    });
   }
 
   void _initializeAnimations() {
@@ -59,7 +77,108 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     super.dispose();
   }
 
-  Color _getSeverityColor(String severity) {
+  // Generate unique ID (same logic as ResultsScreen)
+  String _generateScanId() {
+    final dataHash = jsonEncode(widget.analysisResult).hashCode.abs();
+    final imagePathHash = widget.originalScanData['imagePath']?.hashCode ?? 0;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'advanced_${dataHash}_${imagePathHash}_$timestamp';
+  }
+
+// Update the _checkAndAutoSaveScan method in advanced_results_screen.dart
+  Future<void> _checkAndAutoSaveScan() async {
+    // Check all possible flags that indicate this is from history
+    final isFromHistory = widget.originalScanData['isFromHistory'] == true ||
+        widget.originalScanData['skipSave'] == true ||
+        widget.originalScanData['databaseId'] != null;
+
+    if (isFromHistory) {
+      debugPrint('📂 Opening advanced scan from history - skipping auto-save');
+      setState(() => _isAlreadySaved = true);
+      return;
+    }
+
+    if (_isAlreadySaved || _isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
+    try {
+      // Use original ID if provided, otherwise generate new one
+      final originalId = widget.originalScanData['id'] as String?;
+      final scanId = originalId ?? _generateScanId();
+
+      // Check if already exists (prevents duplicates)
+      final existing = await _scanRepository.getScanById(scanId);
+      if (existing != null) {
+        debugPrint('✅ Advanced scan already exists → skipping save');
+        setState(() {
+          _isAlreadySaved = true;
+          _isProcessing = false;
+        });
+        return;
+      }
+
+      // Prepare image base64
+      String? imageBase64 = widget.originalScanData['imageBase64'] as String?;
+      final imagePath = widget.originalScanData['imagePath'] as String?;
+
+      if (imageBase64 == null && imagePath != null) {
+        try {
+          final file = File(imagePath);
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+            imageBase64 = base64Encode(bytes);
+            debugPrint('✅ Converted image to base64 (${bytes.length} bytes)');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to convert image to base64: $e');
+        }
+      }
+
+      // Add image base64 to original data
+      final updatedOriginalData = {
+        ...widget.originalScanData,
+        'imageBase64': imageBase64,
+      };
+
+      // Add scan ID to analysis result
+      final updatedAnalysisResult = {
+        ...widget.analysisResult,
+        'scanId': scanId,
+      };
+
+      // Determine source
+      final source = updatedAnalysisResult['source']?.toString().toLowerCase() ?? 'gemini';
+      final isGemini = source.contains('gemini');
+
+      // Save using correct method
+      final savedScan = isGemini
+          ? await _scanRepository.saveGeminiScan(
+        analysisResult: updatedAnalysisResult,
+        imagePath: imagePath,
+      )
+          : await _scanRepository.savePlantIdScan(
+        analysisResult: updatedAnalysisResult,
+        imagePath: imagePath,
+      );
+
+      debugPrint('✅ Advanced scan auto-saved → ID: ${savedScan.id}');
+
+      if (mounted) {
+        setState(() {
+          _isAlreadySaved = true;
+          _isProcessing = false;
+        });
+      }
+    } catch (e, stack) {
+      debugPrint('❌ Auto-save failed: $e');
+      debugPrint('Stack: $stack');
+
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }  Color _getSeverityColor(String severity) {
     switch (severity.toLowerCase()) {
       case 'critical':
         return Colors.red;
@@ -142,7 +261,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Source badge
                       SourceBadge(
                         result: widget.analysisResult,
                         theme: theme,
@@ -152,7 +270,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
 
-                      // Main diagnosis card
                       DiagnosisCard(
                         theme: theme,
                         data: data,
@@ -163,7 +280,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
 
-                      // Image preview
                       ImagePreviewResults(
                         originalScanData: widget.originalScanData,
                         theme: theme,
@@ -173,7 +289,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
 
-                      // Symptoms section
                       SectionCard(
                         theme: theme,
                         title: 'Symptoms Detected',
@@ -186,7 +301,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
 
-                      // Remediation section
                       SectionCard(
                         theme: theme,
                         title: 'Treatment Recommendations',
@@ -199,7 +313,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
 
-                      // Precautions section
                       SectionCard(
                         theme: theme,
                         title: 'Preventive Measures',
@@ -212,7 +325,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
 
-                      // Additional info
                       if (data['additionalInfo'] != null)
                         AdditionalInfoCard(
                           theme: theme,
@@ -220,8 +332,35 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                           hasDiseaseInfo: hasDiseaseInfo,
                         ),
 
+                      // Subtle saved indicator (optional - looks clean)
+                      if (_isAlreadySaved)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  color: Colors.green.withOpacity(0.7),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Saved to history',
+                                  style: TextStyle(
+                                    color: Colors.green.withOpacity(0.7),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
                       SizedBox(
-                        height: AppMeasurements.getResponsivePadding(context) * 2,
+                        height: AppMeasurements.getResponsivePadding(context) * 2.5,
                       ),
                     ],
                   ),

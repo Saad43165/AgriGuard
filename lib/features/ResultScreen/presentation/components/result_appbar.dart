@@ -19,7 +19,7 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.elevation = 0,
     this.topPadding = 8.0,
-    this.leading,
+    this.leading, Widget? trailing,
   });
 
   @override

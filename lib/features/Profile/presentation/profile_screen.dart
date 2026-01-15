@@ -14,7 +14,7 @@ import '../utils/profile_image_manager.dart';
 import 'Components/actions.dart';
 import 'Components/profile_info.dart';
 import 'Components/profile_picture.dart' show ProfilePicture;
-import 'components/statistics.dart';
+import 'Components/statistics.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -666,9 +666,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                         FadeTransition(
                           opacity: _fadeAnimation,
                           child: Statistics(
-                            userProfile: _userProfile,
                             cardPadding: const EdgeInsets.all(16),
                             itemSpacing: 12,
+                            userId: FirebaseAuth.instance.currentUser?.uid, // NEW: real-time data
                           ),
                         ),
 
