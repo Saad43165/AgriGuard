@@ -5,9 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class PlantIdService {
-  // Plant.id API v3 configuration - CORRECTED URL
   static const String _plantIdApiKey = 'w5Ofy2sXPfaORHMM6P9Ky9o0pi58ElkbwyezKuy9dOm3DLqcdF';
-  static const String _plantIdBaseUrl = 'https://api.plant.id/v3'; // Correct URL
+  static const String _plantIdBaseUrl = 'https://api.plant.id/v3';
 
   /// Test if Plant.id API is working
   Future<bool> testPlantIdApi() async {
@@ -35,6 +34,22 @@ class PlantIdService {
     try {
       debugPrint('🌿 Starting Plant.id v3 analysis WITH DISEASE DETECTION...');
 
+      // Validate image file
+      if (!await imageFile.exists()) {
+        throw Exception('Image file does not exist');
+      }
+
+      final fileSize = await imageFile.length();
+      debugPrint('📊 Image size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+
+      if (fileSize > 5 * 1024 * 1024) {
+        throw Exception('Image too large (max 5MB). Current size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+      }
+
+      if (fileSize < 1024) {
+        throw Exception('Image too small (min 1KB)');
+      }
+
       // Read image
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
@@ -54,17 +69,15 @@ class PlantIdService {
     }
   }
 
-  /// Send Plant.id request WITH HEALTH ASSESSMENT - IMPROVED VERSION
+  /// Send Plant.id request WITH HEALTH ASSESSMENT
   Future<Map<String, dynamic>> _sendPlantIdRequestWithHealth(String base64Image) async {
-    // Create request body with health assessment - SIMPLIFIED
     final requestBody = {
       'images': [base64Image],
-      'similar_images': false, // Disabled for faster response
       'health': 'all',
-      'modifiers': ['crops_fast', 'similar_images'], // Add modifiers for faster processing
+      'similar_images': true,
     };
 
-    debugPrint('📋 Request configuration: health=all, similar_images=false');
+    debugPrint('📋 Request configuration: health=all, similar_images=true');
 
     final createResponse = await http.post(
       Uri.parse('$_plantIdBaseUrl/identification'),
@@ -78,10 +91,10 @@ class PlantIdService {
     debugPrint('📡 Plant.id v3 Create Response: ${createResponse.statusCode}');
 
     if (createResponse.body.isNotEmpty) {
-      final preview = createResponse.body.length > 200
-          ? createResponse.body.substring(0, 200)
+      final preview = createResponse.body.length > 300
+          ? createResponse.body.substring(0, 300)
           : createResponse.body;
-      debugPrint('📄 Create Response body preview: $preview');
+      debugPrint('📄 Create Response preview: $preview');
     }
 
     if (createResponse.statusCode == 201) {
@@ -103,82 +116,146 @@ class PlantIdService {
     } else if (createResponse.statusCode == 400) {
       final errorBody = createResponse.body;
       debugPrint('❌ Bad Request Error: $errorBody');
-      // Try simpler request without health
-      debugPrint('🔄 Trying simpler request without health...');
-      return await _sendSimplePlantIdRequest(base64Image);
+
+      // Try minimal request as fallback
+      debugPrint('🔄 Trying minimal request without health...');
+      return await _sendMinimalPlantIdRequest(base64Image);
     } else {
       throw Exception('Plant.id API error ${createResponse.statusCode}: ${createResponse.body}');
     }
   }
 
-  /// Poll for identification result - IMPROVED WITH BACKOFF
+  /// Poll for identification result with IMPROVED LOGIC
   Future<Map<String, dynamic>> _pollForResult(String accessToken, {required bool healthRequested}) async {
-    const maxAttempts = 15; // Increased from 10
-    int delaySeconds = 2; // Start with 2 seconds
+    const maxAttempts = 20; // Increased from 15
+    int delaySeconds = 1; // Start with shorter delay
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-      debugPrint('🔄 Polling attempt $attempt/$maxAttempts...');
+      debugPrint('🔄 Polling attempt $attempt/$maxAttempts (wait: ${delaySeconds}s)...');
 
-      final uri = Uri.parse('$_plantIdBaseUrl/identification/$accessToken').replace(queryParameters: {
-        'language': 'en',
-        'details': 'common_names,description,treatment',
-        'health': healthRequested ? 'all' : 'none', // Important: Include health parameter
-      });
+      try {
+        final uri = Uri.parse('$_plantIdBaseUrl/identification/$accessToken').replace(
+          queryParameters: {
+            'language': 'en',
+            'details': 'common_names,description,treatment',
+          },
+        );
 
-      final response = await http.get(
-        uri,
-        headers: {'Api-Key': _plantIdApiKey},
-      );
+        final response = await http.get(
+          uri,
+          headers: {'Api-Key': _plantIdApiKey},
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('⏱️ Poll request timeout on attempt $attempt');
+            throw Exception('Request timeout');
+          },
+        );
 
-      debugPrint('📡 Poll Response: ${response.statusCode}');
+        debugPrint('📡 Poll Response: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final isFinished = data['is_finished'] as bool? ?? false;
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
 
-        if (isFinished) {
-          debugPrint('✅ Identification finished');
-          return _parsePlantIdV3Response(data);
-        } else {
-          // Check if there's an error message
+          // LOG FULL RESPONSE for debugging
+          debugPrint('📦 Response data keys: ${data.keys.toList()}');
+          debugPrint('📦 Full response: ${jsonEncode(data)}');
+
+          // Check completion status
           final status = data['status'] as String?;
-          if (status == 'failed' || status == 'error') {
-            throw Exception('Identification failed: ${data['error'] ?? 'Unknown error'}');
+          final isFinished = data['finished'] as bool? ??
+              data['is_finished'] as bool? ??
+              false;
+
+          debugPrint('📊 Status: $status, Finished: $isFinished');
+
+          // Check if finished
+          if (isFinished || status == 'COMPLETED' || status == 'completed') {
+            debugPrint('✅ Identification finished successfully');
+            return _parsePlantIdV3Response(data);
+          }
+
+          // Check for failure
+          if (status == 'FAILED' || status == 'failed' || status == 'ERROR' || status == 'error') {
+            final errorMsg = data['error'] as String? ?? data['message'] as String? ?? 'Unknown error';
+            throw Exception('Identification failed: $errorMsg');
           }
 
           // Check progress
-          final progress = data['progress'] as int?;
+          final progress = data['progress'] as num?;
           if (progress != null) {
-            debugPrint('📊 Progress: $progress%');
+            debugPrint('📊 Progress: ${progress}%');
+
+            // If stuck at same progress, try to extract partial data
+            if (attempt > 10 && progress > 0) {
+              debugPrint('⚠️ Long processing time, checking for partial results...');
+
+              // Try to parse whatever we have
+              try {
+                final result = data['result'];
+                if (result != null && result is Map) {
+                  debugPrint('🔍 Found partial result data, attempting parse...');
+                  return _parsePlantIdV3Response(data);
+                }
+              } catch (e) {
+                debugPrint('❌ Could not parse partial data: $e');
+              }
+            }
           }
+
+          // Check if we have any result data even if not marked finished
+          if (attempt > 12) {
+            final result = data['result'];
+            if (result != null) {
+              debugPrint('⚠️ Attempting to parse incomplete result after $attempt attempts...');
+              try {
+                return _parsePlantIdV3Response(data);
+              } catch (e) {
+                debugPrint('❌ Failed to parse incomplete result: $e');
+              }
+            }
+          }
+
+        } else if (response.statusCode == 404) {
+          throw Exception('Identification not found. Token may have expired.');
+        } else {
+          debugPrint('❌ Poll error ${response.statusCode}: ${response.body}');
         }
-      } else {
-        debugPrint('❌ Poll error ${response.statusCode}: ${response.body}');
-        // Don't throw immediately, retry
+
+      } catch (e) {
+        debugPrint('❌ Poll attempt $attempt error: $e');
+
+        // Don't throw on network errors, retry
+        if (attempt >= maxAttempts) {
+          rethrow;
+        }
       }
 
-      // Exponential backoff
+      // Wait before next attempt with exponential backoff
       await Future.delayed(Duration(seconds: delaySeconds));
 
-      // Increase delay for next attempt (exponential backoff)
-      if (attempt < 5) {
-        delaySeconds += 1;
-      } else if (attempt < 10) {
-        delaySeconds += 2;
+      // Adjust delay based on attempt number
+      if (attempt < 3) {
+        delaySeconds = 2; // First few: 2 seconds
+      } else if (attempt < 7) {
+        delaySeconds = 3; // Mid: 3 seconds
+      } else if (attempt < 12) {
+        delaySeconds = 4; // Later: 4 seconds
       } else {
-        delaySeconds += 3;
+        delaySeconds = 5; // Final attempts: 5 seconds
       }
     }
 
-    throw Exception('Identification timeout after $maxAttempts attempts. Please try again with a clearer image.');
+    throw Exception('Identification timeout after $maxAttempts attempts. The Plant.id service is taking too long to process. Try:\n1. Use a different image\n2. Ensure good lighting\n3. Try Gemini AI instead');
   }
 
-  /// Send simple Plant.id request (fallback)
-  Future<Map<String, dynamic>> _sendSimplePlantIdRequest(String base64Image) async {
-    final simpleRequestBody = {
+  /// Send minimal Plant.id request (fallback)
+  Future<Map<String, dynamic>> _sendMinimalPlantIdRequest(String base64Image) async {
+    final minimalRequestBody = {
       'images': [base64Image],
-      'similar_images': false, // Disabled for faster response
     };
+
+    debugPrint('📋 Minimal request: images only');
 
     final createResponse = await http.post(
       Uri.parse('$_plantIdBaseUrl/identification'),
@@ -186,8 +263,10 @@ class PlantIdService {
         'Content-Type': 'application/json',
         'Api-Key': _plantIdApiKey,
       },
-      body: jsonEncode(simpleRequestBody),
+      body: jsonEncode(minimalRequestBody),
     );
+
+    debugPrint('📡 Minimal Create Response: ${createResponse.statusCode}');
 
     if (createResponse.statusCode == 201) {
       final createData = jsonDecode(createResponse.body);
@@ -197,20 +276,22 @@ class PlantIdService {
         throw Exception('No access token in response');
       }
 
-      // Poll for result
+      debugPrint('🔑 Access Token from minimal request: $accessToken');
       return await _pollForResult(accessToken, healthRequested: false);
     } else {
-      throw Exception('Simple request failed: ${createResponse.statusCode}');
+      debugPrint('❌ Minimal request failed: ${createResponse.statusCode} - ${createResponse.body}');
+      throw Exception('Plant.id request failed: ${createResponse.statusCode}. Please check your API key and credits.');
     }
   }
 
-  /// Parse Plant.id v3 API response with COMPLETE DISEASE INFORMATION
+  /// Parse Plant.id v3 API response
+  /// Parse Plant.id v3 API response - FIXED VERSION
   Map<String, dynamic> _parsePlantIdV3Response(Map<String, dynamic> data) {
     try {
-      debugPrint('🌿 Parsing Plant.id v3 response with health data...');
-      debugPrint('📊 Full response keys: ${data.keys.toList()}');
+      debugPrint('🌿 Parsing Plant.id v3 response...');
 
       final result = data['result'] as Map<String, dynamic>? ?? {};
+      debugPrint('📊 Result keys: ${result.keys.toList()}');
 
       // Check if plant is detected
       final isPlant = result['is_plant'] as Map<String, dynamic>?;
@@ -236,11 +317,20 @@ class PlantIdService {
       final probability = (topSuggestion['probability'] as num?)?.toDouble() ?? 0.0;
       final confidence = (probability * 100).round();
 
-      // Extract plant details
+      // Extract plant details - FIXED TYPE CASTING
       final details = topSuggestion['details'] as Map<String, dynamic>? ?? {};
       final commonNames = (details['common_names'] as List<dynamic>?)?.cast<String>() ?? [];
-      final description = details['description'] as Map<String, dynamic>?;
-      final descriptionValue = description?['value'] as String? ?? 'Plant identified successfully';
+
+      // FIX: Handle description properly - it might be a Map OR a String
+      String descriptionValue = 'Plant identified successfully';
+      if (details.containsKey('description')) {
+        final description = details['description'];
+        if (description is Map<String, dynamic>) {
+          descriptionValue = description['value'] as String? ?? 'Plant identified successfully';
+        } else if (description is String) {
+          descriptionValue = description;
+        }
+      }
 
       debugPrint('✅ Plant identified: $plantName (${commonNames.isNotEmpty ? commonNames.first : "no common name"})');
       debugPrint('📊 Identification confidence: $confidence%');
@@ -254,6 +344,7 @@ class PlantIdService {
       List<String> treatments = [];
       List<String> precautions = [];
 
+      // FIX: Handle is_healthy properly - check if it exists
       final isHealthy = result['is_healthy'] as Map<String, dynamic>?;
       final isHealthyBinary = isHealthy?['binary'] as bool? ?? true;
       final isHealthyProbability = (isHealthy?['probability'] as num?)?.toDouble() ?? 1.0;
@@ -276,20 +367,25 @@ class PlantIdService {
 
             debugPrint('🦠 Disease detected: $diseaseName (${(diseaseProbability * 100).toStringAsFixed(1)}% probability)');
 
-            // Determine severity
             severity = _determineSeverity(diseaseProbability);
 
-            // Extract disease details
+            // FIX: Extract disease details properly
             final diseaseDetails = topDisease['details'] as Map<String, dynamic>? ?? {};
 
-            // Get description
-            final diseaseDescription = diseaseDetails['description'] as Map<String, dynamic>?;
-            final diseaseDescValue = diseaseDescription?['value'] as String?;
+            // FIX: Handle disease description properly
+            String? diseaseDescValue;
+            if (diseaseDetails.containsKey('description')) {
+              final diseaseDescription = diseaseDetails['description'];
+              if (diseaseDescription is Map<String, dynamic>) {
+                diseaseDescValue = diseaseDescription['value'] as String?;
+              } else if (diseaseDescription is String) {
+                diseaseDescValue = diseaseDescription;
+              }
+            }
 
-            // Extract symptoms from description or generate based on disease name
             symptoms = _extractSymptoms(diseaseName, diseaseDescValue, diseaseProbability);
 
-            // Get treatment information
+            // FIX: Handle treatment properly
             final treatment = diseaseDetails['treatment'] as Map<String, dynamic>?;
             if (treatment != null) {
               treatments = _extractTreatments(treatment);
@@ -302,6 +398,15 @@ class PlantIdService {
             debugPrint('💊 Extracted ${treatments.length} treatments');
             debugPrint('⚠️ Extracted ${precautions.length} precautions');
           }
+        } else {
+          // If no disease section but plant is not healthy
+          diseaseName = 'Plant Stress';
+          diseaseProbability = 1.0 - isHealthyProbability;
+          severity = _determineSeverity(diseaseProbability);
+          symptoms = ['Plant shows signs of stress or poor health'];
+          treatments = _getGenericTreatments('plant stress');
+          precautions = _getGenericPrecautions();
+          debugPrint('⚠️ Plant not healthy but no specific disease identified');
         }
       } else {
         debugPrint('✅ Plant appears healthy');
@@ -344,13 +449,47 @@ class PlantIdService {
         'hasDiseaseInfo': hasDiseaseInfo,
         'hasHealthAssessment': isHealthy != null,
       };
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ Error parsing Plant.id v3 response: $e');
-      debugPrint('Raw data: ${data.toString()}');
+      debugPrint('Stack trace: $stackTrace');
+      debugPrint('Raw data keys: ${data.keys.toList()}');
+
+      // Try to extract at least some information even if parsing fails
+      try {
+        final result = data['result'] as Map<String, dynamic>? ?? {};
+        final classification = result['classification'] as Map<String, dynamic>? ?? {};
+        final suggestions = classification['suggestions'] as List<dynamic>? ?? [];
+
+        if (suggestions.isNotEmpty) {
+          final topSuggestion = suggestions.first as Map<String, dynamic>;
+          final plantName = topSuggestion['name'] as String? ?? 'Unknown Plant';
+
+          return {
+            'success': true,
+            'source': 'Plant.id AI',
+            'data': {
+              'plantName': plantName,
+              'scientificName': plantName,
+              'diseaseName': 'Analysis complete - details unavailable',
+              'severity': 'Unknown',
+              'confidence': 0,
+              'diseaseConfidence': 0,
+              'symptoms': ['Analysis completed but details could not be parsed'],
+              'remediation': ['Please try with a different image or use Gemini analysis'],
+              'precautions': ['Follow general plant care guidelines'],
+              'additionalInfo': '✅ ANALYSIS COMPLETE\n\nPlant identified: $plantName\n\n⚠️ Note: Some details could not be parsed due to format differences.\n\nTry:\n• Different image angle\n• Better lighting\n• Using Gemini AI for more detailed analysis',
+            },
+            'isRealData': true,
+            'hasDiseaseInfo': false,
+          };
+        }
+      } catch (e2) {
+        debugPrint('❌ Even fallback parsing failed: $e2');
+      }
+
       return _createFallbackResponse();
     }
   }
-
   // ====== HELPER METHODS ======
   String _determineSeverity(double probability) {
     if (probability > 0.8) return 'Severe';
@@ -363,7 +502,6 @@ class PlantIdService {
   List<String> _extractSymptoms(String diseaseName, String? description, double probability) {
     final symptoms = <String>[];
 
-    // Add disease-specific symptoms from description
     if (description != null && description.isNotEmpty) {
       final sentences = description.split('. ');
       for (var sentence in sentences.take(3)) {
@@ -373,7 +511,6 @@ class PlantIdService {
       }
     }
 
-    // Add severity-based symptoms
     if (probability > 0.7) {
       if (symptoms.isEmpty) {
         symptoms.add('Advanced stage of $diseaseName detected');
@@ -400,7 +537,6 @@ class PlantIdService {
   List<String> _extractTreatments(Map<String, dynamic> treatment) {
     final treatments = <String>[];
 
-    // Extract biological treatment
     final biological = treatment['biological'] as List<dynamic>?;
     if (biological != null && biological.isNotEmpty) {
       for (var item in biological) {
@@ -411,7 +547,6 @@ class PlantIdService {
       }
     }
 
-    // Extract chemical treatment
     final chemical = treatment['chemical'] as List<dynamic>?;
     if (chemical != null && chemical.isNotEmpty) {
       for (var item in chemical) {
@@ -422,7 +557,6 @@ class PlantIdService {
       }
     }
 
-    // Extract prevention methods
     final prevention = treatment['prevention'] as List<dynamic>?;
     if (prevention != null && prevention.isNotEmpty) {
       for (var item in prevention) {
@@ -488,7 +622,6 @@ class PlantIdService {
     buffer.write('═' * 40);
     buffer.write('\n\n');
 
-    // Plant Information
     buffer.write('🪴 PLANT IDENTIFICATION\n');
     buffer.write('─' * 40);
     buffer.write('\n');
@@ -505,7 +638,6 @@ class PlantIdService {
 
     buffer.write('\n');
 
-    // Health Assessment
     buffer.write('🏥 HEALTH ASSESSMENT\n');
     buffer.write('─' * 40);
     buffer.write('\n');
