@@ -1,7 +1,7 @@
 // lib/services/plant_id_service.dart
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img_lib;
@@ -15,10 +15,13 @@ class PlantIdService {
   static const String _modelPath = 'assets/models/plant_species_final_quantized.tflite';
   static const String _labelsPath = 'assets/models/labels.txt';
   static const int _inputSize = 224;
-  static const double _confidenceThreshold = 0.65;
-  static const double _minAcceptableConfidence = 0.60;
+  
+  // Adaptive thresholds based on model accuracy (93.1%)
+  static const double _baseConfidenceThreshold = 0.50;
+  static const double _highConfidenceThreshold = 0.75;
+  static const double _minAcceptableConfidence = 0.35;
 
-  final String _normalizationScheme = '[-1, 1]'; // Your model uses [-1, 1] normalization
+  final String _normalizationScheme = '[-1, 1]';
 
   late TensorType _inputType;
   late TensorType _outputType;
@@ -26,11 +29,28 @@ class PlantIdService {
   late List<int> _outputShape;
   int _numClasses = 0;
 
+  // Class-specific thresholds based on training data distribution
+  final Map<String, double> _classSpecificThresholds = {
+    'Soybean': 0.35,    // Only 160 training images
+    'Wheat': 0.35,      // Only 160 training images
+    'Cherry': 0.45,     // 4386 training images
+    'Peach': 0.45,      // 4457 training images
+    'Strawberry': 0.45, // 4498 training images
+    'Bell pepper': 0.48, // 4876 training images
+    'Potato': 0.50,     // 7128 training images
+    'Apple': 0.50,      // 9714 training images
+    'Grape': 0.50,      // 9027 training images
+    'Corn (Maize)': 0.50, // 9149 training images
+    'Tomato': 0.50,     // 13883 training images
+  };
+
   bool get isLoaded => _isLoaded;
 
   Future<void> loadModel() async {
     try {
       print('🌱 Loading Plant Species Identification Model...');
+      print('   Model Accuracy: 93.1% | Classes: 11');
+      print('   Using adaptive confidence thresholds');
 
       // Load the model
       _interpreter = await Interpreter.fromAsset(_modelPath);
@@ -47,7 +67,6 @@ class PlantIdService {
         _adjustLabelsToMatchModel();
       }
 
-      // Verify normalization scheme (based on your training)
       print('✅ Using [-1, 1] normalization (as per training)');
       
       // Run a quick test
@@ -91,10 +110,12 @@ class PlantIdService {
       _labels = txt.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
       print('✅ Loaded ${_labels.length} plant species labels');
       
-      // Display all plant species
-      print('📋 Plant Species in model:');
+      // Display all plant species with their thresholds
+      print('📋 Plant Species in model (with thresholds):');
       for (int i = 0; i < _labels.length; i++) {
-        print('   ${i + 1}. ${_labels[i]}');
+        final label = _labels[i];
+        final threshold = _getClassThreshold(label);
+        print('   ${i + 1}. $label: ${(threshold * 100).toStringAsFixed(0)}% threshold');
       }
     } catch (e) {
       print('⚠️ Failed to load labels, using default: $e');
@@ -140,9 +161,10 @@ class PlantIdService {
       
       final maxIndex = _getMaxIndex(probabilities);
       final maxConfidence = probabilities[maxIndex];
+      final predictedLabel = maxIndex < _labels.length ? _labels[maxIndex] : 'Unknown';
       
       print('   Test inference successful');
-      print('   Top prediction confidence: ${(maxConfidence * 100).toStringAsFixed(1)}%');
+      print('   Top prediction: $predictedLabel (${(maxConfidence * 100).toStringAsFixed(1)}%)');
       
       if (maxConfidence < 0.1) {
         print('   ⚠️ Very low confidence - check normalization');
@@ -154,10 +176,6 @@ class PlantIdService {
 
   dynamic _prepareInput(img_lib.Image image) {
     // Always use [-1, 1] normalization as per your training
-    return _prepareInputWithNormalization(image, _normalizationScheme);
-  }
-
-  dynamic _prepareInputWithNormalization(img_lib.Image image, String scheme) {
     if (_inputType == TensorType.uint8) {
       return _prepareUint8Input(image);
     }
@@ -170,8 +188,7 @@ class PlantIdService {
       // RGB channels (skip alpha)
       for (int c = 0; c < 3; c++) {
         final pixelValue = bytes[i + c].toDouble();
-        
-        // Only [-1, 1] normalization (as used in training)
+        // [-1, 1] normalization (as used in training)
         floatList[floatIndex++] = (pixelValue / 127.5) - 1.0;
       }
     }
@@ -263,7 +280,7 @@ class PlantIdService {
 
     // Ensure we have the right number of probabilities
     if (probabilities.length != _numClasses) {
-      probabilities = probabilities.sublist(0, _numClasses);
+      probabilities = probabilities.sublist(0, min(probabilities.length, _numClasses));
     }
 
     return probabilities;
@@ -310,22 +327,17 @@ class PlantIdService {
       // Get all predictions sorted by confidence
       final allPredictions = _getAllPredictions(probabilities);
       
-      // Get top prediction
-      final topPrediction = allPredictions.isNotEmpty ? allPredictions[0] : null;
-      
-      if (topPrediction == null) {
+      if (allPredictions.isEmpty) {
         return {
           'success': false,
           'error': 'No predictions generated',
+          'isUnknown': true,
         };
       }
 
+      final topPrediction = allPredictions[0];
       final topLabel = topPrediction['label'] as String;
       final topConfidence = topPrediction['confidence'] as double;
-      
-      // Check if confidence is high enough
-      final isUnknown = topConfidence < _confidenceThreshold || 
-                       topConfidence < _minAcceptableConfidence;
       
       // Get confidence gap with second prediction
       double confidenceGap = 0.0;
@@ -334,20 +346,50 @@ class PlantIdService {
         confidenceGap = topConfidence - secondConfidence;
       }
 
+      // Determine if this should be marked as unknown
+      final analysis = _analyzePrediction(topLabel, topConfidence, confidenceGap, allPredictions);
+      final isUnknown = analysis['isUnknown'] as bool;
+      final reasoning = analysis['reasoning'] as String;
+
       // Display results
       print('\n📊 Plant Species Identification Results:');
-      print('   ★ $topLabel: ${(topConfidence * 100).toStringAsFixed(1)}%');
+      print('   ┌─────────────────────────────────────┐');
+      print('   │ ★ $topLabel');
+      print('   │ Confidence: ${(topConfidence * 100).toStringAsFixed(1)}%');
+      print("   │ Threshold: ${((analysis['thresholdUsed'] as double) * 100).toStringAsFixed(1)}%");
       
-      if (allPredictions.length > 1) {
+      if (confidenceGap > 0) {
+        print('   │ Gap to 2nd: ${(confidenceGap * 100).toStringAsFixed(1)}%');
+      }
+      
+      if (!isUnknown) {
+        print('   │ Status: ✅ Confident Identification');
+      } else {
+        print('   │ Status: ⚠️ Low Confidence');
+      }
+      print('   └─────────────────────────────────────┘');
+
+      // Show top alternatives
+      if (allPredictions.length > 1 && topConfidence < 0.8) {
+        print('\n   Alternatives:');
         for (int i = 1; i < min(3, allPredictions.length); i++) {
           final label = allPredictions[i]['label'];
           final conf = ((allPredictions[i]['confidence'] as double) * 100).toStringAsFixed(1);
-          print('   $label: $conf%');
+          print('   ${i}. $label: $conf%');
         }
       }
-      
+
+      // Show reasoning for unknown classification
       if (isUnknown) {
-        print('   ⚠️ Low confidence - plant species may not be recognized');
+        print('\n   Reason: $reasoning');
+      }
+
+      // Determine confidence level
+      String confidenceLevel = 'Low';
+      if (topConfidence >= _highConfidenceThreshold) {
+        confidenceLevel = 'High';
+      } else if (topConfidence >= _baseConfidenceThreshold) {
+        confidenceLevel = 'Medium';
       }
 
       return {
@@ -355,14 +397,17 @@ class PlantIdService {
         'label': topLabel,
         'confidence': topConfidence,
         'isUnknown': isUnknown,
+        'confidenceLevel': confidenceLevel,
+        'confidenceThresholdUsed': analysis['thresholdUsed'] as double,
         'allPredictions': allPredictions,
         'top3Predictions': allPredictions.take(3).toList(),
         'inferenceTime': stopwatch.elapsedMilliseconds,
         'confidenceGap': confidenceGap,
         'normalizationScheme': _normalizationScheme,
+        'reasoning': reasoning,
         'message': isUnknown 
-            ? 'Plant species not recognized with confidence'
-            : 'Identified as $topLabel',
+            ? 'Unable to identify with confidence. Try a clearer image.'
+            : 'Identified as $topLabel (${confidenceLevel.toLowerCase()} confidence)',
       };
 
     } catch (e) {
@@ -377,14 +422,86 @@ class PlantIdService {
     }
   }
 
+  Map<String, dynamic> _analyzePrediction(
+    String topLabel, 
+    double topConfidence, 
+    double confidenceGap,
+    List<Map<String, dynamic>> allPredictions
+  ) {
+    // Get class-specific threshold
+    final classThreshold = _getClassThreshold(topLabel);
+    
+    // Check 1: Absolute confidence too low
+    if (topConfidence < _minAcceptableConfidence) {
+      return {
+        'isUnknown': true,
+        'thresholdUsed': classThreshold,
+        'reasoning': 'Confidence too low (${(topConfidence * 100).toStringAsFixed(1)}% < ${(_minAcceptableConfidence * 100).toStringAsFixed(1)}%)',
+      };
+    }
+    
+    // Check 2: Below class-specific threshold
+    if (topConfidence < classThreshold) {
+      return {
+        'isUnknown': true,
+        'thresholdUsed': classThreshold,
+        'reasoning': 'Below threshold for "$topLabel" (${(topConfidence * 100).toStringAsFixed(1)}% < ${(classThreshold * 100).toStringAsFixed(1)}%)',
+      };
+    }
+    
+    // Check 3: Ambiguous predictions (low confidence gap)
+    if (allPredictions.length > 1) {
+      final secondConfidence = allPredictions[1]['confidence'] as double;
+      
+      // If confidence gap is small and predictions are somewhat confident
+      if (confidenceGap < 0.15 && topConfidence < 0.7 && secondConfidence > 0.3) {
+        return {
+          'isUnknown': true,
+          'thresholdUsed': classThreshold,
+          'reasoning': 'Ambiguous prediction (gap: ${(confidenceGap * 100).toStringAsFixed(1)}%, 2nd: ${(secondConfidence * 100).toStringAsFixed(1)}%)',
+        };
+      }
+    }
+    
+    // Check 4: Unreasonably low confidence for a "good" prediction
+    if (topConfidence < 0.3) {
+      return {
+        'isUnknown': true,
+        'thresholdUsed': classThreshold,
+        'reasoning': 'Unusually low confidence (${(topConfidence * 100).toStringAsFixed(1)}%)',
+      };
+    }
+    
+    // All checks passed - confident prediction
+    String reasoning = 'Confident prediction';
+    if (topConfidence >= _highConfidenceThreshold) {
+      reasoning = 'High confidence (${(topConfidence * 100).toStringAsFixed(1)}% ≥ ${(_highConfidenceThreshold * 100).toStringAsFixed(1)}%)';
+    } else if (confidenceGap > 0.2) {
+      reasoning = 'Clear winner (gap: ${(confidenceGap * 100).toStringAsFixed(1)}%)';
+    }
+    
+    return {
+      'isUnknown': false,
+      'thresholdUsed': classThreshold,
+      'reasoning': reasoning,
+    };
+  }
+
+  double _getClassThreshold(String label) {
+    // Return class-specific threshold if defined, otherwise use base threshold
+    return _classSpecificThresholds[label] ?? _baseConfidenceThreshold;
+  }
+
   List<Map<String, dynamic>> _getAllPredictions(List<double> probabilities) {
     List<Map<String, dynamic>> predictions = [];
     
-    for (int i = 0; i < min(probabilities.length, _labels.length); i++) {
+    final limit = min(probabilities.length, _labels.length);
+    for (int i = 0; i < limit; i++) {
       predictions.add({
         'label': _labels[i],
         'confidence': probabilities[i],
         'index': i,
+        'threshold': _getClassThreshold(_labels[i]),
       });
     }
     
