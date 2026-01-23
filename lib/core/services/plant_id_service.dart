@@ -341,7 +341,7 @@ class PlantIdService {
       if (allPredictions.length > 1) {
         for (int i = 1; i < min(3, allPredictions.length); i++) {
           final label = allPredictions[i]['label'];
-          final conf = (allPredictions[i]['confidence'] as double * 100).toStringAsFixed(1);
+          final conf = ((allPredictions[i]['confidence'] as double) * 100).toStringAsFixed(1);
           print('   $label: $conf%');
         }
       }

@@ -69,7 +69,7 @@ class _ResultsScreenState extends State<ResultsScreen>
       _diseaseCauses = json.decode(causesJson);
 
       // Load disease mapping JSON
-      final mappingJson = await rootBundle.loadString('assets/data/disease_mapping.json');
+      final mappingJson = await rootBundle.loadString('assets/data/mapping.json');
       _diseaseMapping = json.decode(mappingJson);
 
       // Extract causes for current disease
@@ -354,9 +354,11 @@ class _ResultsScreenState extends State<ResultsScreen>
         }
       }
       // Method 3: Construct key
-      else      final constructedKey = '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
-      if (_diseaseCauses.containsKey(constructedKey)) {
-        diseaseKey = constructedKey;
+      else {
+        final constructedKey = '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
+        if (_diseaseCauses.containsKey(constructedKey)) {
+          diseaseKey = constructedKey;
+        }
       }
     
 
