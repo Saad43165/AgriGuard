@@ -1,6 +1,7 @@
 // lib/services/plant_id_service.dart
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img_lib;
@@ -17,7 +18,7 @@ class PlantIdService {
   static const double _confidenceThreshold = 0.65;
   static const double _minAcceptableConfidence = 0.60;
 
-  String _normalizationScheme = '[-1, 1]'; // Your model uses [-1, 1] normalization
+  final String _normalizationScheme = '[-1, 1]'; // Your model uses [-1, 1] normalization
 
   late TensorType _inputType;
   late TensorType _outputType;
@@ -335,13 +336,13 @@ class PlantIdService {
 
       // Display results
       print('\n📊 Plant Species Identification Results:');
-      print('   ★ ${topLabel}: ${(topConfidence * 100).toStringAsFixed(1)}%');
+      print('   ★ $topLabel: ${(topConfidence * 100).toStringAsFixed(1)}%');
       
       if (allPredictions.length > 1) {
         for (int i = 1; i < min(3, allPredictions.length); i++) {
           final label = allPredictions[i]['label'];
           final conf = (allPredictions[i]['confidence'] as double * 100).toStringAsFixed(1);
-          print('   ${label}: $conf%');
+          print('   $label: $conf%');
         }
       }
       

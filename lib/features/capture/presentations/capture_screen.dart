@@ -424,7 +424,7 @@ class _CaptureScreenState extends State<CaptureScreen>
 
       // Add warning if plant ID might be wrong
       if (!isLikelyPlant) {
-        treatment = '⚠️ NOTE: Plant identification may be incorrect. "${plantName}" appears to be a disease name.\n$treatment';
+        treatment = '⚠️ NOTE: Plant identification may be incorrect. "$plantName" appears to be a disease name.\n$treatment';
       }
     } else if (isHealthy) {
       treatment = '• Continue regular care routine\n• Monitor for any signs of disease or pests\n• Apply balanced fertilizer as needed';

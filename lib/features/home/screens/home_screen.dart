@@ -21,7 +21,6 @@ import 'components/first_time_user_guide.dart';
 import 'components/guest_mode_banner.dart';
 import 'components/loading_section.dart';
 import 'components/recent_scan_section.dart';
-import '../../../../core/constants/app_measurements.dart';
 import 'components/advance_scan_section.dart';
 
 class HomeScreen extends StatefulWidget {
