@@ -1,12 +1,11 @@
-Apple 
-Bell pepper 
+Apple
+Bell pepper
 Cherry
-Corn (Maize) 
+Corn (Maize)
 Grape
 Peach
 Potato
+Soybean
 Strawberry
 Tomato
-Soybean
 Wheat
-Cedar_Apple_Rust

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../core/constants/app_routes.dart';
-import '../../utils/profile_image_manager.dart';
 
 class ProfileActions extends StatelessWidget {
   final EdgeInsets padding;

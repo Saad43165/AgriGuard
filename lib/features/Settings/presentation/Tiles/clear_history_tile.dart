@@ -171,7 +171,7 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
 
       // Double check the update
       final updatedUser = await userRef.get();
-      final updatedData = updatedUser.data() as Map<String, dynamic>?;
+      final updatedData = updatedUser.data();
       debugPrint('✅ Verification - scanCount in Firestore: ${updatedData?['scanCount'] ?? 'N/A'}');
     } catch (e) {
       debugPrint('⚠️ Error updating user document: $e');

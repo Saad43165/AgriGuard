@@ -402,7 +402,7 @@ class _CaptureScreenState extends State<CaptureScreen>
     // Determine diagnosis message
     String diagnosis;
     if (!isLikelyPlant) {
-      diagnosis = '⚠️ Plant identification uncertain. The identified "${plantName}" appears to be a disease, not a plant species.';
+      diagnosis = '⚠️ Plant identification uncertain. The identified "$plantName" appears to be a disease, not a plant species.';
     } else if (isUnknown || plantConfidence < 0.3) {
       diagnosis = 'Unable to identify plant with confidence';
     } else if (isHealthy) {
@@ -420,11 +420,11 @@ class _CaptureScreenState extends State<CaptureScreen>
       treatment = '• Plant identification uncertain\n• Plant appears healthy\n• Verify plant type for accurate care';
     } else if (remediationList != null && remediationList.isNotEmpty) {
       treatment = remediationList.join('\n• ');
-      treatment = '• ' + treatment;
+      treatment = '• $treatment';
 
       // Add warning if plant ID might be wrong
       if (!isLikelyPlant) {
-        treatment = '⚠️ NOTE: Plant identification may be incorrect. "${plantName}" appears to be a disease name.\n' + treatment;
+        treatment = '⚠️ NOTE: Plant identification may be incorrect. "${plantName}" appears to be a disease name.\n$treatment';
       }
     } else if (isHealthy) {
       treatment = '• Continue regular care routine\n• Monitor for any signs of disease or pests\n• Apply balanced fertilizer as needed';
@@ -438,7 +438,7 @@ class _CaptureScreenState extends State<CaptureScreen>
       warningNote = '''
     
 ⚠️ IMPORTANT NOTE:
-The plant identification model predicted "${plantName}", which appears to be a disease name.
+The plant identification model predicted "$plantName", which appears to be a disease name.
 This may indicate:
 1. The plant ID model is confused
 2. The image shows disease symptoms

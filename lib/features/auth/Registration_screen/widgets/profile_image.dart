@@ -121,7 +121,7 @@ class ProfileImageWidget extends StatelessWidget {
 
   Widget _buildPlaceholder(ThemeData theme, double size) {
     return Container(
-      color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

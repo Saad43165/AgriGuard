@@ -4,11 +4,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_measurements.dart';
 import '../../../core/widgets/floating_orb.dart';
-import '../../core/models/scan_model.dart';
 import 'components/additional_info_card.dart';
 import 'components/diagnosis_card.dart';
 import 'components/image_preview_results.dart';

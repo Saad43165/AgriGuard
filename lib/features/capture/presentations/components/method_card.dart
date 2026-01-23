@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
 
 class MethodCard extends StatelessWidget {

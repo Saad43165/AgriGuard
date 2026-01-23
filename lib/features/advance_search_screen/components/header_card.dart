@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_measurements.dart';
 
 class HeaderCard extends StatelessWidget {
   final double padding;

@@ -14,7 +14,7 @@ class AnalysisDetailsCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // Helper method to get disease display information
-    Map<String, dynamic> _getDiseaseDisplayInfo() {
+    Map<String, dynamic> getDiseaseDisplayInfo() {
       String label = 'Health Status';
       String value = 'Healthy';
       IconData icon = Icons.check_circle_rounded;
@@ -80,7 +80,7 @@ class AnalysisDetailsCard extends StatelessWidget {
       return {'label': label, 'value': value, 'icon': icon, 'color': color, 'hasDisease': false};
     }
 
-    final displayInfo = _getDiseaseDisplayInfo();
+    final displayInfo = getDiseaseDisplayInfo();
     final String? plantName = scanData['plantName']?.toString();
     final String? confidence = scanData['confidence']?.toString();
     final String? severity = scanData['severity']?.toString();

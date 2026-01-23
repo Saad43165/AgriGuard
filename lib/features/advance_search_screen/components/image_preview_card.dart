@@ -76,7 +76,7 @@ class ImagePreviewCard extends StatelessWidget {
           ],
         )
             : Container(
-          color: theme.colorScheme.surfaceVariant,
+          color: theme.colorScheme.surfaceContainerHighest,
           child: Icon(
             Icons.image_not_supported,
             size: 64,

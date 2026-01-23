@@ -164,7 +164,7 @@ class SourceCard extends StatelessWidget {
                 ),
               ],
             ),
-          )).toList(),
+          )),
         ],
       ),
     );

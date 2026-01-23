@@ -498,7 +498,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
@@ -548,7 +548,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
           widget.onCancel();
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           foregroundColor: Theme.of(context).colorScheme.onSurface,
           padding: const EdgeInsets.symmetric(vertical: 16),
           elevation: 0,

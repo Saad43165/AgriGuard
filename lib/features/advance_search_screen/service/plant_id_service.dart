@@ -184,7 +184,7 @@ class PlantIdService {
           // Check progress
           final progress = data['progress'] as num?;
           if (progress != null) {
-            debugPrint('📊 Progress: ${progress}%');
+            debugPrint('📊 Progress: $progress%');
 
             // If stuck at same progress, try to extract partial data
             if (attempt > 10 && progress > 0) {

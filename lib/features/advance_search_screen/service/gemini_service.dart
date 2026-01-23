@@ -144,7 +144,7 @@ Be specific and scientific.'''
       throw Exception('Alternative endpoint failed: ${response.statusCode}');
     } catch (e) {
       debugPrint('❌ Alternative endpoint failed: $e');
-      throw e;
+      rethrow;
     }
   }
 

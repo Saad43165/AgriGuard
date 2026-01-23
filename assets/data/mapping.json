@@ -1,0 +1,122 @@
+{
+  "Apple___Apple_scab": {
+    "plant": "Apple",
+    "disease": "Apple scab"
+  },
+  "Apple___Black_rot": {
+    "plant": "Apple",
+    "disease": "Black rot"
+  },
+  "Apple___healthy": {
+    "plant": "Apple",
+    "disease": "healthy"
+  },
+  "Bell_pepper___Bacterial_spot": {
+    "plant": "Bell pepper",
+    "disease": "Bacterial spot"
+  },
+  "Bell_pepper___healthy": {
+    "plant": "Bell pepper",
+    "disease": "healthy"
+  },
+  "Cherry___Powdery_mildew": {
+    "plant": "Cherry",
+    "disease": "Powdery mildew"
+  },
+  "Cherry___healthy": {
+    "plant": "Cherry",
+    "disease": "healthy"
+  },
+  "Corn_(Maize)___Cercospora_leaf_spot": {
+    "plant": "Corn (Maize)",
+    "disease": "Cercospora leaf spot"
+  },
+  "Corn_(Maize)___Common_rust": {
+    "plant": "Corn (Maize)",
+    "disease": "Common rust"
+  },
+  "Corn_(Maize)___Northern_Leaf_Blight": {
+    "plant": "Corn (Maize)",
+    "disease": "Northern Leaf Blight"
+  },
+  "Corn_(Maize)___healthy": {
+    "plant": "Corn (Maize)",
+    "disease": "healthy"
+  },
+  "Grape___Black_rot": {
+    "plant": "Grape",
+    "disease": "Black rot"
+  },
+  "Grape___Esca_(Black_Measles)": {
+    "plant": "Grape",
+    "disease": "Esca (Black Measles)"
+  },
+  "Grape___Leaf_blight": {
+    "plant": "Grape",
+    "disease": "Leaf blight"
+  },
+  "Grape___healthy": {
+    "plant": "Grape",
+    "disease": "healthy"
+  },
+  "Peach___Bacterial_spot": {
+    "plant": "Peach",
+    "disease": "Bacterial spot"
+  },
+  "Peach___healthy": {
+    "plant": "Peach",
+    "disease": "healthy"
+  },
+  "Potato___Early_blight": {
+    "plant": "Potato",
+    "disease": "Early blight"
+  },
+  "Potato___Late_blight": {
+    "plant": "Potato",
+    "disease": "Late blight"
+  },
+  "Potato___healthy": {
+    "plant": "Potato",
+    "disease": "healthy"
+  },
+  "Soybean___Bacterial_blight": {
+    "plant": "Soybean",
+    "disease": "Bacterial blight"
+  },
+  "Strawberry___Leaf_scorch": {
+    "plant": "Strawberry",
+    "disease": "Leaf scorch"
+  },
+  "Strawberry___healthy": {
+    "plant": "Strawberry",
+    "disease": "healthy"
+  },
+  "Tomato___Bacterial_spot": {
+    "plant": "Tomato",
+    "disease": "Bacterial spot"
+  },
+  "Tomato___Early_blight": {
+    "plant": "Tomato",
+    "disease": "Early blight"
+  },
+  "Tomato___Late_blight": {
+    "plant": "Tomato",
+    "disease": "Late blight"
+  },
+  "Tomato___Septoria_leaf_spot": {
+    "plant": "Tomato",
+    "disease": "Septoria leaf spot"
+  },
+  "Tomato___Yellow_Leaf_Curl_Virus": {
+    "plant": "Tomato",
+    "disease": "Yellow Leaf Curl Virus"
+  },
+  "Tomato___healthy": {
+    "plant": "Tomato",
+    "disease": "healthy"
+  },
+  "Wheat___Stripe_rust": {
+    "plant": "Wheat",
+    "disease": "Stripe rust"
+  }
+}

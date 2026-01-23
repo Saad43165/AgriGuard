@@ -354,7 +354,7 @@ class _ResultsScreenState extends State<ResultsScreen>
         }
       }
       // Method 3: Construct key
-      else if (plantName != null && diseaseName != null) {
+      else if (diseaseName != null) {
         final constructedKey = '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
         if (_diseaseCauses.containsKey(constructedKey)) {
           diseaseKey = constructedKey;
@@ -374,7 +374,7 @@ class _ResultsScreenState extends State<ResultsScreen>
 
       // If no specific causes found
       if (_diseaseCausesList.isEmpty) {
-        _tryGeneralCauses(diseaseName!);
+        _tryGeneralCauses(diseaseName);
       }
 
     } catch (e) {

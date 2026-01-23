@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_measurements.dart';
-import '../../../ResultScreen/presentation/results_screen.dart';
-import '../../../advance_result_screen/advanced_result_screen.dart';
 
 class HistoryCardWidget extends StatelessWidget {
   final Map<String, dynamic> scan;

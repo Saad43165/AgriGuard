@@ -58,7 +58,7 @@ class ComparisonTable extends StatelessWidget {
       },
       children: [
         _buildTableHeader(context, apiColor, isDarkMode),
-        ...comparisons.map((comp) => _buildTableRow(context, comp, apiColor, isDarkMode)).toList(),
+        ...comparisons.map((comp) => _buildTableRow(context, comp, apiColor, isDarkMode)),
       ],
     );
   }

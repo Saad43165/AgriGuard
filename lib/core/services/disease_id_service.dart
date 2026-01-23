@@ -11,8 +11,8 @@ class DiseaseIdService {
   static const String _labelsPath = 'assets/models/disease_labels.txt';
 
   // Configuration constants
-  static const double _minConfidenceThreshold = 40.0; // Minimum 40% confidence
-  static const double _lowConfidenceThreshold = 30.0; // Below this, mark as unknown
+  static const double _minConfidenceThreshold = 0.5; // Minimum 40% confidence
+  static const double _lowConfidenceThreshold = 0.6; // Below this, mark as unknown
   static const int _minImageSize = 100; // Minimum image dimension in pixels
   static const int _minImageBytes = 10240; // Minimum 10KB file size
 
@@ -199,7 +199,7 @@ class DiseaseIdService {
       if (originalImage.width < _minImageSize || originalImage.height < _minImageSize) {
         return {
           'isGoodQuality': false,
-          'reason': 'Image dimensions too small (${originalImage.width}x${originalImage.height} < ${_minImageSize}x${_minImageSize})'
+          'reason': 'Image dimensions too small (${originalImage.width}x${originalImage.height} < ${_minImageSize}x$_minImageSize)'
         };
       }
 

@@ -285,7 +285,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
           // Search Bar
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: theme.colorScheme.outline.withOpacity(0.2),
@@ -340,7 +340,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
             colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           )
               : null,
-          color: isSelected ? null : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          color: isSelected ? null : theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
@@ -549,11 +549,11 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
             colors: isDark
                 ? [
               theme.colorScheme.surface.withOpacity(0.6),
-              theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
             ]
                 : [
               Colors.white,
-              isAdvanced ? Colors.blue.shade50.withOpacity(0.5) : theme.colorScheme.surfaceVariant.withOpacity(0.2),
+              isAdvanced ? Colors.blue.shade50.withOpacity(0.5) : theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
             ],
           ),
           borderRadius: BorderRadius.circular(20),

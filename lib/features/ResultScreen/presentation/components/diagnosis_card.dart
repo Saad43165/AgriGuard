@@ -14,7 +14,7 @@ class DiagnosisCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     // Helper methods inside build where theme is available
-    Color _getDiseaseColor(DiagnosisResult result) {
+    Color getDiseaseColor(DiagnosisResult result) {
       if (result.isHealthy) return Colors.green;
       if (result.requiresUrgentAction) return Colors.red;
       if (result.severity.toLowerCase() == 'medium') return Colors.orange;
@@ -22,21 +22,21 @@ class DiagnosisCard extends StatelessWidget {
       return theme.colorScheme.error;
     }
 
-    IconData _getDiseaseIcon(DiagnosisResult result) {
+    IconData getDiseaseIcon(DiagnosisResult result) {
       if (result.isHealthy) return Icons.check_circle_rounded;
       if (result.requiresUrgentAction) return Icons.warning_rounded;
       if (result.severity.toLowerCase() == 'medium') return Icons.info_rounded;
       return Icons.warning_amber_rounded;
     }
 
-    String _getDiseaseLabel(DiagnosisResult result) {
+    String getDiseaseLabel(DiagnosisResult result) {
       if (result.isHealthy) return 'Health Status';
       if (result.severity.toLowerCase() == 'high') return 'Critical Condition';
       if (result.severity.toLowerCase() == 'medium') return 'Moderate Condition';
       return 'Detected Condition';
     }
 
-    Color _getConfidenceColor(String confidence) {
+    Color getConfidenceColor(String confidence) {
       try {
         final conf = double.tryParse(confidence) ?? 0;
         if (conf >= 80) return Colors.green;
@@ -48,9 +48,9 @@ class DiagnosisCard extends StatelessWidget {
     }
 
     // Determine UI elements based on disease and severity
-    final Color diseaseColor = _getDiseaseColor(diagnosisResult);
-    final IconData diseaseIcon = _getDiseaseIcon(diagnosisResult);
-    final String diseaseLabel = _getDiseaseLabel(diagnosisResult);
+    final Color diseaseColor = getDiseaseColor(diagnosisResult);
+    final IconData diseaseIcon = getDiseaseIcon(diagnosisResult);
+    final String diseaseLabel = getDiseaseLabel(diagnosisResult);
     final String confidenceText = '${diagnosisResult.confidence}% Confidence';
 
     return Container(
@@ -120,10 +120,10 @@ class DiagnosisCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getConfidenceColor(diagnosisResult.confidence).withOpacity(0.15),
+                    color: getConfidenceColor(diagnosisResult.confidence).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _getConfidenceColor(diagnosisResult.confidence).withOpacity(0.3),
+                      color: getConfidenceColor(diagnosisResult.confidence).withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -133,13 +133,13 @@ class DiagnosisCard extends StatelessWidget {
                       Icon(
                         Icons.analytics_rounded,
                         size: 14,
-                        color: _getConfidenceColor(diagnosisResult.confidence),
+                        color: getConfidenceColor(diagnosisResult.confidence),
                       ),
                       const SizedBox(width: 6),
                       Text(
                         confidenceText,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: _getConfidenceColor(diagnosisResult.confidence),
+                          color: getConfidenceColor(diagnosisResult.confidence),
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
