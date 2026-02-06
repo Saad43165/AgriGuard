@@ -18,7 +18,8 @@ dependencies:
   firebase_storage: ^13.0.1
   image_picker: ^1.1.2
   flutter_colorpicker: ^1.1.0
-  image: ^4.0.17
+  image: ^4.1.4
+  collection: ^1.18.0
   path_provider: ^2.1.1
   permission_handler: ^12.0.0+1
   flutter_image_filters: ^0.0.28
@@ -52,8 +53,12 @@ flutter:
     - assets/models/plant_species_final_quantized.tflite
     - assets/models/labels.txt
     - assets/images/
-    - assets/models/plant_disease_dynamic_quant.tflite # Disease model (add this)
+    - assets/models/plant_disease_dynamic_quant.tflite 
     - assets/models/disease_labels.txt
+    - assets/models/severity_dynamic_quant.tflite
+    - assets/models/severity_labels.txt
+    - assets/models/model_info.json
+    - assets/data/remediation.json
     - assets/data/disease_causes.json
     - assets/data/mapping.json
 

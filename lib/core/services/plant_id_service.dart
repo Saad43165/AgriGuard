@@ -17,9 +17,9 @@ class PlantIdService {
   static const int _inputSize = 224;
   
   // Adaptive thresholds based on model accuracy (93.1%)
-  static const double _baseConfidenceThreshold = 0.50;
-  static const double _highConfidenceThreshold = 0.75;
-  static const double _minAcceptableConfidence = 0.35;
+  static const double _baseConfidenceThreshold = 0.60;
+  static const double _highConfidenceThreshold = 0.80;
+  static const double _minAcceptableConfidence = 0.50;
 
   final String _normalizationScheme = '[-1, 1]';
 
@@ -31,8 +31,8 @@ class PlantIdService {
 
   // Class-specific thresholds based on training data distribution
   final Map<String, double> _classSpecificThresholds = {
-    'Soybean': 0.35,    // Only 160 training images
-    'Wheat': 0.35,      // Only 160 training images
+    'Soybean': 0.50,    // Only 160 training images
+    'Wheat': 0.50,      // Only 160 training images
     'Cherry': 0.45,     // 4386 training images
     'Peach': 0.45,      // 4457 training images
     'Strawberry': 0.45, // 4498 training images
@@ -45,6 +45,79 @@ class PlantIdService {
   };
 
   bool get isLoaded => _isLoaded;
+
+  // Leaf detection helper method
+  Future<Map<String, dynamic>> _performLeafDetection(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final image = img_lib.decodeImage(bytes);
+      if (image == null) {
+        return {'isLeaf': true, 'confidence': 50.0, 'message': 'Failed to decode image'};
+      }
+
+      final resizedImage = img_lib.copyResize(image, width: 300);
+      
+      // Multiple checks
+      int greenPixels = 0;
+      int totalPixels = resizedImage.width * resizedImage.height;
+      int edgeCount = 0;
+      final edgeThreshold = 25;
+      
+      for (int y = 0; y < resizedImage.height; y++) {
+        for (int x = 0; x < resizedImage.width; x++) {
+          final pixel = resizedImage.getPixel(x, y);
+          final r = pixel.r.toDouble();
+          final g = pixel.g.toDouble();
+          final b = pixel.b.toDouble();
+          
+          // Green check
+          if (g > r * 1.2 && g > b * 1.2 && g > 30) {
+            greenPixels++;
+          }
+          
+          // Edge check (simple)
+          if (y < resizedImage.height - 1 && x < resizedImage.width - 1) {
+            final current = (r + g + b) / 3;
+            final rightPixel = resizedImage.getPixel(x + 1, y);
+            final right = (rightPixel.r + rightPixel.g + rightPixel.b) / 3;
+            final downPixel = resizedImage.getPixel(x, y + 1);
+            final down = (downPixel.r + downPixel.g + downPixel.b) / 3;
+            
+            if ((current - right).abs() > edgeThreshold || 
+                (current - down).abs() > edgeThreshold) {
+              edgeCount++;
+            }
+          }
+        }
+      }
+      
+      final greenPercentage = (greenPixels / totalPixels) * 100;
+      final edgeDensity = (edgeCount / totalPixels) * 100;
+      
+      // Decision logic
+      bool isLeaf = greenPercentage > 25 && edgeDensity > 5;
+      double confidence = (greenPercentage * 0.6) + (edgeDensity * 0.4);
+      
+      print('🍃 Plant ID Service Leaf Detection:');
+      print('   Green: ${greenPercentage.toStringAsFixed(1)}%');
+      print('   Edge Density: ${edgeDensity.toStringAsFixed(1)}%');
+      print('   Is Leaf: $isLeaf');
+      print('   Confidence: ${confidence.toStringAsFixed(1)}%');
+      
+      return {
+        'isLeaf': isLeaf,
+        'confidence': confidence,
+        'greenPercentage': greenPercentage,
+        'edgeDensity': edgeDensity,
+        'message': isLeaf 
+            ? 'Image appears to be a plant leaf'
+            : 'Image does not appear to be a plant leaf',
+      };
+    } catch (e) {
+      print('❌ Leaf detection error: $e');
+      return {'isLeaf': true, 'confidence': 50.0, 'message': 'Detection error'};
+    }
+  }
 
   Future<void> loadModel() async {
     try {
@@ -306,7 +379,29 @@ class PlantIdService {
     try {
       print('\n🌿 Identifying plant species...');
 
-      // Preprocess image
+      // STEP 1: Perform leaf detection first
+      print('🍃 Performing leaf detection...');
+      final leafAnalysis = await _performLeafDetection(imageFile);
+      final isLeaf = leafAnalysis['isLeaf'] as bool;
+      final leafConfidence = leafAnalysis['confidence'] as double;
+      
+      if (!isLeaf) {
+        print('❌ Image does not appear to be a plant leaf. Skipping species identification.');
+        return {
+          'success': false,
+          'error': 'Image does not appear to be a plant leaf',
+          'isLeaf': false,
+          'leafConfidence': leafConfidence,
+          'isUnknown': true,
+          'label': 'Non-Plant Image',
+          'confidence': 0.0,
+          'message': 'The image does not appear to contain a plant leaf. Please upload a clear photo of a plant leaf.',
+          'shouldSkipDiseaseDetection': true,
+          'leafAnalysis': leafAnalysis,
+        };
+      }
+
+      // STEP 2: Preprocess image
       final image = await ImagePreprocessor.preprocess(
         imageFile,
         modelInputSize: _inputSize,
@@ -316,7 +411,7 @@ class PlantIdService {
         throw Exception('Failed to process image');
       }
 
-      // Prepare input and run inference
+      // STEP 3: Prepare input and run inference
       final input = _prepareInput(image);
       final stopwatch = Stopwatch()..start();
       final probabilities = _runInference(input);
@@ -324,7 +419,7 @@ class PlantIdService {
 
       print('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
 
-      // Get all predictions sorted by confidence
+      // STEP 4: Get all predictions sorted by confidence
       final allPredictions = _getAllPredictions(probabilities);
       
       if (allPredictions.isEmpty) {
@@ -332,6 +427,8 @@ class PlantIdService {
           'success': false,
           'error': 'No predictions generated',
           'isUnknown': true,
+          'isLeaf': true,
+          'leafConfidence': leafConfidence,
         };
       }
 
@@ -346,7 +443,7 @@ class PlantIdService {
         confidenceGap = topConfidence - secondConfidence;
       }
 
-      // Determine if this should be marked as unknown
+      // STEP 5: Determine if this should be marked as unknown
       final analysis = _analyzePrediction(topLabel, topConfidence, confidenceGap, allPredictions);
       final isUnknown = analysis['isUnknown'] as bool;
       final reasoning = analysis['reasoning'] as String;
@@ -357,6 +454,7 @@ class PlantIdService {
       print('   │ ★ $topLabel');
       print('   │ Confidence: ${(topConfidence * 100).toStringAsFixed(1)}%');
       print("   │ Threshold: ${((analysis['thresholdUsed'] as double) * 100).toStringAsFixed(1)}%");
+      print('   │ Leaf Check: ✅ Passed (${leafConfidence.toStringAsFixed(1)}%)');
       
       if (confidenceGap > 0) {
         print('   │ Gap to 2nd: ${(confidenceGap * 100).toStringAsFixed(1)}%');
@@ -375,7 +473,7 @@ class PlantIdService {
         for (int i = 1; i < min(3, allPredictions.length); i++) {
           final label = allPredictions[i]['label'];
           final conf = ((allPredictions[i]['confidence'] as double) * 100).toStringAsFixed(1);
-          print('   ${i}. $label: $conf%');
+          print('   $i. $label: $conf%');
         }
       }
 
@@ -397,6 +495,8 @@ class PlantIdService {
         'label': topLabel,
         'confidence': topConfidence,
         'isUnknown': isUnknown,
+        'isLeaf': true, // Since we passed leaf check
+        'leafConfidence': leafConfidence,
         'confidenceLevel': confidenceLevel,
         'confidenceThresholdUsed': analysis['thresholdUsed'] as double,
         'allPredictions': allPredictions,
@@ -418,6 +518,7 @@ class PlantIdService {
         'label': 'Unknown Plant',
         'confidence': 0.0,
         'isUnknown': true,
+        'isLeaf': false, // Assume not leaf on error
       };
     }
   }

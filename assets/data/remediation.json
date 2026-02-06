@@ -1,0 +1,749 @@
+{
+  "metadata": {
+    "version": "2.0",
+    "description": "Plant disease remediation database. Each entry contains remediation (treatment) and its effect on the plant after applying that specific treatment.",
+    "last_updated": "2026-01-14",
+    "severity_levels": ["None", "Low", "Medium", "High", "Critical"],
+    "effect_meaning": "Effect describes what will happen to the plant AFTER applying the suggested remediation"
+  },
+
+  "remediations": {
+    "Apple___Apple_scab": {
+      "plant": "Apple",
+      "disease": "Apple scab",
+
+      "None": {
+        "remediation": "No treatment needed. Continue regular monitoring and maintain orchard hygiene by removing fallen leaves after every rain.",
+        "effect": "Tree will remain healthy and continue producing high-quality fruit without any disease pressure this season."
+      },
+
+      "Low": {
+        "remediation": "Spray Captan 50WP at 2-3 g/L or Mancozeb 75WP at 2.5 g/L every 10-14 days. Remove and destroy infected leaves from the tree.",
+        "effect": "After applying this spray, new leaves will grow without scab infection. Removed infected leaves will stop releasing spores so nearby leaves will stay clean."
+      },
+
+      "Medium": {
+        "remediation": "Spray systemic fungicide Myclobutanil 10% at 0.5 mL/L or Difenoconazole 25% EC at 0.5 mL/L. Cover all leaf surfaces thoroughly. Repeat every 7-10 days for 3 sprays. Prune infected branches and open up the canopy for air flow.",
+        "effect": "After spraying, the fungus already present on leaves will stop growing within 3-5 days. Pruned branches will heal cleanly and new shoots growing in their place will be disease-free."
+      },
+
+      "High": {
+        "remediation": "Spray Propiconazole 25% EC at 1 mL/L every 5-7 days for 4-5 rounds. Remove all badly infected leaves and fruit. Apply dormant oil spray in late winter. For severe trunk infection, consider trunk injection.",
+        "effect": "After this treatment, the fungal infection on remaining leaves will be controlled and stopped from spreading further. The tree will slowly recover its leaf cover and regain strength over the next growing season."
+      },
+
+      "Critical": {
+        "remediation": "Combine systemic fungicide Propiconazole with contact fungicide Copper oxychloride 50% WP at 3 g/L. Spray every 3-5 days. Remove all leaves and fruit if necessary. Do heavy pruning of dead wood. Apply organic matter to the soil around the tree.",
+        "effect": "After this intensive treatment, the tree will stop losing healthy tissue. The soil treatment and organic matter will strengthen the root system and over 12-18 months the tree will slowly grow new healthy branches and leaves."
+      }
+    },
+
+    "Apple___Black_rot": {
+      "plant": "Apple",
+      "disease": "Black rot",
+
+      "None": {
+        "remediation": "Remove mummified fruit from tree and ground. Prune dead branches during dormant season. Keep orchard clean.",
+        "effect": "Tree will stay healthy with no disease source present. Fruit will develop normally without rot."
+      },
+
+      "Low": {
+        "remediation": "Spray Captan 50WP at 2.5 g/L every 10-14 days from pink bud stage. Remove all mummified fruit. Cut out small cankers on branches.",
+        "effect": "After removing mummified fruit and spraying, the source of infection is eliminated. Developing fruit on the tree will grow healthy and rot-free for this season."
+      },
+
+      "Medium": {
+        "remediation": "Spray Thiophanate-methyl 70% WP at 1 g/L every week for 4 weeks. Remove all infected fruit immediately. Cut out branch cankers 15 cm below the visible dark spot and disinfect cutting tools between every cut.",
+        "effect": "After cutting cankers and spraying, the fungus will stop spreading through the branches. Cut wounds will heal over in 2-3 weeks and new healthy wood will grow in their place."
+      },
+
+      "High": {
+        "remediation": "Remove ALL fruit from the tree whether infected or not to break disease cycle. Spray Myclobutanil at 1 mL/L every 5 days for 6 weeks. Cut out all visible cankers during dormancy. Burn all removed material.",
+        "effect": "After removing all fruit and cankers, the fungus has no place to survive on the tree. The weekly sprays will keep the tree clean and by next spring healthy new growth and buds will appear."
+      },
+
+      "Critical": {
+        "remediation": "If tree is heavily cankered, remove the tree completely including roots. If saving the tree: Remove all fruit and leaves. Spray alternating fungicides every 5 days. Cut out every canker surgically. Consider hiring a professional tree surgeon.",
+        "effect": "After surgical removal of all cankers and continuous spraying, the tree will stop losing branches. However recovery will take 2-3 years and the tree will grow slowly during that time with reduced fruit production."
+      }
+    },
+
+    "Apple___healthy": {
+      "plant": "Apple",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Continue regular care: balanced NPK fertilizer, water 2.5 cm per week, prune once a year, spray preventive fungicide during spring bloom.",
+        "effect": "Tree will maintain its current healthy condition and continue to produce full quality fruit throughout the season."
+      }
+    },
+
+    "Bell_pepper___Bacterial_spot": {
+      "plant": "Bell pepper",
+      "disease": "Bacterial spot",
+
+      "None": {
+        "remediation": "Use drip irrigation only. Keep plants properly spaced. Plant only certified disease-free transplants.",
+        "effect": "Plants will grow without any bacterial infection and produce maximum fruit yield."
+      },
+
+      "Low": {
+        "remediation": "Spray Copper hydroxide 77% WP at 3 g/L every week. Remove spotted leaves immediately. Switch to drip irrigation if you are using overhead sprinklers.",
+        "effect": "After spraying and removing spotted leaves, the bacteria on remaining leaves will be killed. New leaves growing after this treatment will appear clean and healthy within 5-7 days."
+      },
+
+      "Medium": {
+        "remediation": "Spray Copper oxychloride 50% WP at 3 g/L every 5 days for 3 weeks. Remove leaves with heavy spotting. Spray Streptomycin sulfate at 200 ppm if it is available and permitted in your region.",
+        "effect": "After this combined spray treatment, bacterial population on the plant will drop significantly. Within 2 weeks new growth on the plant will come out clean and fruit will start developing normally."
+      },
+
+      "High": {
+        "remediation": "Spray copper bactericide every 3-4 days. Remove plants that are very heavily infected and burn them. Disinfect all tools and hands with 10% bleach after touching any plant. Stop giving nitrogen fertilizer for now.",
+        "effect": "After removing heavily infected plants and stopping nitrogen, the remaining plants will stop showing new spots. The copper sprays will protect them and they will slowly recover and produce some fruit."
+      },
+
+      "Critical": {
+        "remediation": "Remove and burn all infected plants. Do not compost them. Spray copper on any remaining healthy plants every 3 days. After removing all plants, treat the soil by covering it with black plastic for 2 weeks (solarization). Do not plant peppers here for 2-3 years.",
+        "effect": "After removing infected plants and solarizing soil, the bacteria in the field will be killed. Remaining healthy plants protected by copper spray will recover and produce fruit."
+      }
+    },
+
+    "Bell_pepper___healthy": {
+      "plant": "Bell pepper",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Use drip irrigation. Feed with NPK 5-10-10 fertilizer. Space plants 45-60 cm apart. Check plants every week.",
+        "effect": "Plants will continue growing healthily and produce good quality fruit throughout the growing season."
+      }
+    },
+
+    "Cherry___Powdery_mildew": {
+      "plant": "Cherry",
+      "disease": "Powdery mildew",
+
+      "None": {
+        "remediation": "Prune tree to open up branches for air circulation. Do not over-fertilize with nitrogen. Watch the tree during warm days and cool nights.",
+        "effect": "Tree canopy will stay open and dry which will not allow mildew to grow. Tree remains healthy and productive."
+      },
+
+      "Low": {
+        "remediation": "Spray wettable sulfur 80% WP at 2 g/L or potassium bicarbonate at 5 g/L every 7-10 days. Cut off the affected white shoot tips.",
+        "effect": "After spraying, the white mildew powder on leaves will dry up and fall off within 3-4 days. Cut shoot tips will heal and new clean shoots will grow in their place."
+      },
+
+      "Medium": {
+        "remediation": "Spray Myclobutanil 10% at 0.5 mL/L every 7 days for 4 rounds. Cut out heavily white-coated shoots. Thin out inner branches to let sunlight and air reach all parts of the tree.",
+        "effect": "After spraying and pruning, the mildew fungus inside the remaining leaves will be killed. Within 2 weeks the tree will start pushing new healthy shoots that will remain clean for the rest of the season."
+      },
+
+      "High": {
+        "remediation": "Alternate between Trifloxystrobin and Myclobutanil sprays every week for 6-8 weeks. Cut out all branches covered with white mildew. Remove all old dried fruit from the tree. Reduce water given to the tree.",
+        "effect": "After heavy pruning and alternating sprays, the mildew fungus will be eliminated from the tree. The tree will be weaker for a few weeks but will recover and grow new clean branches by late summer."
+      },
+
+      "Critical": {
+        "remediation": "Cut away 40-50% of the tree canopy that is covered in mildew. Spray strong fungicide every 5 days. Remove all fruit to let the tree focus its energy on growing new healthy leaves. Add sulfur to the soil around the tree.",
+        "effect": "After removing heavily infected canopy and continuous spraying, the remaining part of the tree will stop being affected. The tree will spend all its energy growing new healthy leaves. Fruit production will restart next season as the tree recovers."
+      }
+    },
+
+    "Cherry___healthy": {
+      "plant": "Cherry",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Prune once a year, feed balanced fertilizer, water properly during fruit development, spray preventive spray if your region has mildew history.",
+        "effect": "Tree will stay healthy and continue producing good quality cherries every year."
+      }
+    },
+
+    "Corn_(Maize)___Cercospora_leaf_spot": {
+      "plant": "Corn (Maize)",
+      "disease": "Cercospora leaf spot (Gray leaf spot)",
+
+      "None": {
+        "remediation": "Plant resistant hybrids next season. Rotate fields with soybeans or wheat. Bury old corn stalks into the soil after harvest.",
+        "effect": "Field will have no disease source and next crop will grow without gray leaf spot."
+      },
+
+      "Low": {
+        "remediation": "Spray Azoxystrobin 250 g/L at 200 mL per hectare at first sign of gray spots on lower leaves. Check field every week. Keep potassium fertilizer adequate.",
+        "effect": "After spraying, the gray spots on lower leaves will stop growing within 5 days. The fungus will not move up to upper leaves so photosynthesis stays strong and grain fills normally."
+      },
+
+      "Medium": {
+        "remediation": "Spray Azoxystrobin combined with Propiconazole at 400 mL per hectare when disease reaches the lower third of the plant. Spray again after 14-21 days if spots keep appearing.",
+        "effect": "After this combined spray, the fungus on lower and middle leaves will be stopped. The ear leaf and top leaves which are most important for grain filling will stay green and healthy."
+      },
+
+      "High": {
+        "remediation": "Spray fungicide at maximum rate allowed on the label. Do two sprays 10-14 days apart. Look at the field honestly - if disease has already reached the ear leaf then treatment will give limited return. Think about harvesting early for animal feed.",
+        "effect": "After spraying, the fungus will slow down but some leaf damage has already happened. The spray will prevent total leaf death and allow whatever grain is forming to finish filling."
+      },
+
+      "Critical": {
+        "remediation": "Harvest the crop early for silage (animal feed) if grain filling is very poor. Spray fungicide only if it stops the plant from dying completely before harvest. Burn or bury all stalks right after harvest to prevent disease next year.",
+        "effect": "After early harvest and stalk destruction, the field will be cleaned of the disease source. The crop saved as silage will still have feed value even though grain was not fully developed."
+      }
+    },
+
+    "Corn_(Maize)___Common_rust": {
+      "plant": "Corn (Maize)",
+      "disease": "Common rust",
+
+      "None": {
+        "remediation": "Plant rust-resistant hybrids. Plant early so corn matures before rust pressure builds. Watch rust forecast reports.",
+        "effect": "Corn will grow and mature without rust infection and yield will be at full potential."
+      },
+
+      "Low": {
+        "remediation": "Usually no spray needed unless growing seed corn. If spraying: apply Propiconazole 250 EC at 200 mL per hectare when orange pustules first appear on lower leaves before tasseling.",
+        "effect": "After spraying, the orange rust pustules on lower leaves will stop releasing spores. Upper leaves will stay clean and grain filling will proceed normally with no yield loss."
+      },
+
+      "Medium": {
+        "remediation": "Spray Azoxystrobin or Propiconazole if disease appears before or during tasseling. Make sure the ear leaf is covered well. Usually one spray is enough.",
+        "effect": "After spraying, rust will stop spreading to upper leaves. The ear leaf which controls grain filling will remain green and functional. Grain quality will be maintained."
+      },
+
+      "High": {
+        "remediation": "Spray treatment at this stage gives limited return. Focus on keeping the plant healthy through good water and fertilizer. If grain is not filling well, harvest early. Plan to use resistant hybrid next year.",
+        "effect": "After providing water and nutrients, the plant will use remaining healthy leaves to fill whatever grain it can. Harvesting at right time will save the grain quality that is still present."
+      },
+
+      "Critical": {
+        "remediation": "Do not spray - no economic return. Let crop reach natural maturity and harvest when grain is dry enough. Destroy all corn stalks after harvest. Choose resistant hybrid for next season.",
+        "effect": "After harvesting and destroying stalks, the field will be free of rust spores. Next season's crop with resistant hybrid will not be affected."
+      }
+    },
+
+    "Corn_(Maize)___Northern_Leaf_Blight": {
+      "plant": "Corn (Maize)",
+      "disease": "Northern Leaf Blight",
+
+      "None": {
+        "remediation": "Use hybrids with Ht resistance genes. Rotate with non-corn crops. Bury corn stalks by deep tillage after harvest.",
+        "effect": "Field stays clean of the blight fungus and next corn crop will grow without any blight infection."
+      },
+
+      "Low": {
+        "remediation": "Spray Azoxystrobin 250 SC at 200 mL per hectare when long dark green lesions first appear on lower leaves, before tasseling. Scout every 5-7 days.",
+        "effect": "After spraying, the long lesions on lower leaves will stop growing. The fungus will not move up to the ear leaf. Upper leaves will stay healthy and grain will fill to full size."
+      },
+
+      "Medium": {
+        "remediation": "Spray Azoxystrobin combined with Propiconazole at ear leaf emergence. Repeat after 14-21 days if humid weather continues. Make sure spray reaches the ear leaf well.",
+        "effect": "After spraying, blight lesions will stop appearing on new leaves. The ear leaf and above will be protected during the critical grain filling period and yield loss will be limited."
+      },
+
+      "High": {
+        "remediation": "Spray immediately if disease has just reached the ear leaf and grain fill is not complete. Do two sprays 10-14 days apart. Be realistic about return - if ear leaf is already heavily damaged, treatment will give less benefit.",
+        "effect": "After spraying, the rate of new lesions forming will slow down. This gives the remaining healthy leaf area more time to fill the grain that is already forming."
+      },
+
+      "Critical": {
+        "remediation": "Do not spray - not worth the cost at this stage. Harvest corn as soon as grain is dry enough. Burn or deeply bury all stalks. Do not plant corn here for at least 2 years.",
+        "effect": "After harvesting and destroying all stalks, the blight fungus is removed from the field. Crop rotation will ensure the disease does not come back for years."
+      }
+    },
+
+    "Corn_(Maize)___healthy": {
+      "plant": "Corn (Maize)",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Feed balanced NPK fertilizer based on soil test. Space plants properly. Water well during tasseling and grain filling. Control weeds early.",
+        "effect": "Corn will grow to its full genetic potential and produce maximum grain yield with good quality."
+      }
+    },
+
+    "Grape___Black_rot": {
+      "plant": "Grape",
+      "disease": "Black rot",
+
+      "None": {
+        "remediation": "Pick up and destroy all dried shriveled berries (mummies) from vines and ground. Prune out old canes. Spray dormant lime-sulfur before buds open in spring.",
+        "effect": "The vine will enter the growing season with no disease source present. New growth and fruit will develop clean and healthy."
+      },
+
+      "Low": {
+        "remediation": "Spray Mancozeb 75% WP at 2.5 g/L every 10-14 days from bud break through 4 weeks after bloom. Pick off any infected berries immediately. Prune and train vines so air moves freely through the canopy.",
+        "effect": "After spraying and removing infected berries, the fungus spores in the air will be killed before they land on healthy fruit. Remaining grape clusters will stay clean and develop to full size."
+      },
+
+      "Medium": {
+        "remediation": "Spray Captan or Mancozeb every 7-10 days until grapes fully ripen. Remove entire clusters that have any rotted berries. Do summer pruning to cut back thick leaf areas for better air movement.",
+        "effect": "After removing infected clusters and improving air flow, the fungus will have difficulty infecting remaining clusters. Healthy clusters will continue developing and ripen normally."
+      },
+
+      "High": {
+        "remediation": "Remove ALL grape clusters from the vine whether they look infected or not. This stops the disease cycle completely. Spray Mancozeb plus Myclobutanil every 5-7 days for the rest of the season. Cut back infected canes heavily.",
+        "effect": "After removing all fruit and infected wood, the vine itself will be protected by the sprays. The vine will focus its energy on building strong wood and healthy buds for next year's crop."
+      },
+
+      "Critical": {
+        "remediation": "Remove all fruit and all canes that show any sign of infection. Spray Myclobutanil at 1 mL/L every 5 days. Cut irrigation to slow vine growth. Apply soil treatment around the vine base.",
+        "effect": "After this heavy pruning and continuous spraying, the vine will stop losing healthy wood. It will be weak for the rest of this season but the roots will stay strong and the vine will regrow next year."
+      }
+    },
+
+    "Grape___Esca_(Black_Measles)": {
+      "plant": "Grape",
+      "disease": "Esca (Black Measles)",
+
+      "None": {
+        "remediation": "Always prune in dry winter weather. Seal all large cuts with wound sealant immediately. Keep pruning tools sharp and clean between vines.",
+        "effect": "Wounds will heal quickly and cleanly with no entry point for the Esca fungi. Vine will stay healthy and productive for many years."
+      },
+
+      "Low": {
+        "remediation": "Cut out all wood that shows brown streaks inside when sliced. Paint every cut surface with copper wound sealant immediately. Feed the vine well with balanced fertilizer and water it properly to reduce stress.",
+        "effect": "After cutting infected wood and sealing wounds, the fungi will be physically removed from the vine. Good nutrition and water will strengthen the remaining healthy wood and help it resist re-infection."
+      },
+
+      "Medium": {
+        "remediation": "Cut back all infected branches to healthy white wood - slice the cut surface and check there is no brown color. Remove spotted leaves and berries. Water and fertilize well to reduce plant stress. If the main trunk shows streaking, plan for trunk renewal.",
+        "effect": "After removing all infected wood, the vine will push new healthy shoots from the remaining clean wood. The vine will look weaker for a few weeks but will recover and produce fruit from the new growth."
+      },
+
+      "High": {
+        "remediation": "Start growing a new trunk from a strong bud at the base of the vine. Keep the old infected trunk alive until the new one is strong enough (takes 2-3 years). Then cut and remove the old trunk completely. Feed the vine well during this whole period.",
+        "effect": "After the new trunk is established and the old one removed, the vine will essentially be renewed. It will produce increasing amounts of fruit each year as the new trunk grows stronger."
+      },
+
+      "Critical": {
+        "remediation": "Remove the entire vine including roots. Do not plant anything in this spot for 3-5 years. Treat the soil. When replanting choose varieties that are more tolerant of Esca.",
+        "effect": "After removing the vine and cleaning the soil, the Esca fungi in the ground will die out over time. A new vine planted later with a tolerant variety will start fresh with no disease history."
+      }
+    },
+
+    "Grape___Leaf_blight": {
+      "plant": "Grape",
+      "disease": "Leaf blight (Isariopsis leaf spot)",
+
+      "None": {
+        "remediation": "Remove lower leaves near the grape clusters for air flow. Do not water overhead. Feed vine with balanced fertilizer.",
+        "effect": "Vine canopy will stay dry and open which stops the blight fungus from growing. Grapes will ripen well."
+      },
+
+      "Low": {
+        "remediation": "Spray Copper oxychloride 50% WP at 2.5 g/L every 14 days. Remove leaves that are badly spotted.",
+        "effect": "After spraying, the brown spots on remaining leaves will stop spreading. New leaves coming out will be clean and the vine will have enough healthy leaves to ripen the grapes well."
+      },
+
+      "Medium": {
+        "remediation": "Spray Mancozeb 75% WP at 2.5 g/L every 7-10 days until spotting stops spreading. Remove heavily spotted leaves. Cut back some shoots to let air move through the vine.",
+        "effect": "After removing spotted leaves and spraying, the healthy leaves left on the vine will stay green. They will continue making food for the grapes and fruit quality will be maintained."
+      },
+
+      "High": {
+        "remediation": "Spray copper and Mancozeb alternating every 5-7 days. Remove all spotted leaves even if it means the vine loses many leaves. If grapes are not ripening because of leaf loss, harvest them early. Reduce nitrogen feeding.",
+        "effect": "After removing spotted leaves and spraying, the remaining healthy leaves will be protected. The vine will be weaker but will not lose more leaves. Any unripe grapes picked early can still ripen indoors."
+      },
+
+      "Critical": {
+        "remediation": "Most leaves have fallen or are heavily damaged. Pick any grapes that can still be used. Keep spraying to protect the few leaves left. Cut back badly damaged shoots in winter. Feed vine with potassium-rich fertilizer for recovery.",
+        "effect": "After picking remaining grapes and protecting the last leaves, the vine will survive through to dormancy. With winter pruning and good feeding in spring, the vine will grow back a full set of healthy leaves next season."
+      }
+    },
+
+    "Grape___healthy": {
+      "plant": "Grape",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Manage canopy properly, fertilize with balanced NPK, prune on time, train shoots well, spray preventive program during bloom and fruit development.",
+        "effect": "Vine will stay productive and healthy producing high-quality grapes year after year."
+      }
+    },
+
+    "Peach___Bacterial_spot": {
+      "plant": "Peach",
+      "disease": "Bacterial spot",
+
+      "None": {
+        "remediation": "Plant resistant varieties. Use windbreaks around the orchard. Water at the base only. Spray copper in late winter as a preventive.",
+        "effect": "Tree will grow without bacterial infection and produce clean blemish-free peaches."
+      },
+
+      "Low": {
+        "remediation": "Spray Copper hydroxide 77% WP at 3 g/L starting at petal fall. Repeat every 7-10 days for 4-5 rounds. Remove fruit that has dark sunken spots on it.",
+        "effect": "After spraying, bacteria living on the leaf and fruit surfaces will be killed. New leaves and fruit developing after the spray will come out clean and healthy."
+      },
+
+      "Medium": {
+        "remediation": "Spray copper every 5-7 days. Remove fruit with heavy dark spots to stop bacteria from multiplying. Thin out inner branches so leaves dry quickly after rain. Stop nitrogen feeding temporarily.",
+        "effect": "After removing spotted fruit and thinning branches, the tree dries faster after rain which slows bacteria growth. Remaining clean fruit will continue growing and be ready for harvest."
+      },
+
+      "High": {
+        "remediation": "Remove all fruit from the tree to reduce the amount of bacteria. Keep spraying copper to protect the leaves. Cut back heavily spotted shoots after the season. Build a windbreak to protect the tree.",
+        "effect": "After removing all fruit, the tree will put its energy into keeping leaves healthy instead of growing fruit. Copper spray will protect those leaves. Next year with the windbreak the tree will produce fruit again."
+      },
+
+      "Critical": {
+        "remediation": "Tree is very weak from infection. Keep spraying copper to protect remaining leaves. Cut out dead branches in winter. Feed tree well with fertilizer and water. Check if the tree is worth keeping or should be replaced.",
+        "effect": "After continued copper spray and good feeding, the tree will slowly recover leaf health. It will take 2-3 years to get back to producing fruit but the tree structure will be stronger."
+      }
+    },
+
+    "Peach___healthy": {
+      "plant": "Peach",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Prune into open center shape every year. Feed balanced NPK with low nitrogen. Water at the base. Scout for disease weekly.",
+        "effect": "Tree will stay strong and healthy and produce good quality peaches consistently."
+      }
+    },
+
+    "Potato___Early_blight": {
+      "plant": "Potato",
+      "disease": "Early blight",
+
+      "None": {
+        "remediation": "Use certified seed potatoes only. Rotate crops for 3-4 years. Feed plant well so it stays strong. Remove wild potato plants nearby.",
+        "effect": "Potato plants will grow strong and healthy and produce full-size tubers with no blight damage."
+      },
+
+      "Low": {
+        "remediation": "Spray Chlorothalonil 75% WP at 2 g/L or Mancozeb 75% WP at 2.5 g/L when dark ringed spots first appear. Repeat every 7-10 days. Remove the spotted lower leaves.",
+        "effect": "After spraying and leaf removal, the fungus will be killed on remaining leaves. New leaves growing above will stay clean and the plant will continue making food for the tubers underground which will grow to full size."
+      },
+
+      "Medium": {
+        "remediation": "Spray alternating Chlorothalonil and Azoxystrobin every 5-7 days. Remove spotted leaves from the lower half of the plant. Side-dress with nitrogen and potassium fertilizer. Keep watering steady.",
+        "effect": "After this treatment the upper leaves will stay healthy and green. The plant will keep making food and sending it to the tubers underground. Tubers will still grow well even though some lower leaves were removed."
+      },
+
+      "High": {
+        "remediation": "Spray every 5 days combining protective and systemic fungicides. Accept that many leaves are already damaged. Focus treatment on protecting the top leaves. Think about harvesting early if tubers have reached a decent size.",
+        "effect": "After spraying the top leaves will be protected from further infection. The remaining healthy leaves will push food down to the tubers and whatever size they have reached will be maintained. Early harvest will give you usable tubers."
+      },
+
+      "Critical": {
+        "remediation": "Check if treatment is worth the cost. If yes: spray to keep any remaining leaves alive long enough for tubers to reach minimum size. Then kill the vines and dig up tubers. Destroy all plant material. Do not plant potatoes here for 3 years.",
+        "effect": "After vine killing and harvesting, you will get small tubers but they will still have value. Destroying all plant material and rotating crops will clean the field so future potato crops will grow without early blight."
+      }
+    },
+
+    "Potato___Late_blight": {
+      "plant": "Potato",
+      "disease": "Late blight",
+
+      "None": {
+        "remediation": "Watch late blight forecast reports every day during cool wet weather. Have fungicide stored and ready. Scout field twice a week. Remove volunteer potatoes.",
+        "effect": "You will catch the disease the moment it appears and spray immediately which gives the best chance of stopping it before it spreads across the field."
+      },
+
+      "Low": {
+        "remediation": "Spray IMMEDIATELY - do not wait. Use Mefenoxam plus Chlorothalonil or Cymoxanil plus Mancozeb. Spray again every 5-7 days without missing. If only a few plants show symptoms, pull them out and burn them.",
+        "effect": "After immediate spraying, the fungus on healthy plants will be killed before it produces spores. If weather turns dry the disease will stop spreading and the rest of the crop will grow normally and you can harvest full tubers."
+      },
+
+      "Medium": {
+        "remediation": "Spray systemic plus protective fungicide every 3-5 days. Pull out and burn plants that are visibly infected. Kill the vines early - 10-14 days before you plan to harvest - to stop the disease from reaching the tubers.",
+        "effect": "After vine killing, the disease cannot reach the tubers underground anymore. Tubers will stay clean in the soil. Wait 2 weeks then dig and you will get usable tubers free from rot."
+      },
+
+      "High": {
+        "remediation": "Spray every 3-4 days at maximum rate. Kill the vines RIGHT NOW to protect tubers - this is the most important step. Wait 14-21 days after vine killing before digging. Sort tubers carefully when you dig.",
+        "effect": "After killing vines immediately, the fungus is cut off from reaching tubers. Most tubers underground will be clean. When you dig after the waiting period you will be able to sort out any affected ones and save the rest."
+      },
+
+      "Critical": {
+        "remediation": "Destroy all plants immediately - do not wait. Kill vines today even if tubers are not fully grown. Wait at least 2 weeks. Dig and throw away any tuber that looks dark or soft. Do not store any potatoes from this field.",
+        "effect": "After immediate vine destruction, the fungus stops spreading underground. Small tubers will be recovered but they should go straight to market or processing - not storage. The field will be clean for next season after proper rotation."
+      }
+    },
+
+    "Potato___healthy": {
+      "plant": "Potato",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Use certified seed. Rotate crops. Feed based on soil test. Hill the rows properly. Water consistently. Scout weekly.",
+        "effect": "Plants will grow vigorously and produce full-size healthy tubers with good storage quality."
+      }
+    },
+
+    "Soybean___Bacterial_blight": {
+      "plant": "Soybean",
+      "disease": "Bacterial blight",
+
+      "None": {
+        "remediation": "Buy only certified disease-free seed. Rotate crops. Do not work in fields when leaves are wet. Remove weeds that can carry bacteria.",
+        "effect": "Plants will grow without bacterial infection and pods will fill normally with healthy seeds."
+      },
+
+      "Low": {
+        "remediation": "Copper spray gives limited but some benefit. Remove and burn plants that are badly infected if there are only a few. Do not walk through the field when it is wet. Spray foliar fertilizer to strengthen remaining plants.",
+        "effect": "After removing infected plants and strengthening healthy ones with foliar feed, the healthy plants will grow stronger and resist infection better. Pod filling will continue normally on unaffected plants."
+      },
+
+      "Medium": {
+        "remediation": "Copper spray every 7-10 days for marginal benefit. Do not disturb wet plants. Control insects that spread bacteria. Feed plants with foliar potassium and calcium to boost resistance.",
+        "effect": "After foliar feeding, healthy plants will become stronger and their leaves will be less likely to get infected. The copper will slow bacteria spread between plants. Pods on healthy plants will fill well."
+      },
+
+      "High": {
+        "remediation": "Chemical treatment will not reverse the damage at this stage. Let the crop finish growing. Focus on harvesting clean seed when pods are dry. Destroy all plant material after harvest. Do not plant soybeans for 2-3 years.",
+        "effect": "After letting the crop mature naturally and harvesting when dry, the seed quality from unaffected pods will still be usable. Destroying residue after harvest cleans the field for future crops."
+      },
+
+      "Critical": {
+        "remediation": "Harvest early if pods have any seed in them. Destroy every bit of plant material by burning. Solarize the soil. Do not plant soybeans here for 3 years. Use resistant varieties in future.",
+        "effect": "After destroying all plant material and solarizing, the bacteria living in the soil and debris will be killed. The field will be clean and ready for rotation crops without bacterial contamination."
+      }
+    },
+
+    "Strawberry___Leaf_scorch": {
+      "plant": "Strawberry",
+      "disease": "Leaf scorch",
+
+      "None": {
+        "remediation": "Plant resistant varieties. Water only at the base with drip irrigation. Space plants 30-45 cm apart. Remove old leaves during renovation.",
+        "effect": "Plants will stay healthy with dry leaves and produce full strawberry harvest."
+      },
+
+      "Low": {
+        "remediation": "Spray Captan 50WP at 2 g/L or Thiram 75% WP at 2 g/L every 7-10 days starting at flowering. Pick off infected leaves by hand.",
+        "effect": "After spraying and removing spotted leaves, the fungus on the plant will be killed. New leaves will grow out clean and green. The plant will continue producing strawberries normally this season."
+      },
+
+      "Medium": {
+        "remediation": "Spray Captan every 5-7 days. During renovation after harvest cut ALL leaves down to the crown level and remove them from the field. Do not water overhead. Feed with balanced fertilizer after renovation.",
+        "effect": "After cutting all leaves and spraying, the plant crowns will be clean of fungus. New leaves will push up from the crown within 1-2 weeks and they will be healthy. Next season this plant will produce well."
+      },
+
+      "High": {
+        "remediation": "Mow the entire planting and remove all leaf material. Burn the removed leaves. Spray fungicide on the crowns. Reduce plant density if rows are too thick. Feed with fertilizer to push new growth.",
+        "effect": "After removing all diseased leaves and spraying the crowns, the fungus is completely removed from the planting. New leaves will grow from the crowns within 2 weeks. The plant will be weaker this season but will recover for next year."
+      },
+
+      "Critical": {
+        "remediation": "If this is a second or third year planting, plow it down and replant fresh. If trying to save: mow everything, remove and burn all leaves, spray crowns heavily, and feed with strong fertilizer.",
+        "effect": "After replanting with fresh plants, the new planting will start with no disease history and produce a full harvest next season. If saving existing plants, they will push new growth but will be weak and may not produce much this year."
+      }
+    },
+
+    "Strawberry___healthy": {
+      "plant": "Strawberry",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Water at the base only. Manage runners properly. Renovate after harvest every year. Control weeds. Space plants well.",
+        "effect": "Plants will stay healthy and produce heavy harvests of good quality strawberries for 2-3 productive years."
+      }
+    },
+
+    "Tomato___Bacterial_spot": {
+      "plant": "Tomato",
+      "disease": "Bacterial spot",
+
+      "None": {
+        "remediation": "Use certified transplants only. Water at the base. Space plants properly. Rotate with non-tomato crops for 3-4 years.",
+        "effect": "Plants will grow without spots and produce clean marketable tomatoes."
+      },
+
+      "Low": {
+        "remediation": "Spray Copper hydroxide 77% WP at 3 g/L every week. Pick off spotted leaves. Clean all tools with 10% bleach after touching any plant. Switch to drip irrigation if sprinklers are being used.",
+        "effect": "After spraying and removing spotted leaves, the bacteria on remaining leaves will be killed by copper. New leaves and fruit growing after this will come out clean. The plant will produce good tomatoes."
+      },
+
+      "Medium": {
+        "remediation": "Spray copper every 5 days combined with Mancozeb. Remove leaves and fruit that have heavy dark spots. Stop all nitrogen feeding. Spray calcium foliar to strengthen fruit walls.",
+        "effect": "After removing spotted parts and calcium spray, the remaining fruit on the plant will grow with thicker skin making it harder for bacteria to get inside. New fruit will develop clean on copper-protected plants."
+      },
+
+      "High": {
+        "remediation": "Spray copper every 3-4 days. Remove plants that are very heavily spotted and burn them away from the field. Pick any fruit that is ripe or close to ripe right now. Disinfect hands and tools constantly.",
+        "effect": "After removing heavily infected plants and picking ripe fruit, the remaining healthy plants will be protected by copper. They will produce some more fruit that you can harvest in the coming weeks."
+      },
+
+      "Critical": {
+        "remediation": "Stop the field if most plants are affected. Harvest whatever tomatoes you can right now. Remove and burn all plants. Treat the soil. Do not grow tomatoes or peppers here for 3-4 years.",
+        "effect": "After harvesting remaining tomatoes and destroying all plants, the bacteria in the field will die out over time with rotation. Your harvested tomatoes can still be sold if they are firm and clean on the outside."
+      }
+    },
+
+    "Tomato___Early_blight": {
+      "plant": "Tomato",
+      "disease": "Early blight",
+
+      "None": {
+        "remediation": "Mulch around plants to stop soil from splashing onto leaves. Feed well. Water consistently. Stake plants so lower leaves stay off the ground.",
+        "effect": "Leaves will stay dry and clean. Plants will grow strong and produce tomatoes without blight."
+      },
+
+      "Low": {
+        "remediation": "Spray Chlorothalonil 75% WP at 2 g/L or Mancozeb at 2.5 g/L every week. Remove ringed brown spots on lower leaves. Mulch around plants.",
+        "effect": "After spraying and removing spotted leaves, the fungus will be killed on the plant. Upper leaves will stay green and healthy. The plant will keep producing tomatoes normally."
+      },
+
+      "Medium": {
+        "remediation": "Spray alternating Chlorothalonil and Azoxystrobin every 5-7 days. Remove all spotted leaves up to the first tomato cluster. Feed with nitrogen and potassium. Water regularly.",
+        "effect": "After removing lower spotted leaves and spraying, the remaining upper leaves will be protected. The plant will continue making food through healthy upper leaves and fruit will keep growing and ripening."
+      },
+
+      "High": {
+        "remediation": "Spray every 5 days with combined fungicides. Many leaves have already been damaged so spray the remaining ones well. Feed plant through foliar spray. Pick ripe tomatoes now before the plant weakens further.",
+        "effect": "After spraying the remaining healthy leaves will be protected and stay green a bit longer. This gives the tomatoes currently on the plant time to ripen so you can harvest them before the plant gets too weak."
+      },
+
+      "Critical": {
+        "remediation": "Pick every tomato that is ripe or almost ripe immediately. Do not spray anymore - it is too late. Remove all plants and burn them. Clean the field. Rotate crops and use resistant varieties next time.",
+        "effect": "After harvesting remaining tomatoes you will still get some usable fruit. After removing and burning all plants the fungus will be gone from the field. Next season with resistant varieties the field will produce clean tomatoes again."
+      }
+    },
+
+    "Tomato___Late_blight": {
+      "plant": "Tomato",
+      "disease": "Late blight",
+
+      "None": {
+        "remediation": "Watch late blight forecast every day in cool wet weather. Have spray equipment and fungicide ready. Scout twice a week. Remove volunteer tomatoes and potatoes nearby.",
+        "effect": "You will be ready to spray the moment disease appears. This speed of response is the only way to stop late blight from destroying the crop."
+      },
+
+      "Low": {
+        "remediation": "Spray TODAY without any delay. Use Mancozeb plus Cymoxanil or Chlorothalonil plus Mefenoxam. Spray again every 5-7 days. Remove infected plants if only a few show symptoms.",
+        "effect": "After immediate spraying the healthy plants in the field will be protected from infection. If weather becomes drier the disease will stop and your crop will grow and produce tomatoes normally."
+      },
+
+      "Medium": {
+        "remediation": "Spray every 3-5 days at full rate. Pull out and burn visibly infected plants. Harvest any ripe tomatoes now. Spray neighboring tomato and potato fields too as a warning measure.",
+        "effect": "After removing infected plants and spraying the rest, healthy plants will continue growing. Ripe tomatoes you picked today are safe to sell. Remaining plants protected by spray will produce more fruit if weather improves."
+      },
+
+      "High": {
+        "remediation": "Spray every 3-4 days at maximum dose. Harvest all ripe or nearly ripe tomatoes RIGHT NOW. Destroy visibly infected plants. Warn neighbors who have tomatoes or potatoes.",
+        "effect": "After harvesting and destroying infected plants, the tomatoes you picked will be fine to sell. The spray will slow the disease on remaining plants giving them a chance to ripen whatever fruit they have left."
+      },
+
+      "Critical": {
+        "remediation": "Destroy all plants today. Pick any tomatoes that are usable regardless of ripeness - they can ripen off the vine. Burn all plant material. Do not plant tomatoes or potatoes here for 2-3 years.",
+        "effect": "After destroying all plants the disease source is removed from the field. Unripe tomatoes picked today can ripen indoors and be sold. The field will recover after rotation and be ready for future crops."
+      }
+    },
+
+    "Tomato___Septoria_leaf_spot": {
+      "plant": "Tomato",
+      "disease": "Septoria leaf spot",
+
+      "None": {
+        "remediation": "Remove old plant debris from last season. Mulch around plants. Stake them well. Water at the base only. Rotate crops.",
+        "effect": "Plants will grow with dry clean leaves. No fungus will be present to cause spots and tomatoes will produce well."
+      },
+
+      "Low": {
+        "remediation": "Spray Chlorothalonil 75% WP at 2 g/L or copper spray weekly when tiny spots with dark edges first appear. Remove spotted lower leaves and destroy them.",
+        "effect": "After spraying and leaf removal, the tiny spots will not spread to upper leaves. The plant will keep all its important upper leaves healthy and continue producing good tomatoes."
+      },
+
+      "Medium": {
+        "remediation": "Spray Chlorothalonil or Mancozeb every 5-7 days. Remove all spotted leaves up to the first tomato cluster. Prune some shoots to improve air movement. Feed with potassium fertilizer.",
+        "effect": "After removing spotted leaves and pruning, the remaining leaves will dry faster after rain which slows the fungus. Potassium feeding will strengthen remaining leaves. Tomatoes will continue ripening."
+      },
+
+      "High": {
+        "remediation": "Spray every 5 days to protect any leaves still left. Feed through foliar spray since many leaves are gone. Pick ripe tomatoes now. Accept that the plant is finishing its productive life.",
+        "effect": "After foliar feeding the remaining leaves will stay alive a bit longer and send food to the tomatoes still on the plant. Picking ripe fruit now gives you the best quality harvest possible from this plant."
+      },
+
+      "Critical": {
+        "remediation": "Do not spray anymore. Pick whatever tomatoes are on the plant now. Remove and destroy all plants. Clean the soil. Rotate crops for at least 2 years.",
+        "effect": "After picking remaining tomatoes you will have some usable fruit. After field cleanup and rotation the fungus will be gone and next season's crop will start on clean ground."
+      }
+    },
+
+    "Tomato___Yellow_Leaf_Curl_Virus": {
+      "plant": "Tomato",
+      "disease": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+
+      "None": {
+        "remediation": "Plant varieties with Ty resistance gene. Use insect netting over plants in greenhouse. Control whiteflies from the start. Remove any plant showing curling leaves immediately.",
+        "effect": "Plants will grow healthy because resistant varieties will not get sick even if whiteflies carry the virus. Full fruit production will happen."
+      },
+
+      "Low": {
+        "remediation": "There is NO medicine for this virus. Remove and burn infected plants immediately. Spray remaining plants with neonicotinoid insecticide to kill whiteflies. Put up yellow sticky traps. Cover healthy plants with insect netting.",
+        "effect": "After removing infected plants and killing whiteflies, the remaining healthy plants will not get the virus because the insects carrying it are dead. These plants will continue growing and producing tomatoes."
+      },
+
+      "Medium": {
+        "remediation": "Pull out ALL plants showing curling yellow leaves and burn them. Spray insecticide on remaining plants every 3-4 days to kill whiteflies. Put insect nets over healthy plants. Remove all weeds around the field.",
+        "effect": "After removing infected plants and netting healthy ones, whiteflies cannot reach healthy plants to spread the virus. Protected plants will continue growing and producing tomatoes normally."
+      },
+
+      "High": {
+        "remediation": "Look at the field honestly. If more than half the plants are infected it is better to end the field. If saving: remove infected plants, spray insecticide heavily, net all remaining plants, remove all weeds.",
+        "effect": "After removing infected plants and protecting the rest with nets and insecticide, the surviving healthy plants will produce some fruit. However yield will be much lower than expected because many plants were removed."
+      },
+
+      "Critical": {
+        "remediation": "End the entire field. Destroy every plant infected or not - healthy plants will get infected soon anyway with so many whiteflies. Burn everything. Spray insecticide on the empty field. Do not plant here for 1 season.",
+        "effect": "After destroying everything and spraying the empty field, whiteflies and the virus reservoir are removed. When you plant again next season with resistant varieties the field will produce a healthy full crop."
+      }
+    },
+
+    "Tomato___healthy": {
+      "plant": "Tomato",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Stake or cage plants. Water 1-2 inches per week consistently. Feed balanced fertilizer - not too much nitrogen. Mulch the ground. Pick ripe fruit regularly.",
+        "effect": "Plants will stay strong and healthy throughout the season and produce maximum number of good quality tomatoes."
+      }
+    },
+
+    "Wheat___Stripe_rust": {
+      "plant": "Wheat",
+      "disease": "Stripe rust (Yellow rust)",
+
+      "None": {
+        "remediation": "Plant varieties with rust resistance. Watch regional rust reports from your agricultural department. Scout the field every week during cool damp weather. Destroy volunteer wheat.",
+        "effect": "Wheat will grow without any rust and produce full grain yield at harvest."
+      },
+
+      "Low": {
+        "remediation": "Spray Propiconazole 25% EC at 200 mL per hectare or Tebuconazole 25% EC at 200 mL per hectare as soon as you see yellow-orange lines of rust pustules. One spray is usually enough if done early.",
+        "effect": "After spraying, the rust pustules will dry up and stop releasing spores within 5-7 days. Upper leaves will stay clean and green. Grain will fill to full size and you will get a normal harvest."
+      },
+
+      "Medium": {
+        "remediation": "Spray Propiconazole or Tebuconazole immediately. Check the flag leaf - if it is still clean spray it well to protect it. You may need a second spray in 14-21 days if rust keeps appearing.",
+        "effect": "After spraying, the flag leaf will be protected and stay green. Since the flag leaf makes most of the food for grain filling, the wheat will produce a good harvest even though lower leaves were affected."
+      },
+
+      "High": {
+        "remediation": "Spray now but be realistic about the return. If the flag leaf is already heavily covered with rust, spraying will give limited benefit. Let the wheat mature and harvest on time. Use resistant variety next year.",
+        "effect": "After spraying, whatever healthy leaf area remains will be protected and continue making food for the grain. The grain will still fill but will be smaller than normal. Harvesting at the right time will give you the best quality grain possible."
+      },
+
+      "Critical": {
+        "remediation": "Do not spend money on spraying. Let wheat mature as it can. Harvest as soon as grain is dry enough - do not leave it standing too long. Destroy all wheat stubble after harvest. Plant resistant variety next season.",
+        "effect": "After harvesting and destroying stubble, the rust fungus is removed from the field. The grain you harvest will be smaller and lighter than normal but still has value. Next season with a resistant variety the field will produce well."
+      }
+    },
+
+    "Wheat___healthy": {
+      "plant": "Wheat",
+      "disease": "Healthy",
+
+      "None": {
+        "remediation": "Seed at proper rate. Feed based on soil test. Control weeds early. Use resistant varieties. Rotate crops.",
+        "effect": "Wheat will grow strongly and produce full yield of high-quality grain at harvest."
+      }
+    }
+  },
+
+  "important_notes": {
+    "chemical_safety": "Always read product labels before use. Wear gloves, mask and goggles when spraying. Do not spray near water sources or when wind is blowing.",
+    "harvest_waiting": "Always wait the number of days written on the product label before picking fruit or grain after spraying.",
+    "resistance": "Change the type of fungicide or bactericide every 2-3 sprays. Using the same chemical every time makes the disease become resistant to it.",
+    "cost_benefit": "Always think about whether the cost of treatment is less than the value of what you will save. Sometimes replanting is cheaper than intensive treatment.",
+    "weather": "Spray in the morning when wind is calm. Do not spray if it will rain within 4-6 hours."
+  }
+}
