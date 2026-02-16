@@ -1,8 +1,6 @@
-// lib/widgets/current_weather_section.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/weather_model.dart';
-import '../items/icon_item.dart';
 
 class CurrentWeatherSection extends StatelessWidget {
   final WeatherModel weatherData;
@@ -24,13 +22,10 @@ class CurrentWeatherSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Location
               _locationRow(),
               const SizedBox(height: 12),
-              _dateChip(),
+              _dateAndTimeChips(),
               const SizedBox(height: 40),
-
-              // Main temperature + icon
               Center(
                 child: Column(
                   children: [
@@ -62,7 +57,18 @@ class CurrentWeatherSection extends StatelessWidget {
 
   Widget _locationRow() => Row(
     children: [
-      const IconItem(icon: Icons.location_on_rounded, size: 24),
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.location_on_rounded,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
       const SizedBox(width: 12),
       Expanded(
         child: Column(
@@ -95,22 +101,59 @@ class CurrentWeatherSection extends StatelessWidget {
     ],
   );
 
-  Widget _dateChip() => Container(
+  Widget _dateAndTimeChips() => Wrap(
+    spacing: 8,
+    children: [
+      _chip(
+        icon: Icons.calendar_today,
+        text: DateFormat('EEEE, MMM d').format(DateTime.now()),
+      ),
+      _chip(
+        icon: Icons.access_time,
+        text: _getLocalTime(),
+      ),
+    ],
+  );
+
+  Widget _chip({required IconData icon, required String text}) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     decoration: BoxDecoration(
       color: Colors.white.withOpacity(0.2),
       borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now()),
-      style: TextStyle(
-        fontSize: 14,
-        color: Colors.white.withOpacity(0.95),
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.3,
+      border: Border.all(
+        color: Colors.white.withOpacity(0.3),
+        width: 1,
       ),
     ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white, size: 14),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white.withOpacity(0.95),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    ),
   );
+
+  String _getLocalTime() {
+    if (weatherData.localTime.isNotEmpty && weatherData.localTime != 'Unknown') {
+      try {
+        final localDateTime = DateTime.parse(weatherData.localTime);
+        return DateFormat('HH:mm').format(localDateTime);
+      } catch (e) {
+        return DateFormat('HH:mm').format(DateTime.now());
+      }
+    }
+    return DateFormat('HH:mm').format(DateTime.now());
+  }
 
   Widget _weatherIcon() => Container(
     padding: const EdgeInsets.all(24),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../../core/constants/app_measurements.dart';
 import 'scan_card.dart';
 
 class RecentScansSection extends StatelessWidget {
@@ -26,85 +25,105 @@ class RecentScansSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final horizontalPadding = screenWidth * 0.05;
 
     if (recentScans.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    // Dynamic color based on section type
+    final sectionColor = showAdvancedBadge
+        ? (isDark ? const Color(0xFF5E97F6) : const Color(0xFF4285F4))
+        : Theme.of(context).colorScheme.primary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // Section Header - REMOVED SCAN COUNT
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-          ),
+        // Modern Header
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Title with icon - WITHOUT COUNT
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: _getSectionColor(theme),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      showAdvancedBadge ? Icons.cloud : Icons.phone_android,
-                      size: 16,
-                      color: Colors.white,
-                    ),
+              // Icon with gradient
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: showAdvancedBadge
+                        ? (isDark
+                        ? [const Color(0xFF5E97F6), const Color(0xFF5BB974)]
+                        : [const Color(0xFF4285F4), const Color(0xFF34A853)])
+                        : [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    sectionTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: AppMeasurements.getResponsiveFontSize(
-                        context,
-                        baseSize: 18,
-                      ),
-                      letterSpacing: -0.3,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: sectionColor.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  // REMOVED: Scan count container
-                ],
+                  ],
+                ),
+                child: Icon(
+                  showAdvancedBadge ? Icons.cloud_outlined : Icons.smartphone_outlined,
+                  size: 18,
+                  color: Colors.white,
+                ),
               ),
 
+              const SizedBox(width: 10),
+
+              // Title
+              Expanded(
+                child: Text(
+                  sectionTitle,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    letterSpacing: -0.5,
+                    color: isDark ? Colors.white : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
               // View All Button
-              _buildViewAllButton(context),
+              _buildViewAllButton(context, isDark, sectionColor),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
+        SizedBox(height: screenHeight * 0.012),
 
-        // Horizontal Scans List
+        // Scans Grid - REDUCED HEIGHT
         SizedBox(
-          height: 160,
+          height: 135, // Reduced from 165
           child: ListView.builder(
-            padding: const EdgeInsets.only(left: 20, right: 20),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding * 0.8),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             itemCount: recentScans.length,
             itemBuilder: (context, index) {
               final scan = recentScans[index];
               final scanId = scan['id']?.toString() ?? 'scan_$index';
+              final screenWidth = MediaQuery.of(context).size.width;
+              final cardWidth = (screenWidth * 0.32).clamp(110.0, 135.0); // Reduced width
 
               return Container(
-                width: 140,
+                width: cardWidth,
                 margin: EdgeInsets.only(
-                  right: index < recentScans.length - 1 ? 12 : 20,
+                  right: index < recentScans.length - 1 ? 10 : 0,
+                  left: index == 0 ? 4 : 0,
                 ),
                 child: Hero(
                   tag: 'recent_scan_hero_$scanId',
@@ -131,35 +150,40 @@ class RecentScansSection extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 8),
+        SizedBox(height: screenHeight * 0.005),
       ],
     );
   }
 
-  Widget _buildViewAllButton(BuildContext context) {
-    final theme = Theme.of(context);
-
+  Widget _buildViewAllButton(BuildContext context, bool isDark, Color sectionColor) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           HapticFeedback.lightImpact();
           onShowAllScans();
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary.withOpacity(0.1),
-                theme.colorScheme.secondary.withOpacity(0.1),
+              colors: isDark
+                  ? [
+                sectionColor.withOpacity(0.2),
+                sectionColor.withOpacity(0.15),
+              ]
+                  : [
+                sectionColor.withOpacity(0.12),
+                sectionColor.withOpacity(0.08),
               ],
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.2),
-              width: 1,
+              color: isDark
+                  ? sectionColor.withOpacity(0.4)
+                  : sectionColor.withOpacity(0.25),
+              width: 1.2,
             ),
           ),
           child: Row(
@@ -167,29 +191,23 @@ class RecentScansSection extends StatelessWidget {
             children: [
               Text(
                 'View All',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+                style: TextStyle(
+                  color: isDark ? sectionColor : sectionColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11.5,
+                  letterSpacing: 0.2,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
               Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 12,
-                color: theme.colorScheme.primary,
+                Icons.arrow_forward_rounded,
+                size: 13,
+                color: isDark ? sectionColor : sectionColor,
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Color _getSectionColor(ThemeData theme) {
-    if (showAdvancedBadge) {
-      return Colors.blue;
-    }
-    return theme.colorScheme.primary;
   }
 }

@@ -424,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
+                            padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
                             sliver: SliverToBoxAdapter(
                               child: FadeTransition(
                                 opacity: _fadeController,

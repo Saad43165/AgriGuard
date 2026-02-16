@@ -189,6 +189,12 @@ class WeatherProvider with ChangeNotifier {
         days: 5,
       );
 
+      if (kDebugMode) {
+        print('🕒 LOCAL TIME FROM API: "${forecast.current.localTime}"');
+        print('🌍 TIMEZONE FROM API: "${forecast.current.timezone}"');
+        print('📍 CITY FROM API: "${forecast.current.cityName}"');
+      }
+
       _safeSetState(() {
         _weatherForecast = forecast;
         _selectedCity = forecast.current.cityName;
@@ -205,7 +211,21 @@ class WeatherProvider with ChangeNotifier {
   /// Load weather by city name
   Future<void> _loadWeatherByCity(String city) async {
     try {
+      if (kDebugMode) {
+        print('🔍 Searching weather for city: $city');
+      }
+
       final forecast = await _weatherService.getWeatherByCity(city, days: 5);
+
+      if (kDebugMode) {
+        print('=== CITY SEARCH RESULT ===');
+        print('🏙️  City: ${forecast.current.cityName}');
+        print('🌍 Country: ${forecast.current.country}');
+        print('🕒 Local Time: "${forecast.current.localTime}"');
+        print('⏰ Timezone: "${forecast.current.timezone}"');
+        print('🌡️  Temperature: ${forecast.current.temperature}°C');
+        print('========================');
+      }
 
       _safeSetState(() {
         _weatherForecast = forecast;
@@ -232,12 +252,21 @@ class WeatherProvider with ChangeNotifier {
   Future<void> loadWeatherForCity(String city) async {
     if (_isDisposed) return;
 
+    if (kDebugMode) {
+      print('🔍 User requested weather for: $city');
+    }
+
     _updateState(WeatherLoadingState.loading);
     _clearError();
 
     try {
       await _loadWeatherByCity(city);
       _updateState(WeatherLoadingState.loaded);
+
+      if (kDebugMode) {
+        print('✅ Successfully loaded weather for: $city');
+        _printWeatherDebug();
+      }
     } catch (e) {
       _handleError(e);
     }
@@ -319,15 +348,18 @@ class WeatherProvider with ChangeNotifier {
   void _printWeatherDebug() {
     if (_weatherForecast == null) return;
 
-    print('=== WEATHER DEBUG INFO ===');
-    print('City: ${_weatherForecast!.current.cityName}');
-    print('Temperature: ${_weatherForecast!.current.temperature}°C');
-    print('Condition: ${_weatherForecast!.current.conditionText}');
-    print('Humidity: ${_weatherForecast!.current.humidity}%');
-    print('Wind Speed: ${_weatherForecast!.current.windSpeed} km/h');
-    print('UV Index: ${_weatherForecast!.current.uvIndex}');
-    print('Forecast Days: ${_weatherForecast!.forecast.length}');
-    print('=========================');
+    print('=== CURRENT WEATHER STATE ===');
+    print('🏙️  City: ${_weatherForecast!.current.cityName}');
+    print('🌍 Country: ${_weatherForecast!.current.country}');
+    print('🕒 Local Time: "${_weatherForecast!.current.localTime}"');
+    print('⏰ Timezone: "${_weatherForecast!.current.timezone}"');
+    print('🌡️  Temperature: ${_weatherForecast!.current.temperature}°C');
+    print('☁️  Condition: ${_weatherForecast!.current.conditionText}');
+    print('💧 Humidity: ${_weatherForecast!.current.humidity}%');
+    print('💨 Wind Speed: ${_weatherForecast!.current.windSpeed} km/h');
+    print('☀️  UV Index: ${_weatherForecast!.current.uvIndex}');
+    print('📅 Forecast Days: ${_weatherForecast!.forecast.length}');
+    print('============================');
   }
 
   @override

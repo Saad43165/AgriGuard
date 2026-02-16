@@ -1,4 +1,3 @@
-// lib/widgets/top_bar.dart
 import 'package:flutter/material.dart';
 
 class TopBar extends StatelessWidget {
@@ -20,31 +19,13 @@ class TopBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Row(
           children: [
-            _glassButton(
+            _buildButton(
               onPressed: onBack,
               child: const Icon(Icons.arrow_back_rounded, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: GestureDetector(
-                onTap: onSearch,
-                child: _glassContainer(
-                  child: Row(
-                    children: const [
-                      Icon(Icons.search_rounded, size: 22),
-                      SizedBox(width: 12),
-                      Text(
-                        'Search location...',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: _buildSearchBar(onSearch),
             ),
           ],
         ),
@@ -52,30 +33,66 @@ class TopBar extends StatelessWidget {
     );
   }
 
-  Widget _glassButton({required VoidCallback onPressed, required Widget child}) {
+  Widget _buildButton({required VoidCallback onPressed, required Widget child}) {
     return Container(
       decoration: _glassDecoration(),
-      child: IconButton(
-        icon: child,
-        onPressed: onPressed,
-        color: Colors.white,
-        padding: const EdgeInsets.all(12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: child,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _glassContainer({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: _glassDecoration(),
-      child: child,
+  Widget _buildSearchBar(VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: _glassDecoration(),
+          child: Row(
+            children: const [
+              Icon(Icons.search_rounded, size: 22, color: Colors.white),
+              SizedBox(width: 12),
+              Text(
+                'Search location...',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   BoxDecoration _glassDecoration() => BoxDecoration(
-    color: Colors.white.withOpacity(0.25),
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Colors.white.withOpacity(0.3),
+        Colors.white.withOpacity(0.2),
+      ],
+    ),
     borderRadius: BorderRadius.circular(14),
-    border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+    border: Border.all(
+      color: Colors.white.withOpacity(0.4),
+      width: 1.5,
+    ),
     boxShadow: [
       BoxShadow(
         color: Colors.black.withOpacity(0.15),

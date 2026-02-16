@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../core/constants/app_measurements.dart';
 import '../../../ResultScreen/presentation/results_screen.dart';
 import '../../../advance_result_screen/advanced_result_screen.dart';
 
@@ -29,9 +28,7 @@ class ScanCard extends StatefulWidget {
   State<ScanCard> createState() => _ScanCardState();
 }
 
-class _ScanCardState extends State<ScanCard>
-    with SingleTickerProviderStateMixin {
-  late final Map<String, dynamic> _navigableScan;
+class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin {
   late final String _formattedDate;
   late final Color _confidenceColor;
   late final String _confidenceText;
@@ -42,9 +39,7 @@ class _ScanCardState extends State<ScanCard>
   @override
   void initState() {
     super.initState();
-    _navigableScan = _convertScanForNavigation(widget.scan);
-    _formattedDate = _formatTimestamp(
-        widget.scan['timestamp'] ?? widget.scan['scanDate']);
+    _formattedDate = _formatTimestamp(widget.scan['timestamp'] ?? widget.scan['scanDate']);
     final conf = double.tryParse(widget.scan['confidence'].toString()) ?? 0;
     _confidenceColor = _getConfidenceColor(conf);
     _confidenceText = '${conf.toInt()}%';
@@ -70,7 +65,7 @@ class _ScanCardState extends State<ScanCard>
   // -----------------------------------------------------------------------
   Color _getConfidenceColor(double confidence) {
     if (confidence >= 80) return const Color(0xFF10B981);
-    if (confidence >= 60) return const Color(0xFFF59E0B);
+    if (confidence >= 60) return const Color(0xFFFB923C);
     return const Color(0xFFEF4444);
   }
 
@@ -93,32 +88,6 @@ class _ScanCardState extends State<ScanCard>
     }
   }
 
-  Map<String, dynamic> _convertScanForNavigation(
-      Map<String, dynamic> data) {
-    final converted = <String, dynamic>{};
-    data.forEach((key, value) {
-      if (value is Timestamp) {
-        final date = value.toDate();
-        converted[key] = date.toIso8601String();
-        converted['${key}Millis'] = value.millisecondsSinceEpoch;
-      } else if (value is DateTime) {
-        converted[key] = value.toIso8601String();
-        converted['${key}Millis'] = value.millisecondsSinceEpoch;
-      } else if (value is Map) {
-        converted[key] = _convertScanForNavigation(Map.from(value));
-      } else if (value is List) {
-        converted[key] = value.map((e) {
-          if (e is Map) return _convertScanForNavigation(Map.from(e));
-          return e;
-        }).toList();
-      } else {
-        converted[key] = value;
-      }
-    });
-    return converted;
-  }
-
-  // Check if scan is advanced
   bool _isAdvancedScan() {
     return widget.scan['isAdvanced'] as bool? ??
         widget.scan['scanType']?.toString() == 'advanced' ||
@@ -127,139 +96,170 @@ class _ScanCardState extends State<ScanCard>
             widget.scan['analysisSource']?.toString() == 'plantId';
   }
 
-  // Get plant name with disease for display
   String _getPlantName() {
     return widget.scan['plantName']?.toString() ?? 'Unknown Plant';
   }
 
-  // Get disease name for display
   String _getDiseaseName() {
-    final disease = widget.scan['diagnosis']?.toString() ??
+    return widget.scan['diagnosis']?.toString() ??
         widget.scan['diseaseName']?.toString() ??
         'Healthy';
-    return disease;
   }
 
-  // Convert treatment to list
-  List<String> _convertTreatmentToList(dynamic treatment) {
-    if (treatment == null) return [];
-    if (treatment is List) return List<String>.from(treatment);
-    if (treatment is String) {
-      return treatment.split('. ').where((s) => s.isNotEmpty).toList();
-    }
-    return [];
-  }
+  // Get color scheme based on analysis source
+  Map<String, dynamic> _getSourceColorScheme(String? source, bool isDark) {
+    final lowerSource = (source ?? '').toLowerCase();
 
-  // Get raw data for advanced results
-  Map<String, dynamic>? _getAdvancedData() {
-    if (_isAdvancedScan()) {
-      return widget.scan['advancedData'] is Map
-          ? Map<String, dynamic>.from(widget.scan['advancedData'])
-          : widget.scan['rawData'] is Map
-          ? Map<String, dynamic>.from(widget.scan['rawData'])
-          : null;
-    }
-    return null;
-  }
-
-  // -----------------------------------------------------------------------
-  // Navigation Handlers - FIXED: Added ID and history flags
-  // -----------------------------------------------------------------------
-  void _navigateToRegularResults(BuildContext context) {
-    // Create scan data WITH HISTORY FLAGS
-    final scanData = {
-      ...widget.scan, // Pass all original data
-      'isFromHistory': true, // CRITICAL: Mark as from history
-      'skipSave': true,
-      'alreadySaved': true,
-      'originalId': widget.scan['id'], // Pass original ID
-    };
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ResultsScreen(
-          scanData: scanData, // Pass with flags
-        ),
-      ),
-    );
-  }
-
-  void _navigateToAdvancedResults(BuildContext context) {
-    final advancedData = _getAdvancedData();
-
-    // Build analysis result format WITH ID
-    final analysisResult = {
-      'source': widget.scan['analysisSource']?.toString() ?? 'Gemini',
-      'data': {
-        'plant': _getPlantName(),
-        'disease': _getDiseaseName(),
-        'confidence': widget.scan['confidence']?.toString() ?? '0',
-        'severity': widget.scan['severity']?.toString() ?? 'Medium',
-        'symptoms': widget.scan['symptoms'] is List ?
-        List<String>.from(widget.scan['symptoms']) : [],
-        'remediation': _convertTreatmentToList(widget.scan['treatment']),
-        'precautions': widget.scan['precautions'] is List ?
-        List<String>.from(widget.scan['precautions']) : [],
-        'additionalInfo': widget.scan['description']?.toString() ?? '',
-      },
-      'success': true,
-      'hasDiseaseInfo': true,
-      'scanId': widget.scan['id'], // Pass original ID
-    };
-
-    // Safely merge only if both are Maps
-    final data = analysisResult['data'];
-    if (data is Map<String, dynamic> &&
-        advancedData != null &&
-        advancedData['data'] is Map<String, dynamic>) {
-      data.addAll(advancedData['data'] as Map<String, dynamic>);
-    }
-
-    // Create original scan data WITH HISTORY FLAGS
-    final originalScanData = {
-      'imagePath': widget.scan['imagePath'],
-      'imageUrl': widget.scan['imageUrl'],
-      'imageBase64': widget.scan['imageBase64'],
-      'isFromHistory': true, // CRITICAL: Mark as from history
-      'skipSave': true,
-      'alreadySaved': true,
-      'id': widget.scan['id'], // Pass original ID
-    };
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AdvancedResultsScreen(
-          analysisResult: analysisResult,
-          originalScanData: originalScanData,
-        ),
-      ),
-    );
-  }
-
-  void _onTap() {
-    HapticFeedback.lightImpact();
-    if (_isAdvancedScan()) {
-      _navigateToAdvancedResults(context);
+    if (lowerSource.contains('gemini')) {
+      return {
+        'primary': isDark ? const Color(0xFF5E97F6) : const Color(0xFF4285F4),
+        'gradient': isDark
+            ? [const Color(0xFF5E97F6), const Color(0xFF5BB974)]
+            : [const Color(0xFF4285F4), const Color(0xFF34A853)],
+        'light': isDark ? const Color(0xFF1E3A5F) : const Color(0xFFE8F0FE),
+        'cardBg': isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        'borderColor': isDark
+            ? const Color(0xFF5E97F6).withOpacity(0.4)
+            : const Color(0xFF4285F4).withOpacity(0.25),
+        'icon': Icons.stars_rounded,
+        'name': 'Gemini AI',
+      };
+    } else if (lowerSource.contains('plantid') || lowerSource.contains('plant.id')) {
+      return {
+        'primary': isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+        'gradient': isDark
+            ? [const Color(0xFF34D399), const Color(0xFF10B981)]
+            : [const Color(0xFF10B981), const Color(0xFF059669)],
+        'light': isDark ? const Color(0xFF1A3D2F) : const Color(0xFFD1FAE5),
+        'cardBg': isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        'borderColor': isDark
+            ? const Color(0xFF34D399).withOpacity(0.4)
+            : const Color(0xFF10B981).withOpacity(0.25),
+        'icon': Icons.eco_rounded,
+        'name': 'Plant.id',
+      };
     } else {
-      _navigateToRegularResults(context);
+      return {
+        'primary': Theme.of(context).colorScheme.primary,
+        'gradient': [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.secondary,
+        ],
+        'light': Theme.of(context).colorScheme.primaryContainer,
+        'cardBg': Theme.of(context).colorScheme.surface,
+        'borderColor': Theme.of(context).colorScheme.outline.withOpacity(isDark ? 0.3 : 0.15),
+        'icon': Icons.local_florist_rounded,
+        'name': 'Standard',
+      };
     }
   }
 
-  void _onLongPress() {
-    HapticFeedback.mediumImpact();
-    widget.onShowOptions(widget.scan);
+  Color _getDiseaseBoxColor(String diseaseName, bool isDark, {required bool isBackground}) {
+    final isHealthy = diseaseName.toLowerCase() == 'healthy';
+    if (isBackground) {
+      return isHealthy
+          ? (isDark ? const Color(0xFF1A3D2F) : Colors.green.shade50)
+          : (isDark ? const Color(0xFF3D2A1A) : Colors.orange.shade50);
+    } else {
+      return isHealthy
+          ? (isDark ? const Color(0xFF34D399) : Colors.green.shade300)
+          : (isDark ? const Color(0xFFFB923C) : Colors.orange.shade300);
+    }
+  }
+
+  Color _getDiseaseTextColor(String diseaseName, bool isDark) {
+    final isHealthy = diseaseName.toLowerCase() == 'healthy';
+    return isHealthy
+        ? (isDark ? const Color(0xFF34D399) : Colors.green.shade700)
+        : (isDark ? const Color(0xFFFB923C) : Colors.orange.shade800);
   }
 
   // -----------------------------------------------------------------------
-  // UI (unchanged)
+  // Navigation
+  // -----------------------------------------------------------------------
+  void _navigateToResults(BuildContext context) {
+    HapticFeedback.lightImpact();
+
+    if (_isAdvancedScan()) {
+      final analysisResult = {
+        'source': widget.scan['analysisSource']?.toString() ?? 'Gemini',
+        'data': {
+          'plant': _getPlantName(),
+          'disease': _getDiseaseName(),
+          'confidence': widget.scan['confidence']?.toString() ?? '0',
+          'severity': widget.scan['severity']?.toString() ?? 'Medium',
+          'symptoms': widget.scan['symptoms'] is List
+              ? List<String>.from(widget.scan['symptoms'])
+              : [],
+          'remediation': widget.scan['treatment'] is List
+              ? List<String>.from(widget.scan['treatment'])
+              : [],
+          'precautions': widget.scan['precautions'] is List
+              ? List<String>.from(widget.scan['precautions'])
+              : [],
+          'additionalInfo': widget.scan['description']?.toString() ?? '',
+        },
+        'success': true,
+        'hasDiseaseInfo': true,
+        'scanId': widget.scan['id'],
+      };
+
+      final originalScanData = {
+        'imagePath': widget.scan['imagePath'],
+        'imageUrl': widget.scan['imageUrl'],
+        'imageBase64': widget.scan['imageBase64'],
+        'isFromHistory': true,
+        'skipSave': true,
+        'alreadySaved': true,
+        'id': widget.scan['id'],
+      };
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AdvancedResultsScreen(
+            analysisResult: analysisResult,
+            originalScanData: originalScanData,
+          ),
+        ),
+      );
+    } else {
+      final scanData = {
+        ...widget.scan,
+        'isFromHistory': true,
+        'skipSave': true,
+        'alreadySaved': true,
+        'originalId': widget.scan['id'],
+      };
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResultsScreen(scanData: scanData),
+        ),
+      );
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // UI - REDUCED SIZE
   // -----------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final plantName = _getPlantName();
     final diseaseName = _getDiseaseName();
     final isAdvanced = _isAdvancedScan();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final analysisSource = widget.scan['analysisSource']?.toString();
+
+    final colorScheme = _getSourceColorScheme(analysisSource, isDark);
+    final primaryColor = colorScheme['primary'] as Color;
+    final gradientColors = colorScheme['gradient'] as List<Color>;
+    final lightColor = colorScheme['light'] as Color;
+    final cardBg = colorScheme['cardBg'] as Color;
+    final borderColor = colorScheme['borderColor'] as Color;
+    final sourceIcon = colorScheme['icon'] as IconData;
+    final sourceName = colorScheme['name'] as String;
 
     return GestureDetector(
       onTapDown: (_) {
@@ -269,76 +269,118 @@ class _ScanCardState extends State<ScanCard>
       onTapUp: (_) {
         setState(() => _isPressed = false);
         _pressController.reverse();
-        _onTap();
+        _navigateToResults(context);
       },
       onTapCancel: () {
         setState(() => _isPressed = false);
         _pressController.reverse();
       },
-      onLongPress: _onLongPress,
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        widget.onShowOptions(widget.scan);
+      },
       child: ScaleTransition(
         scale: _scaleAnim,
         child: Container(
-          height: 160,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(
-              AppMeasurements.getResponsiveBorderRadius(context) + 2,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [cardBg, lightColor.withOpacity(0.12)]
+                  : [cardBg, lightColor.withOpacity(0.25)],
             ),
-            border: Border.all(
-              color: _isPressed
-                  ? (isAdvanced ? Colors.blue : Theme.of(context).colorScheme.primary).withOpacity(0.3)
-                  : Theme.of(context).colorScheme.outline.withOpacity(0.1),
-              width: 1,
-            ),
+            borderRadius: BorderRadius.circular(14), // Slightly reduced
+            border: Border.all(color: borderColor, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(_isPressed ? 0.15 : 0.08),
-                blurRadius: _isPressed ? 12 : 8,
-                offset: Offset(0, _isPressed ? 4 : 2),
+                color: isDark
+                    ? Colors.black.withOpacity(0.4)
+                    : primaryColor.withOpacity(0.15),
+                blurRadius: _isPressed ? 10 : 8,
+                offset: Offset(0, _isPressed ? 3 : 2),
               ),
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Image with Confidence Badge
-              Expanded(
-                flex: 7,
+              // Image Section - REDUCED
+              SizedBox(
+                height: 70, // Reduced from 80
                 child: Stack(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(
-                          AppMeasurements.getResponsiveBorderRadius(context) + 1,
-                        ),
-                        topRight: Radius.circular(
-                          AppMeasurements.getResponsiveBorderRadius(context) + 1,
-                        ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12.5),
+                        topRight: Radius.circular(12.5),
                       ),
                       child: SizedBox.expand(
-                        child: _buildImage(),
+                        child: _buildImage(isDark),
                       ),
                     ),
 
-                    // Confidence Badge
+                    // Source Badge (for advanced scans) - SMALLER
+                    if (isAdvanced)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.black.withOpacity(0.85),
+                                Colors.black.withOpacity(0.7),
+                              ],
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(colors: gradientColors),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(sourceIcon, size: 8, color: Colors.white),
+                              ),
+                              const SizedBox(width: 3),
+                              Flexible(
+                                child: Text(
+                                  sourceName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 8.5,
+                                    shadows: [Shadow(color: Colors.black, blurRadius: 2)],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // Confidence Badge - SMALLER
                     if (widget.scan['confidence'] != null)
                       Positioned(
-                        top: 6,
-                        right: 6,
+                        top: 5,
+                        right: 5,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                           decoration: BoxDecoration(
                             color: _confidenceColor,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(5),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
                               ),
                             ],
                           ),
@@ -347,40 +389,8 @@ class _ScanCardState extends State<ScanCard>
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 10,
+                              fontSize: 8.5,
                               height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Advanced Scan Badge
-                    if (isAdvanced)
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Text(
-                            'AI',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 9,
                             ),
                           ),
                         ),
@@ -389,80 +399,99 @@ class _ScanCardState extends State<ScanCard>
                 ),
               ),
 
-              // Content Section
+              // Content Section - SMALLER
               Expanded(
-                flex: 6,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.all(7), // Reduced from 8
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Plant Name
+                      // Plant Name - SMALLER
                       Text(
                         plantName,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 11, // Reduced from 11.5
                           height: 1.2,
+                          color: isDark
+                              ? primaryColor.withOpacity(0.95)
+                              : primaryColor.withOpacity(0.9),
                           letterSpacing: -0.2,
-                          color: isAdvanced ? Colors.blue : null,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 2),
 
-                      // Disease Name
-                      Text(
-                        diseaseName,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          height: 1.2,
-                          color: diseaseName.toLowerCase() == 'healthy'
-                              ? Colors.green
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 6),
+                      const SizedBox(height: 3),
 
-                      // Date
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_rounded,
-                            size: 10,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.5),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              _formattedDate,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.6),
-                                fontSize: 10,
-                                height: 1.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                      // Disease Status Box - SMALLER
+                      Flexible(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3), // Reduced
+                          decoration: BoxDecoration(
+                            color: _getDiseaseBoxColor(diseaseName, isDark, isBackground: true),
+                            borderRadius: BorderRadius.circular(5),
+                            border: Border.all(
+                              color: _getDiseaseBoxColor(diseaseName, isDark, isBackground: false),
+                              width: 1,
                             ),
                           ),
-                        ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Status',
+                                    style: TextStyle(
+                                      fontSize: 6.5, // Reduced from 7
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 6.5, // Reduced from 7
+                                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        _formattedDate,
+                                        style: TextStyle(
+                                          fontSize: 6.5, // Reduced from 7
+                                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Flexible(
+                                child: Text(
+                                  diseaseName,
+                                  style: TextStyle(
+                                    fontSize: 9.5, // Reduced from 10
+                                    height: 1.2,
+                                    fontWeight: FontWeight.w700,
+                                    color: _getDiseaseTextColor(diseaseName, isDark),
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -476,25 +505,22 @@ class _ScanCardState extends State<ScanCard>
   }
 
   // -----------------------------------------------------------------------
-  // Image handling (unchanged)
+  // Image handling
   // -----------------------------------------------------------------------
-  Widget _buildImage() {
-    // Try base64 first
+  Widget _buildImage(bool isDark) {
     final imageBase64 = widget.scan['imageBase64']?.toString();
     if (imageBase64 != null && imageBase64.isNotEmpty) {
       try {
-        final bytes = base64Decode(imageBase64);
         return Image.memory(
-          bytes,
+          base64Decode(imageBase64),
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _placeholder(),
+          errorBuilder: (_, __, ___) => _placeholder(isDark),
         );
       } catch (e) {
         debugPrint('Error decoding base64: $e');
       }
     }
 
-    // Try network URL
     final imageUrl = widget.scan['imageUrl']?.toString();
     if (imageUrl != null && imageUrl.isNotEmpty) {
       return Image.network(
@@ -504,19 +530,18 @@ class _ScanCardState extends State<ScanCard>
             ? child
             : Center(
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: 14,
+            height: 14,
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
-        errorBuilder: (_, __, ___) => _placeholder(),
+        errorBuilder: (_, __, ___) => _placeholder(isDark),
       );
     }
 
-    // Try local file
     final imagePath = widget.scan['imagePath']?.toString();
     if (imagePath != null && imagePath.isNotEmpty) {
       final file = File(imagePath);
@@ -524,22 +549,24 @@ class _ScanCardState extends State<ScanCard>
         return Image.file(
           file,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _placeholder(),
+          errorBuilder: (_, __, ___) => _placeholder(isDark),
         );
       }
     }
 
-    return _placeholder();
+    return _placeholder(isDark);
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(bool isDark) {
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
       child: Center(
         child: Icon(
           Icons.local_florist_rounded,
-          size: 28,
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          size: 22, // Reduced from 24
+          color: isDark
+              ? Colors.grey.shade600
+              : Theme.of(context).colorScheme.primary.withOpacity(0.3),
         ),
       ),
     );

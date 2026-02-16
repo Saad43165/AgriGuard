@@ -1,14 +1,16 @@
-// lib/features/home/screens/weather/weather_screen/forecast_section.dart
 import 'package:flutter/material.dart';
 import '../../models/weather_model.dart';
 import 'forecast_card.dart';
+import 'day_detail_screen.dart';
 
 class ForecastSection extends StatelessWidget {
   final List<ForecastDay> forecastDays;
+  final Color weatherColor;
 
   const ForecastSection({
     super.key,
     required this.forecastDays,
+    required this.weatherColor,
   });
 
   @override
@@ -17,16 +19,26 @@ class ForecastSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Padding(
-            padding: const EdgeInsets.only(left: 10,top: 10),
+            padding: const EdgeInsets.fromLTRB(26, 16, 26, 12),
             child: Row(
-              children: const [
-                _IconChip(icon: Icons.calendar_today_rounded, size: 20),
-                SizedBox(width: 12),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_today_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Text(
-                  '3-Day Forecast',
-                  style: TextStyle(
+                  '${forecastDays.length}-Day Forecast',
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -36,40 +48,33 @@ class ForecastSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Forecast cards – one per day
+          const SizedBox(height: 8),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: forecastDays.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (ctx, index) => ForecastCard(
               day: forecastDays[index],
               index: index,
+              onTap: () => _navigateToDayDetail(ctx, forecastDays[index], weatherColor),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-class _IconChip extends StatelessWidget {
-  final IconData icon;
-  final double size;
-
-  const _IconChip({required this.icon, this.size = 24});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
+  void _navigateToDayDetail(BuildContext context, ForecastDay day, Color weatherColor) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DayDetailScreen(
+          forecastDay: day,
+          weatherColor: weatherColor,
+        ),
       ),
-      child: Icon(icon, color: Colors.white, size: size),
     );
   }
 }

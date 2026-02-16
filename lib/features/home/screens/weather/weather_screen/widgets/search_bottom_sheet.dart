@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 typedef SearchCallback = Future<void> Function(String city);
 
 class SearchBottomSheet {
-  const SearchBottomSheet._(); // Private constructor
+  const SearchBottomSheet._();
 
-  /// Shows the search bottom sheet
   static void show({
     required BuildContext context,
     required Color weatherColor,
@@ -21,24 +20,20 @@ class SearchBottomSheet {
         controller: controller,
         weatherColor: weatherColor,
         onSearch: onSearch,
-        modalContext: modalContext,
       ),
     );
   }
 }
 
-/// Private StatefulWidget to manage local state (isSearching, error)
 class _SearchSheetContent extends StatefulWidget {
   final TextEditingController controller;
   final Color weatherColor;
   final SearchCallback onSearch;
-  final BuildContext modalContext;
 
   const _SearchSheetContent({
     required this.controller,
     required this.weatherColor,
     required this.onSearch,
-    required this.modalContext,
   });
 
   @override
@@ -56,7 +51,7 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
   }
 
   Future<void> _performSearch(String city) async {
-    if (city.isEmpty) {
+    if (city.trim().isEmpty) {
       setState(() => _error = 'Please enter a city name');
       return;
     }
@@ -67,58 +62,95 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
     });
 
     try {
-      await widget.onSearch(city);
-      if (widget.modalContext.mounted) {
-        Navigator.pop(widget.modalContext);
+      await widget.onSearch(city.trim());
+      // Close the bottom sheet on success
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
       }
     } catch (e) {
-      setState(() {
-        _error = 'City not found. Please try again.';
-        _isSearching = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceAll('Exception: ', '');
+          _isSearching = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
         padding: const EdgeInsets.all(28),
-        decoration: _sheetDecoration(context),
+        decoration: _sheetDecoration(isDark),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _DragHandle(),
+            _DragHandle(isDark: isDark),
             const SizedBox(height: 24),
-            Text(
-              'Search Location',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+
+            // Title with icon
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        widget.weatherColor,
+                        widget.weatherColor.withOpacity(0.7),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: widget.weatherColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.search_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Search Location',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+
+            // Search field
             TextField(
               controller: widget.controller,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: isDark ? Colors.white : Colors.black87,
+                fontSize: 16,
               ),
-              decoration: _inputDecoration(
-                weatherColor: widget.weatherColor,
-                error: _error,
-                controller: widget.controller,
-                onClear: () => setState(() => widget.controller.clear()),
-              ),
+              decoration: _inputDecoration(isDark),
               onChanged: (_) => setState(() {}),
               onSubmitted: _performSearch,
             ),
             const SizedBox(height: 20),
+
+            // Search button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -130,6 +162,7 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                   elevation: 0,
+                  disabledBackgroundColor: widget.weatherColor.withOpacity(0.5),
                 ),
                 onPressed: _isSearching
                     ? null
@@ -147,7 +180,7 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.search_rounded, size: 22),
-                    SizedBox(width: 10),
+                    SizedBox(width: 12),
                     Text(
                       'Search Weather',
                       style: TextStyle(
@@ -166,31 +199,34 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Helper: Input decoration
-  // -------------------------------------------------------------------------
-  InputDecoration _inputDecoration({
-    required Color weatherColor,
-    required String? error,
-    required TextEditingController controller,
-    required VoidCallback onClear,
-  }) {
-    final theme = Theme.of(context);
+  InputDecoration _inputDecoration(bool isDark) {
     return InputDecoration(
       hintText: 'Enter city name (e.g., London, Tokyo)',
       hintStyle: TextStyle(
-        color: theme.colorScheme.onSurface.withOpacity(0.5),
+        color: isDark ? Colors.white.withOpacity(0.5) : Colors.grey.shade500,
+        fontSize: 15,
       ),
-      prefixIcon: Icon(Icons.search_rounded, color: weatherColor, size: 24),
-      suffixIcon: controller.text.isNotEmpty
+      prefixIcon: Icon(
+        Icons.location_city_rounded,
+        color: widget.weatherColor,
+        size: 24,
+      ),
+      suffixIcon: widget.controller.text.isNotEmpty
           ? IconButton(
-        icon: const Icon(Icons.clear),
-        onPressed: onClear,
-        color: theme.colorScheme.onSurface.withOpacity(0.7),
+        icon: Icon(
+          Icons.clear,
+          color: isDark ? Colors.white70 : Colors.grey,
+        ),
+        onPressed: () {
+          widget.controller.clear();
+          setState(() {});
+        },
       )
           : null,
       filled: true,
-      fillColor: weatherColor.withOpacity(0.1),
+      fillColor: isDark
+          ? widget.weatherColor.withOpacity(0.15)
+          : widget.weatherColor.withOpacity(0.08),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide.none,
@@ -198,30 +234,36 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
         borderSide: BorderSide(
-          color: theme.colorScheme.onSurface.withOpacity(0.1),
+          color: widget.weatherColor.withOpacity(0.2),
+          width: 1.5,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: weatherColor, width: 2),
+        borderSide: BorderSide(
+          color: widget.weatherColor,
+          width: 2,
+        ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: Colors.red.shade400, width: 1.5),
+        borderSide: BorderSide(
+          color: Colors.red.shade400,
+          width: 1.5,
+        ),
       ),
-      errorText: error,
-      errorStyle: TextStyle(color: Colors.red.shade400),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      errorText: _error,
+      errorStyle: TextStyle(
+        color: Colors.red.shade400,
+        fontSize: 13,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Helper: Sheet background
-  // -------------------------------------------------------------------------
-  BoxDecoration _sheetDecoration(BuildContext context) {
-    final theme = Theme.of(context);
+  BoxDecoration _sheetDecoration(bool isDark) {
     return BoxDecoration(
-      color: theme.colorScheme.surface,
+      color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       boxShadow: [
         BoxShadow(
@@ -234,9 +276,10 @@ class _SearchSheetContentState extends State<_SearchSheetContent> {
   }
 }
 
-// -------------------------------------------------------------------------
 class _DragHandle extends StatelessWidget {
-  const _DragHandle();
+  final bool isDark;
+
+  const _DragHandle({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +287,7 @@ class _DragHandle extends StatelessWidget {
       width: 50,
       height: 5,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+        color: isDark ? Colors.white.withOpacity(0.3) : Colors.grey.shade300,
         borderRadius: BorderRadius.circular(3),
       ),
     );

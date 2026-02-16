@@ -218,14 +218,14 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
                               children: [
                                 Icon(
                                   Icons.edit_rounded,
-                                  size: 12,
+                                  size: 6,
                                   color: const Color(0xFF4CAF50),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Editing',
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 7,
                                     fontWeight: FontWeight.w600,
                                     color: const Color(0xFF4CAF50),
                                   ),

@@ -1,16 +1,14 @@
-// lib/screens/weather_details_screen.dart
 import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/search_bottom_sheet.dart';
 import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/top_bar.dart';
 import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/weather_background.dart';
 import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/weather_info_grid.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import '../../models/weather_model.dart';
-import '../../provider/weather_provider.dart';
+
+import '../../services/weather_service.dart';
 import 'current_weather_section.dart';
 import 'forecast_section.dart';
-
+import 'hourly_forecast_section.dart';
 
 class WeatherDetailsScreen extends StatefulWidget {
   final WeatherModel weatherData;
@@ -34,9 +32,19 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
   late final AnimationController _shimmerController;
   late final Animation<double> _fadeAnimation;
 
+  // Local state to hold updated weather data
+  late WeatherModel _currentWeather;
+  late List<ForecastDay>? _forecastDays;
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize with passed data
+    _currentWeather = widget.weatherData;
+    _forecastDays = widget.forecastDays;
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -61,9 +69,11 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final weatherColor = _getWeatherColor(
-      widget.weatherData.conditionText,
-      widget.weatherData.isDay,
+      _currentWeather.conditionText,
+      _currentWeather.isDay,
+      isDark,
     );
 
     return Scaffold(
@@ -74,29 +84,35 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
             shimmerController: _shimmerController,
           ),
           SafeArea(
-            child: CustomScrollView(
+            child: _isLoading
+                ? _buildLoadingIndicator()
+                : CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
                 TopBar(
                   weatherColor: weatherColor,
                   onBack: () => Navigator.pop(context),
-                  onSearch: () => SearchBottomSheet.show(
-                    context: context,
-                    weatherColor: weatherColor,
-                    onSearch: (city) async {
-                      final provider = Provider.of<WeatherProvider>(context, listen: false);
-                      await provider.loadWeatherForCity(city);
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                  ),
+                  onSearch: () => _showSearch(context, weatherColor),
                 ),
                 CurrentWeatherSection(
-                  weatherData: widget.weatherData,
+                  weatherData: _currentWeather,
                   fadeAnimation: _fadeAnimation,
                 ),
-                WeatherInfoGrid(weatherData: widget.weatherData),
-                if (widget.forecastDays != null && widget.forecastDays!.isNotEmpty)
-                  ForecastSection(forecastDays: widget.forecastDays!),
+
+                // Hourly Forecast Section
+                if (_forecastDays != null && _forecastDays!.isNotEmpty)
+                  HourlyForecastSection(
+                    forecastDay: _forecastDays!.first,
+                    weatherColor: weatherColor,
+                  ),
+
+                WeatherInfoGrid(weatherData: _currentWeather),
+
+                if (_forecastDays != null && _forecastDays!.isNotEmpty)
+                  ForecastSection(
+                    forecastDays: _forecastDays!,
+                    weatherColor: weatherColor,
+                  ),
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             ),
@@ -106,41 +122,89 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
     );
   }
 
-  // -----------------------------------------------------------------
-  // Helper methods – kept here because they are used only by this screen
-  // -----------------------------------------------------------------
-  IconData _getWeatherIcon(String condition, int isDay) {
-    final c = condition.toLowerCase();
-    if (isDay == 0) {
-      if (c.contains('clear')) return Icons.nightlight_round;
-      if (c.contains('cloudy') || c.contains('overcast')) return Icons.cloud;
-    }
-    if (c.contains('sunny') || c.contains('clear')) return Icons.wb_sunny_rounded;
-    if (c.contains('cloudy') || c.contains('overcast')) return Icons.cloud_rounded;
-    if (c.contains('rain') || c.contains('drizzle')) return Icons.water_drop_rounded;
-    if (c.contains('storm') || c.contains('thunder')) return Icons.thunderstorm_rounded;
-    if (c.contains('snow') || c.contains('sleet')) return Icons.ac_unit_rounded;
-    if (c.contains('fog') || c.contains('mist')) return Icons.foggy;
-    return Icons.wb_cloudy_rounded;
+  Widget _buildLoadingIndicator() {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: Colors.white,
+        strokeWidth: 3,
+      ),
+    );
   }
 
-  Color _getWeatherColor(String condition, int isDay) {
+  void _showSearch(BuildContext context, Color weatherColor) {
+    SearchBottomSheet.show(
+      context: context,
+      weatherColor: weatherColor,
+      onSearch: (city) async {
+        setState(() => _isLoading = true);
+
+        try {
+          // Import the service to load weather directly
+          final weatherService = WeatherService();
+          final forecast = await weatherService.getWeatherByCity(city, days: 5);
+
+          if (mounted) {
+            setState(() {
+              _currentWeather = forecast.current;
+              _forecastDays = forecast.forecast;
+              _isLoading = false;
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+
+            // Show error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  e.toString().replaceAll('Exception: ', ''),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+          // Re-throw to let the bottom sheet handle it
+          rethrow;
+        }
+      },
+    );
+  }
+
+  Color _getWeatherColor(String condition, int isDay, bool isDark) {
     final c = condition.toLowerCase();
+
     if (isDay == 0) {
-      if (c.contains('clear')) return const Color(0xFF1a237e);
-      if (c.contains('rain') || c.contains('drizzle')) return const Color(0xFF263238);
-      if (c.contains('storm') || c.contains('thunder')) return const Color(0xFF311b92);
-      if (c.contains('snow') || c.contains('sleet')) return const Color(0xFF37474f);
-      if (c.contains('cloudy') || c.contains('overcast')) return const Color(0xFF424242);
-      if (c.contains('fog') || c.contains('mist')) return const Color(0xFF455a64);
-      return const Color(0xFF283593);
+      if (c.contains('clear')) {
+        return isDark ? const Color(0xFF3949AB) : const Color(0xFF1a237e);
+      } else if (c.contains('rain') || c.contains('drizzle')) {
+        return isDark ? const Color(0xFF455A64) : const Color(0xFF263238);
+      } else if (c.contains('storm') || c.contains('thunder')) {
+        return isDark ? const Color(0xFF512DA8) : const Color(0xFF311b92);
+      } else if (c.contains('snow') || c.contains('sleet')) {
+        return isDark ? const Color(0xFF546E7A) : const Color(0xFF37474f);
+      } else if (c.contains('cloudy') || c.contains('overcast')) {
+        return isDark ? const Color(0xFF616161) : const Color(0xFF424242);
+      }
+      return isDark ? const Color(0xFF5C6BC0) : const Color(0xFF283593);
     }
-    if (c.contains('sunny') || c.contains('clear')) return Colors.orange.shade600;
-    if (c.contains('cloudy') || c.contains('overcast')) return Colors.blueGrey.shade600;
-    if (c.contains('rain') || c.contains('drizzle')) return Colors.blue.shade700;
-    if (c.contains('storm') || c.contains('thunder')) return Colors.deepPurple.shade700;
-    if (c.contains('snow') || c.contains('sleet')) return Colors.lightBlue.shade600;
-    if (c.contains('fog') || c.contains('mist')) return Colors.grey.shade600;
-    return Colors.teal.shade700;
+
+    if (c.contains('sunny') || c.contains('clear')) {
+      return isDark ? const Color(0xFFFF9800) : const Color(0xFFEF6C00);
+    } else if (c.contains('cloudy') || c.contains('overcast')) {
+      return isDark ? const Color(0xFF78909C) : const Color(0xFF546E7A);
+    } else if (c.contains('rain') || c.contains('drizzle')) {
+      return isDark ? const Color(0xFF42A5F5) : const Color(0xFF1976D2);
+    } else if (c.contains('storm') || c.contains('thunder')) {
+      return isDark ? const Color(0xFF7E57C2) : const Color(0xFF512DA8);
+    } else if (c.contains('snow') || c.contains('sleet')) {
+      return isDark ? const Color(0xFF4FC3F7) : const Color(0xFF0288D1);
+    }
+    return isDark ? const Color(0xFF26A69A) : const Color(0xFF00897B);
   }
 }
