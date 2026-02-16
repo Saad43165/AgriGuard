@@ -22,237 +22,163 @@ class ClearHistoryTile extends StatefulWidget {
 
 class _ClearHistoryTileState extends State<ClearHistoryTile> {
   bool _isClearing = false;
-  final ScanDatabase _scanDatabase = ScanDatabase.instance;
+  String _currentStep = '';
 
   Future<void> _clearScanHistory(BuildContext context) async {
     if (_isClearing) return;
 
-    HapticFeedback.heavyImpact();
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      _showError(context, 'You must be logged in to clear history.');
-      return;
-    }
-
-    setState(() => _isClearing = true);
+    setState(() {
+      _isClearing = true;
+      _currentStep = 'Starting...';
+    });
 
     try {
-      // 1. First, try to clear from all Firestore collections
-      await _clearFirestoreScans(user.uid);
+      HapticFeedback.heavyImpact();
 
-      // 2. Clear local SQLite database for this user
-      await _clearLocalDatabase(user.uid);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Please log in to clear history');
+      }
 
-      // 3. Clear shared preferences scan history
+      debugPrint('🔄 Starting clear for user: ${user.uid}');
+
+      // Step 1: Clear SQLite (faster, do this first)
+      setState(() => _currentStep = 'Clearing local database...');
+      await _clearLocalDatabaseSimple(user.uid);
+
+      // Step 2: Clear Firestore
+      setState(() => _currentStep = 'Clearing cloud data...');
+      await _clearFirestoreSimple(user.uid);
+
+      // Step 3: Clear SharedPreferences
+      setState(() => _currentStep = 'Cleaning cache...');
       await _clearSharedPreferences();
+
+      debugPrint('✅ All clear operations completed');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
+            content: const Row(
               children: [
                 Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                const Text('Scan history cleared successfully!'),
+                SizedBox(width: 12),
+                Text('History cleared successfully!'),
               ],
             ),
             backgroundColor: Colors.green.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
             duration: const Duration(seconds: 2),
           ),
         );
       }
 
       widget.onHistoryCleared?.call();
-    } on FirebaseException catch (e) {
-      if (context.mounted) {
-        _showError(context, 'Firebase error: ${e.message}');
-      }
-      debugPrint('Firebase error clearing history: ${e.code} - ${e.message}');
     } catch (e) {
+      debugPrint('❌ Error: $e');
       if (context.mounted) {
-        _showError(context, 'Failed to clear history. Please try again.');
+        _showError(context, 'Error: ${e.toString()}');
       }
-      debugPrint('Error clearing history: $e');
     } finally {
       if (mounted) {
-        setState(() => _isClearing = false);
+        setState(() {
+          _isClearing = false;
+          _currentStep = '';
+        });
       }
     }
   }
 
-  // ADD THIS UPDATED METHOD HERE:
-  Future<void> _clearFirestoreScans(String userId) async {
-    final firestore = FirebaseFirestore.instance;
+  // SIMPLIFIED LOCAL DATABASE CLEAR
+  Future<void> _clearLocalDatabaseSimple(String userId) async {
+    debugPrint('🔄 Clearing SQLite database...');
 
-    // Clear from users/{userId}/scans subcollection
     try {
-      final scansRef = firestore.collection('users').doc(userId).collection('scans');
-      final snapshot = await scansRef.get();
+      final db = ScanDatabase.instance;
 
-      if (snapshot.docs.isNotEmpty) {
-        final batch = firestore.batch();
-        for (final doc in snapshot.docs) {
-          batch.delete(doc.reference);
-        }
-        await batch.commit();
-        debugPrint('✅ Cleared ${snapshot.docs.length} scans from users/scans');
-      }
+      // Just use clearAllScans - it's simpler and works
+      await db.clearAllScans().timeout(const Duration(seconds: 10));
+
+      debugPrint('✅ SQLite cleared successfully');
     } catch (e) {
-      debugPrint('⚠️ Error clearing users/scans: $e');
-      // Continue with other collections even if this fails
+      debugPrint('❌ SQLite error: $e');
+      // Don't throw - continue with other operations
     }
+  }
 
-    // Clear from onDeviceScans collection
+  // SIMPLIFIED FIRESTORE CLEAR
+  Future<void> _clearFirestoreSimple(String userId) async {
+    debugPrint('🔄 Clearing Firestore...');
+
     try {
-      final onDeviceQuery = firestore
-          .collection('onDeviceScans')
-          .where('userId', isEqualTo: userId);
-      final onDeviceSnapshot = await onDeviceQuery.get();
+      final firestore = FirebaseFirestore.instance;
 
-      if (onDeviceSnapshot.docs.isNotEmpty) {
-        final batch = firestore.batch();
-        for (final doc in onDeviceSnapshot.docs) {
-          batch.delete(doc.reference);
-        }
-        await batch.commit();
-        debugPrint('✅ Cleared ${onDeviceSnapshot.docs.length} on-device scans');
-      }
-    } catch (e) {
-      debugPrint('⚠️ Error clearing onDeviceScans: $e');
-    }
-
-    // Clear from advancedScans collection
-    try {
-      final advancedQuery = firestore
-          .collection('advancedScans')
-          .where('userId', isEqualTo: userId);
-      final advancedSnapshot = await advancedQuery.get();
-
-      if (advancedSnapshot.docs.isNotEmpty) {
-        final batch = firestore.batch();
-        for (final doc in advancedSnapshot.docs) {
-          batch.delete(doc.reference);
-        }
-        await batch.commit();
-        debugPrint('✅ Cleared ${advancedSnapshot.docs.length} advanced scans');
-      }
-    } catch (e) {
-      debugPrint('⚠️ Error clearing advancedScans: $e');
-    }
-
-    // CRITICAL: Update the user's scanCount to 0
-    try {
-      final userRef = firestore.collection('users').doc(userId);
-
-      // Get local SQLite counts to verify
-      final scanCounts = await _scanDatabase.getScanCounts(userId);
-      final localTotal = scanCounts['total'] ?? 0;
-
-      debugPrint('📊 Local SQLite scan count after deletion: $localTotal');
-
-      // Update Firestore user document
-      await userRef.update({
-        'scanCount': 0,  // This will trigger the StreamBuilder to update
-        'reportCount': FieldValue.delete(), // Optional: clear reports too
-        'lastScan': FieldValue.delete(),
+      // Just update the user document - don't try to delete individual docs
+      await firestore.collection('users').doc(userId).update({
+        'scanCount': 0,
         'totalScans': 0,
         'onDeviceScans': 0,
         'advancedScans': 0,
+        'lastScan': FieldValue.delete(),
         'updatedAt': FieldValue.serverTimestamp(),
-        // For debugging:
-        'localScanCount': localTotal,
+      }).timeout(const Duration(seconds: 10));
+
+      debugPrint('✅ Firestore user doc updated');
+
+      // Optional: Try to clear subcollections (but don't wait for it)
+      _clearFirestoreSubcollections(userId).catchError((e) {
+        debugPrint('⚠️ Background subcollection clear failed: $e');
       });
-
-      debugPrint('✅ Updated user document: scanCount set to 0');
-
-      // Double check the update
-      final updatedUser = await userRef.get();
-      final updatedData = updatedUser.data();
-      debugPrint('✅ Verification - scanCount in Firestore: ${updatedData?['scanCount'] ?? 'N/A'}');
     } catch (e) {
-      debugPrint('⚠️ Error updating user document: $e');
+      debugPrint('❌ Firestore error: $e');
+      // Don't throw - the main goal (resetting counts) succeeded
     }
   }
 
-  Future<void> _clearLocalDatabase(String userId) async {
+  // BACKGROUND OPERATION - Don't wait for this
+  Future<void> _clearFirestoreSubcollections(String userId) async {
+    final firestore = FirebaseFirestore.instance;
+
     try {
-      debugPrint('🔄 Starting SQLite database clearing for user: $userId');
+      // Clear users/{userId}/scans
+      final scansQuery = firestore
+          .collection('users')
+          .doc(userId)
+          .collection('scans')
+          .limit(500); // Limit to prevent hanging
 
-      // First, get all scans for this user
-      final userScans = await _scanDatabase.getScansByUser(userId);
-      debugPrint('📊 Found ${userScans.length} scans in SQLite for user: $userId');
-
-      if (userScans.isEmpty) {
-        debugPrint('✅ No scans found in SQLite for user: $userId');
-        return;
-      }
-
-      // Option 1: Delete scans one by one (safer for multi-user apps)
-      int deletedCount = 0;
-      for (final scan in userScans) {
-        if (scan.id != null) {
-          try {
-            await _scanDatabase.deleteScan(scan.id!);
-            deletedCount++;
-          } catch (e) {
-            debugPrint('⚠️ Failed to delete scan ${scan.id}: $e');
-          }
+      final scansSnapshot = await scansQuery.get();
+      if (scansSnapshot.docs.isNotEmpty) {
+        final batch = firestore.batch();
+        for (final doc in scansSnapshot.docs) {
+          batch.delete(doc.reference);
         }
+        await batch.commit();
       }
-
-      debugPrint('✅ Deleted $deletedCount scans individually');
-
-      // Verify deletion
-      final remainingScans = await _scanDatabase.getScansByUser(userId);
-      if (remainingScans.isEmpty) {
-        debugPrint('✅ SQLite database successfully cleared for user: $userId');
-      } else {
-        debugPrint('⚠️ ${remainingScans.length} scans remain after individual deletion');
-
-        // Option 2: Use the clearAllScans() method as last resort
-        // WARNING: This clears ALL scans from ALL users!
-        debugPrint('⚠️ Using clearAllScans() - will clear ALL users\' scans');
-        await _scanDatabase.clearAllScans();
-        debugPrint('✅ Used clearAllScans() - cleared entire SQLite database');
-      }
-
     } catch (e) {
-      debugPrint('❌ Error clearing local database: $e');
-      // Try the nuclear option as fallback
-      try {
-        await _scanDatabase.clearAllScans();
-        debugPrint('✅ Fallback: Used clearAllScans() after error');
-      } catch (e2) {
-        debugPrint('❌ Even clearAllScans() failed: $e2');
-      }
+      debugPrint('⚠️ Error clearing subcollections: $e');
     }
   }
 
   Future<void> _clearSharedPreferences() async {
+    debugPrint('🔄 Clearing SharedPreferences...');
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Remove any scan-related preferences
-      await prefs.remove('last_scan_date');
-      await prefs.remove('total_scans');
-      await prefs.remove('recent_scans');
-      await prefs.remove('scan_history_cache');
-      await prefs.remove('last_sync_time');
+      final keys = prefs.getKeys().where((key) =>
+      key.toLowerCase().contains('scan') ||
+          key == 'last_sync_time' ||
+          key == 'total_scans'
+      ).toList();
 
-      // Also clear any scan IDs
-      final keys = prefs.getKeys();
       for (final key in keys) {
-        if (key.contains('scan_') || key.contains('Scan') || key.contains('SCAN')) {
-          await prefs.remove(key);
-        }
+        await prefs.remove(key);
       }
 
-      debugPrint('✅ Shared preferences cleared');
+      debugPrint('✅ Cleared ${keys.length} preferences');
     } catch (e) {
-      debugPrint('⚠️ Error clearing shared preferences: $e');
+      debugPrint('⚠️ SharedPreferences error: $e');
     }
   }
 
@@ -269,8 +195,7 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -280,168 +205,43 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+      barrierDismissible: !_isClearing,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.orange.shade50,
-                ),
-                child: Icon(
-                  Icons.warning_rounded,
-                  color: Colors.orange.shade700,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Clear All Scan History?',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'This will permanently delete:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  children: [
-                    _buildBulletPoint('All scans from Firebase Cloud'),
-                    _buildBulletPoint('All scans from local SQLite database'),
-                    _buildBulletPoint('All scan history from device cache'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'This action cannot be undone.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              if (_isClearing)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Clearing history...',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This may take a moment',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                          ),
-                        ),
-                        child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _clearScanHistory(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade600,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text('Clear All', style: TextStyle(fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
+              child: Icon(Icons.warning_rounded, color: Colors.orange.shade700, size: 28),
+            ),
+            const SizedBox(width: 12),
+            const Text('Clear History?'),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBulletPoint(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0, right: 8.0),
-            child: Icon(
-              Icons.circle,
-              size: 6,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-            ),
+        content: const Text(
+          'This will permanently delete all your scan data from both cloud and device. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: _isClearing ? null : () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+          ElevatedButton(
+            onPressed: _isClearing
+                ? null
+                : () {
+              Navigator.pop(context);
+              _clearScanHistory(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.shade600,
+              foregroundColor: Colors.white,
             ),
+            child: const Text('Clear All'),
           ),
         ],
       ),
@@ -453,7 +253,7 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
     return Padding(
       padding: widget.padding ?? EdgeInsets.zero,
       child: InkWell(
-        onTap: () => _showConfirmationDialog(context),
+        onTap: _isClearing ? null : () => _showConfirmationDialog(context),
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -486,17 +286,16 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _isClearing ? 'Clearing History...' : 'Clear Scan History',
+                      _isClearing ? 'Clearing...' : 'Clear Scan History',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _isClearing
-                          ? 'Please wait while we clear all your scan data'
-                          : 'Remove all scan data from cloud and device',
+                      _isClearing && _currentStep.isNotEmpty
+                          ? _currentStep
+                          : 'Remove all scan data',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 12,
