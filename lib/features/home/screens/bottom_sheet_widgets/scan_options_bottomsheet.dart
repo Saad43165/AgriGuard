@@ -1,11 +1,9 @@
-// lib/features/scan_history/presentation/components/scan_options_bottomsheet/scan_options_bottomsheet.dart
 import 'dart:io';
 import 'package:agriguard_fyp/features/home/screens/bottom_sheet_widgets/services/pdf_action_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'pdf_success_dialog.dart';
 import 'option_tile.dart';
-
 
 class ScanOptionsBottomSheet extends StatefulWidget {
   final Map<String, dynamic> scan;
@@ -28,31 +26,60 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
   bool _isGeneratingPdf = false;
 
   Future<void> _generatePdf() async {
-    if (_isGeneratingPdf || !mounted) return;
+    if (_isGeneratingPdf) return;
+
     setState(() => _isGeneratingPdf = true);
 
-    await _pdfService.generateAndShowPdf(
-      context: context,
-      scan: widget.scan,
-      onError: (msg) => _showError(msg),
-      onSuccess: (file) => _showPdfSuccess(file),
-    );
+    // CRITICAL: Get scaffold messenger and navigator BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
-    if (mounted) setState(() => _isGeneratingPdf = false);
-  }
+    try {
+      await _pdfService.generateAndShowPdf(
+        context: context,
+        scan: widget.scan,
+        onError: (msg) {
+          if (mounted) setState(() => _isGeneratingPdf = false);
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(msg)),
+                ],
+              ),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        },
+        onSuccess: (file) async {
+          debugPrint('📱 Success callback - showing dialog for: ${file.path}');
 
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.error),
-    );
-  }
+          if (mounted) setState(() => _isGeneratingPdf = false);
 
-  Future<void> _showPdfSuccess(File pdfFile) async {
-    await showDialog(
-      context: context,
-      builder: (_) => PdfSuccessDialog(pdfFile: pdfFile),
-    );
+          // Show success dialog using the captured navigator
+          await showDialog(
+            context: navigator.context,
+            barrierDismissible: true,
+            builder: (dialogContext) => PdfSuccessDialog(pdfFile: file),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ Error in _generatePdf: $e');
+      if (mounted) setState(() => _isGeneratingPdf = false);
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override
@@ -65,7 +92,11 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
         color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.4 : 0.15), blurRadius: 20, offset: const Offset(0, -8)),
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -8),
+          ),
         ],
       ),
       child: SafeArea(
@@ -135,11 +166,21 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: Icon(Icons.tune_rounded, color: theme.colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 12),
-        Text('Scan Options', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: -0.5)),
+        Text(
+          'Scan Options',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: -0.5,
+          ),
+        ),
       ],
     ),
   );
@@ -147,6 +188,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
 
 class _MiniLoader extends StatelessWidget {
   const _MiniLoader();
+
   @override
   Widget build(BuildContext context) => const SizedBox(
     width: 20,

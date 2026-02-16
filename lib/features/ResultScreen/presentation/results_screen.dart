@@ -1,4 +1,3 @@
-// lib/features/ResultScreen/presentation/results_screen.dart
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -12,21 +11,23 @@ import 'package:image/image.dart' as img;
 import '../../../../core/constants/app_routes.dart';
 import '../../../core/widgets/floating_orb.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
+import '../../home/screens/bottom_sheet_widgets/pdf_success_dialog.dart';
+import '../../home/screens/bottom_sheet_widgets/services/pdf_action_services.dart';
 import 'components/analysis_details_card.dart';
 import 'components/diagnosis_card.dart';
 import 'components/diagnosis_result.dart';
 import 'components/disease_cause_card.dart';
 import 'components/floating_advance_search_banner.dart';
 import 'components/recommentations_card.dart';
+import 'components/pdf_floating_button.dart';
 import '../../../../core/repositories/scan_repository.dart';
-import '../../../../core/services/severity_id_service.dart'; // Added import
+import '../../../../core/services/severity_id_service.dart';
 
 // Enhanced Leaf Detection Helper
 class LeafDetectionUtils {
   static Future<Map<String, dynamic>> analyzeImageForLeafDetection(
       String? imagePath, String? imageBase64) async {
     try {
-      // If no image available, we can't determine
       if (imagePath == null && imageBase64 == null) {
         return {'isLeaf': true, 'confidence': 50.0, 'reasons': ['No image available for analysis']};
       }
@@ -44,50 +45,41 @@ class LeafDetectionUtils {
         return {'isLeaf': true, 'confidence': 50.0, 'reasons': ['Failed to decode image']};
       }
 
-      // Resize for faster processing
       final resizedImage = img.copyResize(image, width: 300);
 
-      // Multiple detection methods
       final greenAnalysis = _analyzeGreenDominance(resizedImage);
       final textureAnalysis = _analyzeTexture(resizedImage);
       final shapeAnalysis = _analyzeShape(resizedImage);
       final colorAnalysis = _analyzeColorDistribution(resizedImage);
       final edgeAnalysis = _analyzeEdgeFeatures(resizedImage);
 
-      // Calculate overall score
       double totalScore = 0.0;
       int factorCount = 0;
 
-      // Green dominance is most important (40%)
       if (greenAnalysis['score'] != null) {
         totalScore += greenAnalysis['score'] * 0.4;
         factorCount++;
       }
 
-      // Texture analysis (25%)
       if (textureAnalysis['score'] != null) {
         totalScore += textureAnalysis['score'] * 0.25;
         factorCount++;
       }
 
-      // Shape analysis (20%)
       if (shapeAnalysis['score'] != null) {
         totalScore += shapeAnalysis['score'] * 0.2;
         factorCount++;
       }
 
-      // Edge features (15%)
       if (edgeAnalysis['score'] != null) {
         totalScore += edgeAnalysis['score'] * 0.15;
         factorCount++;
       }
 
-      // Normalize score
       final normalizedScore = totalScore * 100;
 
-      // Collect reasons for decision
       List<String> reasons = [];
-      bool isLeaf = normalizedScore > 40; // Higher threshold
+      bool isLeaf = normalizedScore > 40;
 
       if (!isLeaf) {
         reasons.add('Image appears to be non-plant material');
@@ -141,32 +133,29 @@ class LeafDetectionUtils {
   static Map<String, dynamic> _analyzeGreenDominance(img.Image image) {
     int greenPixels = 0;
     int totalPixels = image.width * image.height;
-    
-    // Count pixels where green is significantly dominant
+
     for (int y = 0; y < image.height; y++) {
       for (int x = 0; x < image.width; x++) {
         final pixel = image.getPixel(x, y);
         final r = pixel.r.toDouble();
         final g = pixel.g.toDouble();
         final b = pixel.b.toDouble();
-        
-        // Green is dominant (more than 20% higher than red and blue)
+
         if (g > r * 1.2 && g > b * 1.2 && g > 30) {
           greenPixels++;
         }
       }
     }
-    
+
     final greenPercentage = (greenPixels / totalPixels) * 100;
-    
-    // Score based on green percentage
+
     double score = 0.0;
     if (greenPercentage > 60) {
       score = 1.0;
     } else if (greenPercentage > 40) score = 0.8;
     else if (greenPercentage > 20) score = 0.5;
     else if (greenPercentage > 10) score = 0.3;
-    
+
     return {
       'greenPercentage': greenPercentage,
       'score': score,
@@ -176,40 +165,35 @@ class LeafDetectionUtils {
   }
 
   static Map<String, dynamic> _analyzeTexture(img.Image image) {
-    // Convert to grayscale
     final gray = img.grayscale(image);
-    
+
     int edgeCount = 0;
     final edgeThreshold = 25;
-    
-    // Calculate edge density
+
     for (int y = 1; y < gray.height - 1; y++) {
       for (int x = 1; x < gray.width - 1; x++) {
         final center = _getLuminance(gray.getPixel(x, y));
         final right = _getLuminance(gray.getPixel(x + 1, y));
         final bottom = _getLuminance(gray.getPixel(x, y + 1));
-        
+
         if ((center - right).abs() > edgeThreshold ||
             (center - bottom).abs() > edgeThreshold) {
           edgeCount++;
         }
       }
     }
-    
+
     final edgeDensity = (edgeCount / (gray.width * gray.height)) * 100;
-    
-    // Leaves have medium to high edge density (5-30%)
+
     double score = 0.0;
     if (edgeDensity > 5 && edgeDensity < 40) {
       score = 0.7 + (edgeDensity / 100);
     } else if (edgeDensity < 2) {
-      // Too uniform (might be artificial)
       return {'score': 0.2, 'edgeDensity': edgeDensity, 'isTooUniform': true};
     } else if (edgeDensity > 50) {
-      // Too noisy
       return {'score': 0.3, 'edgeDensity': edgeDensity, 'isTooNoisy': true};
     }
-    
+
     return {
       'score': score,
       'edgeDensity': edgeDensity,
@@ -218,20 +202,18 @@ class LeafDetectionUtils {
   }
 
   static Map<String, dynamic> _analyzeShape(img.Image image) {
-    // Simple shape analysis - leaves are rarely perfect squares/circles
     final aspectRatio = image.width / image.height;
-    
+
     double score = 0.0;
-    
-    // Leaves typically have aspect ratio between 1.5 and 4
+
     if (aspectRatio >= 1.2 && aspectRatio <= 4.0) {
       score = 0.8;
     } else if (aspectRatio >= 1.0 && aspectRatio <= 1.5) {
-      score = 0.5; // Square-ish but could be leaf
+      score = 0.5;
     } else {
-      score = 0.3; // Very long or very tall
+      score = 0.3;
     }
-    
+
     return {
       'score': score,
       'aspectRatio': aspectRatio,
@@ -241,47 +223,42 @@ class LeafDetectionUtils {
   }
 
   static Map<String, dynamic> _analyzeColorDistribution(img.Image image) {
-    // Analyze color distribution for unnatural patterns
     Map<String, int> colorBins = {};
-    
+
     for (int y = 0; y < image.height; y += 2) {
       for (int x = 0; x < image.width; x += 2) {
         final pixel = image.getPixel(x, y);
-        // Bin colors by major color groups
         final colorKey = '${(pixel.r ~/ 32)}-${(pixel.g ~/ 32)}-${(pixel.b ~/ 32)}';
         colorBins[colorKey] = (colorBins[colorKey] ?? 0) + 1;
       }
     }
-    
+
     final uniqueColors = colorBins.length;
     final totalSamples = (image.width / 2) * (image.height / 2);
     final colorVariety = (uniqueColors / totalSamples) * 100;
-    
-    // Leaves usually have limited color variety (mostly greens/browns)
+
     return {
       'uniqueColors': uniqueColors,
       'colorVariety': colorVariety,
-      'hasTooManyColors': colorVariety > 15, // Too many distinct colors
+      'hasTooManyColors': colorVariety > 15,
     };
   }
 
   static Map<String, dynamic> _analyzeEdgeFeatures(img.Image image) {
     final gray = img.grayscale(image);
     final edges = img.sobel(gray);
-    
+
     int straightEdgeCount = 0;
     int totalEdgePixels = 0;
-    
-    // Look for straight edges (common in man-made objects)
+
     for (int y = 1; y < edges.height - 1; y++) {
       for (int x = 1; x < edges.width - 1; x++) {
         final pixel = edges.getPixel(x, y);
         final luminance = _getLuminance(pixel);
-        
+
         if (luminance > 100) {
           totalEdgePixels++;
-          
-          // Check if this edge pixel is part of a straight line
+
           final neighbors = [
             _getLuminance(edges.getPixel(x-1, y-1)),
             _getLuminance(edges.getPixel(x, y-1)),
@@ -292,33 +269,32 @@ class LeafDetectionUtils {
             _getLuminance(edges.getPixel(x, y+1)),
             _getLuminance(edges.getPixel(x+1, y+1)),
           ];
-          
-          // Count aligned neighbors (suggesting straight edge)
+
           int alignedNeighbors = 0;
           for (final neighbor in neighbors) {
             if (neighbor > 50) alignedNeighbors++;
           }
-          
+
           if (alignedNeighbors >= 4) {
             straightEdgeCount++;
           }
         }
       }
     }
-    
-    final straightEdgeRatio = totalEdgePixels > 0 
-        ? (straightEdgeCount / totalEdgePixels) * 100 
+
+    final straightEdgeRatio = totalEdgePixels > 0
+        ? (straightEdgeCount / totalEdgePixels) * 100
         : 0;
-    
+
     double score = 0.0;
     if (straightEdgeRatio < 20) {
-      score = 0.8; // Natural edges
+      score = 0.8;
     } else if (straightEdgeRatio < 40) {
-      score = 0.5; // Some straight edges
+      score = 0.5;
     } else {
-      score = 0.2; // Many straight edges (likely man-made)
+      score = 0.2;
     }
-    
+
     return {
       'score': score,
       'straightEdgeRatio': straightEdgeRatio,
@@ -359,6 +335,7 @@ class _ResultsScreenState extends State<ResultsScreen>
   bool _jsonLoaded = false;
   bool _isLeafImage = true;
   bool _checkingLeafDetection = false;
+  bool _isGeneratingPdf = false;
   Timer? _advancedSearchTimer;
 
   // Data Variables
@@ -371,11 +348,10 @@ class _ResultsScreenState extends State<ResultsScreen>
   List<String> _remediation = [];
   bool _isLoadingSeverityRemediation = false;
 
-  // Repository
+  // Repository and Services
   late final ScanRepository _scanRepository;
-  
-  // Service
   late final SeverityIdService _severityIdService;
+  final PdfActionsService _pdfService = PdfActionsService();
 
   // Constants
   static const _advancedSearchDelay = Duration(seconds: 4);
@@ -408,25 +384,23 @@ class _ResultsScreenState extends State<ResultsScreen>
       if (mounted) {
         setState(() => _checkingLeafDetection = true);
       }
-      
-      // Run enhanced leaf detection
+
       final imagePath = widget.scanData['imagePath'] as String?;
       final imageBase64 = widget.scanData['imageBase64'] as String?;
-      
+
       final leafAnalysis = await LeafDetectionUtils.analyzeImageForLeafDetection(
-        imagePath, 
-        imageBase64
+          imagePath,
+          imageBase64
       );
-      
+
       _isLeafImage = leafAnalysis['isLeaf'] as bool;
       final detectionConfidence = leafAnalysis['confidence'] as double;
-      
+
       debugPrint('🍃 Enhanced Leaf Detection:');
       debugPrint('   Is Leaf: $_isLeafImage');
       debugPrint('   Confidence: ${detectionConfidence.toStringAsFixed(1)}%');
-      
+
       if (!_isLeafImage) {
-        // Update diagnosis for non-leaf images
         widget.scanData['diseaseName'] = 'Image Not Recognized';
         widget.scanData['plantName'] = 'Non-Plant Image';
         widget.scanData['confidence'] = detectionConfidence.toStringAsFixed(1);
@@ -440,19 +414,15 @@ class _ResultsScreenState extends State<ResultsScreen>
           'Take the photo in good lighting conditions',
           'Avoid blurry or distant photos'
         ];
-        
-        // Add detection details
+
         widget.scanData['leafDetectionDetails'] = leafAnalysis['details'];
-        
-        // Set severity and remediation for non-leaf
+
         _severity = 'N/A';
         _remediation = widget.scanData['remediation'] as List<String>;
       } else {
-        // For leaf images, get severity and remediation from service
         await _getSeverityAndRemediation();
       }
-      
-      // Then check and save scan
+
       await _checkAndSaveScan();
     } catch (e) {
       debugPrint('Leaf detection error: $e');
@@ -469,10 +439,9 @@ class _ResultsScreenState extends State<ResultsScreen>
       if (mounted) {
         setState(() => _isLoadingSeverityRemediation = true);
       }
-      
+
       debugPrint('🔍 Getting severity and remediation from service...');
-      
-      // Get severity and remediation from SeverityIdService
+
       final severityResult = await _severityIdService.getSeverityAndRemediation(
         diseaseName: widget.scanData['diseaseName']?.toString() ?? '',
         plantName: widget.scanData['plantName']?.toString() ?? '',
@@ -480,12 +449,12 @@ class _ResultsScreenState extends State<ResultsScreen>
         imagePath: widget.scanData['imagePath'] as String?,
         imageBase64: widget.scanData['imageBase64'] as String?,
       );
-      
+
       if (severityResult != null) {
-        _severity = severityResult['severity']?.toString() ?? 
-                    widget.scanData['severity']?.toString() ?? 
-                    'Medium';
-        
+        _severity = severityResult['severity']?.toString() ??
+            widget.scanData['severity']?.toString() ??
+            'Medium';
+
         final remediationData = severityResult['remediation'];
         if (remediationData != null) {
           if (remediationData is List) {
@@ -498,15 +467,13 @@ class _ResultsScreenState extends State<ResultsScreen>
                 .toList();
           }
         }
-        
-        // Update the scanData with results from service
+
         widget.scanData['severity'] = _severity;
         widget.scanData['remediation'] = _remediation;
-        
+
         debugPrint('✅ Severity: $_severity');
         debugPrint('✅ Remediation count: ${_remediation.length}');
       } else {
-        // Fallback to existing data if service fails
         _severity = widget.scanData['severity']?.toString() ?? 'Medium';
         _remediation = _parseStringToList(widget.scanData['remediation'] ?? widget.scanData['treatment']);
         debugPrint('⚠️ Using fallback severity and remediation');
@@ -514,8 +481,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     } catch (e, stackTrace) {
       debugPrint('❌ Error getting severity and remediation: $e');
       debugPrint('Stack trace: $stackTrace');
-      
-      // Fallback to existing data
+
       _severity = widget.scanData['severity']?.toString() ?? 'Medium';
       _remediation = _parseStringToList(widget.scanData['remediation'] ?? widget.scanData['treatment']);
     } finally {
@@ -525,7 +491,6 @@ class _ResultsScreenState extends State<ResultsScreen>
     }
   }
 
-  // Initialization Methods
   void _initializeAnimations() {
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -542,7 +507,6 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  // JSON Data Loading
   Future<void> _loadJsonData() async {
     try {
       debugPrint('📚 Loading JSON data...');
@@ -568,7 +532,6 @@ class _ResultsScreenState extends State<ResultsScreen>
     }
   }
 
-  // Scan Saving Logic
   Future<void> _checkAndSaveScan() async {
     if (_shouldSkipSave()) {
       debugPrint('📂 Skipping auto-save for existing/advanced scan');
@@ -588,15 +551,15 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   bool _shouldSkipSave() {
     final data = widget.scanData;
-    
+
     return data['isFromHistory'] == true ||
         data['skipSave'] == true ||
         data['databaseId'] != null ||
         data['isAdvanced'] == true ||
         data['analysisSource'] != null ||
-        (data['id'] != null && 
-         (data['id'] as String).startsWith(_scanIdPrefix) ||
-         (data['id'] as String).startsWith('advanced_'));
+        (data['id'] != null &&
+            (data['id'] as String).startsWith(_scanIdPrefix) ||
+            (data['id'] as String).startsWith('advanced_'));
   }
 
   Future<void> _saveScanToDatabase() async {
@@ -607,7 +570,7 @@ class _ResultsScreenState extends State<ResultsScreen>
 
       final scanId = _generateScanId();
       final existingScan = await _scanRepository.getScanById(scanId);
-      
+
       if (existingScan != null) {
         debugPrint('✅ Scan already exists in database');
         _updateSaveState(false, true);
@@ -625,7 +588,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     } catch (e, stackTrace) {
       debugPrint('❌ Save error: $e\n$stackTrace');
       _updateSaveState(false, false);
-      
+
       if (!_isDuplicateError(e)) {
         _showSaveError();
       }
@@ -647,19 +610,15 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   Future<Map<String, dynamic>> _processScanData(String scanId) async {
     final processedData = Map<String, dynamic>.from(widget.scanData);
-    
-    // Convert image to base64 if needed
+
     final imageBase64 = await _getImageBase64();
     if (imageBase64 != null) {
       processedData['imageBase64'] = imageBase64;
     }
 
-    // Fix data types
     _fixDataTypes(processedData);
-    
-    // Set scan ID
     processedData['id'] = scanId;
-    
+
     return processedData;
   }
 
@@ -679,12 +638,11 @@ class _ResultsScreenState extends State<ResultsScreen>
         debugPrint('⚠️ Failed to convert image: $e');
       }
     }
-    
+
     return null;
   }
 
   void _fixDataTypes(Map<String, dynamic> data) {
-    // Fix confidence - for non-leaf images, use detection confidence
     if (data['confidence'] is String) {
       if (!_isLeafImage) {
         final leafAnalysis = data['leafDetectionDetails'];
@@ -700,10 +658,8 @@ class _ResultsScreenState extends State<ResultsScreen>
       data['confidence'] = _nonLeafConfidence;
     }
 
-    // Fix symptoms
     data['symptoms'] = _parseStringToList(data['symptoms']);
 
-    // Fix remediation/treatment - use the service results
     if (_remediation.isNotEmpty) {
       data['remediation'] = _remediation;
     } else if (data['remediation'] != null) {
@@ -715,10 +671,8 @@ class _ResultsScreenState extends State<ResultsScreen>
       data['remediation'] = [];
     }
 
-    // Fix precautions
     data['precautions'] = _parseStringToList(data['precautions']);
-    
-    // Fix severity - use the service result
+
     if (_severity.isNotEmpty) {
       data['severity'] = _severity;
     }
@@ -740,7 +694,7 @@ class _ResultsScreenState extends State<ResultsScreen>
   bool _isDuplicateError(Object error) {
     final errorString = error.toString().toLowerCase();
     return errorString.contains('duplicate') ||
-           errorString.contains('already exists');
+        errorString.contains('already exists');
   }
 
   void _updateSaveState(bool isSaving, bool isSaved) {
@@ -752,10 +706,8 @@ class _ResultsScreenState extends State<ResultsScreen>
     }
   }
 
-  // Disease Causes Extraction
   void _extractDiseaseCauses() {
     try {
-      // First check if this is a non-leaf image
       if (!_isLeafImage) {
         _diseaseCausesList.addAll([
           'The uploaded image does not appear to be a plant leaf',
@@ -774,7 +726,6 @@ class _ResultsScreenState extends State<ResultsScreen>
       final plantName = widget.scanData['plantName']?.toString();
       final confidence = _getConfidence();
 
-      // Handle special cases
       if (_isFailedAnalysis(diseaseName)) {
         _diseaseCausesList.addAll(_getFailedAnalysisCauses());
         return;
@@ -795,7 +746,6 @@ class _ResultsScreenState extends State<ResultsScreen>
         return;
       }
 
-      // Try to find specific causes
       final diseaseKey = _findDiseaseKey(rawLabel, diseaseName, plantName);
       if (diseaseKey != null && _diseaseCauses.containsKey(diseaseKey)) {
         final causes = _extractCausesFromKey(diseaseKey);
@@ -805,7 +755,6 @@ class _ResultsScreenState extends State<ResultsScreen>
         }
       }
 
-      // Fallback to general causes
       _tryGeneralCauses(diseaseName);
     } catch (e) {
       debugPrint('❌ Error extracting causes: $e');
@@ -825,21 +774,21 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   bool _isFailedAnalysis(String? diseaseName) {
     return diseaseName == null ||
-           diseaseName.toLowerCase().contains('unable to determine') ||
-           diseaseName.toLowerCase().contains('image quality issue') ||
-           diseaseName.toLowerCase().contains('analysis required');
+        diseaseName.toLowerCase().contains('unable to determine') ||
+        diseaseName.toLowerCase().contains('image quality issue') ||
+        diseaseName.toLowerCase().contains('analysis required');
   }
 
   bool _isUnknownPlant(String? plantName) {
     return plantName == null ||
-           plantName.toLowerCase().contains('unknown') ||
-           plantName.toLowerCase().contains('unable to determine');
+        plantName.toLowerCase().contains('unknown') ||
+        plantName.toLowerCase().contains('unable to determine');
   }
 
   bool _isHealthyPlant(String? diseaseName) {
     return diseaseName?.toLowerCase() == 'healthy' ||
-           diseaseName?.toLowerCase().contains('healthy') == true ||
-           (widget.scanData['isHealthy'] as bool? ?? false);
+        diseaseName?.toLowerCase().contains('healthy') == true ||
+        (widget.scanData['isHealthy'] as bool? ?? false);
   }
 
   List<String> _getFailedAnalysisCauses() {
@@ -881,12 +830,10 @@ class _ResultsScreenState extends State<ResultsScreen>
   }
 
   String? _findDiseaseKey(String? rawLabel, String? diseaseName, String? plantName) {
-    // Try direct match with raw label
     if (rawLabel != null && _diseaseCauses.containsKey(rawLabel)) {
       return rawLabel;
     }
 
-    // Try mapping
     if (rawLabel != null && _diseaseMapping.containsKey(rawLabel)) {
       final displayName = _diseaseMapping[rawLabel]['display_name']?.toString();
       if (displayName != null) {
@@ -894,7 +841,6 @@ class _ResultsScreenState extends State<ResultsScreen>
       }
     }
 
-    // Try constructed key
     if (plantName != null && diseaseName != null) {
       final constructedKey = '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
       if (_diseaseCauses.containsKey(constructedKey)) {
@@ -913,7 +859,7 @@ class _ResultsScreenState extends State<ResultsScreen>
 
     final plant = parts[0].replaceAll(' ', '_');
     final disease = parts[1].replaceAll(' ', '_').toLowerCase();
-    
+
     final key = '${plant}___$disease';
     if (_diseaseCauses.containsKey(key)) return key;
 
@@ -976,13 +922,12 @@ class _ResultsScreenState extends State<ResultsScreen>
     ];
   }
 
-  // UI Methods
   void _scheduleAdvancedSearchBanner() {
     _advancedSearchTimer = Timer(_advancedSearchDelay, () {
       if (!mounted) return;
-      
+
       setState(() => _showAdvancedSearchBanner = true);
-      
+
       _advancedSearchTimer = Timer(_advancedSearchDuration, () {
         if (mounted) {
           setState(() => _showAdvancedSearchBanner = false);
@@ -1014,20 +959,123 @@ class _ResultsScreenState extends State<ResultsScreen>
     if (fromCapture) {
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.scan,
-        (route) => false,
+            (route) => false,
       );
     } else if (previousRoute != null) {
       Navigator.of(context).pushNamedAndRemoveUntil(
         previousRoute,
-        (route) => false,
+            (route) => false,
       );
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.home,
-        (route) => false,
+            (route) => false,
       );
+    }
+  }
+
+  Future<void> _generatePdfReport() async {
+    if (_isGeneratingPdf) {
+      debugPrint('⚠️ PDF generation already in progress');
+      return;
+    }
+
+    debugPrint('🔘 Generate PDF button pressed!');
+
+    setState(() => _isGeneratingPdf = true);
+
+    try {
+      // Prepare comprehensive scan data for PDF
+      final pdfScanData = {
+        ...widget.scanData,
+        'severity': _severity,
+        'remediation': _remediation,
+        'symptoms': _diseaseCausesList,
+        'plantName': _resolvePlantName(),
+        'diseaseName': _getDiseaseName(),
+        'confidence': widget.scanData['confidence']?.toString() ?? '0',
+      };
+
+      debugPrint('📊 PDF Data prepared with ${pdfScanData.keys.length} keys');
+
+      await _pdfService.generateAndShowPdf(
+        context: context,
+        scan: pdfScanData,
+        onError: (msg) {
+          debugPrint('❌ PDF Error callback: $msg');
+          if (mounted) {
+            setState(() => _isGeneratingPdf = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(msg)),
+                  ],
+                ),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        },
+        onSuccess: (file) async {
+          debugPrint('✅ PDF Success callback triggered!');
+          debugPrint('   File path: ${file.path}');
+          debugPrint('   Widget mounted: $mounted');
+
+          if (!mounted) {
+            debugPrint('❌ Widget not mounted - cannot show dialog');
+            return;
+          }
+
+          setState(() => _isGeneratingPdf = false);
+
+          // Small delay to ensure UI is ready
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          if (!mounted) {
+            debugPrint('❌ Widget unmounted after delay');
+            return;
+          }
+
+          debugPrint('🎯 Showing PdfSuccessDialog...');
+
+          try {
+            await showDialog(
+              context: context,
+              barrierDismissible: true,
+              useRootNavigator: true,
+              builder: (dialogContext) {
+                debugPrint('✅ Dialog builder called');
+                return PdfSuccessDialog(pdfFile: file);
+              },
+            );
+            debugPrint('✅ Dialog closed');
+          } catch (e) {
+            debugPrint('❌ Error showing dialog: $e');
+          }
+        },
+      );
+    } catch (e, stackTrace) {
+      debugPrint('❌ PDF generation error: $e');
+      debugPrint('Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() => _isGeneratingPdf = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -1036,8 +1084,7 @@ class _ResultsScreenState extends State<ResultsScreen>
       final plantName = _resolvePlantName();
       final diseaseName = _getDiseaseName();
       final isHealthy = _isPlantHealthy(diseaseName);
-      
-      // Use the service-provided severity and remediation
+
       final severity = _severity;
       final recommendations = _remediation.isNotEmpty ? _remediation : _getFallbackRecommendations(isHealthy);
 
@@ -1071,7 +1118,7 @@ class _ResultsScreenState extends State<ResultsScreen>
       if (parts.length >= 2) {
         final diseasePlantName = parts[0].replaceAll('_', ' ').trim();
         final diseaseName = _getDiseaseName();
-        
+
         if (diseasePlantName.isNotEmpty &&
             diseasePlantName.toLowerCase() != plantName.toLowerCase() &&
             diseasePlantName != 'Unknown Plant' &&
@@ -1086,8 +1133,8 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   String _getDiseaseName() {
     return widget.scanData['diseaseName']?.toString() ??
-           widget.scanData['diagnosis']?.toString() ??
-           'Healthy';
+        widget.scanData['diagnosis']?.toString() ??
+        'Healthy';
   }
 
   List<String> _getFallbackRecommendations(bool isHealthy) {
@@ -1110,11 +1157,10 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   bool _isPlantHealthy(String diseaseName) {
     return diseaseName.toLowerCase() == 'healthy' ||
-           diseaseName.toLowerCase().contains('no disease') ||
-           (widget.scanData['isHealthy'] as bool? ?? false);
+        diseaseName.toLowerCase().contains('no disease') ||
+        (widget.scanData['isHealthy'] as bool? ?? false);
   }
 
-  // UI Helper Methods
   Widget _buildImageSection() {
     final imagePath = widget.scanData['imagePath'] as String?;
     final imageUrl = widget.scanData['imageUrl'] as String?;
@@ -1232,18 +1278,17 @@ class _ResultsScreenState extends State<ResultsScreen>
   }
 
   Widget _buildAdvancedSearchButton() {
-    // Don't show advanced search for non-leaf images
     if (!_isLeafImage) return const SizedBox.shrink();
-    
+
     final theme = Theme.of(context);
 
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withOpacity(0.1),
-            theme.colorScheme.primary.withOpacity(0.05),
-        ]),
+            colors: [
+              theme.colorScheme.primary.withOpacity(0.1),
+              theme.colorScheme.primary.withOpacity(0.05),
+            ]),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.colorScheme.primary.withOpacity(0.3),
@@ -1291,13 +1336,13 @@ class _ResultsScreenState extends State<ResultsScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 20),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
               Text(
                 _checkingLeafDetection ? 'Analyzing image...' : 'Getting severity and recommendations...',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               Text(
                 _checkingLeafDetection ? 'Checking if image is a plant leaf' : 'Analyzing disease severity and treatment options',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -1330,83 +1375,65 @@ class _ResultsScreenState extends State<ResultsScreen>
               end: Alignment.bottomRight,
               colors: theme.brightness == Brightness.dark
                   ? const [
-                      Color(0xFF0F0F23),
-                      Color(0xFF16213E),
-                      Color(0xFF1A1A2E),
-                      Color(0xFF0F0F23),
-                    ]
+                Color(0xFF0F0F23),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+                Color(0xFF0F0F23),
+              ]
                   : [
-                      theme.colorScheme.surface,
-                      theme.colorScheme.surface.withOpacity(0.9),
-                      theme.colorScheme.surface.withOpacity(0.8),
-                      theme.colorScheme.surface,
-                    ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
+                theme.colorScheme.surface,
+                theme.colorScheme.surface.withOpacity(0.9),
+                theme.colorScheme.surface.withOpacity(0.8),
+                theme.colorScheme.surface,
+              ],
+              stops: const [0.0, 0.3, 0.7, 1.0],
             ),
           ),
           child: Stack(
             children: [
-              // Floating Orbs
               ...List.generate(
                 8,
-                (index) => FloatingOrb(
+                    (index) => FloatingOrb(
                   index: index,
                   maxWidth: MediaQuery.of(context).size.width,
                   fadeController: _fadeController,
                   scaleAnimation: _scaleAnimation,
                 ),
               ),
-
-              // Main Content
               SafeArea(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image Section
                       _buildImageSection(),
                       const SizedBox(height: 20),
-
-                      // Diagnosis Card (now includes service-provided severity)
                       DiagnosisCard(diagnosisResult: diagnosisResult),
                       const SizedBox(height: 20),
-
-                      // Analysis Details
                       AnalysisDetailsCard(scanData: widget.scanData),
                       const SizedBox(height: 20),
-
-                      // Disease Causes
                       if (_jsonLoaded)
                         DiseaseCausesCard(causes: _diseaseCausesList),
                       const SizedBox(height: 20),
-
-                      // Recommendations (now uses service-provided remediation)
                       RecommendationsCard(
                         recommendations: diagnosisResult.recommendations,
                       ),
                       const SizedBox(height: 20),
-
-                      // Next Steps (only for leaf images)
                       if (_isLeafImage) ...[
                         const NextStepsCard(),
                         const SizedBox(height: 20),
                       ],
-
-                      // Advanced Search Button (only for leaf images)
                       _buildAdvancedSearchButton(),
-                      const SizedBox(height: 80),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
               ),
-
-              // Advanced Search Banner (only for leaf images)
               if (_showAdvancedSearchBanner && _isLeafImage)
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 0,
+                  bottom: 80,
                   child: FloatingAdvancedSearchBanner(
                     onTap: _navigateToAdvancedSearch,
                     onDismiss: () {
@@ -1419,6 +1446,16 @@ class _ResultsScreenState extends State<ResultsScreen>
             ],
           ),
         ),
+        floatingActionButton: _isLeafImage && !_isGeneratingPdf && !_isSaving
+            ? Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: PdfFloatingButton(
+            onPressed: _generatePdfReport,
+            isGenerating: _isGeneratingPdf,
+          ),
+        )
+            : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }

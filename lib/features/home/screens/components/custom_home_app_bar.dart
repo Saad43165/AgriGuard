@@ -40,21 +40,20 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
     setState(() => _isLoadingImage = true);
 
     try {
-      // Priority 1: Check for pending image from ProfileImageManager (newly uploaded)
+      // Check for pending image
       final pendingImage = ProfileImageManager.getPendingImage();
       if (pendingImage != null && await pendingImage.exists()) {
-        debugPrint('🖼️ AppBar: Loading pending image from manager');
         if (mounted) {
           setState(() {
             _profileImageFile = pendingImage;
-            _profileImageBase64 = null; // Clear Base64 when we have local file
+            _profileImageBase64 = null;
             _isLoadingImage = false;
           });
         }
         return;
       }
 
-      // Priority 2: Load Base64 image from Firestore
+      // Load from Firestore
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final snapshot = await FirebaseFirestore.instance
@@ -67,34 +66,21 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
           final imageUrl = data['profileImageUrl'] as String?;
 
           if (imageUrl != null && imageUrl.isNotEmpty) {
-            // Check if it's Base64 (not starting with http)
-            if (!imageUrl.startsWith('http')) {
-              debugPrint('📥 AppBar: Loaded Base64 image from Firestore');
-              setState(() {
-                _profileImageBase64 = imageUrl;
-                _profileImageFile = null;
-                _isLoadingImage = false;
-              });
-            } else {
-              // Legacy URL support (if you had URLs before)
-              debugPrint('🌐 AppBar: Found URL (legacy), consider migrating to Base64');
-              setState(() {
-                _profileImageBase64 = imageUrl; // Store URL as is
-                _profileImageFile = null;
-                _isLoadingImage = false;
-              });
-            }
+            setState(() {
+              _profileImageBase64 = imageUrl;
+              _profileImageFile = null;
+              _isLoadingImage = false;
+            });
             return;
           }
         }
       }
 
-      // No image found
       if (mounted) {
         setState(() => _isLoadingImage = false);
       }
     } catch (e) {
-      debugPrint('❌ AppBar: Error loading profile image: $e');
+      debugPrint('Error loading profile image: $e');
       if (mounted) {
         setState(() => _isLoadingImage = false);
       }
@@ -136,49 +122,41 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
       return _buildLoadingAvatar();
     }
 
-    // Priority 1: Local file (newly selected image)
+    // Local file
     if (_profileImageFile != null) {
       return _buildAvatarContainer(
         child: ClipOval(
           child: Image.file(
             _profileImageFile!,
             fit: BoxFit.cover,
-            width: 44,
-            height: 44,
-            errorBuilder: (context, error, stackTrace) {
-              debugPrint('❌ AppBar: Error loading local file');
-              return _buildDefaultAvatar();
-            },
+            width: 48,
+            height: 48,
+            errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
           ),
         ),
       );
     }
 
-    // Priority 2: Base64 image from Firestore
+    // Base64 or URL
     if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
-      // Check if it's a URL (legacy support)
       if (_profileImageBase64!.startsWith('http')) {
         return _buildAvatarContainer(
           child: ClipOval(
             child: Image.network(
               _profileImageBase64!,
               fit: BoxFit.cover,
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return _buildLoadingAvatar();
               },
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('❌ AppBar: Error loading network image');
-                return _buildDefaultAvatar();
-              },
+              errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
             ),
           ),
         );
       }
 
-      // It's Base64
       try {
         final Uint8List imageBytes = base64Decode(_profileImageBase64!);
         return _buildAvatarContainer(
@@ -186,34 +164,33 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
             child: Image.memory(
               imageBytes,
               fit: BoxFit.cover,
-              width: 44,
-              height: 44,
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('❌ AppBar: Error decoding Base64 image');
-                return _buildDefaultAvatar();
-              },
+              width: 48,
+              height: 48,
+              errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
             ),
           ),
         );
       } catch (e) {
-        debugPrint('❌ AppBar: Base64 decode error: $e');
         return _buildDefaultAvatar();
       }
     }
 
-    // Default avatar if no image
     return _buildDefaultAvatar();
   }
 
   Widget _buildAvatarContainer({required Widget child}) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          width: 2,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
         ),
         boxShadow: [
           BoxShadow(
@@ -223,14 +200,21 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
           ),
         ],
       ),
-      child: child,
+      padding: const EdgeInsets.all(2.5),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Theme.of(context).colorScheme.surface,
+        ),
+        child: child,
+      ),
     );
   }
 
   Widget _buildLoadingAvatar() {
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
@@ -239,17 +223,13 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
             Theme.of(context).colorScheme.secondary.withOpacity(0.3),
           ],
         ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          width: 2,
-        ),
       ),
       child: Center(
         child: SizedBox(
-          width: 20,
-          height: 20,
+          width: 22,
+          height: 22,
           child: CircularProgressIndicator(
-            strokeWidth: 2,
+            strokeWidth: 2.5,
             valueColor: AlwaysStoppedAnimation(
               Theme.of(context).colorScheme.primary,
             ),
@@ -261,11 +241,13 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
 
   Widget _buildDefaultAvatar() {
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Theme.of(context).colorScheme.primary,
             Theme.of(context).colorScheme.secondary,
@@ -281,14 +263,20 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
       ),
       child: Icon(
         Icons.person_rounded,
-        size: 24,
-        color: Theme.of(context).colorScheme.onPrimary,
+        size: 26,
+        color: Colors.white,
       ),
     );
   }
 
+  void _navigateToProfile() {
+    Navigator.pushNamed(context, '/profile');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return StreamBuilder<String>(
       stream: _userNameStream(),
       builder: (context, snapshot) {
@@ -305,17 +293,14 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: Theme.of(context).brightness == Brightness.dark
+                colors: isDark
                     ? [
                   const Color(0xFF0F0F23).withOpacity(0.95),
                   const Color(0xFF16213E).withOpacity(0.9),
                 ]
                     : [
                   Theme.of(context).colorScheme.surface,
-                  Theme.of(context)
-                      .colorScheme
-                      .surface
-                      .withOpacity(0.95),
+                  Theme.of(context).colorScheme.surface.withOpacity(0.95),
                 ],
               ),
             ),
@@ -324,10 +309,20 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
             padding: const EdgeInsets.only(top: 8),
             child: Row(
               children: [
-                // User Avatar with Profile Image
-                _buildProfileAvatar(),
+                // Clickable Profile Avatar
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _navigateToProfile,
+                    borderRadius: BorderRadius.circular(24),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: _buildProfileAvatar(),
+                    ),
+                  ),
+                ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
 
                 // Greeting & Name
                 Expanded(
@@ -336,7 +331,7 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${_getGreeting()} 👋',
+                        _getGreeting(),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
@@ -346,7 +341,10 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
                             context,
                             baseSize: 12,
                           ),
+                          fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       ShaderMask(
@@ -358,14 +356,12 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
                         ).createShader(bounds),
                         child: Text(
                           firstName,
-                          style:
-                          Theme.of(context).textTheme.titleLarge?.copyWith(
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontSize:
-                            AppMeasurements.getResponsiveFontSize(
+                            fontSize: AppMeasurements.getResponsiveFontSize(
                               context,
-                              baseSize: 18,
+                              baseSize: 19,
                             ),
                           ),
                           maxLines: 1,
@@ -373,18 +369,6 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-
-                // Notification Button (placeholder)
-                Container(
-                  margin: const EdgeInsets.only(right: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surface
-                        .withOpacity(0.5),
-                    shape: BoxShape.circle,
                   ),
                 ),
               ],
