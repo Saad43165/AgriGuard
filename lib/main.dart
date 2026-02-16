@@ -5,16 +5,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/navigation/app_router.dart';
 import 'core/widgets/app_themes.dart';
+import 'core/services/notification_service.dart';  // ADD THIS
 import 'features/auth/Login_Screen/services/guest_service.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Guest Service
   await GuestService().initialize();
+
+  // Initialize Notifications (ADD THIS)
+  await NotificationService().initialize();
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),

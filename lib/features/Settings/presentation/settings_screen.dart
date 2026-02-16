@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/widgets/app_themes.dart';
+import '../../../../core/services/notification_service.dart';
 import 'Tiles/app_version_tile.dart';
 import 'Tiles/clear_history_tile.dart';
 import 'Tiles/delete_acount_tile.dart';
@@ -119,22 +120,30 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         ),
         child: Stack(
           children: [
-            ...List.generate(6, (index) => FloatingOrb(
-              index: index,
-              maxWidth: MediaQuery.of(context).size.width,
-              fadeController: _fadeController,
-              scaleAnimation: _scaleAnimation,
-            )),
+            ...List.generate(
+              6,
+                  (index) => FloatingOrb(
+                index: index,
+                maxWidth: MediaQuery.of(context).size.width,
+                fadeController: _fadeController,
+                scaleAnimation: _scaleAnimation,
+              ),
+            ),
             SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: padding * 0.6, vertical: padding * 0.5),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: padding * 0.6,
+                      vertical: padding * 0.5,
+                    ),
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: isLargeScreen ? 700.0 : double.infinity),
+                        constraints: BoxConstraints(
+                          maxWidth: isLargeScreen ? 700.0 : double.infinity,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -142,19 +151,31 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                             SizedBox(height: padding * 1.5),
 
                             // Preferences Section
-                            _buildSectionHeader(context, 'Preferences', Icons.tune_rounded),
+                            _buildSectionHeader(
+                              context,
+                              'Preferences',
+                              Icons.tune_rounded,
+                            ),
                             SizedBox(height: padding * 0.8),
                             _buildPreferencesSection(),
                             SizedBox(height: padding * 2),
 
                             // Account Section
-                            _buildSectionHeader(context, 'Account', Icons.person_rounded),
+                            _buildSectionHeader(
+                              context,
+                              'Account',
+                              Icons.person_rounded,
+                            ),
                             SizedBox(height: padding * 0.8),
                             _buildAccountSection(),
                             SizedBox(height: padding * 2),
 
                             // About Section
-                            _buildSectionHeader(context, 'About', Icons.info_rounded),
+                            _buildSectionHeader(
+                              context,
+                              'About',
+                              Icons.info_rounded,
+                            ),
                             SizedBox(height: padding * 0.8),
                             _buildAboutSection(),
                             SizedBox(height: padding * 2),
@@ -251,17 +272,278 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                 title: 'Notifications',
                 subtitle: 'Receive alerts and updates',
                 value: _notificationsEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _notificationsEnabled = value;
-                    _saveSettings();
-                  });
+                onChanged: (value) async {
+                  setState(() => _notificationsEnabled = value);
+                  await _saveSettings();
+
+                  await NotificationService().setNotificationsEnabled(value);
+
                   HapticFeedback.mediumImpact();
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            Icon(
+                              value ? Icons.notifications_active : Icons.notifications_off,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              value ? 'Notifications enabled' : 'Notifications disabled',
+                            ),
+                          ],
+                        ),
+                        backgroundColor: value ? const Color(0xFF10B981) : Colors.grey.shade700,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 },
               ),
+              _buildDivider(),
+
+              // FCM TOKEN VIEWER
+              _buildFCMTokenTile(),
+
+              _buildDivider(),
+
+              // TEST NOTIFICATION
+              _buildTestNotificationTile(),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFCMTokenTile() {
+    return Container(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                Colors.purple.withOpacity(0.15),
+                Colors.deepPurple.withOpacity(0.15),
+              ],
+            ),
+          ),
+          child: const Icon(
+            Icons.key_rounded,
+            color: Colors.purple,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          'FCM Token',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Text(
+            'Copy device token for testing',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 12,
+            ),
+          ),
+        ),
+        trailing: const Icon(Icons.content_copy_rounded),
+        onTap: () async {
+          final token = NotificationService().fcmToken;
+
+          if (token != null && token.isNotEmpty) {
+            await Clipboard.setData(ClipboardData(text: token));
+
+            if (mounted) {
+              // Show token in dialog
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.key_rounded,
+                          color: Colors.purple,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text('FCM Token'),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.purple.withOpacity(0.3),
+                          ),
+                        ),
+                        child: SelectableText(
+                          token,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF10B981),
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Token copied to clipboard!',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF10B981),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text('No FCM token available yet'),
+                    ],
+                  ),
+                  backgroundColor: Colors.red.shade600,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildTestNotificationTile() {
+    return Container(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                Colors.orange.withOpacity(0.15),
+                Colors.deepOrange.withOpacity(0.15),
+              ],
+            ),
+          ),
+          child: const Icon(
+            Icons.bug_report_rounded,
+            color: Colors.orange,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          'Test Notification',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Text(
+            'Send a local test notification',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 12,
+            ),
+          ),
+        ),
+        trailing: const Icon(Icons.send_rounded),
+        onTap: () async {
+          HapticFeedback.mediumImpact();
+
+          await NotificationService().showTestNotification();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 12),
+                    Text('Test notification sent!'),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF10B981),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
       ),
     );
   }

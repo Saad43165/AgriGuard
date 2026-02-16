@@ -11,6 +11,8 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
+        // ← CORRECT KOTLIN SYNTAX
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -26,7 +28,9 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // ADD THIS BLOCK INSIDE defaultConfig
+        // ← ADD THIS
+        multiDexEnabled = true
+
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
@@ -41,4 +45,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // ← CORRECT KOTLIN SYNTAX FOR DEPENDENCIES
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
