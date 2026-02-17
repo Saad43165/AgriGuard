@@ -14,7 +14,7 @@ import '../../../core/models/scan_model.dart';
 import '../../../core/repositories/scan_repository.dart';
 import '../../../core/widgets/floating_orb.dart';
 import '../../auth/Login_Screen/services/guest_service.dart';
-import 'bottom_sheet_widgets/scan_options_bottomsheet.dart';
+import 'PdfDialogs/scan_options_bottomsheet.dart';
 import 'components/all_scans_dialog_content.dart';
 import 'components/custom_home_app_bar.dart';
 import 'components/first_time_user_guide.dart';
