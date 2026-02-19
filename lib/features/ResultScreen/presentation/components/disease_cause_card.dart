@@ -1,5 +1,5 @@
-// components/disease_causes_card.dart
 import 'package:flutter/material.dart';
+import 'section_header.dart';
 
 class DiseaseCausesCard extends StatelessWidget {
   final List<String> causes;
@@ -11,122 +11,120 @@ class DiseaseCausesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _buildCausesCard(context);
-  }
-
-  Widget _buildCausesCard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surface.withOpacity(0.5)
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-          width: 1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Disease Causes',
+          icon: Icons.science_rounded,
+          subtitle: 'Understanding the root causes',
+          iconColor: const Color(0xFF6366F1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6750A4).withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6750A4).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.science_rounded,
-                    color: const Color(0xFF6750A4),
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Disease Causes & Factors',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                const Color(0xFF1E293B),
+                const Color(0xFF0F172A),
+              ]
+                  : [
+                Colors.white,
+                const Color(0xFFF8FAFC),
               ],
             ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.06),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-
-          // Content
-          causes.isEmpty
-              ? _buildEmptyState(context)
-              : _buildCausesList(context),
-        ],
-      ),
+          child: causes.isEmpty
+              ? _buildEmptyState(context, isDark)
+              : Column(
+            children: List.generate(
+              causes.length,
+                  (index) => _buildCauseItem(
+                context: context,
+                text: causes[index],
+                index: index,
+                isLast: index == causes.length - 1,
+                isDark: isDark,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final theme = Theme.of(context);
-
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(32),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF6366F1).withOpacity(0.1),
+                  const Color(0xFF6366F1).withOpacity(0.05),
+                ],
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF6366F1).withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Icon(
               Icons.search_off_rounded,
               size: 48,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              color: const Color(0xFF6366F1),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'No disease analysis available',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No Disease Analysis Available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : Colors.black87,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Plant could not be identified or analysis failed',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
-              ),
-              textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Analysis data is not available for this scan',
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark
+                  ? Colors.white.withOpacity(0.6)
+                  : Colors.black.withOpacity(0.5),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-  Widget _buildCausesList(BuildContext context) {
-    return Column(
-      children: List.generate(
-        causes.length,
-            (index) => _buildCauseItem(
-          context: context,
-          text: causes[index],
-          index: index,
-          isLast: index == causes.length - 1,
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -136,12 +134,21 @@ class DiseaseCausesCard extends StatelessWidget {
     required String text,
     required int index,
     required bool isLast,
+    required bool isDark,
   }) {
-    final theme = Theme.of(context);
-
-    // Clean up the text
     String cleanText = text.trim();
     if (cleanText.isEmpty) return const SizedBox.shrink();
+
+    // Cause type icons
+    final causeIcons = [
+      Icons.bug_report_rounded,
+      Icons.water_drop_rounded,
+      Icons.wb_sunny_rounded,
+      Icons.thermostat_rounded,
+      Icons.eco_rounded,
+    ];
+
+    final causeIcon = causeIcons[index % causeIcons.length];
 
     return Container(
       decoration: BoxDecoration(
@@ -149,70 +156,96 @@ class DiseaseCausesCard extends StatelessWidget {
             ? null
             : Border(
           bottom: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.1),
-            width: 1,
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.04),
+            width: 1.5,
           ),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.all(20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon with number
+            // Cause Icon Container
             Container(
-              width: 36,
-              height: 36,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6750A4).withOpacity(0.2),
-                    const Color(0xFF6750A4).withOpacity(0.1),
-                  ],
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: const Color(0xFF6750A4).withOpacity(0.3),
-                  width: 1,
+                  color: Colors.white.withOpacity(0.2),
+                  width: 2,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    color: const Color(0xFF6750A4),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                child: Icon(
+                  causeIcon,
+                  color: Colors.white,
+                  size: 24,
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             // Cause Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: const Color(0xFF6366F1).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          'CAUSE ${index + 1}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF6366F1),
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   Text(
                     cleanText,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 13.5,
+                    style: TextStyle(
+                      fontSize: 14,
                       height: 1.6,
-                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
-                  // Add small spacing between items
-                  if (!isLast) const SizedBox(height: 8),
                 ],
               ),
             ),
-            // Info icon
-            const SizedBox(width: 8),
-            Icon(
-              Icons.info_outline_rounded,
-              size: 18,
-              color: const Color(0xFF6750A4).withOpacity(0.5),
-            ),
+            const SizedBox(width: 12),
+            // Info Badge
+
           ],
         ),
       ),

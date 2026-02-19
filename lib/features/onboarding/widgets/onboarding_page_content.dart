@@ -1,191 +1,157 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_measurements.dart';
 import '../models/onboarding_data.dart';
+import 'dart:math' as math;
 
-class OnboardingPageContent extends StatefulWidget {
+class InteractivePageContent extends StatefulWidget {
   final OnboardingData data;
-  const OnboardingPageContent({super.key, required this.data});
+  final bool isActive;
+
+  const InteractivePageContent({
+    super.key,
+    required this.data,
+    required this.isActive,
+  });
 
   @override
-  State<OnboardingPageContent> createState() => _OnboardingPageContentState();
+  State<InteractivePageContent> createState() => _InteractivePageContentState();
 }
 
-class _OnboardingPageContentState extends State<OnboardingPageContent>
-    with SingleTickerProviderStateMixin {
+class _InteractivePageContentState extends State<InteractivePageContent>
+    with TickerProviderStateMixin {
   late AnimationController _iconController;
-  late Animation<double> _iconScaleAnimation;
-  late Animation<double> _iconRotationAnimation;
-  late Animation<double> _glowAnimation;
-  late Animation<double> _pulseAnimation;
+  late AnimationController _featuresController;
+  late AnimationController _orbitController;
 
   @override
   void initState() {
     super.initState();
+
     _iconController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
-    _iconScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _iconController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
-      ),
+    _featuresController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
     );
 
-    _iconRotationAnimation = Tween<double>(begin: -0.05, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _iconController,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
+    // FIXED: Separate smooth orbit controller
+    _orbitController = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    )..repeat();
 
-    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _iconController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeInOut),
-      ),
-    );
+    if (widget.isActive) {
+      _startAnimations();
+    }
+  }
 
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _iconController,
-        curve: const Interval(0.6, 1.0, curve: Curves.easeInOut),
-      ),
-    );
+  @override
+  void didUpdateWidget(InteractivePageContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      _startAnimations();
+    }
+  }
 
-    _iconController.forward();
+  void _startAnimations() async {
+    _iconController.forward(from: 0);
+    await Future.delayed(const Duration(milliseconds: 300));
+    _featuresController.forward(from: 0);
   }
 
   @override
   void dispose() {
     _iconController.dispose();
+    _featuresController.dispose();
+    _orbitController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: screenHeight * 0.7),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppMeasurements.getResponsivePadding(context),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(height: AppMeasurements.getResponsiveSize(context, baseSize: 40)),
-              _buildProfessionalIcon(context, colorScheme),
-              SizedBox(height: AppMeasurements.getResponsiveSize(context, baseSize: 48)),
-              _buildTitle(context, theme, colorScheme),
-              SizedBox(height: AppMeasurements.smallPadding),
-              _buildDescription(context, theme, colorScheme),
-              SizedBox(height: AppMeasurements.getResponsiveSize(context, baseSize: 40)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
 
-  Widget _buildProfessionalIcon(BuildContext context, ColorScheme colorScheme) {
-    final baseSize = AppMeasurements.getResponsiveIconSizeLarge(context);
-    final containerSize = baseSize * 1.4;
-    final outerRingSize = containerSize * 1.05;
-    final iconFontSize = containerSize * 0.5;
+                  // Animated Main Icon - FIXED: No rotation, smooth orbit
+                  _buildMainIcon(isDark),
 
-    return AnimatedBuilder(
-      animation: _iconController,
-      builder: (context, child) {
-        final double glowValue = _glowAnimation.value;
-        final double scale = _iconScaleAnimation.value * _pulseAnimation.value;
-        final double iconScale = _iconScaleAnimation.value;
-        final double rotation = _iconRotationAnimation.value;
+                  const SizedBox(height: 32),
 
-        // Pre-calculate animated opacities
-        final double glowOpacity = glowValue * 0.15;
-        final double outerRingOpacity = glowValue;
-        final double shineOpacity = glowValue * 0.08;
-        final double accentOpacity1 = glowValue * 0.7;
-        final double accentOpacity2 = glowValue * 0.5;
+                  // Title and Subtitle
+                  _buildTitle(),
 
-        return Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            // === Outer Glow (no Opacity widget) ===
-            Container(
-              width: outerRingSize * 1.3,
-              height: outerRingSize * 1.3,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withOpacity(glowOpacity * 1.33), // 0.2 / 0.15
-                    blurRadius: 30,
-                    spreadRadius: 0,
-                  ),
+                  const SizedBox(height: 10),
+
+                  _buildSubtitle(),
+
+                  const SizedBox(height: 16),
+
+                  // Description
+                  _buildDescription(),
+
+                  const SizedBox(height: 20),
+
+                  // Interactive Features - FIXED: Better spacing
+                  _buildFeatures(isDark),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
 
-            // === Outer Ring with Animated Gradient ===
-            Transform.scale(
-              scale: scale,
-              child: Container(
-                width: outerRingSize,
-                height: outerRingSize,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primary.withOpacity(0.1 * outerRingOpacity),
-                      colorScheme.secondary.withOpacity(0.008 * outerRingOpacity),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+  Widget _buildMainIcon(bool isDark) {
+    return AnimatedBuilder(
+      animation: _iconController,
+      builder: (context, child) {
+        final scale = Curves.easeOutBack.transform(_iconController.value);
 
-            // === Main Icon Container ===
-            Transform.scale(
-              scale: iconScale,
-              child: Transform.rotate(
-                angle: rotation,
-                child: Container(
-                  width: containerSize,
-                  height: containerSize,
+        return Transform.scale(
+          scale: scale,
+          child: SizedBox(
+            width: 180,
+            height: 190,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Main icon container
+                Container(
+                  width: 140,
+                  height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: colorScheme.surface,
-                    border: Border.all(
-                      color: colorScheme.primary.withOpacity(0.15),
-                      width: 2,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.1),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Stack(
                     children: [
-                      // Shine overlay (animated)
+                      // Shine effect
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
@@ -194,117 +160,77 @@ class _OnboardingPageContentState extends State<OnboardingPageContent>
                               begin: Alignment.topLeft,
                               end: Alignment.center,
                               colors: [
-                                Colors.white.withOpacity(shineOpacity),
+                                Colors.white.withOpacity(0.3),
                                 Colors.transparent,
                               ],
                             ),
                           ),
                         ),
                       ),
-                      // Icon with gradient
+
+                      // Main icon - NO ROTATION
                       Center(
-                        child: _buildIconContent(context, colorScheme, iconFontSize),
+                        child: Icon(
+                          widget.data.mainIcon,
+                          size: 70,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ),
 
-            // === Minimal Accent Dots (animated opacity in color) ===
-            ..._buildMinimalAccents(
-              context,
-              colorScheme,
-              containerSize,
-              accentOpacity1,
-              accentOpacity2,
+                // Orbiting feature icons - FIXED: Smooth, no distortion
+                ..._buildOrbitingIcons(),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
   }
 
-  List<Widget> _buildMinimalAccents(
-      BuildContext context,
-      ColorScheme colorScheme,
-      double containerSize,
-      double accentOpacity1,
-      double accentOpacity2,
-      ) {
-    return [
-      // Top accent dot
-      Positioned(
-        top: containerSize * -0.08,
-        right: containerSize * 0.2,
-        child: Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.primary.withOpacity(accentOpacity1),
-                colorScheme.secondary.withOpacity(accentOpacity1),
-              ],
+  List<Widget> _buildOrbitingIcons() {
+    return List.generate(3, (index) {
+      return AnimatedBuilder(
+        animation: _orbitController,
+        builder: (context, child) {
+          // FIXED: Smooth continuous rotation
+          final angle = (index * 2 * math.pi / 3) + (_orbitController.value * 2 * math.pi);
+          final radius = 85.0;
+          final x = radius * math.cos(angle);
+          final y = radius * math.sin(angle);
+
+          // FIXED: Scale based on main animation only
+          final scale = Curves.easeOutBack.transform(_iconController.value);
+
+          return Transform.translate(
+            offset: Offset(x, y),
+            child: Transform.scale(
+              scale: scale,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  widget.data.featureIcons[index],
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.primary.withOpacity(accentOpacity1 * 0.57), // 0.4 / 0.7
-                blurRadius: 6,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-        ),
-      ),
-      // Bottom accent dot
-      Positioned(
-        bottom: containerSize * 0.05,
-        left: containerSize * -0.05,
-        child: Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colorScheme.secondary.withOpacity(accentOpacity2),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.secondary.withOpacity(accentOpacity2 * 0.6), // 0.3 / 0.5
-                blurRadius: 4,
-                spreadRadius: 0.5,
-              ),
-            ],
-          ),
-        ),
-      ),
-    ];
+          );
+        },
+      );
+    });
   }
 
-  Widget _buildIconContent(BuildContext context, ColorScheme colorScheme, double iconFontSize) {
-    return ShaderMask(
-      shaderCallback: (bounds) => LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [colorScheme.primary, colorScheme.secondary],
-      ).createShader(bounds),
-      child: Text(
-        widget.data.icon,
-        style: TextStyle(
-          fontSize: iconFontSize,
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          height:1,
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  Widget _buildTitle(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildTitle() {
     return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 700),
-      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 500),
+      tween: Tween(begin: 0.0, end: widget.isActive ? 1.0 : 0.0),
       curve: Curves.easeOut,
       builder: (context, value, child) {
         return Opacity(
@@ -315,52 +241,163 @@ class _OnboardingPageContentState extends State<OnboardingPageContent>
           ),
         );
       },
-      child: Text(
-        widget.data.title,
-        style: theme.textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-          color: colorScheme.onSurface,
-          height: 1.2,
-          fontSize: AppMeasurements.getResponsiveFontSize(
-            context,
-            baseSize: 28,
+      child: ShaderMask(
+        blendMode: BlendMode.srcIn,
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
+        ).createShader(bounds),
+        child: Text(
+          widget.data.title,
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
+            height: 1.2,
           ),
+          textAlign: TextAlign.center,
         ),
-        textAlign: TextAlign.center,
-        maxLines: 2,
       ),
     );
   }
 
-  Widget _buildDescription(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildSubtitle() {
     return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 900),
-      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      tween: Tween(begin: 0.0, end: widget.isActive ? 1.0 : 0.0),
       curve: Curves.easeOut,
       builder: (context, value, child) {
         return Opacity(
           opacity: value,
           child: Transform.translate(
-            offset: Offset(0, 15 * (1 - value)),
+            offset: Offset(0, 12 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          widget.data.subtitle,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.primary,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDescription() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 700),
+      tween: Tween(begin: 0.0, end: widget.isActive ? 1.0 : 0.0),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 12 * (1 - value)),
             child: child,
           ),
         );
       },
       child: Text(
         widget.data.description,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: colorScheme.onSurface.withOpacity(0.7),
-          height: 1.6,
-          fontSize: AppMeasurements.getResponsiveFontSize(
-            context,
-            baseSize: 16,
-          ),
+        style: TextStyle(
+          fontSize: 15,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          height: 1.5,
           letterSpacing: 0.2,
           fontWeight: FontWeight.w400,
         ),
         textAlign: TextAlign.center,
       ),
+    );
+  }
+
+  Widget _buildFeatures(bool isDark) {
+    return AnimatedBuilder(
+      animation: _featuresController,
+      builder: (context, child) {
+        return Column(
+          children: List.generate(widget.data.features.length, (index) {
+            final delay = index * 0.15;
+            final progress = (_featuresController.value - delay).clamp(0.0, 1.0);
+
+            return Opacity(
+              opacity: progress,
+              child: Transform.translate(
+                offset: Offset(0, 15 * (1 - progress)),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(context).colorScheme.secondary,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          widget.data.features[index],
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/scan_model.dart';
@@ -183,6 +185,10 @@ class ScanDatabase {
     }
   }
 
+  // ============================================
+  // CREATE OPERATIONS
+  // ============================================
+
   Future<String> createScan(ScanModel scan) async {
     final db = await database;
 
@@ -212,6 +218,11 @@ class ScanDatabase {
     }
   }
 
+  // ============================================
+  // READ OPERATIONS
+  // ============================================
+
+  /// Get scans by user with optional limit
   Future<List<ScanModel>> getScansByUser(String userId, {int limit = 50}) async {
     final db = await database;
     final results = await db.query(
@@ -225,6 +236,33 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
+  /// Get ALL scans for a user (no limit) - returns raw maps
+  Future<List<Map<String, dynamic>>> getAllScans(String userId) async {
+    final db = await database;
+    final results = await db.query(
+      'scans',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'scanDate DESC',
+    );
+
+    return results;
+  }
+
+  /// Get ALL scans for a user as ScanModel objects
+  Future<List<ScanModel>> getAllScanModels(String userId) async {
+    final db = await database;
+    final results = await db.query(
+      'scans',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'scanDate DESC',
+    );
+
+    return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
+  }
+
+  /// Get on-device scans only
   Future<List<ScanModel>> getOnDeviceScans(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -237,6 +275,7 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
+  /// Get advanced scans only
   Future<List<ScanModel>> getAdvancedScans(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -249,6 +288,7 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
+  /// Get scans by analysis source (onDeviceML, gemini, plantid)
   Future<List<ScanModel>> getScansBySource(String userId, String source) async {
     final db = await database;
     final results = await db.query(
@@ -261,6 +301,7 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
+  /// Get a single scan by ID
   Future<ScanModel?> getScanById(String id) async {
     final db = await database;
     final results = await db.query(
@@ -275,6 +316,39 @@ class ScanDatabase {
     return null;
   }
 
+  /// Get unsynced scans
+  Future<List<ScanModel>> getUnsyncedScans(String userId) async {
+    final db = await database;
+    final results = await db.query(
+      'scans',
+      where: 'userId = ? AND isSynced = ?',
+      whereArgs: [userId, 0],
+      orderBy: 'scanDate DESC',
+    );
+
+    return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
+  }
+
+  /// Get recent scans (last N days)
+  Future<List<ScanModel>> getRecentScans(String userId, {int days = 7}) async {
+    final db = await database;
+    final cutoffDate = DateTime.now().subtract(Duration(days: days)).toIso8601String();
+
+    final results = await db.query(
+      'scans',
+      where: 'userId = ? AND scanDate >= ?',
+      whereArgs: [userId, cutoffDate],
+      orderBy: 'scanDate DESC',
+    );
+
+    return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
+  }
+
+  // ============================================
+  // UPDATE OPERATIONS
+  // ============================================
+
+  /// Update an existing scan
   Future<void> updateScan(ScanModel scan) async {
     if (scan.id == null) {
       throw Exception('Cannot update scan without ID');
@@ -289,27 +363,7 @@ class ScanDatabase {
     );
   }
 
-  Future<void> deleteScan(String id) async {
-    final db = await database;
-    await db.delete(
-      'scans',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  Future<List<ScanModel>> getUnsyncedScans(String userId) async {
-    final db = await database;
-    final results = await db.query(
-      'scans',
-      where: 'userId = ? AND isSynced = ?',
-      whereArgs: [userId, 0],
-      orderBy: 'scanDate DESC',
-    );
-
-    return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
-  }
-
+  /// Mark a scan as synced
   Future<void> markAsSynced(String id) async {
     final db = await database;
     await db.update(
@@ -320,6 +374,43 @@ class ScanDatabase {
     );
   }
 
+  // ============================================
+  // DELETE OPERATIONS
+  // ============================================
+
+  /// Delete a single scan
+  Future<void> deleteScan(String id) async {
+    final db = await database;
+    await db.delete(
+      'scans',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Clear all scans
+  Future<void> clearAllScans() async {
+    final db = await database;
+    await db.delete('scans');
+  }
+
+  /// Delete scans older than N days
+  Future<int> deleteOldScans(String userId, {int days = 30}) async {
+    final db = await database;
+    final cutoffDate = DateTime.now().subtract(Duration(days: days)).toIso8601String();
+
+    return await db.delete(
+      'scans',
+      where: 'userId = ? AND scanDate < ?',
+      whereArgs: [userId, cutoffDate],
+    );
+  }
+
+  // ============================================
+  // STATISTICS & COUNTS
+  // ============================================
+
+  /// Get basic scan counts
   Future<Map<String, int>> getScanCounts(String userId) async {
     final db = await database;
 
@@ -345,23 +436,201 @@ class ScanDatabase {
     };
   }
 
-  Future<void> clearAllScans() async {
+  /// Get healthy scans count
+  Future<int> getHealthyScansCount(String userId) async {
     final db = await database;
-    await db.delete('scans');
+    final results = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM scans 
+      WHERE userId = ? 
+      AND (LOWER(diseaseName) LIKE '%healthy%' OR diseaseName = '')
+    ''', [userId]);
+
+    return results.first['count'] as int;
   }
 
+  /// Get diseased scans count
+  Future<int> getDiseasedScansCount(String userId) async {
+    final db = await database;
+    final results = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM scans 
+      WHERE userId = ? 
+      AND LOWER(diseaseName) NOT LIKE '%healthy%' 
+      AND diseaseName != ''
+    ''', [userId]);
+
+    return results.first['count'] as int;
+  }
+
+  /// Get detailed statistics (all-in-one)
+  Future<Map<String, int>> getDetailedStats(String userId) async {
+    final db = await database;
+
+    final totalResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM scans WHERE userId = ?',
+      [userId],
+    );
+
+    final healthyResult = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM scans 
+      WHERE userId = ? 
+      AND (LOWER(diseaseName) LIKE '%healthy%' OR diseaseName = '')
+    ''', [userId]);
+
+    final diseasedResult = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM scans 
+      WHERE userId = ? 
+      AND LOWER(diseaseName) NOT LIKE '%healthy%' 
+      AND diseaseName != ''
+    ''', [userId]);
+
+    final onDeviceResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM scans WHERE userId = ? AND scanType = ?',
+      [userId, ScanType.onDevice.name],
+    );
+
+    final advancedResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM scans WHERE userId = ? AND scanType = ?',
+      [userId, ScanType.advanced.name],
+    );
+
+    final unsyncedResult = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM scans WHERE userId = ? AND isSynced = 0',
+      [userId],
+    );
+
+    return {
+      'total': totalResult.first['count'] as int,
+      'healthy': healthyResult.first['count'] as int,
+      'diseased': diseasedResult.first['count'] as int,
+      'onDevice': onDeviceResult.first['count'] as int,
+      'advanced': advancedResult.first['count'] as int,
+      'unsynced': unsyncedResult.first['count'] as int,
+    };
+  }
+
+  /// Get scans grouped by disease
+  Future<Map<String, int>> getDiseaseBreakdown(String userId) async {
+    final db = await database;
+    final results = await db.rawQuery('''
+      SELECT diseaseName, COUNT(*) as count 
+      FROM scans 
+      WHERE userId = ? 
+      GROUP BY diseaseName 
+      ORDER BY count DESC
+    ''', [userId]);
+
+    Map<String, int> breakdown = {};
+    for (var row in results) {
+      final disease = row['diseaseName'] as String;
+      final count = row['count'] as int;
+      breakdown[disease] = count;
+    }
+
+    return breakdown;
+  }
+
+  /// Get scans per month for charts
+  Future<Map<String, int>> getScansPerMonth(String userId, {int months = 6}) async {
+    final db = await database;
+    final cutoffDate = DateTime.now().subtract(Duration(days: months * 30)).toIso8601String();
+
+    final results = await db.rawQuery('''
+      SELECT 
+        strftime('%Y-%m', scanDate) as month,
+        COUNT(*) as count
+      FROM scans
+      WHERE userId = ? AND scanDate >= ?
+      GROUP BY month
+      ORDER BY month DESC
+    ''', [userId, cutoffDate]);
+
+    Map<String, int> monthlyData = {};
+    for (var row in results) {
+      final month = row['month'] as String;
+      final count = row['count'] as int;
+      monthlyData[month] = count;
+    }
+
+    return monthlyData;
+  }
+
+  // ============================================
+  // UTILITY OPERATIONS
+  // ============================================
+
+  /// Get database information
   Future<Map<String, dynamic>> getDatabaseInfo() async {
     final db = await database;
 
     final countResult = await db.rawQuery('SELECT COUNT(*) as count FROM scans');
     final columnsResult = await db.rawQuery('PRAGMA table_info(scans)');
+    final indexResult = await db.rawQuery('PRAGMA index_list(scans)');
 
     return {
       'scanCount': countResult.first['count'] as int,
       'columns': columnsResult.map((col) => col['name'] as String).toList(),
+      'indexes': indexResult.map((idx) => idx['name'] as String).toList(),
+      'version': (await db.getVersion()),
     };
   }
 
+  /// Get database size in bytes
+  Future<int> getDatabaseSize() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'scans.db');
+
+    try {
+      final file = await File(path).stat();
+      return file.size;
+    } catch (e) {
+      print('⚠️ Error getting database size: $e');
+      return 0;
+    }
+  }
+
+  /// Compact/vacuum database
+  Future<void> compactDatabase() async {
+    final db = await database;
+    await db.execute('VACUUM');
+    print('✅ Database compacted');
+  }
+
+  /// Export all scans for backup
+  Future<List<Map<String, dynamic>>> exportAllScans(String userId) async {
+    final db = await database;
+    final results = await db.query(
+      'scans',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'scanDate DESC',
+    );
+
+    return results;
+  }
+
+  /// Import scans from backup
+  Future<int> importScans(List<Map<String, dynamic>> scans) async {
+    final db = await database;
+    int imported = 0;
+
+    for (var scanMap in scans) {
+      try {
+        await db.insert(
+          'scans',
+          scanMap,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        imported++;
+      } catch (e) {
+        print('⚠️ Error importing scan: $e');
+      }
+    }
+
+    print('✅ Imported $imported scans');
+    return imported;
+  }
+
+  /// Close database connection
   Future<void> close() async {
     final db = await database;
     await db.close();

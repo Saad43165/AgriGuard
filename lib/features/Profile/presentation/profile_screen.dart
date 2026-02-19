@@ -10,13 +10,13 @@ import '../Components/actions.dart';
 import '../Components/edit_profile_sheet.dart';
 import '../Components/guest_restriction_view.dart';
 import '../Components/logout_confirmation_dialog_content.dart';
+import '../Components/profile_appbar.dart';
 import '../Components/profile_header.dart';
 import '../Components/profile_image_helper.dart';
 import '../Components/profile_info.dart';
 import '../Components/profile_picture_option_sheet.dart';
 import '../Components/statistics.dart';
 import '../utils/profile_image_manager.dart';
-
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -346,6 +346,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: _guestService.isGuestMode
+          ? null
+          : ProfileAppBar(onLogoutPressed: _showLogoutDialog),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (_guestService.isGuestMode) {
@@ -429,22 +432,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     children: [
-                      // Logout button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            onPressed: _showLogoutDialog,
-                            icon: Icon(
-                              Icons.logout_rounded,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 10),
-
                       // Compact Profile Header
                       CompactProfileHeader(
                         userProfile: _userProfile,

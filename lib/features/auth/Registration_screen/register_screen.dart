@@ -1,24 +1,21 @@
-// features/auth/Registration_screen/register_screen.dart
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:agriguard_fyp/features/auth/Registration_screen/utils/snackbar_utils.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/login_prompt.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/profile_image.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_button.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_form.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart';
+import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/step/step_one.dart';
+import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/step/step_two.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../../Profile/utils/profile_image_manager.dart'; // ← CORRECT IMPORT
+import '../Forget_Pass_Screen/constants/app_colors.dart';
+import '../../Profile/utils/profile_image_manager.dart';
+import 'widgets/step/step_three.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -27,46 +24,48 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
-    with TickerProviderStateMixin, ScreenAnimationMixin {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+class _RegisterScreenState extends State<RegisterScreen> {
+  final PageController _pageController = PageController();
+  int _currentStep = 0;
+
+  // Form Keys
+  final GlobalKey<FormState> _stepOneKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _stepTwoKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _stepThreeKey = GlobalKey<FormState>();
+
+  // ADDED: Keys to access step states
+  final GlobalKey<StepOneState> _stepOneStateKey = GlobalKey<StepOneState>();
+  final GlobalKey<StepTwoState> _stepTwoStateKey = GlobalKey<StepTwoState>();
+  final GlobalKey<StepThreeState> _stepThreeStateKey = GlobalKey<StepThreeState>();
+
+  // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-  TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _farmSizeController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   File? _imageFile;
   bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-
-  @override
-  void initState() {
-    super.initState();
-    initializeAnimations();
-  }
 
   @override
   void dispose() {
+    _pageController.dispose();
     _nameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _phoneController.dispose();
     _locationController.dispose();
     _farmSizeController.dispose();
-    disposeAnimations();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage() async {
     try {
       HapticFeedback.lightImpact();
-
       final pickedFile = await ImagePicker().pickImage(
         source: ImageSource.gallery,
         maxWidth: 800,
@@ -75,76 +74,116 @@ class _RegisterScreenState extends State<RegisterScreen>
       );
 
       if (pickedFile != null) {
-        final file = File(pickedFile.path);
-        setState(() => _imageFile = file);
+        setState(() => _imageFile = File(pickedFile.path));
         SnackbarUtils.showImageSuccessSnackBar(context);
       }
     } catch (e) {
       HapticFeedback.heavyImpact();
       SnackbarUtils.showImageErrorSnackBar(context, e.toString());
-      debugPrint('Image picker error: $e');
     }
   }
 
-  Future<String?> _uploadProfileImage(String uid) async {
-    if (_imageFile == null) {
-      debugPrint('❌ No image file to convert');
-      return null;
+  void _nextStep() {
+    bool isValid = false;
+
+    // FIXED: Enable autovalidation BEFORE validating
+    switch (_currentStep) {
+      case 0:
+      // Enable autovalidation in Step One
+        _stepOneStateKey.currentState?.enableAutoValidation();
+        isValid = _stepOneKey.currentState?.validate() ?? false;
+        break;
+      case 1:
+      // Step 2 is optional, always valid
+        _stepTwoStateKey.currentState?.enableAutoValidation();
+        isValid = _stepTwoKey.currentState?.validate() ?? true;
+        break;
+      case 2:
+      // Enable autovalidation in Step Three
+        _stepThreeStateKey.currentState?.enableAutoValidation();
+        isValid = _stepThreeKey.currentState?.validate() ?? false;
+        break;
     }
 
+    if (isValid) {
+      if (_currentStep < 2) {
+        HapticFeedback.lightImpact();
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _register();
+      }
+    } else {
+      // ADDED: Better error feedback
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _currentStep == 0
+                      ? 'Please fill in your name and email'
+                      : _currentStep == 2
+                      ? 'Please enter and confirm your password'
+                      : 'Please check your inputs',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
+
+  void _previousStep() {
+    if (_currentStep > 0) {
+      HapticFeedback.lightImpact();
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _goToLogin() {
+    HapticFeedback.lightImpact();
+    Navigator.pop(context);
+  }
+
+  Future<String?> _uploadProfileImage(String uid) async {
+    if (_imageFile == null) return null;
+
     try {
-      debugPrint('🖼️ === CONVERTING IMAGE TO BASE64 ===');
-      debugPrint('📁 Image path: ${_imageFile!.path}');
-
-      // Check if file exists
-      if (!await _imageFile!.exists()) {
-        debugPrint('❌ Image file does not exist');
-        return null;
-      }
-
-      // Read image as bytes
+      if (!await _imageFile!.exists()) return null;
       final bytes = await _imageFile!.readAsBytes();
-      debugPrint('📊 Original file size: ${bytes.length} bytes');
-
-      // Compress image if too large (optional)
       Uint8List compressedBytes = bytes;
-      if (bytes.length > 500000) { // 500KB
-        debugPrint('⚡ Compressing large image...');
-        compressedBytes = await _compressImage(bytes);
-        debugPrint('📊 Compressed size: ${compressedBytes.length} bytes');
+
+      if (bytes.length > 500000) {
+        final codec = await instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        final byteData = await frame.image.toByteData(format: ImageByteFormat.png);
+        compressedBytes = byteData!.buffer.asUint8List();
       }
 
-      // Convert to base64 string
-      final base64Image = base64Encode(compressedBytes);
-      debugPrint('✅ Image converted to Base64');
-      debugPrint('📊 Base64 string length: ${base64Image.length} characters');
-
-      return base64Image;
-
+      return base64Encode(compressedBytes);
     } catch (e) {
       debugPrint('❌ Base64 conversion error: $e');
       return null;
     }
   }
 
-// Optional: Image compression function
-  Future<Uint8List> _compressImage(Uint8List bytes) async {
-    final codec = await instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    final byteData = await frame.image.toByteData(format: ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
-  }
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_imageFile != null && !await _imageFile!.exists()) {
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: 'Selected image is no longer accessible. Please select again.',
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -155,9 +194,6 @@ class _RegisterScreenState extends State<RegisterScreen>
       final location = _locationController.text.trim();
       final farmSize = _farmSizeController.text.trim();
 
-      debugPrint('Starting registration for: $email');
-
-      // Create user in Firebase Auth
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
       final user = credential.user;
@@ -165,50 +201,12 @@ class _RegisterScreenState extends State<RegisterScreen>
       if (user == null) throw Exception('User creation failed');
 
       final uid = user.uid;
-      debugPrint('User created with UID: $uid');
 
-      // Upload profile image if exists
       String? profileImageUrl;
-      if (_imageFile != null && await _imageFile!.exists()) {
-        debugPrint('🖼️ Converting profile image to Base64...');
+      if (_imageFile != null && await _imageFile!.existsSync()) {
         profileImageUrl = await _uploadProfileImage(uid);
-
-        if (profileImageUrl != null) {
-          debugPrint('✅ Profile image converted to Base64 successfully!');
-          debugPrint('📊 Base64 data length: ${profileImageUrl.length}');
-        } else {
-          debugPrint('❌ Image conversion failed - setting to null');
-          profileImageUrl = null;
-        }
-      } else {
-        debugPrint('ℹ️ No profile image selected');
-        profileImageUrl = null;
       }
 
-// DEBUG: Check what's being saved
-      debugPrint('🎯 FINAL - profileImageUrl type: ${profileImageUrl.runtimeType}');
-      debugPrint('🎯 FINAL - profileImageUrl is null: ${profileImageUrl == null}');
-      if (profileImageUrl != null) {
-        debugPrint('🎯 FINAL - profileImageUrl length: ${profileImageUrl.length}');
-      }
-
-// Save user data to Firestore
-      debugPrint('💾 Saving user data to Firestore...');
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'fullName': name,
-        'email': email,
-        'phoneNumber': phone,
-        'location': location,
-        'farmSize': farmSize,
-        'profileImageUrl': profileImageUrl, // This stores the Base64 string
-        'createdAt': FieldValue.serverTimestamp(),
-        'emailVerified': false,
-        'uid': uid,
-      });
-      debugPrint('✅ User data saved with Base64 image');
-
-      // Save user data to Firestore
-      debugPrint('Saving user data to Firestore...');
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'fullName': name,
         'email': email,
@@ -218,87 +216,147 @@ class _RegisterScreenState extends State<RegisterScreen>
         'profileImageUrl': profileImageUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'emailVerified': false,
-        'uid': uid, // ← ADD THIS for easier queries
+        'uid': uid,
       });
 
-      // Send email verification
-      debugPrint('Sending email verification...');
       await user.sendEmailVerification();
-      debugPrint('Email verification sent');
 
       if (mounted) {
-        // Save the image to ProfileImageManager
         if (_imageFile != null) {
           ProfileImageManager.setPendingImage(_imageFile!);
-          debugPrint('Profile image saved to manager');
         }
 
-        // Show success message with email verification info
-        SnackbarUtils.showRegistrationSuccessSnackBar(context);
+        HapticFeedback.mediumImpact();
+        await _showSuccessDialog();
 
-        // Show additional info about email verification
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Account created successfully!', style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('Please check your email ($email) for verification link.', style: TextStyle(fontSize: 12)),
-              ],
-            ),
-            duration: Duration(seconds: 5),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        await Future.delayed(const Duration(seconds: 3));
-
-        // Sign out the user after registration to force login
         await FirebaseAuth.instance.signOut();
-        debugPrint('User signed out after registration');
-
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.login,
-              (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
       }
     } on FirebaseAuthException catch (e) {
-      debugPrint('Firebase Auth Error: ${e.code} - ${e.message}');
+      HapticFeedback.heavyImpact();
       _handleFirebaseAuthError(e);
-    } on FirebaseException catch (e) {
-      debugPrint('Firebase Error: ${e.code} - ${e.message}');
-      SnackbarUtils.showErrorSnackBar(
-        context: context,
-        message: 'Firebase error: ${e.message ?? e.code}',
-      );
     } catch (e) {
-      debugPrint('Unexpected Error: $e');
+      HapticFeedback.heavyImpact();
       SnackbarUtils.showUnexpectedErrorSnackBar(context, e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }  void _handleFirebaseAuthError(FirebaseAuthException e) {
+  }
+
+  Future<void> _showSuccessDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.all(32),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                ),
+              ),
+              child: const Icon(Icons.check_rounded, color: Colors.white, size: 56),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              'Account Created!',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'A verification email has been sent to:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _emailController.text.trim(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Please check your inbox and verify your email to login',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Got it!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleFirebaseAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'email-already-in-use':
         SnackbarUtils.showEmailAlreadyInUseSnackBar(context);
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
         break;
       case 'weak-password':
         SnackbarUtils.showWeakPasswordSnackBar(context);
         break;
       case 'invalid-email':
         SnackbarUtils.showInvalidEmailSnackBar(context);
-        break;
-      case 'operation-not-allowed':
-        SnackbarUtils.showErrorSnackBar(
-          context: context,
-          message: 'Email/password accounts are not enabled. Please contact support.',
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
         );
-        break;
-      case 'network-request-failed':
-        SnackbarUtils.showNetworkErrorSnackBar(context);
         break;
       default:
         SnackbarUtils.showErrorSnackBar(
@@ -310,80 +368,220 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
+    final isDark = ThemeProvider.of(context).isDarkMode;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const RegisterAppBar(),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: ThemeProvider.of(context).isDarkMode
-              ? const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0F23),
-              Color(0xFF16213E),
-              Color(0xFF1A1A2E),
-              Color(0xFF0F0F23),
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
-          )
-              : LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.surface.withOpacity(0.9),
-              Theme.of(context).colorScheme.surface.withOpacity(0.8),
-              Theme.of(context).colorScheme.surface,
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_currentStep > 0) {
+          _previousStep();
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: RegisterAppBar(
+          currentStep: _currentStep,
+          onBackPressed: _currentStep > 0 ? _previousStep : _goToLogin,
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(padding),
-            child: applyAnimations(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // UPDATED: Using the extracted ProfileImageWidget
-                  ProfileImageWidget(
-                    imageFile: _imageFile,
-                    onImagePressed: _pickImage,
-                    isLoading: _isLoading,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark ? AppColors.darkGradient : AppColors.lightGradient,
+              stops: AppColors.gradientStops,
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildProgressIndicator(),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (index) => setState(() => _currentStep = index),
+                    children: [
+                      StepOne(
+                        key: _stepOneStateKey, // ADDED: State key
+                        formKey: _stepOneKey,
+                        nameController: _nameController,
+                        emailController: _emailController,
+                        imageFile: _imageFile,
+                        onImagePick: _pickImage,
+                      ),
+                      StepTwo(
+                        key: _stepTwoStateKey, // ADDED: State key
+                        formKey: _stepTwoKey,
+                        phoneController: _phoneController,
+                        locationController: _locationController,
+                        farmSizeController: _farmSizeController,
+                      ),
+                      StepThree(
+                        key: _stepThreeStateKey, // ADDED: State key
+                        formKey: _stepThreeKey,
+                        passwordController: _passwordController,
+                        confirmPasswordController: _confirmPasswordController,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: padding),
-                  RegisterForm(
-                    formKey: _formKey,
-                    nameController: _nameController,
-                    emailController: _emailController,
-                    passwordController: _passwordController,
-                    confirmPasswordController: _confirmPasswordController,
-                    phoneController: _phoneController,
-                    locationController: _locationController,
-                    farmSizeController: _farmSizeController,
-                    obscurePassword: _obscurePassword,
-                    obscureConfirmPassword: _obscureConfirmPassword,
-                    onPasswordVisibilityChanged: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                    onConfirmPasswordVisibilityChanged: () => setState(
-                            () => _obscureConfirmPassword = !_obscureConfirmPassword),
-                  ),
-                  SizedBox(height: smallPadding),
-                  RegisterButton(
-                    onPressed: _isLoading ? () {} : _register,
-                    isLoading: _isLoading,
-                  ),
-                  SizedBox(height: smallPadding),
-                  const LoginPrompt(),
-                ],
-              ),
+                ),
+                _buildNavigationButtons(),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        children: List.generate(3, (index) {
+          final isActive = index <= _currentStep;
+
+          return Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height: 4,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(2),
+                      gradient: isActive
+                          ? LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                      )
+                          : null,
+                      color: isActive
+                          ? null
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+                if (index < 2) const SizedBox(width: 8),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    final padding = AppMeasurements.getResponsivePadding(context);
+
+    return Container(
+      padding: EdgeInsets.all(padding),
+      child: Row(
+        children: [
+          if (_currentStep > 0)
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _isLoading ? null : _previousStep,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.arrow_back_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    ShaderMask(
+                      blendMode: BlendMode.srcIn,
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
+                      ).createShader(bounds),
+                      child: Text(
+                        'Back',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (_currentStep > 0) const SizedBox(width: 12),
+          Expanded(
+            flex: _currentStep == 0 ? 1 : 1,
+            child: GestureDetector(
+              onTap: _isLoading ? null : _nextStep,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _isLoading
+                        ? [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                      Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                    ]
+                        : [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: _isLoading
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                      : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _currentStep == 2 ? 'Create Account' : 'Next',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _currentStep == 2 ? Icons.check_rounded : Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

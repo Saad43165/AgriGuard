@@ -9,14 +9,44 @@ class WeatherService {
   static const String _apiKey = '5ccb6e1680064a169e5113329251608';
   static const String _baseUrl = 'https://api.weatherapi.com/v1';
   static const Duration _timeout = Duration(seconds: 15);
+  static const Duration _cacheDuration = Duration(minutes: 10); // Cache for 10 minutes
 
-  // Singleton pattern for better performance
+  // Singleton pattern
   static final WeatherService _instance = WeatherService._internal();
   factory WeatherService() => _instance;
   WeatherService._internal();
 
+  // Cache storage
+  WeatherForecast? _cachedForecast;
+  DateTime? _lastFetchTime;
+  String? _lastQuery;
+  int? _lastDays;
+
+  /// Check if cached data is still valid
+  bool _isCacheValid(String query, int days) {
+    if (_cachedForecast == null || _lastFetchTime == null) {
+      return false;
+    }
+
+    final cacheAge = DateTime.now().difference(_lastFetchTime!);
+    final isSameQuery = _lastQuery == query && _lastDays == days;
+
+    return isSameQuery && cacheAge < _cacheDuration;
+  }
+
+  /// Clear the cache manually if needed
+  void clearCache() {
+    _cachedForecast = null;
+    _lastFetchTime = null;
+    _lastQuery = null;
+    _lastDays = null;
+    if (kDebugMode) {
+      print('🗑️ Weather cache cleared');
+    }
+  }
+
   /// Get current weather with forecast by city name
-  Future<WeatherForecast> getWeatherByCity(String city, {int days = 5}) async {
+  Future<WeatherForecast> getWeatherByCity(String city, {int days = 5, bool forceRefresh = false}) async {
     try {
       if (city.trim().isEmpty) {
         throw WeatherException('City name cannot be empty');
@@ -26,11 +56,32 @@ class WeatherService {
         throw WeatherException('Forecast days must be between 1 and 10');
       }
 
+      // Check cache first
+      final query = city.toLowerCase().trim();
+      if (!forceRefresh && _isCacheValid(query, days)) {
+        if (kDebugMode) {
+          print('📦 Returning cached weather data for $city');
+        }
+        return _cachedForecast!;
+      }
+
+      if (kDebugMode) {
+        print('🌐 Fetching fresh weather data for $city');
+      }
+
       final response = await http.get(
         Uri.parse('$_baseUrl/forecast.json?key=$_apiKey&q=$city&days=$days&aqi=yes'),
       ).timeout(_timeout);
 
-      return _parseForecastResponse(response);
+      final forecast = _parseForecastResponse(response);
+
+      // Update cache
+      _cachedForecast = forecast;
+      _lastFetchTime = DateTime.now();
+      _lastQuery = query;
+      _lastDays = days;
+
+      return forecast;
     } on TimeoutException {
       throw WeatherException('Request timed out. Please check your internet connection.');
     } on http.ClientException catch (e) {
@@ -46,6 +97,7 @@ class WeatherService {
       double lat,
       double lon, {
         int days = 5,
+        bool forceRefresh = false,
       }) async {
     try {
       if (lat.abs() > 90 || lon.abs() > 180) {
@@ -56,11 +108,32 @@ class WeatherService {
         throw WeatherException('Forecast days must be between 1 and 10');
       }
 
+      // Check cache first
+      final query = '${lat.toStringAsFixed(2)},${lon.toStringAsFixed(2)}';
+      if (!forceRefresh && _isCacheValid(query, days)) {
+        if (kDebugMode) {
+          print('📦 Returning cached weather data for coordinates');
+        }
+        return _cachedForecast!;
+      }
+
+      if (kDebugMode) {
+        print('🌐 Fetching fresh weather data for coordinates');
+      }
+
       final response = await http.get(
         Uri.parse('$_baseUrl/forecast.json?key=$_apiKey&q=$lat,$lon&days=$days&aqi=yes'),
       ).timeout(_timeout);
 
-      return _parseForecastResponse(response);
+      final forecast = _parseForecastResponse(response);
+
+      // Update cache
+      _cachedForecast = forecast;
+      _lastFetchTime = DateTime.now();
+      _lastQuery = query;
+      _lastDays = days;
+
+      return forecast;
     } on TimeoutException {
       throw WeatherException('Request timed out. Please check your internet connection.');
     } on http.ClientException catch (e) {

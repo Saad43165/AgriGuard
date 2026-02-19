@@ -19,16 +19,15 @@ class ForecastCard extends StatelessWidget {
     final date = DateTime.parse(day.date);
     final dayName = index == 0 ? 'Today' : DateFormat('EEEE').format(date);
     final dateStr = DateFormat('MMM d').format(date);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: _cardDecoration(isDark),
+          padding: const EdgeInsets.all(20),
+          decoration: _cardDecoration(),
           child: Row(
             children: [
               // Day info
@@ -40,22 +39,36 @@ class ForecastCard extends StatelessWidget {
                     Text(
                       dayName,
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: 0.3,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black38,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       dateStr,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.85),
-                        fontWeight: FontWeight.w600,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     _buildRainChip(),
                   ],
                 ),
@@ -63,19 +76,31 @@ class ForecastCard extends StatelessWidget {
 
               // Weather icon
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.25),
+                      Colors.white.withOpacity(0.15),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
+                    color: Colors.white.withOpacity(0.4),
+                    width: 2,
                   ),
                 ),
                 child: Icon(
                   _iconFor(day.conditionText),
                   color: Colors.white,
-                  size: 36,
+                  size: 40,
+                  shadows: const [
+                    Shadow(
+                      color: Colors.black26,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 20),
@@ -84,44 +109,91 @@ class ForecastCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.arrow_upward, color: Colors.white, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${day.maxTemp.toStringAsFixed(0)}°',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1.5,
                       ),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.arrow_upward, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${day.maxTemp.toStringAsFixed(0)}°',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black38,
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.arrow_downward, color: Colors.white.withOpacity(0.7), size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${day.minTemp.toStringAsFixed(0)}°',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.25),
+                        width: 1.5,
                       ),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.arrow_downward, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${day.minTemp.toStringAsFixed(0)}°',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
 
               // Arrow indicator
               const SizedBox(width: 12),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withOpacity(0.6),
-                size: 24,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ],
           ),
@@ -134,26 +206,45 @@ class ForecastCard extends StatelessWidget {
     if (day.dailyChanceOfRain <= 0) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.blue.withOpacity(0.5),
-          width: 1,
+        gradient: LinearGradient(
+          colors: [
+            Colors.blue.withOpacity(0.4),
+            Colors.blue.withOpacity(0.3),
+          ],
         ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.blue.withOpacity(0.6),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.water_drop, color: Colors.white, size: 12),
-          const SizedBox(width: 4),
+          const Icon(Icons.water_drop, color: Colors.white, size: 14),
+          const SizedBox(width: 6),
           Text(
             '${day.dailyChanceOfRain}%',
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: Colors.white,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ],
@@ -161,25 +252,25 @@ class ForecastCard extends StatelessWidget {
     );
   }
 
-  BoxDecoration _cardDecoration(bool isDark) => BoxDecoration(
+  BoxDecoration _cardDecoration() => BoxDecoration(
     gradient: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Colors.white.withOpacity(isDark ? 0.15 : 0.25),
-        Colors.white.withOpacity(isDark ? 0.1 : 0.2),
+        Colors.black.withOpacity(0.25),
+        Colors.black.withOpacity(0.15),
       ],
     ),
-    borderRadius: BorderRadius.circular(22),
+    borderRadius: BorderRadius.circular(24),
     border: Border.all(
-      color: Colors.white.withOpacity(0.3),
-      width: 1.5,
+      color: Colors.white.withOpacity(0.35),
+      width: 2,
     ),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.15),
-        blurRadius: 12,
-        offset: const Offset(0, 4),
+        color: Colors.black.withOpacity(0.2),
+        blurRadius: 15,
+        offset: const Offset(0, 6),
       ),
     ],
   );

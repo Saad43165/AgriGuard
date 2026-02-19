@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_measurements.dart';
 
 class DetailRow extends StatelessWidget {
   final String label;
@@ -7,8 +6,7 @@ class DetailRow extends StatelessWidget {
   final IconData icon;
   final Color? iconColor;
   final Color? valueColor;
-  final bool isHighlighted;
-  final VoidCallback? onTap;
+  final bool isHighlight;
 
   const DetailRow({
     super.key,
@@ -17,106 +15,82 @@ class DetailRow extends StatelessWidget {
     required this.icon,
     this.iconColor,
     this.valueColor,
-    this.isHighlighted = false,
-    this.onTap,
+    this.isHighlight = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final effectiveIconColor = iconColor ?? theme.colorScheme.primary;
+    final isDark = theme.brightness == Brightness.dark;
+    final effectiveIconColor = iconColor ?? const Color(0xFF8B5CF6);
+    final effectiveValueColor = valueColor ?? (isDark ? Colors.white : Colors.black87);
 
-    Widget content = Row(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Icon Container with Gradient
+        // Icon Container
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(isHighlight ? 12 : 10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
               colors: [
                 effectiveIconColor.withOpacity(0.2),
                 effectiveIconColor.withOpacity(0.1),
               ],
             ),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(isHighlight ? 14 : 12),
             border: Border.all(
               color: effectiveIconColor.withOpacity(0.3),
-              width: 1,
+              width: 2,
             ),
+            boxShadow: isHighlight
+                ? [
+              BoxShadow(
+                color: effectiveIconColor.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ]
+                : null,
           ),
           child: Icon(
             icon,
             color: effectiveIconColor,
-            size: AppMeasurements.getResponsiveIconSizeSmall(context),
+            size: isHighlight ? 28 : 24,
           ),
         ),
-        const SizedBox(width: 14),
-
-        // Label and Value
+        const SizedBox(width: 16),
+        // Text Content
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  fontSize: AppMeasurements.getResponsiveFontSize(
-                    context,
-                    baseSize: 12,
-                  ),
-                  letterSpacing: 0.3,
-                  fontWeight: FontWeight.w500,
+                style: TextStyle(
+                  fontSize: isHighlight ? 13 : 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? Colors.white.withOpacity(0.5)
+                      : Colors.black.withOpacity(0.4),
+                  letterSpacing: 0.8,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 value,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: valueColor ?? theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppMeasurements.getResponsiveFontSize(
-                    context,
-                    baseSize: 15,
-                  ),
+                style: TextStyle(
+                  fontSize: isHighlight ? 20 : 16,
+                  fontWeight: isHighlight ? FontWeight.w900 : FontWeight.w700,
+                  color: effectiveValueColor,
+                  letterSpacing: -0.3,
+                  height: 1.3,
                 ),
               ),
             ],
           ),
         ),
-
-        // Optional Chevron for tappable items
-        if (onTap != null) ...[
-          const SizedBox(width: 8),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: theme.colorScheme.onSurface.withOpacity(0.3),
-            size: 20,
-          ),
-        ],
       ],
-    );
-
-    // Wrap with InkWell if tappable
-    if (onTap != null) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: content,
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: content,
     );
   }
 }

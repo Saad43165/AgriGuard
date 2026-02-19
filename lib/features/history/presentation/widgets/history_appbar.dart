@@ -22,38 +22,59 @@ class HistoryAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: EdgeInsets.only(top: topPadding),
+      padding: EdgeInsets.only(
+        top: topPadding,
+        left: 5,
+        right: 5,
+      ),
       child: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: elevation,
-        centerTitle: false,
+        centerTitle: true,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Back Button on LEFT SIDE
             if (showBackButton)
               Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
                   gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [
+                      colorScheme.primary.withOpacity(0.2),
+                      colorScheme.secondary.withOpacity(0.2),
+                    ]
+                        : [
+                      colorScheme.primary.withOpacity(0.12),
+                      colorScheme.secondary.withOpacity(0.12),
                     ],
                   ),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                    width: 1,
+                    color: isDark
+                        ? colorScheme.primary.withOpacity(0.3)
+                        : colorScheme.primary.withOpacity(0.4),
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    if (!isDark)
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                  ],
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     onTap: () {
                       HapticFeedback.lightImpact();
                       if (onBackPressed != null) {
@@ -63,37 +84,44 @@ class HistoryAppBar extends StatelessWidget implements PreferredSizeWidget {
                       }
                     },
                     child: Padding(
-                      padding: EdgeInsets.all(padding * 0.5),
+                      padding: const EdgeInsets.all(10),
                       child: Icon(
                         Icons.arrow_back_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
+                        color: colorScheme.primary,
+                        size: 24,
                       ),
                     ),
                   ),
                 ),
               )
             else
-              Container(width: 50), // Spacer to maintain layout
+              const SizedBox(width: 44),
 
             // Title in Center with Gradient
             Expanded(
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                    color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.secondary,
+                    ],
+                  ).createShader(bounds),
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: AppMeasurements.getResponsiveFontSize(
+                        context,
+                        baseSize: 22,
+                      ),
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
               ),
@@ -101,11 +129,9 @@ class HistoryAppBar extends StatelessWidget implements PreferredSizeWidget {
 
             // Actions or Empty Spacer on RIGHT SIDE
             if (actions != null && actions!.isNotEmpty)
-              Row(
-                children: actions!,
-              )
+              ...actions!
             else
-              Container(width: 50), // Spacer to maintain layout
+              const SizedBox(width: 44),
           ],
         ),
       ),

@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "AgriGuard",
+    "loading": "Loading..."
+  },
+  "results": {
+    "title": "Analysis Results",
+    "advanced_title": "Advanced Results",
+    "analyzing": "Analyzing image...",
+    "getting_severity": "Getting severity and recommendations...",
+    "checking_leaf": "Checking if image is a plant leaf",
+    "analyzing_disease": "Analyzing disease severity and treatment options",
+    "no_image": "No image available",
+    "diagnosis": "Diagnosis",
+    "confidence": "Confidence",
+    "severity": "Severity",
+    "plant_name": "Plant Name",
+    "scientific_name": "Scientific Name",
+    "disease": "Disease",
+    "healthy": "Healthy",
+    "recommendations": "Recommendations",
+    "treatment_recommendations": "Treatment Recommendations",
+    "disease_causes": "Disease Causes",
+    "symptoms_detected": "Symptoms Detected",
+    "preventive_measures": "Preventive Measures",
+    "next_steps": "Next Steps",
+    "analysis_details": "Analysis Details",
+    "additional_info": "Additional Information",
+    "advanced_search": "Want deeper analysis?",
+    "try_advanced": "Try Advanced AI Search with AI & Plant.id",
+    "generate_pdf": "Generate PDF Report",
+    "generating_pdf": "Generating PDF...",
+    "saved_to_history": "Saved to history",
+    "image_not_recognized": "Image Not Recognized",
+    "non_plant_image": "Non-Plant Image",
+    "plant_detection_failed": "The uploaded image does not appear to be a plant leaf",
+    "upload_clear_photo": "Please upload a clear photo of a plant leaf"
+  },
+  "severity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "severe": "Severe",
+    "critical": "Critical",
+    "none": "None",
+    "healthy": "Healthy",
+    "na": "N/A"
+  },
+  "source": {
+    "analyzed_by": "Analyzed by",
+    "gemini": "Gemini AI",
+    "plantid": "Plant.id",
+    "ondevice": "On-Device AI"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading",
+    "retry": "Retry"
+  },
+  "buttons": {
+    "switch_to_urdu": "Switch to Urdu",
+    "switch_to_english": "Switch to English"
+  }
+}

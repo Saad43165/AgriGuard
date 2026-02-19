@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_measurements.dart';
 
-/// A reusable button widget for actions with loading state.
-class ActionButton extends StatelessWidget {
+class ActionButton extends StatefulWidget {
   final bool isLoading;
   final VoidCallback onPressed;
   final String label;
@@ -19,42 +17,67 @@ class ActionButton extends StatelessWidget {
   });
 
   @override
+  State<ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<ActionButton> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-        onTap: isLoading ? null : onPressed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppMeasurements.defaultPadding),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppMeasurements.borderRadius),
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-            ),
+    return GestureDetector(
+      onTapDown: widget.isLoading ? null : (_) => setState(() => _isPressed = true),
+      onTapUp: widget.isLoading ? null : (_) => setState(() => _isPressed = false),
+      onTapCancel: widget.isLoading ? null : () => setState(() => _isPressed = false),
+      onTap: widget.isLoading ? null : widget.onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        transform: Matrix4.identity()..scale(_isPressed ? 0.96 : 1.0),
+        width: double.infinity,
+        height: 58,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: widget.isLoading
+                ? [
+              Theme.of(context).colorScheme.primary.withOpacity(0.6),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+            ]
+                : [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-          child: isLoading
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: widget.isLoading || _isPressed
+              ? []
+              : [
+          ],
+        ),
+        child: Center(
+          child: widget.isLoading
               ? Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                width: AppMeasurements.iconSizeMedium,
-                height: AppMeasurements.iconSizeMedium,
+                width: 24,
+                height: 24,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Theme.of(context).colorScheme.onPrimary,
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               ),
-              const SizedBox(width: AppMeasurements.smallPadding),
+              const SizedBox(width: 16),
               Text(
-                loadingLabel,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                widget.loadingLabel,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -63,17 +86,18 @@ class ActionButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                icon,
-                size: AppMeasurements.iconSizeMedium,
+                widget.icon,
                 color: Theme.of(context).colorScheme.onPrimary,
+                size: 22,
               ),
-              const SizedBox(width: AppMeasurements.smallPadding),
+              const SizedBox(width: 12),
               Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                widget.label,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],

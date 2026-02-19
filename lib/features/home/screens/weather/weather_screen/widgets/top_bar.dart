@@ -21,7 +21,7 @@ class TopBar extends StatelessWidget {
           children: [
             _buildButton(
               onPressed: onBack,
-              child: const Icon(Icons.arrow_back_rounded, size: 24),
+              child: const Icon(Icons.arrow_back_rounded, size: 24, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -40,9 +40,9 @@ class TopBar extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             child: child,
           ),
         ),
@@ -55,21 +55,39 @@ class TopBar extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: _glassDecoration(),
           child: Row(
             children: const [
-              Icon(Icons.search_rounded, size: 22, color: Colors.white),
+              Icon(
+                Icons.search_rounded,
+                size: 22,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
               SizedBox(width: 12),
               Text(
                 'Search location...',
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
                   color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -84,18 +102,18 @@ class TopBar extends StatelessWidget {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Colors.white.withOpacity(0.3),
-        Colors.white.withOpacity(0.2),
+        Colors.black.withOpacity(0.25),
+        Colors.black.withOpacity(0.15),
       ],
     ),
-    borderRadius: BorderRadius.circular(14),
+    borderRadius: BorderRadius.circular(16),
     border: Border.all(
-      color: Colors.white.withOpacity(0.4),
-      width: 1.5,
+      color: Colors.white.withOpacity(0.35),
+      width: 2,
     ),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.15),
+        color: Colors.black.withOpacity(0.2),
         blurRadius: 12,
         offset: const Offset(0, 4),
       ),

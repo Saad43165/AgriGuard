@@ -1,9 +1,8 @@
+// lib/features/support/widgets/faq_search_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/app_measurements.dart';
 
-
-class FaqSearchBar extends StatelessWidget {
+class FaqSearchBar extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSearchChanged;
   final VoidCallback onClear;
@@ -16,50 +15,112 @@ class FaqSearchBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final double itemSpacing = AppMeasurements.getResponsivePadding(context);
+  State<FaqSearchBar> createState() => _FaqSearchBarState();
+}
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: itemSpacing),
+class _FaqSearchBarState extends State<FaqSearchBar> {
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
+    widget.controller.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleClear() {
+    widget.controller.clear();
+    widget.onClear();
+    HapticFeedback.lightImpact();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasText = widget.controller.text.isNotEmpty;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _isFocused
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          width: _isFocused ? 2 : 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _isFocused
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
+                : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: _isFocused ? 12 : 6,
+            offset: Offset(0, _isFocused ? 4 : 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          Icon(
-            Icons.search_rounded,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            size: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
-          ),
-          SizedBox(width: itemSpacing / 2),
+          // Text Field
           Expanded(
             child: TextField(
-              controller: controller,
-              onChanged: (_) => onSearchChanged(),
+              controller: widget.controller,
+              focusNode: _focusNode,
+              onChanged: (_) => widget.onSearchChanged(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 16),
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 hintText: 'Search FAQs...',
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: itemSpacing, // Add horizontal padding
-                  vertical: itemSpacing,
-                ),
                 hintStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
                 ),
-              ),            ),
-          ),
-          if (controller.text.isNotEmpty)
-            IconButton(
-              icon: Icon(
-                Icons.clear_rounded,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                size: AppMeasurements.getResponsiveFontSize(context, baseSize: 20),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                isDense: true,
               ),
-              onPressed: () {
-                onClear();
-                HapticFeedback.lightImpact();
-              },
             ),
+          ),
+
+
+
+          // Clear Button
+          if (hasText)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _handleClear,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    size: 20,
+                  ),
+                ),
+              ),
+            )
+          else
+            const SizedBox(width: 8),
         ],
       ),
     );

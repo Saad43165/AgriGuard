@@ -38,7 +38,7 @@ class BottomNavBar extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    // Home Button - Rounded from right
+                    // Home Button
                     Expanded(
                       child: _buildHomeButton(
                         context: context,
@@ -49,7 +49,7 @@ class BottomNavBar extends StatelessWidget {
 
                     const SizedBox(width: 6),
 
-                    // Scan Button - Rounded all sides (unique shape)
+                    // Scan Button
                     _buildScanButton(
                       context: context,
                       isDark: isDark,
@@ -58,7 +58,7 @@ class BottomNavBar extends StatelessWidget {
 
                     const SizedBox(width: 6),
 
-                    // Profile Button - Rounded from left
+                    // Profile Button
                     Expanded(
                       child: _buildProfileButton(
                         context: context,
@@ -76,7 +76,6 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  // Home Button - Rounded from right side
   Widget _buildHomeButton({
     required BuildContext context,
     required bool isDark,
@@ -94,28 +93,9 @@ class BottomNavBar extends StatelessWidget {
         curve: Curves.easeOutCubic,
         height: 58,
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primary,
-              colorScheme.primary.withOpacity(0.8),
-            ],
-          )
-              : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-              const Color(0xFF1F1F3A).withOpacity(0.6),
-              const Color(0xFF1A1A2E).withOpacity(0.8),
-            ]
-                : [
-              Colors.white.withOpacity(0.9),
-              Colors.white.withOpacity(0.7),
-            ],
-          ),
+          color: isSelected
+              ? colorScheme.primary
+              : (isDark ? const Color(0xFF1F1F3A).withOpacity(0.6) : Colors.white),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(18),
             bottomLeft: Radius.circular(18),
@@ -124,19 +104,17 @@ class BottomNavBar extends StatelessWidget {
           ),
           border: Border.all(
             color: isSelected
-                ? colorScheme.primary.withOpacity(0.3)
-                : (isDark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.05)),
-            width: 1.5,
+                ? colorScheme.primary.withOpacity(0.5)
+                : (isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE0E0E0)),
+            width: isSelected ? 1.5 : 1.5,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? colorScheme.primary.withOpacity(0.25)
-                  : Colors.black.withOpacity(isDark ? 0.2 : 0.08),
-              blurRadius: isSelected ? 12 : 6,
-              offset: Offset(0, isSelected ? 4 : 2),
+                  ? colorScheme.primary.withOpacity(0.4)
+                  : Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+              blurRadius: isSelected ? 16 : 8,
+              offset: Offset(0, isSelected ? 6 : 2),
             ),
           ],
         ),
@@ -148,9 +126,7 @@ class BottomNavBar extends StatelessWidget {
               size: 24,
               color: isSelected
                   ? Colors.white
-                  : (isDark
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.black.withOpacity(0.5)),
+                  : (isDark ? Colors.white.withOpacity(0.5) : colorScheme.primary),
             ),
             const SizedBox(height: 3),
             Text(
@@ -158,12 +134,10 @@ class BottomNavBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10.5,
                 height: 1,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: isSelected
                     ? Colors.white
-                    : (isDark
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.black.withOpacity(0.5)),
+                    : (isDark ? Colors.white.withOpacity(0.5) : colorScheme.primary),
                 letterSpacing: 0.3,
               ),
             ),
@@ -173,7 +147,6 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  // Scan Button - Unique rounded shape (elevated circle)
   Widget _buildScanButton({
     required BuildContext context,
     required bool isDark,
@@ -193,50 +166,23 @@ class BottomNavBar extends StatelessWidget {
         height: 62,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: isSelected
-              ? LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primary,
-              colorScheme.primary.withOpacity(0.75),
-            ],
-          )
-              : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-              const Color(0xFF1F1F3A).withOpacity(0.6),
-              const Color(0xFF1A1A2E).withOpacity(0.8),
-            ]
-                : [
-              Colors.white.withOpacity(0.9),
-              Colors.white.withOpacity(0.7),
-            ],
-          ),
+          color: isSelected
+              ? colorScheme.primary
+              : (isDark ? const Color(0xFF1F1F3A).withOpacity(0.6) : Colors.white),
           border: Border.all(
             color: isSelected
-                ? colorScheme.primary.withOpacity(0.4)
-                : (isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.black.withOpacity(0.06)),
-            width: 2,
+                ? colorScheme.primary.withOpacity(0.5)
+                : (isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFE0E0E0)),
+            width: isSelected ? 2 : 2,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? colorScheme.primary.withOpacity(0.35)
-                  : Colors.black.withOpacity(isDark ? 0.25 : 0.1),
-              blurRadius: isSelected ? 16 : 8,
-              offset: Offset(0, isSelected ? 6 : 3),
+                  ? colorScheme.primary.withOpacity(0.5)
+                  : Colors.black.withOpacity(isDark ? 0.25 : 0.08),
+              blurRadius: isSelected ? 20 : 10,
+              offset: Offset(0, isSelected ? 8 : 3),
             ),
-            if (isSelected)
-              BoxShadow(
-                color: colorScheme.primary.withOpacity(0.15),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
           ],
         ),
         child: Column(
@@ -247,9 +193,7 @@ class BottomNavBar extends StatelessWidget {
               size: 26,
               color: isSelected
                   ? Colors.white
-                  : (isDark
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.black.withOpacity(0.5)),
+                  : (isDark ? Colors.white.withOpacity(0.5) : colorScheme.primary),
             ),
             const SizedBox(height: 2),
             Text(
@@ -257,12 +201,10 @@ class BottomNavBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 9.5,
                 height: 1,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: isSelected
                     ? Colors.white
-                    : (isDark
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.black.withOpacity(0.5)),
+                    : (isDark ? Colors.white.withOpacity(0.5) : colorScheme.primary),
                 letterSpacing: 0.3,
               ),
             ),
@@ -272,7 +214,6 @@ class BottomNavBar extends StatelessWidget {
     );
   }
 
-  // Profile Button - Rounded from left side
   Widget _buildProfileButton({
     required BuildContext context,
     required bool isDark,
@@ -290,28 +231,9 @@ class BottomNavBar extends StatelessWidget {
         curve: Curves.easeOutCubic,
         height: 58,
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primary,
-              colorScheme.primary.withOpacity(0.8),
-            ],
-          )
-              : LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-              const Color(0xFF1F1F3A).withOpacity(0.6),
-              const Color(0xFF1A1A2E).withOpacity(0.8),
-            ]
-                : [
-              Colors.white.withOpacity(0.9),
-              Colors.white.withOpacity(0.7),
-            ],
-          ),
+          color: isSelected
+              ? colorScheme.primary
+              : (isDark ? const Color(0xFF1F1F3A).withOpacity(0.6) : Colors.white),
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(28),
             bottomLeft: Radius.circular(28),
@@ -320,19 +242,17 @@ class BottomNavBar extends StatelessWidget {
           ),
           border: Border.all(
             color: isSelected
-                ? colorScheme.primary.withOpacity(0.3)
-                : (isDark
-                ? Colors.white.withOpacity(0.08)
-                : Colors.black.withOpacity(0.05)),
-            width: 1.5,
+                ? colorScheme.primary.withOpacity(0.5)
+                : (isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE0E0E0)),
+            width: isSelected ? 1.5 : 1.5,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? colorScheme.primary.withOpacity(0.25)
-                  : Colors.black.withOpacity(isDark ? 0.2 : 0.08),
-              blurRadius: isSelected ? 12 : 6,
-              offset: Offset(0, isSelected ? 4 : 2),
+                  ? colorScheme.primary.withOpacity(0.4)
+                  : Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+              blurRadius: isSelected ? 16 : 8,
+              offset: Offset(0, isSelected ? 6 : 2),
             ),
           ],
         ),
@@ -344,9 +264,7 @@ class BottomNavBar extends StatelessWidget {
               size: 24,
               color: isSelected
                   ? Colors.white
-                  : (isDark
-                  ? Colors.white.withOpacity(0.5)
-                  : Colors.black.withOpacity(0.5)),
+                  : (isDark ? Colors.white.withOpacity(0.5) : colorScheme.primary),
             ),
             const SizedBox(height: 3),
             Text(
@@ -354,12 +272,10 @@ class BottomNavBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10.5,
                 height: 1,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: isSelected
                     ? Colors.white
-                    : (isDark
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.black.withOpacity(0.5)),
+                    : (isDark ? Colors.white.withOpacity(0.5) : colorScheme.primary),
                 letterSpacing: 0.3,
               ),
             ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_measurements.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -22,37 +21,42 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final effectiveIconColor = iconColor ?? theme.colorScheme.primary;
-    final effectiveBgColor = backgroundColor ?? effectiveIconColor.withOpacity(0.15);
+    final isDark = theme.brightness == Brightness.dark;
+    final effectiveIconColor = iconColor ?? const Color(0xFF6366F1);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Icon Container with Gradient
         Container(
-          padding: const EdgeInsets.all(10),
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                effectiveBgColor,
-                effectiveBgColor.withOpacity(0.7),
-              ],
+              colors: [effectiveIconColor, effectiveIconColor.withOpacity(0.8)],
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: effectiveIconColor.withOpacity(0.2),
-              width: 1,
+              color: Colors.white.withOpacity(0.2),
+              width: 2,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: effectiveIconColor.withOpacity(0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          child: Icon(
-            icon,
-            color: effectiveIconColor,
-            size: 22,
+          child: Center(
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
 
         // Title and Subtitle
         Expanded(
@@ -62,23 +66,23 @@ class SectionHeader extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: AppMeasurements.getResponsiveFontSize(
-                    context,
-                    baseSize: 18,
-                  ),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
                   letterSpacing: -0.5,
-                  color: theme.colorScheme.onSurface,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   subtitle!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? Colors.white.withOpacity(0.6)
+                        : Colors.black.withOpacity(0.5),
                   ),
                 ),
               ],
@@ -88,7 +92,7 @@ class SectionHeader extends StatelessWidget {
 
         // Trailing Widget
         if (trailing != null) ...[
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           trailing!,
         ],
       ],

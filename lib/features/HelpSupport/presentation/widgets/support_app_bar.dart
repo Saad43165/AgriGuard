@@ -1,11 +1,11 @@
-// lib/core/weather_screen/support_app_bar.dart
+// lib/core/widgets/support_app_bar.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
   final bool showBackButton;
   final VoidCallback? onBackPressed;
@@ -23,13 +23,44 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.topPadding = 8.0,
   });
 
-  // FIXED: Proper navigation back
+  @override
+  State<CustomAppBar> createState() => _CustomAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
+}
+
+class _CustomAppBarState extends State<CustomAppBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+  bool _isBackPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+    );
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
   void _handleBack(BuildContext context) {
     HapticFeedback.lightImpact();
 
     // If custom callback is provided, use it
-    if (onBackPressed != null) {
-      onBackPressed!();
+    if (widget.onBackPressed != null) {
+      widget.onBackPressed!();
       return;
     }
 
@@ -44,86 +75,127 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: elevation,
-        centerTitle: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Back Button on LEFT SIDE
-            if (showBackButton)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () => _handleBack(context),
-                    child: Padding(
-                      padding: EdgeInsets.all(padding * 0.5),
-                      child: Icon(
-                        Icons.arrow_back_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(width: 50), // Spacer to maintain layout
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Padding(
+        padding: EdgeInsets.only(top: widget.topPadding),
+        child: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: widget.elevation,
+          centerTitle: true,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Back Button on LEFT SIDE
+              if (widget.showBackButton)
+                _buildBackButton(context, padding, isDark)
+              else
+                const SizedBox(width: 50),
 
-            // Title in Center with Gradient
-            Expanded(
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                    color: Colors.white,
-                  ),
-                ),
+              // Title in Center with Gradient
+              Expanded(
+                child: _buildTitle(context),
               ),
-            ),
 
-            // Actions or Empty Spacer on RIGHT SIDE
-            if (actions != null && actions!.isNotEmpty)
-              Row(
-                children: actions!,
-              )
-            else
-              Container(width: 50), // Spacer to maintain layout
-          ],
+              // Actions or Empty Spacer on RIGHT SIDE
+              if (widget.actions != null && widget.actions!.isNotEmpty)
+                Row(children: widget.actions!)
+              else
+                const SizedBox(width: 50),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
+  Widget _buildBackButton(BuildContext context, double padding, bool isDark) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isBackPressed = true),
+      onTapUp: (_) {
+        setState(() => _isBackPressed = false);
+        _handleBack(context);
+      },
+      onTapCancel: () => setState(() => _isBackPressed = false),
+      child: AnimatedScale(
+        scale: _isBackPressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: EdgeInsets.all(padding * 0.5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+              ],
+            ),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.arrow_back_rounded,
+            color: Theme.of(context).colorScheme.primary,
+            size: AppMeasurements.getResponsiveIconSizeMedium(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 600),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 10 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: ShaderMask(
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(bounds),
+        child: Text(
+          widget.title,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: AppMeasurements.getResponsiveFontSize(
+              context,
+              baseSize: 26,
+            ),
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
 }

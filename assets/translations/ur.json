@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "ایگری گارڈ",
+    "loading": "لوڈ ہو رہا ہے..."
+  },
+  "results": {
+    "title": "تجزیہ کے نتائج",
+    "advanced_title": "ایڈوانسڈ نتائج",
+    "analyzing": "تصویر کا تجزیہ ہو رہا ہے...",
+    "getting_severity": "شدت اور سفارشات حاصل کی جا رہی ہیں...",
+    "checking_leaf": "تصویر پودے کا پتہ ہے یا نہیں چیک کیا جا رہا ہے",
+    "analyzing_disease": "بیماری کی شدت اور علاج کے اختیارات کا تجزیہ ہو رہا ہے",
+    "no_image": "تصویر دستیاب نہیں",
+    "diagnosis": "تشخیص",
+    "confidence": "اعتماد",
+    "severity": "شدت",
+    "plant_name": "پودے کا نام",
+    "scientific_name": "سائنسی نام",
+    "disease": "بیماری",
+    "healthy": "صحت مند",
+    "recommendations": "سفارشات",
+    "treatment_recommendations": "علاج کی سفارشات",
+    "disease_causes": "بیماری کی وجوہات",
+    "symptoms_detected": "علامات کا پتہ چلا",
+    "preventive_measures": "احتیاطی تدابیر",
+    "next_steps": "اگلے اقدامات",
+    "analysis_details": "تجزیہ کی تفصیلات",
+    "additional_info": "اضافی معلومات",
+    "advanced_search": "مزید تفصیلی تجزیہ چاہتے ہیں؟",
+    "try_advanced": "AI اور Plant.id کے ساتھ ایڈوانسڈ AI سرچ آزمائیں",
+    "generate_pdf": "PDF رپورٹ بنائیں",
+    "generating_pdf": "PDF بنائی جا رہی ہے...",
+    "saved_to_history": "تاریخ میں محفوظ ہو گیا",
+    "image_not_recognized": "تصویر کی شناخت نہیں ہو سکی",
+    "non_plant_image": "غیر پودے کی تصویر",
+    "plant_detection_failed": "اپ لوڈ کی گئی تصویر پودے کا پتہ نہیں لگتی",
+    "upload_clear_photo": "براہ کرم پودے کے پتے کی واضح تصویر اپ لوڈ کریں"
+  },
+  "severity": {
+    "low": "کم",
+    "medium": "درمیانہ",
+    "high": "زیادہ",
+    "severe": "شدید",
+    "critical": "انتہائی شدید",
+    "none": "کوئی نہیں",
+    "healthy": "صحت مند",
+    "na": "دستیاب نہیں"
+  },
+  "source": {
+    "analyzed_by": "تجزیہ کار",
+    "gemini": "جیمنی AI",
+    "plantid": "Plant.id",
+    "ondevice": "آن ڈیوائس AI"
+  },
+  "common": {
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ کریں",
+    "close": "بند کریں",
+    "continue": "جاری رکھیں",
+    "back": "واپس",
+    "next": "اگلا",
+    "error": "خرابی",
+    "success": "کامیابی",
+    "loading": "لوڈ ہو رہا ہے",
+    "retry": "دوبارہ کوشش کریں"
+  },
+  "buttons": {
+    "switch_to_urdu": "اردو میں تبدیل کریں",
+    "switch_to_english": "انگریزی میں تبدیل کریں"
+  }
+}

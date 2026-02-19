@@ -1,3 +1,4 @@
+// lib/features/home/screens/weather/provider/weather_provider.dart
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/weather_model.dart';
@@ -35,6 +36,11 @@ class WeatherProvider with ChangeNotifier {
   String _selectedCity = 'Islamabad'; // Default fallback city
 
   bool _isDisposed = false;
+  bool _hasInitialized = false; // ✅ ADD THIS - Prevents re-initialization
+  DateTime? _lastRefreshTime; // ✅ ADD THIS - Track last refresh
+
+  // ✅ Cache duration - only auto-refresh if data is older than this
+  static const Duration _cacheValidDuration = Duration(minutes: 15);
 
   // Getters
   WeatherModel? get currentWeather => _weatherForecast?.current;
@@ -55,6 +61,13 @@ class WeatherProvider with ChangeNotifier {
   bool get isLocationDenied => _permissionState == LocationPermissionState.denied;
   bool get isLocationDeniedForever => _permissionState == LocationPermissionState.deniedForever;
   bool get isLocationServiceDisabled => _permissionState == LocationPermissionState.serviceDisabled;
+
+  // ✅ Check if cache is still valid
+  bool get _isCacheValid {
+    if (_lastRefreshTime == null || _weatherForecast == null) return false;
+    final timeSinceRefresh = DateTime.now().difference(_lastRefreshTime!);
+    return timeSinceRefresh < _cacheValidDuration;
+  }
 
   String get permissionStatusMessage {
     switch (_permissionState) {
@@ -77,17 +90,34 @@ class WeatherProvider with ChangeNotifier {
     _initialize();
   }
 
-  /// Initialize the weather provider
+  /// Initialize the weather provider (ONLY ONCE)
   Future<void> _initialize() async {
+    if (_hasInitialized) {
+      if (kDebugMode) {
+        print('⚠️  Weather already initialized, skipping...');
+      }
+      return;
+    }
+
     if (kDebugMode) {
       print('🌤️  Initializing WeatherProvider...');
     }
+
+    _hasInitialized = true;
     await loadWeatherData();
   }
 
   /// Main method to load weather data
-  Future<void> loadWeatherData() async {
+  Future<void> loadWeatherData({bool forceRefresh = false}) async {
     if (_isDisposed) return;
+
+    // ✅ If cache is valid and not forcing refresh, skip loading
+    if (!forceRefresh && _isCacheValid) {
+      if (kDebugMode) {
+        print('✅ Using cached weather data (still valid)');
+      }
+      return;
+    }
 
     _updateState(WeatherLoadingState.loading);
     _clearError();
@@ -108,6 +138,7 @@ class WeatherProvider with ChangeNotifier {
       }
 
       _updateState(WeatherLoadingState.loaded);
+      _lastRefreshTime = DateTime.now(); // ✅ Update refresh time
 
       if (kDebugMode) {
         print('✅ Weather data loaded successfully');
@@ -125,6 +156,15 @@ class WeatherProvider with ChangeNotifier {
   /// Check and update location permission status
   Future<void> _checkLocationPermission() async {
     if (_isDisposed) return;
+
+    // ✅ Don't re-check if we already know the status (unless it's unknown)
+    if (_permissionState != LocationPermissionState.unknown &&
+        _permissionState != LocationPermissionState.checking) {
+      if (kDebugMode) {
+        print('ℹ️  Using cached permission state: $_permissionState');
+      }
+      return;
+    }
 
     _safeSetState(() {
       _permissionState = LocationPermissionState.checking;
@@ -240,12 +280,15 @@ class WeatherProvider with ChangeNotifier {
     }
   }
 
-  /// Refresh weather data
+  /// ✅ FIXED: Refresh weather data (ONLY when user explicitly requests)
   Future<void> refreshWeather() async {
     if (kDebugMode) {
-      print('🔄 Refreshing weather data...');
+      print('🔄 User requested refresh - forcing reload...');
     }
-    await loadWeatherData();
+
+    // Clear cache and force reload
+    _lastRefreshTime = null;
+    await loadWeatherData(forceRefresh: true);
   }
 
   /// Load weather for a specific city
@@ -262,6 +305,7 @@ class WeatherProvider with ChangeNotifier {
     try {
       await _loadWeatherByCity(city);
       _updateState(WeatherLoadingState.loaded);
+      _lastRefreshTime = DateTime.now(); // ✅ Update refresh time
 
       if (kDebugMode) {
         print('✅ Successfully loaded weather for: $city');
@@ -275,12 +319,15 @@ class WeatherProvider with ChangeNotifier {
   /// Request location permission
   Future<bool> requestLocationPermission() async {
     try {
+      // ✅ Reset permission state to force re-check
+      _permissionState = LocationPermissionState.unknown;
+
       LocationPermission permission = await Geolocator.requestPermission();
 
       await _checkLocationPermission();
 
       if (_permissionState == LocationPermissionState.granted) {
-        await loadWeatherData();
+        await loadWeatherData(forceRefresh: true);
         return true;
       }
       return false;
@@ -295,16 +342,46 @@ class WeatherProvider with ChangeNotifier {
   /// Open app settings
   Future<void> openAppSettings() async {
     await Geolocator.openAppSettings();
+
+    // ✅ After opening settings, reset permission state so it re-checks when user returns
+    Future.delayed(const Duration(seconds: 1), () {
+      _permissionState = LocationPermissionState.unknown;
+    });
   }
 
   /// Open location settings
   Future<void> openLocationSettings() async {
     await Geolocator.openLocationSettings();
+
+    // ✅ After opening settings, reset permission state
+    Future.delayed(const Duration(seconds: 1), () {
+      _permissionState = LocationPermissionState.unknown;
+    });
   }
 
   /// Use default city weather
   Future<void> useDefaultCity() async {
     await loadWeatherForCity(_selectedCity);
+  }
+
+  /// ✅ Manually invalidate cache (useful for debugging)
+  void invalidateCache() {
+    _lastRefreshTime = null;
+    if (kDebugMode) {
+      print('🗑️  Weather cache invalidated');
+    }
+  }
+
+  /// ✅ Get time since last refresh
+  String getTimeSinceRefresh() {
+    if (_lastRefreshTime == null) return 'Never';
+
+    final duration = DateTime.now().difference(_lastRefreshTime!);
+
+    if (duration.inMinutes < 1) return 'Just now';
+    if (duration.inMinutes < 60) return '${duration.inMinutes} min ago';
+    if (duration.inHours < 24) return '${duration.inHours} hours ago';
+    return '${duration.inDays} days ago';
   }
 
   // Helper methods
@@ -359,12 +436,27 @@ class WeatherProvider with ChangeNotifier {
     print('💨 Wind Speed: ${_weatherForecast!.current.windSpeed} km/h');
     print('☀️  UV Index: ${_weatherForecast!.current.uvIndex}');
     print('📅 Forecast Days: ${_weatherForecast!.forecast.length}');
+    print('🔄 Last Refresh: ${getTimeSinceRefresh()}');
+    print('💾 Cache Valid: ${_isCacheValid ? "Yes" : "No"}');
     print('============================');
   }
 
   @override
   void dispose() {
     _isDisposed = true;
+    if (kDebugMode) {
+      print('🗑️  WeatherProvider disposed');
+    }
     super.dispose();
   }
+}
+
+// ✅ Custom exception for weather-related errors
+class WeatherException implements Exception {
+  final String message;
+
+  WeatherException(this.message);
+
+  @override
+  String toString() => message;
 }

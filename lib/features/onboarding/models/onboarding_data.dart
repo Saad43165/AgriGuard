@@ -1,35 +1,90 @@
+import 'package:flutter/material.dart';
+
 class OnboardingData {
-  final String icon;
+  final IconData mainIcon;
+  final List<IconData> featureIcons;
   final String title;
+  final String subtitle;
   final String description;
+  final List<String> features;
 
   OnboardingData({
-    required this.icon,
+    required this.mainIcon,
+    required this.featureIcons,
     required this.title,
+    required this.subtitle,
     required this.description,
+    required this.features,
   });
 
-  // Static list of onboarding pages data
   static List<OnboardingData> get pages => [
     OnboardingData(
-      icon: '🌱',
+      mainIcon: Icons.eco_rounded,
+      featureIcons: [
+        Icons.spa_rounded,
+        Icons.local_florist_rounded,
+        Icons.grass_rounded,
+      ],
       title: 'Protect Your Crops',
-      description: 'Advanced AI-powered disease detection helps you identify crop issues early and take action before it\'s too late.',
+      subtitle: 'AI-Powered Detection',
+      description:
+      'Advanced machine learning identifies crop diseases early, helping you take action before it\'s too late.',
+      features: [
+        'Real-time disease detection',
+        'Early warning system',
+        '95% accuracy rate',
+      ],
     ),
     OnboardingData(
-      icon: '📷',
-      title: 'Instant Detection',
-      description: 'Simply take a photo of your plant and get instant analysis with detailed information about diseases and treatments.',
+      mainIcon: Icons.camera_alt_rounded,
+      featureIcons: [
+        Icons.photo_camera_rounded,
+        Icons.image_search_rounded,
+        Icons.analytics_rounded,
+      ],
+      title: 'Instant Analysis',
+      subtitle: 'Snap & Diagnose',
+      description:
+      'Simply capture a photo of your plant and receive instant AI-powered analysis with detailed insights.',
+      features: [
+        'Instant photo analysis',
+        'Detailed diagnostics',
+        'Treatment recommendations',
+      ],
     ),
     OnboardingData(
-      icon: '💡',
+      mainIcon: Icons.lightbulb_rounded,
+      featureIcons: [
+        Icons.stars_rounded,
+        Icons.psychology_rounded,
+        Icons.tips_and_updates_rounded,
+      ],
       title: 'Expert Guidance',
-      description: 'Receive personalized recommendations and treatment plans based on your crop type and detected conditions.',
+      subtitle: 'Personalized Solutions',
+      description:
+      'Get tailored treatment plans and expert recommendations based on your specific crop conditions.',
+      features: [
+        'Custom treatment plans',
+        'Expert recommendations',
+        'Step-by-step guidance',
+      ],
     ),
     OnboardingData(
-      icon: '📊',
-      title: 'Track Progress',
-      description: 'Monitor your crops over time, track treatments, and watch your fields thrive with data-driven insights.',
+      mainIcon: Icons.trending_up_rounded,
+      featureIcons: [
+        Icons.insert_chart_rounded,
+        Icons.history_rounded,
+        Icons.timeline_rounded,
+      ],
+      title: 'Track Your Success',
+      subtitle: 'Data-Driven Farming',
+      description:
+      'Monitor crop health over time with comprehensive analytics and watch your fields thrive.',
+      features: [
+        'Progress tracking',
+        'Historical analysis',
+        'Performance insights',
+      ],
     ),
   ];
 }

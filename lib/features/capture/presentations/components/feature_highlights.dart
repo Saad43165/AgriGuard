@@ -5,99 +5,171 @@ class FeatureHighlights extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Key Features',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
+        Row(
           children: [
-            _buildFeatureTile(
-              context,
-              icon: Icons.search_rounded,
-              title: 'Identify Plants',
-              description: 'Recognize 50,000+ plant species',
-              color: Colors.green,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.stars_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
-            _buildFeatureTile(
-              context,
-              icon: Icons.health_and_safety_rounded,
-              title: 'Disease Detection',
-              description: 'Spot common plant diseases',
-              color: Colors.orange,
-            ),
-            _buildFeatureTile(
-              context,
-              icon: Icons.medication_rounded,
-              title: 'Treatment Plans',
-              description: 'Get expert recommendations',
-              color: Colors.blue,
-            ),
-            _buildFeatureTile(
-              context,
-              icon: Icons.offline_bolt_rounded,
-              title: 'Offline Mode',
-              description: 'Works without internet',
-              color: Colors.purple,
+            const SizedBox(width: 12),
+            Text(
+              'Key Features',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
             ),
           ],
+        ),
+        const SizedBox(height: 14),
+        _buildFeatureRow(
+          context,
+          icon: Icons.search_rounded,
+          title: 'Identify Plants',
+          description: '50,000+ species',
+          color: Colors.green.shade600,
+          isDark: isDark,
+        ),
+        const SizedBox(height: 10),
+        _buildFeatureRow(
+          context,
+          icon: Icons.health_and_safety_rounded,
+          title: 'Disease Detection',
+          description: 'Common diseases',
+          color: Colors.orange.shade600,
+          isDark: isDark,
+        ),
+        const SizedBox(height: 10),
+        _buildFeatureRow(
+          context,
+          icon: Icons.medication_rounded,
+          title: 'Treatment Plans',
+          description: 'Expert advice',
+          color: Colors.blue.shade600,
+          isDark: isDark,
+        ),
+        const SizedBox(height: 10),
+        _buildFeatureRow(
+          context,
+          icon: Icons.offline_bolt_rounded,
+          title: 'Offline Mode',
+          description: 'No internet needed',
+          color: Colors.purple.shade600,
+          isDark: isDark,
         ),
       ],
     );
   }
 
-  Widget _buildFeatureTile(
+  Widget _buildFeatureRow(
       BuildContext context, {
         required IconData icon,
         required String title,
         required String description,
         required Color color,
+        required bool isDark,
       }) {
     return Container(
-      padding: const EdgeInsets.all(12), // Reduced padding
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: isDark
+            ? const Color(0xFF1A1A2E).withOpacity(0.6)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.1)
+              : Colors.black.withOpacity(0.08),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, size: 28, color: color), // Smaller icon
-          const SizedBox(height: 8),
-          Flexible( // Added Flexible for title
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: color,
-                fontSize: 14, // Smaller font
+          // Icon
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: color.withOpacity(0.3),
+                width: 1.5,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            ),
+            child: Icon(
+              icon,
+              size: 24,
+              color: color,
             ),
           ),
-          const SizedBox(height: 4),
-          Flexible( // Added Flexible for description
-            child: Text(
-              description,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                fontSize: 11, // Smaller font
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          const SizedBox(width: 14),
+
+          // Text content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Indicator dot
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.4),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
           ),
         ],

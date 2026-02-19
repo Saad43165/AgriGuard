@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'section_header.dart';
 
 class NextStepsCard extends StatelessWidget {
   final List<ActionItemData> actionItems;
@@ -10,134 +11,128 @@ class NextStepsCard extends StatelessWidget {
         icon: Icons.history_rounded,
         title: 'Monitor Progress',
         subtitle: 'Check back in 3-5 days to track healing progress',
-        color: Colors.blue,
+        color: Color(0xFF3B82F6),
       ),
       ActionItemData(
         icon: Icons.local_pharmacy_rounded,
         title: 'Get Treatment Products',
         subtitle: 'Find recommended products at your local store',
-        color: Colors.green,
+        color: Color(0xFF10B981),
       ),
       ActionItemData(
         icon: Icons.people_rounded,
         title: 'Consult Expert',
         subtitle: 'Contact a specialist if symptoms worsen',
-        color: Colors.orange,
+        color: Color(0xFFF59E0B),
       ),
     ],
   });
 
   @override
   Widget build(BuildContext context) {
-    return _buildNextStepsCard(context);
-  }
-
-  Widget _buildNextStepsCard(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surface.withOpacity(0.5)
-            : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-          width: 1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Next Steps',
+          icon: Icons.next_plan_rounded,
+          subtitle: 'Recommended actions to take',
+          iconColor: const Color(0xFF10B981),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.next_plan_rounded,
-                    color: theme.colorScheme.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Next Steps',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                const Color(0xFF1E293B),
+                const Color(0xFF0F172A),
+              ]
+                  : [
+                Colors.white,
+                const Color(0xFFF8FAFC),
               ],
             ),
-          ),
-
-          // Content
-          actionItems.isEmpty
-              ? _buildEmptyState(context)
-              : _buildActionItemsList(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.info_outline_rounded,
-              size: 48,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.06),
+              width: 2,
             ),
-            const SizedBox(height: 12),
-            Text(
-              'No next steps available',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: actionItems.isEmpty
+              ? _buildEmptyState(context, isDark)
+              : Column(
+            children: List.generate(
+              actionItems.length,
+                  (index) => _buildActionItem(
+                context: context,
+                item: actionItems[index],
+                index: index,
+                isLast: index == actionItems.length - 1,
+                isDark: isDark,
               ),
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildActionItemsList(BuildContext context) {
-    return Column(
-      children: List.generate(
-        actionItems.length,
-            (index) => _buildActionItem(
-          context: context,
-          item: actionItems[index],
-          index: index,
-          isLast: index == actionItems.length - 1,
-        ),
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF10B981).withOpacity(0.1),
+                  const Color(0xFF10B981).withOpacity(0.05),
+                ],
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF10B981).withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 48,
+              color: const Color(0xFF10B981),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No Next Steps Available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -147,9 +142,9 @@ class NextStepsCard extends StatelessWidget {
     required ActionItemData item,
     required int index,
     required bool isLast,
+    required bool isDark,
   }) {
-    final theme = Theme.of(context);
-    final itemColor = item.color ?? theme.colorScheme.primary;
+    final itemColor = item.color ?? const Color(0xFF10B981);
 
     return Container(
       decoration: BoxDecoration(
@@ -157,8 +152,10 @@ class NextStepsCard extends StatelessWidget {
             ? null
             : Border(
           bottom: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.1),
-            width: 1,
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.04),
+            width: 1.5,
           ),
         ),
       ),
@@ -167,40 +164,45 @@ class NextStepsCard extends StatelessWidget {
         child: InkWell(
           onTap: item.onTap,
           borderRadius: BorderRadius.only(
-            bottomLeft: isLast ? const Radius.circular(16) : Radius.zero,
-            bottomRight: isLast ? const Radius.circular(16) : Radius.zero,
+            topLeft: index == 0 ? const Radius.circular(18) : Radius.zero,
+            topRight: index == 0 ? const Radius.circular(18) : Radius.zero,
+            bottomLeft: isLast ? const Radius.circular(18) : Radius.zero,
+            bottomRight: isLast ? const Radius.circular(18) : Radius.zero,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon Badge
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        itemColor.withOpacity(0.2),
-                        itemColor.withOpacity(0.1),
-                      ],
+                      colors: [itemColor, itemColor.withOpacity(0.8)],
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: itemColor.withOpacity(0.3),
-                      width: 1.5,
+                      color: Colors.white.withOpacity(0.2),
+                      width: 2,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: itemColor.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Icon(
                       item.icon,
-                      size: 22,
-                      color: itemColor,
+                      size: 28,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 // Content
                 Expanded(
                   child: Column(
@@ -208,20 +210,24 @@ class NextStepsCard extends StatelessWidget {
                     children: [
                       Text(
                         item.title,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : Colors.black87,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       if (item.subtitle.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
                           item.subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: TextStyle(
                             fontSize: 13,
                             height: 1.5,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.6)
+                                : Colors.black.withOpacity(0.5),
                           ),
                         ),
                       ],
@@ -229,11 +235,22 @@ class NextStepsCard extends StatelessWidget {
                   ),
                 ),
                 // Arrow
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: itemColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: itemColor.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 20,
+                    color: itemColor,
+                  ),
                 ),
               ],
             ),

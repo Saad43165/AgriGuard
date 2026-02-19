@@ -14,7 +14,6 @@ class HourlyForecastSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Generate hourly data (simulated - in real app, you'd get this from API)
     final hourlyData = _generateHourlyData();
 
     return SliverToBoxAdapter(
@@ -23,35 +22,59 @@ class HourlyForecastSection extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(26, 24, 26, 12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.access_time_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 2,
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Hourly Forecast',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.3,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.3),
+                          Colors.white.withOpacity(0.2),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.access_time_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Hourly Forecast',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black38,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           SizedBox(
-            height: 140,
+            height: 150,
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
@@ -71,9 +94,9 @@ class HourlyForecastSection extends StatelessWidget {
 
   Widget _buildHourlyCard(Map<String, dynamic> hour, bool isNow) {
     return Container(
-      width: 90,
+      width: 95,
       margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -84,21 +107,27 @@ class HourlyForecastSection extends StatelessWidget {
             Colors.white.withOpacity(0.25),
           ]
               : [
-            Colors.white.withOpacity(0.2),
-            Colors.white.withOpacity(0.15),
+            Colors.black.withOpacity(0.25),
+            Colors.black.withOpacity(0.15),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: Colors.white.withOpacity(isNow ? 0.5 : 0.3),
-          width: isNow ? 2 : 1.5,
+          color: Colors.white.withOpacity(isNow ? 0.5 : 0.35),
+          width: isNow ? 2.5 : 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
+          if (isNow)
+            BoxShadow(
+              color: Colors.white.withOpacity(0.2),
+              blurRadius: 15,
+              spreadRadius: 2,
+            ),
         ],
       ),
       child: Column(
@@ -108,37 +137,76 @@ class HourlyForecastSection extends StatelessWidget {
             hour['time'],
             style: TextStyle(
               fontSize: isNow ? 14 : 13,
-              fontWeight: isNow ? FontWeight.bold : FontWeight.w600,
+              fontWeight: FontWeight.w800,
               color: Colors.white,
+              shadows: const [
+                Shadow(
+                  color: Colors.black38,
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
           ),
           Icon(
             hour['icon'],
             color: Colors.white,
-            size: 32,
+            size: 36,
+            shadows: const [
+              Shadow(
+                color: Colors.black26,
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
           Text(
             '${hour['temp']}°',
             style: TextStyle(
-              fontSize: isNow ? 20 : 18,
-              fontWeight: FontWeight.bold,
+              fontSize: isNow ? 22 : 20,
+              fontWeight: FontWeight.w900,
               color: Colors.white,
+              shadows: const [
+                Shadow(
+                  color: Colors.black45,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.water_drop, color: Colors.white, size: 12),
-              const SizedBox(width: 2),
-              Text(
-                '${hour['rain']}%',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.9),
-                  fontWeight: FontWeight.w500,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
               ),
-            ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.water_drop, color: Colors.white, size: 12),
+                const SizedBox(width: 3),
+                Text(
+                  '${hour['rain']}%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black26,
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -33,15 +33,7 @@ class CurrentWeatherSection extends StatelessWidget {
                     const SizedBox(height: 24),
                     _temperature(),
                     const SizedBox(height: 12),
-                    Text(
-                      weatherData.conditionText,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    _conditionText(),
                     const SizedBox(height: 12),
                     _feelsLikeChip(),
                   ],
@@ -55,88 +47,139 @@ class CurrentWeatherSection extends StatelessWidget {
     );
   }
 
-  Widget _locationRow() => Row(
-    children: [
-      Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(
-          Icons.location_on_rounded,
-          color: Colors.white,
-          size: 24,
-        ),
+  Widget _locationRow() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.black.withOpacity(0.25),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: Colors.white.withOpacity(0.3),
+        width: 2,
       ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              weatherData.cityName,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '${weatherData.region}, ${weatherData.country}',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.white.withOpacity(0.85),
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.2,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.2),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
         ),
-      ),
-    ],
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.3),
+                Colors.white.withOpacity(0.2),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.location_on_rounded,
+            color: Colors.white,
+            size: 26,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                weatherData.cityName,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black38,
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${weatherData.region}, ${weatherData.country}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
   );
 
   Widget _dateAndTimeChips() => Wrap(
-    spacing: 8,
+    spacing: 10,
     children: [
       _chip(
-        icon: Icons.calendar_today,
+        icon: Icons.calendar_today_rounded,
         text: DateFormat('EEEE, MMM d').format(DateTime.now()),
       ),
       _chip(
-        icon: Icons.access_time,
+        icon: Icons.access_time_rounded,
         text: _getLocalTime(),
       ),
     ],
   );
 
   Widget _chip({required IconData icon, required String text}) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2),
+      color: Colors.black.withOpacity(0.25),
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: Colors.white.withOpacity(0.3),
-        width: 1,
+        color: Colors.white.withOpacity(0.4),
+        width: 1.5,
       ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        ),
+      ],
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white, size: 14),
-        const SizedBox(width: 6),
+        Icon(icon, color: Colors.white, size: 16),
+        const SizedBox(width: 8),
         Text(
           text,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 13,
-            color: Colors.white.withOpacity(0.95),
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
             letterSpacing: 0.3,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ],
@@ -156,15 +199,31 @@ class CurrentWeatherSection extends StatelessWidget {
   }
 
   Widget _weatherIcon() => Container(
-    padding: const EdgeInsets.all(24),
+    padding: const EdgeInsets.all(28),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.15),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withOpacity(0.25),
+          Colors.white.withOpacity(0.15),
+        ],
+      ),
       shape: BoxShape.circle,
+      border: Border.all(
+        color: Colors.white.withOpacity(0.4),
+        width: 3,
+      ),
       boxShadow: [
         BoxShadow(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withOpacity(0.2),
           blurRadius: 30,
           spreadRadius: 5,
+        ),
+        BoxShadow(
+          color: Colors.black.withOpacity(0.2),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
         ),
       ],
     ),
@@ -172,50 +231,142 @@ class CurrentWeatherSection extends StatelessWidget {
       _iconForCondition(weatherData.conditionText, weatherData.isDay),
       size: 100,
       color: Colors.white,
+      shadows: const [
+        Shadow(
+          color: Colors.black26,
+          blurRadius: 10,
+          offset: Offset(0, 4),
+        ),
+      ],
     ),
   );
 
-  Widget _temperature() => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        weatherData.temperature.toStringAsFixed(0),
-        style: const TextStyle(
-          fontSize: 96,
-          fontWeight: FontWeight.w200,
-          height: 1,
-          color: Colors.white,
-          letterSpacing: -4,
-        ),
+  Widget _temperature() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.black.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(30),
+      border: Border.all(
+        color: Colors.white.withOpacity(0.3),
+        width: 2,
       ),
-      const Padding(
-        padding: EdgeInsets.only(top: 10),
-        child: Text(
-          '°C',
-          style: TextStyle(
-            fontSize: 40,
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          weatherData.temperature.toStringAsFixed(0),
+          style: const TextStyle(
+            fontSize: 96,
             fontWeight: FontWeight.w300,
+            height: 1,
             color: Colors.white,
+            letterSpacing: -4,
+            shadows: [
+              Shadow(
+                color: Colors.black45,
+                blurRadius: 15,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
         ),
+        const Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            '°C',
+            style: TextStyle(
+              fontSize: 40,
+              fontWeight: FontWeight.w400,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black38,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _conditionText() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.black.withOpacity(0.25),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: Colors.white.withOpacity(0.3),
+        width: 1.5,
       ),
-    ],
+    ),
+    child: Text(
+      weatherData.conditionText,
+      style: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+        letterSpacing: 0.5,
+        shadows: [
+          Shadow(
+            color: Colors.black38,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+    ),
   );
 
   Widget _feelsLikeChip() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      'Feels like ${weatherData.feelsLike.toStringAsFixed(0)}°C',
-      style: TextStyle(
-        fontSize: 16,
-        color: Colors.white.withOpacity(0.95),
-        fontWeight: FontWeight.w600,
+      gradient: LinearGradient(
+        colors: [
+          Colors.white.withOpacity(0.25),
+          Colors.white.withOpacity(0.15),
+        ],
       ),
+      borderRadius: BorderRadius.circular(25),
+      border: Border.all(
+        color: Colors.white.withOpacity(0.4),
+        width: 2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.thermostat_rounded, color: Colors.white, size: 18),
+        const SizedBox(width: 8),
+        Text(
+          'Feels like ${weatherData.feelsLike.toStringAsFixed(0)}°C',
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 

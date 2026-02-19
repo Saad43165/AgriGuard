@@ -1,6 +1,6 @@
+// lib/features/support/widgets/faq_category_filters.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/app_measurements.dart';
 import '../models/faq_category.dart';
 
 class FaqCategoryFilters extends StatelessWidget {
@@ -20,67 +20,118 @@ class FaqCategoryFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double itemSpacing = AppMeasurements.getResponsivePadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: itemSpacing),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: FaqCategory.values.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             bool isSelected = selectedCategory == null;
-            return Padding(
-              padding: EdgeInsets.only(right: itemSpacing / 2),
-              child: FilterChip(
-                selected: isSelected,
-                label: Text('All'),
-                avatar: Icon(
-                  Icons.apps_rounded,
-                  size: 18,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                onSelected: (_) => _selectCategory(null),
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                selectedColor: Theme.of(context).colorScheme.primary,
-                labelStyle: TextStyle(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+            return _buildChip(
+              context,
+              label: 'All',
+              icon: Icons.grid_view_rounded,
+              isSelected: isSelected,
+              isDark: isDark,
+              onTap: () => _selectCategory(null),
             );
           }
 
           FaqCategory category = FaqCategory.values[index - 1];
           bool isSelected = selectedCategory == category;
 
-          return Padding(
-            padding: EdgeInsets.only(right: itemSpacing / 2),
-            child: FilterChip(
-              selected: isSelected,
-              label: Text(category.label),
-              avatar: Icon(
-                category.icon,
-                size: 18,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-              onSelected: (_) => _selectCategory(category),
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              selectedColor: Theme.of(context).colorScheme.primary,
-              labelStyle: TextStyle(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.onPrimary
-                    : Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
+          return _buildChip(
+            context,
+            label: category.label,
+            icon: category.icon,
+            isSelected: isSelected,
+            isDark: isDark,
+            onTap: () => _selectCategory(category),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildChip(
+      BuildContext context, {
+        required String label,
+        required IconData icon,
+        required bool isSelected,
+        required bool isDark,
+        required VoidCallback onTap,
+      }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                ],
+              )
+                  : null,
+              color: isSelected
+                  ? null
+                  : (isDark ? const Color(0xFF1E1E2E) : Colors.white),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                width: 2,
+              ),
+              boxShadow: isSelected
+                  ? [
+                BoxShadow(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

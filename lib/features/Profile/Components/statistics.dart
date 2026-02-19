@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/database/scan_database.dart';
 
 class CompactStatistics extends StatefulWidget {
@@ -21,28 +22,55 @@ class CompactStatistics extends StatefulWidget {
 
 class _CompactStatisticsState extends State<CompactStatistics> {
   final ScanDatabase _scanDatabase = ScanDatabase.instance;
-  int _localScanCount = 0;
+  int _totalScans = 0;
+  int _healthyScans = 0;
+  int _diseasedScans = 0;
+  String _memberSince = '';
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadLocalStats();
+    _loadStats();
   }
 
-  Future<void> _loadLocalStats() async {
+  Future<void> _loadStats() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
+        // Get total scans
         final counts = await _scanDatabase.getScanCounts(user.uid);
+        _totalScans = counts['total'] ?? 0;
+
+        // Get all scans to count healthy vs diseased
+        final allScans = await _scanDatabase.getAllScans(user.uid);
+
+        int healthy = 0;
+        int diseased = 0;
+
+        for (var scan in allScans) {
+          final diagnosis = (scan['diagnosis']?.toString() ??
+              scan['diseaseName']?.toString() ??
+              '').toLowerCase();
+
+          if (diagnosis.contains('healthy') || diagnosis.isEmpty) {
+            healthy++;
+          } else {
+            diseased++;
+          }
+        }
+
+        _healthyScans = healthy;
+        _diseasedScans = diseased;
+
+        // Format member since date
+        _memberSince = _formatMemberSince(widget.userProfile['joinDate']);
+
         if (mounted) {
-          setState(() {
-            _localScanCount = counts['total'] ?? 0;
-            _isLoading = false;
-          });
+          setState(() => _isLoading = false);
         }
       } catch (e) {
-        debugPrint('Error loading SQLite scan count: $e');
+        debugPrint('Error loading stats: $e');
         if (mounted) {
           setState(() => _isLoading = false);
         }
@@ -51,6 +79,27 @@ class _CompactStatisticsState extends State<CompactStatistics> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  String _formatMemberSince(dynamic joinDate) {
+    try {
+      if (joinDate == null || joinDate.toString().isEmpty) {
+        return 'Recently';
+      }
+
+      DateTime? date;
+      if (joinDate is Timestamp) {
+        date = joinDate.toDate();
+      } else if (joinDate is String) {
+        date = DateTime.tryParse(joinDate);
+      }
+
+      if (date == null) return 'Recently';
+
+      return DateFormat('MMM yyyy').format(date);
+    } catch (e) {
+      return 'Recently';
     }
   }
 
@@ -81,19 +130,12 @@ class _CompactStatisticsState extends State<CompactStatistics> {
                 : Colors.black.withOpacity(0.05),
           ),
         ),
-        child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(FirebaseAuth.instance.currentUser?.uid)
-              .snapshots(),
-          builder: (context, snapshot) {
-            // Get Firestore data for reports
-            final userData = snapshot.data?.data() as Map<String, dynamic>?;
-            final reports = userData?['reportCount'] ?? 0;
-
-            return Column(
+        child: Column(
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Header
                 Row(
                   children: [
                     Container(
@@ -122,58 +164,88 @@ class _CompactStatisticsState extends State<CompactStatistics> {
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 12),
-
-                // Stats Row
-                if (_isLoading)
-                  _buildLoadingStats()
-                else
-                  Row(
-                    children: [
-                      // Total Scans (from SQLite)
-                      Expanded(
-                        child: _buildQuickStat(
-                          context,
-                          icon: Icons.qr_code_scanner_rounded,
-                          label: 'Scans',
-                          value: _localScanCount.toString(),
-                          color: const Color(0xFF667eea),
-                          isDark: widget.isDark,
-                        ),
+                // Member since badge
+                if (!_isLoading && _memberSince.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                       ),
-                      const SizedBox(width: 12),
-
-                      // Reports (from Firestore)
-                      Expanded(
-                        child: _buildQuickStat(
-                          context,
-                          icon: Icons.description_rounded,
-                          label: 'Reports',
-                          value: reports.toString(),
-                          color: const Color(0xFF4CAF50),
-                          isDark: widget.isDark,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 10,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      // Member Duration
-                      Expanded(
-                        child: _buildQuickStat(
-                          context,
-                          icon: Icons.calendar_today_rounded,
-                          label: 'Member',
-                          value: _getJoinDuration(widget.userProfile['joinDate']),
-                          color: const Color(0xFFFF9800),
-                          isDark: widget.isDark,
-                          isText: true,
+                        const SizedBox(width: 4),
+                        Text(
+                          'Since $_memberSince',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
               ],
-            );
-          },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Stats Row
+            if (_isLoading)
+              _buildLoadingStats()
+            else
+              Row(
+                children: [
+                  // Total Scans
+                  Expanded(
+                    child: _buildQuickStat(
+                      context,
+                      icon: Icons.qr_code_scanner_rounded,
+                      label: 'Total Scans',
+                      value: _totalScans.toString(),
+                      color: const Color(0xFF667eea),
+                      isDark: widget.isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Healthy Plants
+                  Expanded(
+                    child: _buildQuickStat(
+                      context,
+                      icon: Icons.check_circle_rounded,
+                      label: 'Healthy',
+                      value: _healthyScans.toString(),
+                      color: const Color(0xFF10B981),
+                      isDark: widget.isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Diseased Plants
+                  Expanded(
+                    child: _buildQuickStat(
+                      context,
+                      icon: Icons.warning_rounded,
+                      label: 'Diseased',
+                      value: _diseasedScans.toString(),
+                      color: const Color(0xFFFF9800),
+                      isDark: widget.isDark,
+                    ),
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );
@@ -215,7 +287,7 @@ class _CompactStatisticsState extends State<CompactStatistics> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
+          const Text(
             '...',
             style: TextStyle(
               fontSize: 18,
@@ -244,28 +316,39 @@ class _CompactStatisticsState extends State<CompactStatistics> {
         required String value,
         required Color color,
         required bool isDark,
-        bool isText = false,
       }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.02),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withOpacity(0.3),
           width: 1,
         ),
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 18),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: isText ? 12 : 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
               height: 1.0,
@@ -278,7 +361,7 @@ class _CompactStatisticsState extends State<CompactStatistics> {
             style: TextStyle(
               fontSize: 9,
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -287,31 +370,5 @@ class _CompactStatisticsState extends State<CompactStatistics> {
         ],
       ),
     );
-  }
-
-  String _getJoinDuration(dynamic joinDate) {
-    try {
-      if (joinDate == null || joinDate.toString().isEmpty) return '0d';
-
-      DateTime? date;
-      if (joinDate is Timestamp) {
-        date = joinDate.toDate();
-      } else if (joinDate is String) {
-        date = DateTime.tryParse(joinDate);
-      }
-
-      if (date == null) return '0d';
-
-      final duration = DateTime.now().difference(date);
-      if (duration.inDays > 365) {
-        return '${(duration.inDays / 365).floor()}y';
-      } else if (duration.inDays > 30) {
-        return '${(duration.inDays / 30).floor()}mo';
-      } else {
-        return '${duration.inDays}d';
-      }
-    } catch (e) {
-      return '0d';
-    }
   }
 }

@@ -412,7 +412,7 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
                         plantName,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 11, // Reduced from 11.5
+                          fontSize: 10, // Reduced from 11.5
                           height: 1.2,
                           color: isDark
                               ? primaryColor.withOpacity(0.95)
@@ -480,7 +480,7 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
                                 child: Text(
                                   diseaseName,
                                   style: TextStyle(
-                                    fontSize: 9.5, // Reduced from 10
+                                    fontSize: 8.5, // Reduced from 10
                                     height: 1.2,
                                     fontWeight: FontWeight.w700,
                                     color: _getDiseaseTextColor(diseaseName, isDark),

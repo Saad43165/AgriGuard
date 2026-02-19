@@ -1,3 +1,5 @@
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar_actions.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_empty_state.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_scan_card.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_stats_card.dart';
@@ -114,11 +116,11 @@ class _HistoryScreenState extends State<HistoryScreen>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 12),
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
             Text(
               currentScans.isEmpty ? 'No scans found' : 'Refreshed successfully',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -129,7 +131,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
-        margin: EdgeInsets.all(16),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -218,77 +220,15 @@ class _HistoryScreenState extends State<HistoryScreen>
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                Color(0xFF1A1F3A).withOpacity(0.95),
-                Color(0xFF0F172A).withOpacity(0.95),
-              ]
-                  : [
-                Color(0xFFFAFAFA).withOpacity(0.95),
-                Color(0xFFF5F5F5).withOpacity(0.95),
-              ],
-            ),
-          ),
-        ),
-        title: ShaderMask(
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ).createShader(bounds),
-          child: Text(
-            'Scan History',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        leading: Padding(
-          padding: EdgeInsets.all(8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_rounded,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
+      appBar: HistoryAppBar(
+        title: 'Scan History',
+        showBackButton: true,
+        onBackPressed: () => Navigator.pop(context),
         actions: [
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                onPressed: _refreshScans,
-                tooltip: 'Refresh',
-              ),
-            ),
+          HistoryAppBarAction(
+            icon: Icons.refresh_rounded,
+            onPressed: _refreshScans,
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -299,14 +239,14 @@ class _HistoryScreenState extends State<HistoryScreen>
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-              Color(0xFF0A0E27),
-              Color(0xFF1A1F3A),
-              Color(0xFF0F172A),
+              const Color(0xFF0A0E27),
+              const Color(0xFF1A1F3A),
+              const Color(0xFF0F172A),
             ]
                 : [
-              Color(0xFFFAFAFA),
-              Color(0xFFF5F5F5),
-              Color(0xFFFFFFFF),
+              const Color(0xFFFAFAFA),
+              const Color(0xFFF5F5F5),
+              const Color(0xFFFFFFFF),
             ],
           ),
         ),
@@ -328,7 +268,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 opacity: _fadeAnimation,
                 child: Column(
                   children: [
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
                     // Stats Card
                     ScaleTransition(
@@ -341,7 +281,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                       ),
                     ),
 
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
                     // Tab Selector
                     HistoryTabSelector(
@@ -354,7 +294,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                       },
                     ),
 
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
                     // Content
                     Expanded(
@@ -390,8 +330,8 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
 
     return ListView.builder(
-      physics: BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _currentScans.length,
       itemBuilder: (context, index) {
         return HistoryScanCard(
@@ -410,7 +350,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
@@ -422,7 +362,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               ),
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           Text(
             'Loading your scans...',
             style: TextStyle(
@@ -439,12 +379,12 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.error.withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -455,15 +395,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                 color: Theme.of(context).colorScheme.error,
               ),
             ),
-            SizedBox(height: 24),
-            Text(
+            const SizedBox(height: 24),
+            const Text(
               'Failed to load scans',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
               'Please check your connection and try again',
               style: TextStyle(
@@ -472,17 +412,17 @@ class _HistoryScreenState extends State<HistoryScreen>
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: _loadUserScans,
               style: FilledButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: Icon(Icons.refresh_rounded),
-              label: Text('Try Again', style: TextStyle(fontSize: 16)),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Try Again', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),
@@ -493,53 +433,210 @@ class _HistoryScreenState extends State<HistoryScreen>
   Future<void> _showDeleteConfirmationDialog(int index) async {
     final scan = _currentScans[index];
     final diagnosis = scan['diagnosis']?.toString() ?? 'this scan';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.delete_outline_rounded,
-                color: Theme.of(context).colorScheme.error,
-                size: 24,
-              ),
-            ),
-            SizedBox(width: 12),
-            Text('Delete Scan?', style: TextStyle(fontSize: 20)),
-          ],
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
         ),
-        content: Text(
-          'Are you sure you want to delete "$diagnosis"? This action cannot be undone.',
-          style: TextStyle(fontSize: 15),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                const Color(0xFF1E1E2E),
+                const Color(0xFF16213E),
+              ]
+                  : [
+                Colors.white,
+                const Color(0xFFF8F9FF),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.red.shade400,
+                      Colors.red.shade600,
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 48,
+                  color: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Title
+              ShaderMask(
+                blendMode: BlendMode.srcIn,
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.secondary,
+                  ],
+                ).createShader(bounds),
+                child: const Text(
+                  'Delete Scan?',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    letterSpacing: -0.5,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Description
+              Text(
+                'Are you sure you want to delete "$diagnosis"? This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // Buttons
+              Row(
+                children: [
+                  // Cancel Button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.1)
+                              : Colors.black.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.primary.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.primary,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Delete Button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.pop(context);
+                        _deleteScan(index);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.red.shade400,
+                              Colors.red.shade600,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.delete_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Delete',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Text('Cancel', style: TextStyle(fontSize: 15)),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteScan(index);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Text('Delete', style: TextStyle(fontSize: 15)),
-          ),
-        ],
       ),
     );
   }
@@ -561,22 +658,27 @@ class _HistoryScreenState extends State<HistoryScreen>
         });
 
         HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                SizedBox(width: 12),
-                Text('Scan deleted successfully', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-              ],
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Scan deleted successfully',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 2),
+              margin: const EdgeInsets.all(16),
             ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: Duration(seconds: 2),
-            margin: EdgeInsets.all(16),
-          ),
-        );
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error deleting scan: $e');
@@ -585,15 +687,18 @@ class _HistoryScreenState extends State<HistoryScreen>
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
-                SizedBox(width: 12),
-                Text('Failed to delete scan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                const Text(
+                  'Failed to delete scan',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: EdgeInsets.all(16),
+            margin: const EdgeInsets.all(16),
           ),
         );
       }

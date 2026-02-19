@@ -1,3 +1,5 @@
+import 'package:agriguard_fyp/features/auth/Forget_Pass_Screen/widgets/app_bar.dart';
+import 'package:agriguard_fyp/features/auth/Forget_Pass_Screen/widgets/back_to_login_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,12 +8,10 @@ import '../../../core/constants/animation_mixin.dart';
 import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../../core/widgets/glass_card.dart';
 import 'constants/app_colors.dart';
-import 'widgets/action_button.dart';
-import 'widgets/app_bar.dart';
-import 'widgets/email_form.dart';
 import 'widgets/header_section.dart';
+import 'widgets/email_input.dart';
+import 'widgets/submit_button.dart';
 import '/auth_services.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -42,9 +42,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     super.dispose();
   }
 
-  // ──────────────────────────────────────────────────────────────
-  //  RESET PASSWORD
-  // ──────────────────────────────────────────────────────────────
   Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -75,9 +72,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
   }
 
-  // ──────────────────────────────────────────────────────────────
-  //  ERROR HANDLING
-  // ──────────────────────────────────────────────────────────────
   void _handleError(FirebaseAuthException e) {
     final (title, message, action) = switch (e.code) {
       'user-not-found' => (
@@ -108,9 +102,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     _showDetailedError(title, message, action);
   }
 
-  // ──────────────────────────────────────────────────────────────
-  //  SNACKBARS
-  // ──────────────────────────────────────────────────────────────
   void _showSuccess(String msg) => ScaffoldMessenger.of(context).showSnackBar(
     _snack(msg, Theme.of(context).colorScheme.primary, Icons.check_circle),
   );
@@ -146,7 +137,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       backgroundColor: Theme.of(context).colorScheme.error,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context))),
+          borderRadius:
+          BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context))),
       duration: const Duration(seconds: 6),
       action: action,
     ));
@@ -168,27 +160,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     backgroundColor: bg,
     behavior: SnackBarBehavior.floating,
     shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context))),
+        borderRadius:
+        BorderRadius.circular(AppMeasurements.getResponsiveBorderRadius(context))),
     duration: const Duration(seconds: 4),
   );
 
-  // ──────────────────────────────────────────────────────────────
-  //  BUILD
-  // ──────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
-    final smallPadding = AppMeasurements.getResponsiveSmallPadding(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: CustomAppBar(
-        title: AppStrings.resetPassword,
+        title: 'Reset Password',
         onBackPressed: () {
           HapticFeedback.lightImpact();
           Navigator.pop(context);
         },
+        topPadding: 0,
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -201,83 +191,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(padding),
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: padding * 1.2, vertical: padding * 2),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const HeaderSection(),
-                SizedBox(height: padding),
-                Text(
-                  AppStrings.resetPassword,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                  ),
-                  textAlign: TextAlign.center,
+                const SizedBox(height: 20),
+                const ForgotPasswordHeader(),
+                const SizedBox(height: 48),
+                EmailInput(
+                  formKey: _formKey,
+                  emailController: _emailController,
                 ),
-                SizedBox(height: smallPadding),
-                Text(
-                  AppStrings.resetPasswordSubtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-                  ),
-                  textAlign: TextAlign.center,
+                const SizedBox(height: 28),
+                SubmitButton(
+                  isLoading: _isLoading,
+                  onPressed: _resetPassword,
                 ),
-                SizedBox(height: padding * 1.5),
-
-                // Email Form inside GlassCard
-                GlassCard(
-                  borderRadius: AppMeasurements.getResponsiveBorderRadius(context),
-                  padding: EdgeInsets.all(padding),
-                  child: EmailForm(
-                    formKey: _formKey,
-                    emailController: _emailController,
-                    onSubmit: _isLoading ? null : _resetPassword,
-                  ),
-                ),
-
-                SizedBox(height: padding),
-
-                // Send Button
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: padding),
-                  child: ActionButton(
-                    isLoading: _isLoading,
-                    onPressed: _resetPassword,
-                    label: AppStrings.sendResetLink,
-                    icon: Icons.send_rounded,
-                    loadingLabel: 'Sending...',
-                  ),
-                ),
-
-                SizedBox(height: smallPadding),
-
-                // Back to Login
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.pop(context);
-                    },
-                    child: RichText(
-                      text: TextSpan(
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 14),
-                        ),
-                        children: [
-                          const TextSpan(text: 'Remembered your password? '),
-                          TextSpan(
-                            text: AppStrings.login,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 24),
+                BackToLogin(
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
