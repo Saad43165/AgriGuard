@@ -1,11 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/app_measurements.dart';
+import '../../../core/services/translation_service.dart';
 import '../../../core/widgets/floating_orb.dart';
 import 'components/analysis_info_note.dart';
 import 'components/analysis_option_card.dart';
-import 'components/analysis_overlay.dart';
 import 'components/analysis_start_button.dart';
 import 'components/header_card.dart';
 import 'components/image_preview_card.dart';
@@ -28,44 +27,32 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _scaleController;
-  late AnimationController _pulseController;
+  late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _pulseAnimation;
 
   bool _isAnalyzing = false;
-  int _selectedAnalysisType = 0; // 0 = Gemini, 1 = Plant.id
+  int _selectedAnalysisType = 0; // 0 = Cloud, 1 = Plant.id
 
   final AdvancedSearchService _searchService = AdvancedSearchService();
+  final TranslationService _translation = TranslationService();
 
-  final List<Map<String, dynamic>> _analysisOptions = [
+  // Using translation keys instead of hardcoded text
+  List<Map<String, dynamic>> get _analysisOptions => [
     {
-      'title': 'Gemini AI Analysis',
-      'description': 'Advanced AI-powered plant disease detection using Google Gemini',
-      'icon': Icons.psychology,
-      'duration': '2-5 seconds',
-      'type': 'Gemini',
-      'features': [
-        'Advanced disease detection',
-        'Detailed analysis reports',
-        'High accuracy on field images',
-        'Multiple disease classification',
-        'Cause identification included'
-      ],
-      'color': Color(0xFF8B5CF6),
+      'titleKey': 'cloud_ai',
+      'descKey': 'cloud_ai_desc',
+      'icon': Icons.psychology_rounded,
+      'duration': '2-5',
+      'type': 'Cloud',
+      'color': const Color(0xFF8B5CF6),
     },
     {
-      'title': 'Plant.id Professional',
-      'description': 'Specialized plant & disease identification with AI',
-      'icon': Icons.local_florist,
-      'duration': '3-5 seconds',
+      'titleKey': 'plantid',
+      'descKey': 'plantiddesc',
+      'icon': Icons.local_florist_rounded,
+      'duration': '3-5',
       'type': 'PlantId',
-      'features': [
-        'Advanced plant identification',
-        'Disease detection & diagnosis',
-        'Treatment recommendations',
-        'Severity assessment'
-      ],
-      'color': Color(0xFF4CAF50),
+      'color': const Color(0xFF4CAF50),
     },
   ];
 
@@ -73,39 +60,38 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
+    _translation.loadLanguage();
   }
 
   void _initializeAnimations() {
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
-    )..forward();
-
+    );
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
-    )..forward();
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _scaleAnimation = CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.elasticOut,
     );
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fadeController.forward();
+        _scaleController.forward();
+      }
+    });
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _scaleController.dispose();
-    _pulseController.dispose();
     super.dispose();
   }
 
@@ -114,19 +100,18 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
 
     final imagePath = widget.originalScanData['imagePath'] as String?;
     if (imagePath == null) {
-      _showError('No image data found');
+      _showError(_translation.get('error_file_not_found'));
       return;
     }
 
     final imageFile = File(imagePath);
     if (!await imageFile.exists()) {
-      _showError('Image file not found');
+      _showError(_translation.get('error_file_not_found'));
       return;
     }
 
-    // Check file size
     final fileSize = await imageFile.length();
-    if (fileSize > 5 * 1024 * 1024) { // 5MB limit
+    if (fileSize > 5 * 1024 * 1024) {
       _showError('Image is too large (max 5MB)');
       return;
     }
@@ -140,7 +125,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       Map<String, dynamic> result;
 
       if (selectedType == 'Gemini') {
-        debugPrint('🎯 Selected: Gemini AI Analysis');
+        debugPrint('🎯 Selected: Cloud AI Analysis');
         result = await _searchService.analyzePlant(imageFile);
       } else {
         debugPrint('🎯 Selected: Plant.id Professional');
@@ -153,8 +138,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
 
       if (result['success'] == true) {
         debugPrint('✅ Analysis successful with ${result['source']}');
-
         HapticFeedback.lightImpact();
+
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -165,7 +150,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           ),
         );
       } else {
-        final errorMessage = result['message'] ?? result['error'] ?? 'Analysis failed';
+        final errorMessage =
+            result['message'] ?? result['error'] ?? 'Analysis failed';
         debugPrint('❌ Analysis failed: $errorMessage');
         _showError('$selectedType Error: $errorMessage');
       }
@@ -189,18 +175,19 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style:
+                const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
           ],
         ),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 4),
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
-          label: 'Dismiss',
+          label: _translation.get('dismiss'),
           textColor: Colors.white,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -213,228 +200,288 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;
-    final padding = AppMeasurements.getResponsivePadding(context);
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 8),
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: AppBar(
-            automaticallyImplyLeading: false,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: false,
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Back Button on LEFT SIDE
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.of(context).pop();
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context) * 0.5),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Title in Center with Gradient
-                Expanded(
-                  child: ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.secondary,
-                      ],
-                    ).createShader(bounds),
-                    child: Text(
-                      'Advanced Analysis',
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Empty Spacer on RIGHT SIDE
-                Container(width: 50),
+    return PopScope(
+      canPop: !_isAnalyzing,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: _buildAppBar(context, isDark),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark
+                  ? const [
+                Color(0xFF0F0F23),
+                Color(0xFF16213E),
+                Color(0xFF1A1A2E),
+              ]
+                  : [
+                theme.colorScheme.surface,
+                theme.colorScheme.surface.withOpacity(0.9),
+                theme.colorScheme.surface.withOpacity(0.8),
               ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Background orbs
+              ...List.generate(
+                8,
+                    (i) => FloatingOrb(
+                  index: i,
+                  maxWidth: size.width,
+                  fadeController: _fadeController,
+                  scaleAnimation: _scaleAnimation,
+                ),
+              ),
+
+              // Main content - wrapped with AnimatedBuilder
+              SafeArea(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: AnimatedBuilder(
+                    animation: _translation,
+                    builder: (context, child) => _buildContent(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      leadingWidth: 70,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.15) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.25)
+                  : Colors.black.withOpacity(0.08),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _isAnalyzing
+                  ? null
+                  : () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop();
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Center(
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: isDark
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
+              ),
             ),
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: theme.brightness == Brightness.dark
-                ? const [Color(0xFF0A0E27), Color(0xFF1A1F3A), Color(0xFF0F172A)]
-                : const [Color(0xFFF8FAFC), Color(0xFFE2E8F0), Color(0xFFF1F5F9)],
+      title: ShaderMask(
+        blendMode: BlendMode.srcIn,
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.secondary,
+          ],
+        ).createShader(bounds),
+        child: Text(
+          _translation.get('advanced_analysis'),
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            color: Colors.white,
           ),
         ),
-        child: Stack(
-          children: [
-            // Animated orbs
-            ...List.generate(
-              4,
-                  (i) => FloatingOrb(
-                index: i,
-                maxWidth: size.width,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              ),
-            ),
-
-            SafeArea(
-              child: FadeTransition(
-                opacity: _fadeController,
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(padding, padding * 0.5, padding, 0),
-                        child: HeaderCard(padding: padding),
-                      ),
-                    ),
-
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: padding),
-                        child: ImagePreviewCard(
-                          imagePath: widget.originalScanData['imagePath'] as String?,
-                        ),
-                      ),
-                    ),
-
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            padding,
-                            padding * 1.5,
-                            padding,
-                            padding * 0.5
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.primary,
-                                    theme.colorScheme.secondary,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Analysis Methods',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: padding),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                            final option = _analysisOptions[index];
-                            final isSelected = _selectedAnalysisType == index;
-
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: padding),
-                              child: AnalysisOptionCard(
-                                option: option,
-                                isSelected: isSelected,
-                                isAvailable: true,
-                                pulseAnimation: isSelected ? _pulseAnimation : null,
-                                onTap: () {
-                                  if (!_isAnalyzing) {
-                                    setState(() => _selectedAnalysisType = index);
-                                  }
-                                },
-                              ),
-                            );
-                          },
-                          childCount: _analysisOptions.length,
-                        ),
-                      ),
-                    ),
-
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(padding, padding, padding, padding),
-                        child: AnalysisStartButton(
-                          isAnalyzing: _isAnalyzing,
-                          selectedOption: _analysisOptions[_selectedAnalysisType],
-                          isAvailable: true,
-                          onPressed: _startAdvancedAnalysis,
-                        ),
-                      ),
-                    ),
-
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(padding, 0, padding, padding * 2),
-                        child: const AnalysisInfoNote(),
-                      ),
+      ),
+      centerTitle: true,
+      actions: [
+        // Language Toggle
+        Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 8, right: 12),
+          child: AnimatedBuilder(
+            animation: _translation,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.15) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.25)
+                        : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            if (_isAnalyzing)
-              AnalysisOverlay(
-                theme: theme,
-                selectedOption: _analysisOptions[_selectedAnalysisType],
-              ),
-          ],
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _translation.toggleLanguage(),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.language_rounded,
+                            size: 18,
+                            color: isDark
+                                ? Colors.white
+                                : Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _translation.isUrdu ? 'EN' : 'اردو',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? Colors.white
+                                  : Theme.of(context).colorScheme.primary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          HeaderCard(padding: 24),
+
+          const SizedBox(height: 20),
+
+          // Image Preview
+          ImagePreviewCard(
+            imagePath: widget.originalScanData['imagePath'] as String?,
+          ),
+
+          const SizedBox(height: 28),
+
+          // Section Title
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                _translation.get('analysis_methods'),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Analysis Options
+          ...List.generate(_analysisOptions.length, (index) {
+            final option = _analysisOptions[index];
+            final isSelected = _selectedAnalysisType == index;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AnalysisOptionCard(
+                option: option,
+                isSelected: isSelected,
+                isAvailable: true,
+                onTap: () {
+                  if (!_isAnalyzing) {
+                    setState(() => _selectedAnalysisType = index);
+                  }
+                },
+              ),
+            );
+          }),
+
+          const SizedBox(height: 20),
+
+          // Start Button
+          AnalysisStartButton(
+            isAnalyzing: _isAnalyzing,
+            selectedOption: _analysisOptions[_selectedAnalysisType],
+            isAvailable: true,
+            onPressed: _startAdvancedAnalysis,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Info Note
+          const AnalysisInfoNote(),
+
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }

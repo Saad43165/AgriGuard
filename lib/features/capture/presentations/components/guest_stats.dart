@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/translation_service.dart';
 
 class GuestStats extends StatelessWidget {
   final int remainingScans;
@@ -7,53 +8,84 @@ class GuestStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.account_circle_rounded, color: Colors.orange),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Guest Mode',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$remainingScans scans remaining',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign up for unlimited scans and save your history',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.orange.withOpacity(0.8),
-                  ),
-                ),
+    final translation = TranslationService();
+
+    return AnimatedBuilder(
+      animation: translation,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.orange.withOpacity(0.15),
+                Colors.deepOrange.withOpacity(0.1),
               ],
             ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.orange.withOpacity(0.4),
+              width: 1.5,
+            ),
           ),
-          Icon(
-            Icons.arrow_forward_rounded,
-            color: Colors.orange,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.account_circle_rounded,
+                  color: Colors.orange,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      translation.get('guest_stats_title'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.orange,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$remainingScans ${translation.get('guest_stats_scans')}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      translation.get('guest_stats_signup'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade700,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.orange,
+                size: 18,
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

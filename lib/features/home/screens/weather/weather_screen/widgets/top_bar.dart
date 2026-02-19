@@ -35,7 +35,7 @@ class TopBar extends StatelessWidget {
 
   Widget _buildButton({required VoidCallback onPressed, required Widget child}) {
     return Container(
-      decoration: _glassDecoration(),
+      decoration: _premiumDecoration(),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -58,7 +58,7 @@ class TopBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: _glassDecoration(),
+          decoration: _premiumDecoration(),
           child: Row(
             children: const [
               Icon(
@@ -67,9 +67,9 @@ class TopBar extends StatelessWidget {
                 color: Colors.white,
                 shadows: [
                   Shadow(
-                    color: Colors.black26,
-                    blurRadius: 4,
-                    offset: Offset(0, 1),
+                    color: Colors.black38,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
@@ -78,14 +78,14 @@ class TopBar extends StatelessWidget {
                 'Search location...',
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
                   color: Colors.white,
                   shadows: [
                     Shadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 1),
+                      color: Colors.black45,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
                     ),
                   ],
                 ),
@@ -97,13 +97,13 @@ class TopBar extends StatelessWidget {
     );
   }
 
-  BoxDecoration _glassDecoration() => BoxDecoration(
+  BoxDecoration _premiumDecoration() => BoxDecoration(
     gradient: LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Colors.black.withOpacity(0.25),
-        Colors.black.withOpacity(0.15),
+        Colors.black.withOpacity(0.3),
+        Colors.black.withOpacity(0.2),
       ],
     ),
     borderRadius: BorderRadius.circular(16),
@@ -111,12 +111,5 @@ class TopBar extends StatelessWidget {
       color: Colors.white.withOpacity(0.35),
       width: 2,
     ),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.2),
-        blurRadius: 12,
-        offset: const Offset(0, 4),
-      ),
-    ],
   );
 }

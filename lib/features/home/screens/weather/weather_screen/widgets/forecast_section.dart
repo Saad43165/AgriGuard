@@ -20,30 +20,28 @@ class ForecastSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(26, 16, 26, 12),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             child: Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 2,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0x4D000000), Color(0x33000000)],
                 ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0x59FFFFFF), width: 2),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.3),
-                          Colors.white.withOpacity(0.2),
-                        ],
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                       ),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.calendar_today_rounded,
@@ -51,40 +49,33 @@ class ForecastSection extends StatelessWidget {
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Text(
                     '${forecastDays.length}-Day Forecast',
                     style: const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       color: Colors.white,
-                      letterSpacing: 0.3,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black38,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 8),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: forecastDays.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => const SizedBox(height: 14),
             itemBuilder: (ctx, index) => ForecastCard(
               day: forecastDays[index],
               index: index,
               onTap: () => _navigateToDayDetail(ctx, forecastDays[index], weatherColor),
             ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );

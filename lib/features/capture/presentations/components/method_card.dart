@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/app_measurements.dart';
+import '../../../../core/services/translation_service.dart';
 
 class MethodCard extends StatelessWidget {
   final String method;
@@ -29,80 +31,84 @@ class MethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = TranslationService();
+    final effectiveColor = isReady ? gradient[0] : Colors.grey;
 
-    return GestureDetector(
-      onTap: isReady ? onSelect : null,
-      child: MouseRegion(
-        cursor: isReady ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        child: Container(
-          padding: EdgeInsets.all(AppMeasurements.getResponsivePadding(context)),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isReady
-                  ? [gradient[0].withOpacity(0.15), gradient[1].withOpacity(0.05)]
-                  : [Colors.grey.withOpacity(0.1), Colors.grey.withOpacity(0.05)],
-            ),
-            borderRadius: BorderRadius.circular(
-              AppMeasurements.getResponsiveBorderRadius(context) * 1.5,
-            ),
-            border: Border.all(
-              color: isReady ? gradient[0].withOpacity(0.3) : Colors.grey.withOpacity(0.3),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: (isReady ? gradient[0] : Colors.grey).withOpacity(0.1),
-                blurRadius: 15,
-                spreadRadius: 2,
+    return AnimatedBuilder(
+      animation: translation,
+      builder: (context, child) {
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isReady
+                ? () {
+              HapticFeedback.mediumImpact();
+              onSelect?.call();
+            }
+                : null,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isReady
+                      ? [
+                    effectiveColor.withOpacity(isDark ? 0.2 : 0.12),
+                    gradient[1].withOpacity(isDark ? 0.15 : 0.06)
+                  ]
+                      : [
+                    Colors.grey.withOpacity(0.15),
+                    Colors.grey.withOpacity(0.08)
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isReady
+                      ? effectiveColor.withOpacity(isDark ? 0.5 : 0.4)
+                      : Colors.grey.withOpacity(0.3),
+                  width: 2,
+                ),
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, translation, effectiveColor, isDark),
+                  const SizedBox(height: 8),
+                  _buildDescription(context, isDark),
+                  if (features.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _buildFeatures(isDark, effectiveColor),
+                  ],
+                  const SizedBox(height: 10),
+                  _buildSelectButton(context, translation, effectiveColor),
+                ],
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row - More compact
-              _buildHeader(context),
-
-              // Description - Smaller font and less spacing
-              const SizedBox(height: 12),
-              _buildDescription(context),
-
-              // Features - More compact display
-              if (features.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _buildFeatures(isDarkMode),
-              ],
-
-              // Action Button - Smaller and more compact
-              const SizedBox(height: 16),
-              _buildActionButton(context),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, TranslationService translation,
+      Color effectiveColor, bool isDark) {
     return Row(
       children: [
-        // Smaller icon container
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: isReady
                 ? LinearGradient(colors: gradient)
-                : LinearGradient(colors: [Colors.grey, Colors.grey.shade600]),
-            borderRadius: BorderRadius.circular(14),
+                : LinearGradient(
+                colors: [Colors.grey.shade500, Colors.grey.shade600]),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: Colors.white, size: 28),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
-        const SizedBox(width: 14),
-
-        // Title & Subtitle
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,53 +116,58 @@ class MethodCard extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: isReady
+                      ? (isDark ? Colors.white : Colors.black87)
+                      : Colors.grey,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: isReady ? gradient[0] : Colors.grey,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+                  color: isReady ? effectiveColor : Colors.grey,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
                 ),
               ),
             ],
           ),
         ),
-
-        // Status Indicator - Smaller
-        _buildStatusIndicator(),
+        const SizedBox(width: 6),
+        _buildStatusBadge(translation, isDark),
       ],
     );
   }
 
-  Widget _buildStatusIndicator() {
+  Widget _buildStatusBadge(TranslationService translation, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: isReady ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        color: isReady
+            ? Colors.green.withOpacity(isDark ? 0.25 : 0.15)
+            : Colors.orange.withOpacity(isDark ? 0.25 : 0.15),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isReady ? Colors.green : Colors.orange,
-          width: 1,
+          width: 1.2,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isReady ? Icons.check_circle : Icons.access_time,
-            size: 12,
+            isReady ? Icons.check_circle : Icons.hourglass_empty,
+            size: 11,
             color: isReady ? Colors.green : Colors.orange,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           Text(
-            isReady ? 'Ready' : 'Loading',
+            isReady ? '✓' : '⏳',
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
               color: isReady ? Colors.green : Colors.orange,
             ),
           ),
@@ -165,30 +176,41 @@ class MethodCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDescription(BuildContext context) {
+  Widget _buildDescription(BuildContext context, bool isDark) {
     return Text(
       description,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-        height: 1.4,
+        color: isReady
+            ? (isDark
+            ? Colors.white.withOpacity(0.8)
+            : Colors.black.withOpacity(0.75))
+            : Colors.grey,
+        height: 1.3,
+        fontWeight: FontWeight.w600,
+        fontSize: 11,
       ),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
   }
 
-  Widget _buildFeatures(bool isDarkMode) {
+  Widget _buildFeatures(bool isDark, Color effectiveColor) {
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: features.take(3).map((feature) { // Limit to 3 features
+      spacing: 5,
+      runSpacing: 5,
+      children: features.take(4).map((feature) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
           decoration: BoxDecoration(
-            color: isReady ? gradient[0].withOpacity(0.1) : Colors.grey.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+            color: isReady
+                ? effectiveColor.withOpacity(isDark ? 0.2 : 0.12)
+                : Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isReady ? gradient[0].withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+              color: isReady
+                  ? effectiveColor.withOpacity(isDark ? 0.4 : 0.3)
+                  : Colors.grey.withOpacity(0.3),
+              width: 0.8,
             ),
           ),
           child: Row(
@@ -196,17 +218,17 @@ class MethodCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.check_circle_rounded,
-                size: 12,
-                color: isReady ? gradient[0] : Colors.grey,
+                size: 10,
+                color: isReady ? effectiveColor : Colors.grey,
               ),
               const SizedBox(width: 4),
               Text(
                 feature,
                 style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
                   color: isReady
-                      ? (isDarkMode ? Colors.white70 : const Color(0xFF2C3E50))
+                      ? (isDark ? Colors.white : const Color(0xFF2C3E50))
                       : Colors.grey,
                 ),
               ),
@@ -217,41 +239,51 @@ class MethodCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context) {
+  Widget _buildSelectButton(
+      BuildContext context, TranslationService translation, Color effectiveColor) {
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 11),
       decoration: BoxDecoration(
-        gradient: isReady ? LinearGradient(colors: gradient) : null,
+        gradient: isReady
+            ? LinearGradient(
+          colors: gradient,
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        )
+            : LinearGradient(colors: [Colors.grey, Colors.grey.shade700]),
         borderRadius: BorderRadius.circular(10),
-        color: !isReady ? Colors.grey : null,
       ),
-      child: TextButton(
-        onPressed: isReady ? onSelect : null,
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Select Method',
-              style: const TextStyle(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!isReady && loadingText != null)
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
                 color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+                strokeWidth: 2,
               ),
             ),
-            const SizedBox(width: 6),
+          if (!isReady && loadingText != null) const SizedBox(width: 8),
+          Text(
+            isReady ? 'SELECT METHOD' : (loadingText ?? 'LOADING...'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 12,
+              letterSpacing: 0.8,
+            ),
+          ),
+          if (isReady) const SizedBox(width: 6),
+          if (isReady)
             const Icon(
               Icons.arrow_forward_rounded,
               color: Colors.white,
-              size: 18,
+              size: 16,
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

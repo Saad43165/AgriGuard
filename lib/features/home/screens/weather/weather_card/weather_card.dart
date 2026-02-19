@@ -4,7 +4,7 @@ import 'package:agriguard_fyp/features/home/screens/weather/weather_card/widgets
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provider/weather_provider.dart';
-import '../weather_screen/widgets/weather_details_screen.dart';
+import '../weather_screen/weather_details_screen.dart';
 import 'widgets/weather_card_painter.dart';
 
 class WeatherCard extends StatefulWidget {

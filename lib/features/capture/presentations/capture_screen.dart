@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/app_routes.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../core/services/disease_id_service.dart';
 import '../../../core/services/plant_id_service.dart';
 import '../../../core/widgets/floating_orb.dart';
@@ -14,9 +15,7 @@ import 'components/capture_info_dialog.dart';
 import 'components/method_selection_screen.dart';
 import 'components/processing_overlay.dart';
 import 'components/source_selection_screen.dart';
-import 'components/start_scan_button.dart';
 import 'components/welcome_screen.dart';
-
 
 class CaptureScreen extends StatefulWidget {
   const CaptureScreen({super.key});
@@ -28,7 +27,7 @@ class CaptureScreen extends StatefulWidget {
 class _CaptureScreenState extends State<CaptureScreen>
     with TickerProviderStateMixin {
   // Step management
-  int _currentStep = 0; // 0: Welcome, 1: Select Method, 2: Select Source, 3: Processing
+  int _currentStep = 0;
   String? _selectedMethod;
 
   XFile? _imageFile;
@@ -45,19 +44,21 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   // Services
   final PlantIdService _plantService = PlantIdService();
-  final DiseaseIdService _diseaseService = DiseaseIdService(); // Add disease service
+  final DiseaseIdService _diseaseService = DiseaseIdService();
   final GuestService _guestService = GuestService();
+  final TranslationService _translation = TranslationService();
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     _initializeServices();
+    _translation.loadLanguage();
   }
 
   Future<void> _initializeServices() async {
     await _guestService.initialize();
-    await _initializeModels(); // Changed to load both models
+    await _initializeModels();
     if (mounted) setState(() {});
   }
 
@@ -66,16 +67,15 @@ class _CaptureScreenState extends State<CaptureScreen>
       debugPrint('🔄 Loading both AI models...');
       await Future.wait([
         _plantService.loadModel(),
-        _diseaseService.loadModel(), // Load disease model
+        _diseaseService.loadModel(),
       ]);
       debugPrint('✅ Both models loaded successfully');
       debugPrint('   Plant ID Model: ${_plantService.isLoaded ? "✅" : "❌"}');
       debugPrint('   Disease Model: ${_diseaseService.isLoaded ? "✅" : "❌"}');
     } catch (e) {
       debugPrint('❌ Model initialization error: $e');
-      // Show error to user
       if (mounted) {
-        _showErrorSnackBar('Failed to load AI models. Please restart the app.');
+        _showErrorSnackBar('error_load_models');
       }
     }
   }
@@ -115,7 +115,7 @@ class _CaptureScreenState extends State<CaptureScreen>
   @override
   void dispose() {
     _plantService.dispose();
-    _diseaseService.dispose(); // Dispose disease service
+    _diseaseService.dispose();
     _fadeController.dispose();
     _scaleController.dispose();
     _pulseController.dispose();
@@ -170,7 +170,7 @@ class _CaptureScreenState extends State<CaptureScreen>
       debugPrint('❌ Image picker error: $e');
       if (mounted) {
         HapticFeedback.heavyImpact();
-        _showErrorSnackBar('Failed to pick image. Please try again.');
+        _showErrorSnackBar('error_pick_image');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -207,20 +207,20 @@ class _CaptureScreenState extends State<CaptureScreen>
       User? user;
       if (!_guestService.isGuestMode) {
         user = FirebaseAuth.instance.currentUser;
-        if (user == null) throw Exception('Please sign in to continue');
+        if (user == null) throw Exception(_translation.get('error_sign_in'));
       }
 
       final imageFile = File(_imageFile!.path);
-      if (!await imageFile.exists()) throw Exception('Image file not found');
+      if (!await imageFile.exists()) {
+        throw Exception(_translation.get('error_file_not_found'));
+      }
 
-      // Run BOTH plant identification AND disease detection in parallel
       Map<String, dynamic> plantResult;
       Map<String, dynamic> diseaseResult;
 
       debugPrint('🤖 Starting dual AI analysis...');
 
       try {
-        // Run both predictions in parallel for faster processing
         final results = await Future.wait([
           _plantService.predict(imageFile),
           _diseaseService.predict(imageFile),
@@ -240,13 +240,12 @@ class _CaptureScreenState extends State<CaptureScreen>
         debugPrint('   Healthy: ${diseaseResult['isHealthy']}');
         debugPrint('   Raw Label: ${diseaseResult['rawLabel']}');
 
-        // ✅ CRITICAL FIX: Use disease model's plant information when plant ID is uncertain
         final plantConfidence = plantResult['confidence'] as double;
-        final diseaseConfidence = double.parse(diseaseResult['confidence'] as String);
+        final diseaseConfidence =
+        double.parse(diseaseResult['confidence'] as String);
         final predictedPlant = plantResult['label'] as String;
         final isPlantUnknown = plantResult['isUnknown'] as bool? ?? false;
 
-        // Extract plant from disease label
         String correctPlantFromDisease = 'Unknown Plant';
         if (diseaseResult.containsKey('rawLabel')) {
           final rawLabel = diseaseResult['rawLabel'] as String;
@@ -254,46 +253,46 @@ class _CaptureScreenState extends State<CaptureScreen>
             final parts = rawLabel.split('___');
             if (parts[0].isNotEmpty) {
               correctPlantFromDisease = parts[0].replaceAll('_', ' ');
-              debugPrint('✅ Extracted plant from disease model: $correctPlantFromDisease');
+              debugPrint(
+                  '✅ Extracted plant from disease model: $correctPlantFromDisease');
             }
           }
         }
 
-        // DECISION LOGIC: When to trust disease model over plant ID
         if (isPlantUnknown || plantConfidence < 0.5) {
-          // Plant ID is uncertain, use disease model's plant
-          debugPrint('⚠️ Plant ID uncertain (confidence: ${(plantConfidence * 100).toStringAsFixed(1)}%)');
-          debugPrint('   Using plant from disease model: $correctPlantFromDisease');
+          debugPrint(
+              '⚠️ Plant ID uncertain (confidence: ${(plantConfidence * 100).toStringAsFixed(1)}%)');
+          debugPrint(
+              '   Using plant from disease model: $correctPlantFromDisease');
 
-          // Update plant result
           plantResult['label'] = correctPlantFromDisease;
           plantResult['correctedFromDisease'] = true;
           plantResult['originalPrediction'] = predictedPlant;
           plantResult['correctionReason'] = 'Low plant ID confidence';
-        } else if (diseaseConfidence > 70.0 && diseaseResult['isHealthy'] == true) {
-          // High confidence healthy plant from disease model
-          debugPrint('✅ High confidence healthy plant detected in disease model');
-          debugPrint('   Disease model plant: $correctPlantFromDisease vs Plant ID: $predictedPlant');
+        } else if (diseaseConfidence > 70.0 &&
+            diseaseResult['isHealthy'] == true) {
+          debugPrint(
+              '✅ High confidence healthy plant detected in disease model');
+          debugPrint(
+              '   Disease model plant: $correctPlantFromDisease vs Plant ID: $predictedPlant');
 
-          // If they don't match, trust the disease model for healthy plants
           if (!_plantsMatch(predictedPlant, correctPlantFromDisease)) {
-            debugPrint('⚠️ Mismatch detected! Trusting disease model for healthy plant');
+            debugPrint(
+                '⚠️ Mismatch detected! Trusting disease model for healthy plant');
             plantResult['label'] = correctPlantFromDisease;
             plantResult['correctedFromDisease'] = true;
             plantResult['originalPrediction'] = predictedPlant;
-            plantResult['correctionReason'] = 'Healthy plant mismatch correction';
+            plantResult['correctionReason'] =
+            'Healthy plant mismatch correction';
           }
         }
 
-        // Log inference times
         final plantTime = plantResult['inferenceTime'] ?? 0;
         final diseaseTime = diseaseResult['inferenceTime'] ?? 0;
         debugPrint('⏱️ Total inference time: ${plantTime + diseaseTime}ms');
-
       } catch (e) {
         debugPrint('❌ AI prediction error: $e');
 
-        // Create fallback results
         plantResult = {
           'label': 'Unknown Plant',
           'confidence': 0.3,
@@ -321,7 +320,6 @@ class _CaptureScreenState extends State<CaptureScreen>
 
       if (!mounted) return;
 
-      // Check guest scan limits
       if (_guestService.isGuestMode) {
         final success = await _guestService.incrementScanCount();
         if (!success) {
@@ -331,38 +329,29 @@ class _CaptureScreenState extends State<CaptureScreen>
         }
       }
 
-      // Combine results into comprehensive analysis
       final result = _prepareScanData(plantResult, diseaseResult, user);
       if (!mounted) return;
 
-      // Navigate to results screen
-      await Navigator.pushNamed(
-          context,
-          AppRoutes.results,
-          arguments: {'scanData': result}
-      );
+      await Navigator.pushNamed(context, AppRoutes.results,
+          arguments: {'scanData': result});
 
       _resetState();
-
     } catch (e) {
       debugPrint('❌ Process error: $e');
       if (!mounted) return;
 
       HapticFeedback.heavyImpact();
       setState(() => _isProcessing = false);
-      _showErrorSnackBar(e.toString().replaceAll('Exception: ', ''));
+      _showErrorSnackBar('error_pick_image');
     }
   }
 
-// Helper method to check if plants match (fuzzy matching)
   bool _plantsMatch(String plant1, String plant2) {
     final p1 = plant1.toLowerCase();
     final p2 = plant2.toLowerCase();
 
-    // Exact match
     if (p1 == p2) return true;
 
-    // Common aliases
     final aliases = {
       'bell pepper': ['bell pepper', 'pepper'],
       'corn (maize)': ['corn', 'maize', 'corn (maize)'],
@@ -370,7 +359,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       'maize': ['corn', 'maize', 'corn (maize)'],
     };
 
-    // Check if they're in the same alias group
     for (final group in aliases.values) {
       if (group.contains(p1) && group.contains(p2)) {
         return true;
@@ -379,30 +367,32 @@ class _CaptureScreenState extends State<CaptureScreen>
 
     return false;
   }
+
   Map<String, dynamic> _prepareScanData(
       Map<String, dynamic> plantPrediction,
       Map<String, dynamic> diseasePrediction,
-      User? user
+      User? user,
       ) {
     final plantName = plantPrediction['label'] as String;
     final plantConfidence = plantPrediction['confidence'] as double;
     final isUnknown = plantPrediction['isUnknown'] as bool? ?? false;
-    final isLikelyPlant = plantPrediction['isLikelyPlant'] as bool? ?? true; // Default to true
+    final isLikelyPlant = plantPrediction['isLikelyPlant'] as bool? ?? true;
 
-    // Disease information
-    final diseaseName = diseasePrediction['diseaseName'] as String? ?? 'Health Analysis';
+    final diseaseName =
+        diseasePrediction['diseaseName'] as String? ?? 'Health Analysis';
     final severity = diseasePrediction['severity'] as String? ?? 'Unknown';
-    final cause = diseasePrediction['cause'] as String? ?? 'Requires analysis';
+    final cause =
+        diseasePrediction['cause'] as String? ?? 'Requires analysis';
     final diseaseConfidence = diseasePrediction['confidence'] as String? ?? '0.0';
     final isHealthy = diseasePrediction['isHealthy'] as bool? ?? false;
 
     final plantConfidencePercent = (plantConfidence * 100).toStringAsFixed(1);
     final diseaseConfidencePercent = diseaseConfidence;
 
-    // Determine diagnosis message
     String diagnosis;
     if (!isLikelyPlant) {
-      diagnosis = '⚠️ Plant identification uncertain. The identified "$plantName" appears to be a disease, not a plant species.';
+      diagnosis =
+      '⚠️ Plant identification uncertain. The identified "$plantName" appears to be a disease, not a plant species.';
     } else if (isUnknown || plantConfidence < 0.3) {
       diagnosis = 'Unable to identify plant with confidence';
     } else if (isHealthy) {
@@ -411,28 +401,28 @@ class _CaptureScreenState extends State<CaptureScreen>
       diagnosis = '⚠️ $diseaseName detected on $plantName';
     }
 
-    // Treatment recommendations
     String treatment;
     final remediationList = diseasePrediction['remediation'] as List<String>?;
 
     if (!isLikelyPlant && isHealthy) {
-      // If plant ID is wrong but plant is healthy
-      treatment = '• Plant identification uncertain\n• Plant appears healthy\n• Verify plant type for accurate care';
+      treatment =
+      '• Plant identification uncertain\n• Plant appears healthy\n• Verify plant type for accurate care';
     } else if (remediationList != null && remediationList.isNotEmpty) {
       treatment = remediationList.join('\n• ');
       treatment = '• $treatment';
 
-      // Add warning if plant ID might be wrong
       if (!isLikelyPlant) {
-        treatment = '⚠️ NOTE: Plant identification may be incorrect. "$plantName" appears to be a disease name.\n$treatment';
+        treatment =
+        '⚠️ NOTE: Plant identification may be incorrect. "$plantName" appears to be a disease name.\n$treatment';
       }
     } else if (isHealthy) {
-      treatment = '• Continue regular care routine\n• Monitor for any signs of disease or pests\n• Apply balanced fertilizer as needed';
+      treatment =
+      '• Continue regular care routine\n• Monitor for any signs of disease or pests\n• Apply balanced fertilizer as needed';
     } else {
-      treatment = '• Consult agricultural expert for specific treatment\n• Isolate affected plant to prevent spread\n• Apply appropriate fungicide based on diagnosis';
+      treatment =
+      '• Consult agricultural expert for specific treatment\n• Isolate affected plant to prevent spread\n• Apply appropriate fungicide based on diagnosis';
     }
 
-    // Add this warning section
     String warningNote = '';
     if (!isLikelyPlant) {
       warningNote = '''
@@ -451,9 +441,9 @@ For accurate results, please:
 ''';
     }
 
-    // Symptoms and precautions
     final symptomsList = diseasePrediction['symptoms'] as List<String>? ?? [];
-    final precautionsList = diseasePrediction['precautions'] as List<String>? ?? [];
+    final precautionsList =
+        diseasePrediction['precautions'] as List<String>? ?? [];
 
     return {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
@@ -468,9 +458,13 @@ For accurate results, please:
       'severity': severity,
       'cause': cause,
       'symptoms': symptomsList,
-      'symptomsText': symptomsList.isNotEmpty ? symptomsList.join('\n• ') : 'No specific symptoms identified',
+      'symptomsText': symptomsList.isNotEmpty
+          ? symptomsList.join('\n• ')
+          : 'No specific symptoms identified',
       'precautions': precautionsList,
-      'precautionsText': precautionsList.isNotEmpty ? precautionsList.join('\n• ') : '• Maintain proper plant care\n• Regular monitoring\n• Adequate watering',
+      'precautionsText': precautionsList.isNotEmpty
+          ? precautionsList.join('\n• ')
+          : '• Maintain proper plant care\n• Regular monitoring\n• Adequate watering',
       'imagePath': _imageFile!.path,
       'timestamp': DateTime.now().toIso8601String(),
       'userId': user?.uid ?? 'guest',
@@ -506,61 +500,119 @@ For accurate results, please:
   void _showGuestLimitDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.block_rounded, color: Theme.of(context).colorScheme.error),
-            const SizedBox(width: 12),
-            const Text('Scan Limit Reached'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_guestService.getRestrictionMessage('scan_limit')),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.star_rounded, color: Colors.amber),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sign up for unlimited scans and advanced features!',
-                      style: TextStyle(fontSize: 13),
+      builder: (context) => AnimatedBuilder(
+        animation: _translation,
+        builder: (context, child) {
+          return AlertDialog(
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.block_rounded,
+                    color: Theme.of(context).colorScheme.error,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _translation.get('limit_reached'),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _translation.get('limit_message'),
+                  style: const TextStyle(fontSize: 15),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.withOpacity(0.15),
+                        Colors.orange.withOpacity(0.15),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star_rounded,
+                          color: Colors.amber, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _translation.get('limit_benefit'),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                child: Text(
+                  _translation.get('cancel'),
+                  style: const TextStyle(fontSize: 15),
+                ),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.login,
-                    (route) => false
-            ),
-            child: const Text('Sign In Now'),
-          ),
-        ],
+              ElevatedButton(
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                      (route) => false,
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                ),
+                child: Text(
+                  _translation.get('sign_in_now'),
+                  style:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  void _showErrorSnackBar(String message) {
+  void _showErrorSnackBar(String messageKey) {
     if (!mounted) return;
+
+    final message = _translation.get(messageKey);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -569,9 +621,13 @@ For accurate results, please:
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                  message.length > 100
-                      ? '${message.substring(0, 100)}...'
-                      : message
+                message.length > 100
+                    ? '${message.substring(0, 100)}...'
+                    : message,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
@@ -581,7 +637,7 @@ For accurate results, please:
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
-          label: 'Dismiss',
+          label: _translation.get('dismiss'),
           textColor: Colors.white,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -607,23 +663,23 @@ For accurate results, please:
   String _getAppBarTitle() {
     switch (_currentStep) {
       case 0:
-        return 'AGRIGUARD';
+        return _translation.get('app_title');
       case 1:
-        return 'Analysis Method';
+        return _translation.get('analysis_method');
       case 2:
-        return 'Image Source';
+        return _translation.get('image_source');
       case 3:
-        return 'Analyzing...';
+        return _translation.get('analyzing');
       default:
-        return 'AGRIGUARD';
+        return _translation.get('app_title');
     }
   }
 
   String _getProcessingMessage() {
     if (_selectedMethod == 'tflite') {
-      return 'Running Dual AI Analysis...\n• Plant Identification\n• Disease Detection';
+      return '${_translation.get('processing_ai')}\n${_translation.get('processing_plant')}\n${_translation.get('processing_disease')}';
     }
-    return 'Processing...';
+    return _translation.get('processing_text');
   }
 
   @override
@@ -670,7 +726,6 @@ For accurate results, please:
           ),
           child: Stack(
             children: [
-              // Background floating orbs
               ...List.generate(
                 8,
                     (i) => FloatingOrb(
@@ -680,16 +735,12 @@ For accurate results, please:
                   scaleAnimation: _scaleAnimation,
                 ),
               ),
-
-              // Main content
               SafeArea(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: _buildCurrentStep(),
                 ),
               ),
-
-              // Processing overlay
               if (_isProcessing)
                 ProcessingOverlay(
                   selectedMethod: _selectedMethod ?? '',
@@ -715,14 +766,7 @@ For accurate results, please:
             ],
           ),
         ),
-        floatingActionButton: _currentStep == 0
-            ? StartScanButton(
-          onPressed: _startScanning,
-          animation: _pulseAnimation,
-          isGuestMode: _guestService.isGuestMode,
-          remainingScans: _guestService.remainingScans,
-        )
-            : null,
+
       ),
     );
   }
@@ -744,7 +788,7 @@ For accurate results, please:
         return MethodSelectionScreen(
           isTFLiteReady: _plantService.isLoaded && _diseaseService.isLoaded,
           loadingText: !_plantService.isLoaded || !_diseaseService.isLoaded
-              ? 'Loading AI models...'
+              ? _translation.get('model_loading')
               : null,
           onSelectTFLite: () => _selectMethod('tflite'),
           onSelectAPI: () => _selectMethod('api'),

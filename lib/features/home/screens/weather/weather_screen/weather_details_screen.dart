@@ -1,14 +1,16 @@
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/current_weather_section.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/forecast_section.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/hourly_forecast_section.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/search_bottom_sheet.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/top_bar.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/weather_background.dart';
+import 'package:agriguard_fyp/features/home/screens/weather/weather_screen/widgets/weather_info_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'search_bottom_sheet.dart';
-import 'top_bar.dart';
-import 'weather_background.dart';
-import 'weather_info_grid.dart';
-import '../../models/weather_model.dart';
-import '../../services/weather_service.dart';
-import 'current_weather_section.dart';
-import 'forecast_section.dart';
-import 'hourly_forecast_section.dart';
+
+import '../models/weather_model.dart';
+import '../services/weather_service.dart';
+
 
 class WeatherDetailsScreen extends StatefulWidget {
   final WeatherModel weatherData;
@@ -38,7 +40,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
   bool _isLoading = false;
 
   @override
-  bool get wantKeepAlive => true; // Keeps screen state alive when navigating away
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -47,7 +49,6 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
     _currentWeather = widget.weatherData;
     _forecastDays = widget.forecastDays;
 
-    // Debug log initial weather
     debugPrint('🌍 Weather Details Screen Initialized:');
     debugPrint('   Condition: ${_currentWeather.conditionText}');
     debugPrint('   Is Day: ${_currentWeather.isDay}');
@@ -79,7 +80,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required when using AutomaticKeepAliveClientMixin
+    super.build(context);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final weatherColor = _getWeatherColor(
@@ -88,7 +89,6 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
       isDark,
     );
 
-    // Set status bar to always show light icons
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -102,7 +102,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
       backgroundColor: weatherColor,
       body: Stack(
         children: [
-          // Weather background with current conditions
+          // Weather background
           Positioned.fill(
             child: WeatherBackground(
               weatherColor: weatherColor,
@@ -160,13 +160,10 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
     );
   }
 
-  /// Pull-to-refresh handler
   Future<void> _refreshWeather() async {
     try {
       debugPrint('🔄 Refreshing weather data...');
 
-      // Force refresh by passing forceRefresh: true
-      // ✅ FIXED: Changed from _currentWeather.location to _currentWeather.cityName
       final forecast = await _weatherService.getWeatherByCity(
         _currentWeather.cityName,
         days: 5,
@@ -193,41 +190,48 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
   Widget _buildLoadingIndicator() {
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.4),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1.5,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.black.withOpacity(0.4),
+              Colors.black.withOpacity(0.3),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.35),
+            width: 2,
+          ),
         ),
         child: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 50,
-              height: 50,
+              width: 60,
+              height: 60,
               child: CircularProgressIndicator(
                 color: Colors.white,
-                strokeWidth: 3.5,
+                strokeWidth: 4,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 24),
             Text(
               'Updating weather...',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                shadows: [
+                  Shadow(
+                    color: Colors.black45,
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
             ),
           ],
@@ -244,12 +248,9 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
         setState(() => _isLoading = true);
 
         try {
-          // Use cached data by default (no forceRefresh)
           final forecast = await _weatherService.getWeatherByCity(city, days: 5);
 
           debugPrint('✅ Weather updated successfully for: $city');
-          debugPrint('   New Condition: ${forecast.current.conditionText}');
-          debugPrint('   New Is Day: ${forecast.current.isDay}');
 
           if (mounted) {
             setState(() {
@@ -258,7 +259,6 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
               _isLoading = false;
             });
 
-            // Reset animations
             _fadeController.reset();
             _fadeController.forward();
           }
@@ -287,7 +287,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -296,7 +296,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
         backgroundColor: Colors.red.shade700,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 4),
@@ -320,7 +320,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
       } else if (c.contains('fog') || c.contains('mist')) {
         return const Color(0xFF37474F);
       } else {
-        return const Color(0xFF0A192F); // Clear night
+        return const Color(0xFF0A192F);
       }
     } else {
       // DAY
@@ -333,14 +333,14 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
       } else if (c.contains('snow') || c.contains('sleet')) {
         return const Color(0xFF64B5F6);
       } else if (c.contains('overcast')) {
-        return const Color(0xFF546E7A); // Specific for overcast
+        return const Color(0xFF546E7A);
       } else if (c.contains('cloud')) {
-        return const Color(0xFF5C6BC0); // Partly cloudy
+        return const Color(0xFF5C6BC0);
       } else if (c.contains('fog') || c.contains('mist')) {
         return const Color(0xFF78909C);
       }
 
-      return const Color(0xFF1E88E5); // Default sunny
+      return const Color(0xFF1E88E5);
     }
   }
 }

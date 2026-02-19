@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
+import '../../../../core/services/translation_service.dart';
 
 class ComparisonTable extends StatelessWidget {
   const ComparisonTable({super.key});
@@ -7,272 +7,144 @@ class ComparisonTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = TranslationService();
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-            const Color(0xFF1E1E2E),
-            const Color(0xFF16213E),
-          ]
-              : [
-            Colors.white,
-            const Color(0xFFF8F9FF),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.05),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: translation,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.black.withOpacity(0.06),
+              width: 1.5,
+            ),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.compare_arrows_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Method Comparison',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
-                          ),
-                          Text(
-                            'Choose what suits you best',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Method Headers
-                _buildMethodHeaders(context, isDark),
-
-                const SizedBox(height: 16),
-
-                // Comparison Rows
-                _buildComparisonRow(
-                  context,
-                  icon: Icons.wifi_off_rounded,
-                  feature: 'Internet',
-                  onDevice: 'Not Required',
-                  onDevicePositive: true,
-                  cloudAI: 'Required',
-                  cloudAIPositive: false,
-                  isDark: isDark,
-                ),
-
-                const SizedBox(height: 10),
-
-                _buildComparisonRow(
-                  context,
-                  icon: Icons.flash_on_rounded,
-                  feature: 'Speed',
-                  onDevice: 'Instant',
-                  onDevicePositive: true,
-                  cloudAI: '10-30s',
-                  cloudAIPositive: false,
-                  isDark: isDark,
-                ),
-
-                const SizedBox(height: 10),
-
-                _buildComparisonRow(
-                  context,
-                  icon: Icons.eco_rounded,
-                  feature: 'Database',
-                  onDevice: '12 Species',
-                  onDevicePositive: false,
-                  cloudAI: '50,000+',
-                  cloudAIPositive: true,
-                  isDark: isDark,
-                ),
-
-                const SizedBox(height: 10),
-
-                _buildComparisonRow(
-                  context,
-                  icon: Icons.lock_rounded,
-                  feature: 'Privacy',
-                  onDevice: '100% Private',
-                  onDevicePositive: true,
-                  cloudAI: 'Cloud Based',
-                  cloudAIPositive: false,
-                  isDark: isDark,
-                ),
-
-                const SizedBox(height: 10),
-
-                _buildComparisonRow(
-                  context,
-                  icon: Icons.star_rounded,
-                  feature: 'Best For',
-                  onDevice: 'Quick Checks',
-                  onDevicePositive: null,
-                  cloudAI: 'Deep Analysis',
-                  cloudAIPositive: null,
-                  isDark: isDark,
-                ),
+                _buildHeader(context, translation, isDark),
+                const SizedBox(height: 14),
+                _buildMethodHeaders(context, translation),
+                const SizedBox(height: 12),
+                ..._buildComparisonRows(context, translation, isDark),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildMethodHeaders(BuildContext context, bool isDark) {
+  Widget _buildHeader(
+      BuildContext context, TranslationService translation, bool isDark) {
     return Row(
       children: [
-        const SizedBox(width: 80), // Reduced from 100 for more space
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.secondary,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.compare_arrows_rounded,
+            color: Colors.white,
+            size: 16,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                translation.get('comparison_title'),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              Text(
+                translation.get('comparison_subtitle'),
+                style: TextStyle(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.5)
+                      : Colors.black.withOpacity(0.5),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMethodHeaders(BuildContext context, TranslationService translation) {
+    return Row(
+      children: [
+        const SizedBox(width: 70),
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF00B4DB),
-                  Color(0xFF0083B0),
-                ],
+                colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
               ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF00B4DB).withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
               children: [
-                const Icon(
-                  Icons.phone_android_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'On-Device',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 0.3,
-                  ),
-                ),
+                const Icon(Icons.phone_android_rounded,
+                    color: Colors.white, size: 14),
+                const SizedBox(height: 3),
                 Text(
-                  'TFLite',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w500,
+                  translation.get('comparison_ondevice'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF6A11CB),
-                  Color(0xFF2575FC),
-                ],
+                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
               ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6A11CB).withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
               children: [
-                const Icon(
-                  Icons.cloud_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Cloud AI',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 0.3,
-                  ),
-                ),
+                const Icon(Icons.cloud_rounded, color: Colors.white, size: 14),
+                const SizedBox(height: 3),
                 Text(
-                  'Plant.id',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w500,
+                  translation.get('comparison_cloudai'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -280,6 +152,68 @@ class ComparisonTable extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  List<Widget> _buildComparisonRows(
+      BuildContext context, TranslationService translation, bool isDark) {
+    final rows = [
+      {
+        'icon': Icons.wifi_off_rounded,
+        'feature': translation.get('comparison_internet'),
+        'onDevice': translation.get('comparison_not_required'),
+        'onDevicePositive': true,
+        'cloudAI': translation.get('comparison_required'),
+        'cloudAIPositive': false,
+      },
+      {
+        'icon': Icons.flash_on_rounded,
+        'feature': translation.get('comparison_speed'),
+        'onDevice': translation.get('comparison_instant'),
+        'onDevicePositive': true,
+        'cloudAI': '10-30s',
+        'cloudAIPositive': false,
+      },
+      {
+        'icon': Icons.eco_rounded,
+        'feature': translation.get('comparison_database'),
+        'onDevice': '12 ${translation.get('comparison_species')}',
+        'onDevicePositive': false,
+        'cloudAI': '50,000+',
+        'cloudAIPositive': true,
+      },
+      {
+        'icon': Icons.lock_rounded,
+        'feature': translation.get('comparison_privacy'),
+        'onDevice': translation.get('comparison_private'),
+        'onDevicePositive': true,
+        'cloudAI': translation.get('comparison_cloud_based'),
+        'cloudAIPositive': false,
+      },
+      {
+        'icon': Icons.star_rounded,
+        'feature': translation.get('comparison_bestfor'),
+        'onDevice': translation.get('comparison_quick'),
+        'onDevicePositive': null,
+        'cloudAI': translation.get('comparison_deep'),
+        'cloudAIPositive': null,
+      },
+    ];
+
+    return rows.map((row) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: _buildComparisonRow(
+          context,
+          icon: row['icon'] as IconData,
+          feature: row['feature'] as String,
+          onDevice: row['onDevice'] as String,
+          onDevicePositive: row['onDevicePositive'] as bool?,
+          cloudAI: row['cloudAI'] as String,
+          cloudAIPositive: row['cloudAIPositive'] as bool?,
+          isDark: isDark,
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildComparisonRow(
@@ -293,44 +227,32 @@ class ComparisonTable extends StatelessWidget {
         required bool isDark,
       }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withOpacity(0.03)
             : Colors.black.withOpacity(0.02),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.03),
-        ),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
-          // Feature Icon & Name (reduced width)
           SizedBox(
-            width: 80,
+            width: 70,
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 13,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                Icon(
+                  icon,
+                  size: 12,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     feature,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -338,26 +260,18 @@ class ComparisonTable extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(width: 4),
-
-          // On-Device Value
           Expanded(
             child: _buildValueChip(
-              context,
               value: onDevice,
               isPositive: onDevicePositive,
               baseColor: const Color(0xFF00B4DB),
               isDark: isDark,
             ),
           ),
-
-          const SizedBox(width: 6),
-
-          // Cloud AI Value
+          const SizedBox(width: 4),
           Expanded(
             child: _buildValueChip(
-              context,
               value: cloudAI,
               isPositive: cloudAIPositive,
               baseColor: const Color(0xFF6A11CB),
@@ -369,69 +283,54 @@ class ComparisonTable extends StatelessWidget {
     );
   }
 
-  Widget _buildValueChip(
-      BuildContext context, {
-        required String value,
-        required bool? isPositive,
-        required Color baseColor,
-        required bool isDark,
-      }) {
+  Widget _buildValueChip({
+    required String value,
+    required bool? isPositive,
+    required Color baseColor,
+    required bool isDark,
+  }) {
     Color bgColor;
     Color textColor;
-    Color borderColor;
     IconData? icon;
 
     if (isPositive == null) {
-      // Neutral
-      bgColor = baseColor.withOpacity(0.12);
-      textColor = isDark ? Colors.white : baseColor;
-      borderColor = baseColor.withOpacity(0.25);
+      bgColor = baseColor.withOpacity(isDark ? 0.2 : 0.12);
+      textColor = baseColor;
     } else if (isPositive) {
-      // Positive - Green tint
-      bgColor = const Color(0xFF10B981).withOpacity(0.15);
-      textColor = isDark ? const Color(0xFF10B981) : const Color(0xFF059669);
-      borderColor = const Color(0xFF10B981).withOpacity(0.3);
+      bgColor = const Color(0xFF10B981).withOpacity(isDark ? 0.25 : 0.15);
+      textColor = const Color(0xFF10B981);
       icon = Icons.check_circle_rounded;
     } else {
-      // Negative - Orange tint
-      bgColor = const Color(0xFFFF9800).withOpacity(0.15);
-      textColor = isDark ? const Color(0xFFFF9800) : const Color(0xFFF57C00);
-      borderColor = const Color(0xFFFF9800).withOpacity(0.3);
+      bgColor = const Color(0xFFFF9800).withOpacity(isDark ? 0.25 : 0.15);
+      textColor = const Color(0xFFFF9800);
       icon = Icons.info_rounded;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: borderColor,
+          color: textColor.withOpacity(0.3),
           width: 1,
         ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null)
-            Icon(
-              icon,
-              size: 11,
-              color: textColor,
-            ),
-          if (icon != null) const SizedBox(height: 3),
+          if (icon != null) Icon(icon, size: 10, color: textColor),
+          if (icon != null) const SizedBox(height: 2),
           Text(
             value,
             style: TextStyle(
               color: textColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-              letterSpacing: 0.1,
+              fontWeight: FontWeight.w800,
+              fontSize: 9,
               height: 1.2,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
-            overflow: TextOverflow.visible,
           ),
         ],
       ),

@@ -85,6 +85,86 @@ class WeatherModel {
   }
 }
 
+// NEW: HourlyForecast class
+class HourlyForecast {
+  final String time;
+  final int timeEpoch;
+  final double tempC;
+  final double feelsLikeC;
+  final int isDay;
+  final String conditionText;
+  final String iconUrl;
+  final int conditionCode;
+  final double windKph;
+  final int windDegree;
+  final String windDir;
+  final double pressureMb;
+  final double precipMm;
+  final int humidity;
+  final int cloud;
+  final double visKm;
+  final double gustKph;
+  final double uvIndex;
+  final int chanceOfRain;
+  final int chanceOfSnow;
+  final int willItRain;
+  final int willItSnow;
+
+  HourlyForecast({
+    required this.time,
+    required this.timeEpoch,
+    required this.tempC,
+    required this.feelsLikeC,
+    required this.isDay,
+    required this.conditionText,
+    required this.iconUrl,
+    required this.conditionCode,
+    required this.windKph,
+    required this.windDegree,
+    required this.windDir,
+    required this.pressureMb,
+    required this.precipMm,
+    required this.humidity,
+    required this.cloud,
+    required this.visKm,
+    required this.gustKph,
+    required this.uvIndex,
+    required this.chanceOfRain,
+    required this.chanceOfSnow,
+    required this.willItRain,
+    required this.willItSnow,
+  });
+
+  factory HourlyForecast.fromJson(Map<String, dynamic> json) {
+    final condition = json['condition'];
+
+    return HourlyForecast(
+      time: json['time'] ?? '',
+      timeEpoch: json['time_epoch'] as int? ?? 0,
+      tempC: (json['temp_c'] as num?)?.toDouble() ?? 0.0,
+      feelsLikeC: (json['feelslike_c'] as num?)?.toDouble() ?? 0.0,
+      isDay: json['is_day'] as int? ?? 1,
+      conditionText: condition['text'] ?? 'Unknown',
+      iconUrl: 'https:${condition['icon']}',
+      conditionCode: condition['code'] as int? ?? 1000,
+      windKph: (json['wind_kph'] as num?)?.toDouble() ?? 0.0,
+      windDegree: json['wind_degree'] as int? ?? 0,
+      windDir: json['wind_dir'] ?? 'N',
+      pressureMb: (json['pressure_mb'] as num?)?.toDouble() ?? 0.0,
+      precipMm: (json['precip_mm'] as num?)?.toDouble() ?? 0.0,
+      humidity: json['humidity'] as int? ?? 0,
+      cloud: json['cloud'] as int? ?? 0,
+      visKm: (json['vis_km'] as num?)?.toDouble() ?? 0.0,
+      gustKph: (json['gust_kph'] as num?)?.toDouble() ?? 0.0,
+      uvIndex: (json['uv'] as num?)?.toDouble() ?? 0.0,
+      chanceOfRain: json['chance_of_rain'] as int? ?? 0,
+      chanceOfSnow: json['chance_of_snow'] as int? ?? 0,
+      willItRain: json['will_it_rain'] as int? ?? 0,
+      willItSnow: json['will_it_snow'] as int? ?? 0,
+    );
+  }
+}
+
 class ForecastDay {
   final String date;
   final String dateEpoch;
@@ -110,6 +190,7 @@ class ForecastDay {
   final String moonset;
   final String moonPhase;
   final int moonIllumination;
+  final List<HourlyForecast> hourlyForecasts; // NEW: Add hourly data
 
   ForecastDay({
     required this.date,
@@ -136,12 +217,18 @@ class ForecastDay {
     required this.moonset,
     required this.moonPhase,
     required this.moonIllumination,
+    required this.hourlyForecasts, // NEW
   });
 
   factory ForecastDay.fromJson(Map<String, dynamic> json) {
     final day = json['day'];
     final condition = day['condition'];
     final astro = json['astro'];
+
+    // NEW: Parse hourly data
+    final hourlyList = (json['hour'] as List?)
+        ?.map((hourJson) => HourlyForecast.fromJson(hourJson))
+        .toList() ?? [];
 
     return ForecastDay(
       date: json['date'] ?? '',
@@ -168,6 +255,7 @@ class ForecastDay {
       moonset: astro['moonset'] ?? '',
       moonPhase: astro['moon_phase'] ?? '',
       moonIllumination: int.tryParse(astro['moon_illumination']?.toString() ?? '0') ?? 0,
+      hourlyForecasts: hourlyList, // NEW
     );
   }
 }
@@ -191,5 +279,20 @@ class WeatherForecast {
       current: current,
       forecast: forecastDays,
     );
+  }
+
+  // NEW: Get all hourly forecasts from all days
+  List<HourlyForecast> get allHourlyForecasts {
+    final List<HourlyForecast> allHours = [];
+    for (var day in forecast) {
+      allHours.addAll(day.hourlyForecasts);
+    }
+    return allHours;
+  }
+
+  // NEW: Get today's hourly forecasts
+  List<HourlyForecast> get todayHourlyForecasts {
+    if (forecast.isEmpty) return [];
+    return forecast.first.hourlyForecasts;
   }
 }

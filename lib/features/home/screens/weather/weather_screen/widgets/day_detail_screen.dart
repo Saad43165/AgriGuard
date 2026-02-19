@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../../models/weather_model.dart';
 
 class DayDetailScreen extends StatelessWidget {
@@ -24,28 +23,25 @@ class DayDetailScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              weatherColor,
-              weatherColor.withOpacity(0.8),
-            ],
+            colors: [weatherColor, weatherColor.withOpacity(0.8)],
           ),
         ),
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // App Bar
               SliverAppBar(
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 leading: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.25),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 2,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0x4D000000), Color(0x33000000)],
                     ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0x59FFFFFF), width: 2),
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
@@ -53,43 +49,37 @@ class DayDetailScreen extends StatelessWidget {
                   ),
                 ),
                 title: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.25),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 2,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0x4D000000), Color(0x33000000)],
                     ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0x59FFFFFF), width: 2),
                   ),
                   child: Text(
                     dayName,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
                       fontSize: 17,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black38,
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
               ),
-
-              // Content
               SliverPadding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(20),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildMainWeatherCard(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildAstroCard(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildDetailedInfoGrid(),
+                    const SizedBox(height: 20),
                   ]),
                 ),
               ),
@@ -102,70 +92,62 @@ class DayDetailScreen extends StatelessWidget {
 
   Widget _buildMainWeatherCard() {
     return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: _glassDecoration(),
+      padding: const EdgeInsets.all(28),
+      decoration: _premiumDecoration(),
       child: Column(
         children: [
-          Icon(
-            _getWeatherIcon(forecastDay.conditionText),
-            size: 100,
-            color: Colors.white,
-            shadows: const [
-              Shadow(
-                color: Colors.black38,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFFFFFFFF), Color(0xFFE0E0E0)]),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _getWeatherIcon(forecastDay.conditionText),
+              size: 80,
+              color: const Color(0xFF667EEA),
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Text(
             forecastDay.conditionText,
             style: const TextStyle(
               fontSize: 26,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               color: Colors.white,
-              shadows: [
-                Shadow(
-                  color: Colors.black38,
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
+              letterSpacing: 0.5,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTempColumn('High', forecastDay.maxTemp, Icons.arrow_upward),
+              _buildTempColumn('High', forecastDay.maxTemp, Icons.arrow_upward, const Color(0xFFFF6B6B)),
               Container(
                 width: 2,
                 height: 60,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.5),
-                      Colors.white.withOpacity(0.2),
-                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Color(0x80FFFFFF), Colors.transparent],
                   ),
                 ),
               ),
-              _buildTempColumn('Low', forecastDay.minTemp, Icons.arrow_downward),
+              _buildTempColumn('Low', forecastDay.minTemp, Icons.arrow_downward, const Color(0xFF4ECDC4)),
               Container(
                 width: 2,
                 height: 60,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.5),
-                      Colors.white.withOpacity(0.2),
-                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Color(0x80FFFFFF), Colors.transparent],
                   ),
                 ),
               ),
-              _buildTempColumn('Avg', forecastDay.avgTemp, Icons.thermostat),
+              _buildTempColumn('Avg', forecastDay.avgTemp, Icons.thermostat, const Color(0xFFFFA726)),
             ],
           ),
         ],
@@ -173,51 +155,38 @@ class DayDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTempColumn(String label, double temp, IconData icon) {
+  Widget _buildTempColumn(String label, double temp, IconData icon, Color accentColor) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
+            gradient: LinearGradient(
+              colors: [accentColor.withOpacity(0.4), accentColor.withOpacity(0.3)],
             ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0x59FFFFFF), width: 2),
           ),
-          child: Icon(icon, color: Colors.white, size: 24),
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           '${temp.toStringAsFixed(0)}°',
           style: const TextStyle(
-            fontSize: 32,
+            fontSize: 30,
             fontWeight: FontWeight.w900,
             color: Colors.white,
-            shadows: [
-              Shadow(
-                color: Colors.black45,
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 14,
-            color: Colors.white,
+            fontSize: 13,
+            color: Color(0xE6FFFFFF),
             fontWeight: FontWeight.w700,
-            shadows: [
-              Shadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: Offset(0, 1),
-              ),
-            ],
+            letterSpacing: 0.5,
           ),
         ),
       ],
@@ -227,38 +196,30 @@ class DayDetailScreen extends StatelessWidget {
   Widget _buildAstroCard() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: _glassDecoration(),
+      decoration: _premiumDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0x4DFFFFFF), Color(0x33FFFFFF)],
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
                 ),
-                child: const Icon(
-                  Icons.wb_twilight_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.wb_twilight_rounded, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               const Text(
                 'Sun & Moon',
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black38,
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -266,39 +227,17 @@ class DayDetailScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(
-                child: _buildAstroItem(
-                  Icons.wb_sunny_rounded,
-                  'Sunrise',
-                  forecastDay.sunrise,
-                ),
-              ),
-              Expanded(
-                child: _buildAstroItem(
-                  Icons.wb_twilight,
-                  'Sunset',
-                  forecastDay.sunset,
-                ),
-              ),
+              Expanded(child: _buildAstroItem(Icons.wb_sunny_rounded, 'Sunrise', forecastDay.sunrise, const Color(0xFFFFA726))),
+              const SizedBox(width: 12),
+              Expanded(child: _buildAstroItem(Icons.wb_twilight, 'Sunset', forecastDay.sunset, const Color(0xFFFF7043))),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: _buildAstroItem(
-                  Icons.nightlight_round,
-                  'Moonrise',
-                  forecastDay.moonrise,
-                ),
-              ),
-              Expanded(
-                child: _buildAstroItem(
-                  Icons.brightness_3,
-                  'Moonset',
-                  forecastDay.moonset,
-                ),
-              ),
+              Expanded(child: _buildAstroItem(Icons.nightlight_round, 'Moonrise', forecastDay.moonrise, const Color(0xFF7E57C2))),
+              const SizedBox(width: 12),
+              Expanded(child: _buildAstroItem(Icons.brightness_3, 'Moonset', forecastDay.moonset, const Color(0xFF5C6BC0))),
             ],
           ),
           const SizedBox(height: 16),
@@ -306,12 +245,11 @@ class DayDetailScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1.5,
+                gradient: const LinearGradient(
+                  colors: [Color(0x40FFFFFF), Color(0x26FFFFFF)],
                 ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0x59FFFFFF), width: 2),
               ),
               child: Column(
                 children: [
@@ -319,30 +257,18 @@ class DayDetailScreen extends StatelessWidget {
                     forecastDay.moonPhase,
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     '${forecastDay.moonIllumination}% Illuminated',
                     style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
+                      fontSize: 13,
+                      color: Color(0xE6FFFFFF),
                       fontWeight: FontWeight.w600,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black26,
-                          blurRadius: 2,
-                        ),
-                      ],
                     ),
                   ),
                 ],
@@ -354,44 +280,36 @@ class DayDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAstroItem(IconData icon, String label, String value) {
+  Widget _buildAstroItem(IconData icon, String label, String value, Color accentColor) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.25),
-          width: 1.5,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0x33FFFFFF), Color(0x1AFFFFFF)],
         ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x4DFFFFFF), width: 2),
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 32,
-            shadows: const [
-              Shadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [accentColor, accentColor]),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             label,
             style: const TextStyle(
               fontSize: 12,
-              color: Colors.white,
+              color: Color(0xE6FFFFFF),
               fontWeight: FontWeight.w600,
-              shadows: [
-                Shadow(
-                  color: Colors.black26,
-                  blurRadius: 2,
-                ),
-              ],
+              letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 4),
@@ -399,15 +317,9 @@ class DayDetailScreen extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               color: Colors.white,
-              shadows: [
-                Shadow(
-                  color: Colors.black38,
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
-              ],
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -418,38 +330,30 @@ class DayDetailScreen extends StatelessWidget {
   Widget _buildDetailedInfoGrid() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: _glassDecoration(),
+      decoration: _premiumDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
+                padding: const EdgeInsets.all(10),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0x4DFFFFFF), Color(0x33FFFFFF)],
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
                 ),
-                child: const Icon(
-                  Icons.info_outline_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.analytics_rounded, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               const Text(
                 'Detailed Information',
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black38,
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -481,12 +385,14 @@ class DayDetailScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0x40FFFFFF), Color(0x26FFFFFF)],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(12)),
             ),
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -494,41 +400,28 @@ class DayDetailScreen extends StatelessWidget {
               label,
               style: const TextStyle(
                 fontSize: 15,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                shadows: [
-                  Shadow(
-                    color: Colors.black26,
-                    blurRadius: 3,
-                    offset: Offset(0, 1),
-                  ),
-                ],
+                color: Color(0xF2FFFFFF),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1,
+              gradient: const LinearGradient(
+                colors: [Color(0x4DFFFFFF), Color(0x33FFFFFF)],
               ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0x59FFFFFF), width: 2),
             ),
             child: Text(
               value,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w900,
                 color: Colors.white,
-                shadows: [
-                  Shadow(
-                    color: Colors.black38,
-                    blurRadius: 4,
-                    offset: Offset(0, 1),
-                  ),
-                ],
+                letterSpacing: 0.3,
               ),
             ),
           ),
@@ -538,27 +431,17 @@ class DayDetailScreen extends StatelessWidget {
   }
 
   Widget _buildDivider() {
-    return Divider(
-      color: Colors.white.withOpacity(0.25),
-      height: 1,
-      thickness: 1,
-    );
+    return const Divider(color: Color(0x40FFFFFF), height: 1, thickness: 1.5);
   }
 
-  BoxDecoration _glassDecoration() => BoxDecoration(
-    color: Colors.black.withOpacity(0.2),
-    borderRadius: BorderRadius.circular(24),
-    border: Border.all(
-      color: Colors.white.withOpacity(0.35),
-      width: 2,
+  BoxDecoration _premiumDecoration() => BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0x4D000000), Color(0x33000000)],
     ),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.2),
-        blurRadius: 20,
-        offset: const Offset(0, 10),
-      ),
-    ],
+    borderRadius: BorderRadius.circular(28),
+    border: Border.all(color: const Color(0x59FFFFFF), width: 2),
   );
 
   IconData _getWeatherIcon(String condition) {

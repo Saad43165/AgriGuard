@@ -23,34 +23,29 @@ class WeatherBackground extends StatelessWidget {
 
     return Stack(
       children: [
-        // Base gradient background (static - no repaint)
+        // Static gradient
         Positioned.fill(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 600),
+          child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: _getGradientColors(weatherType, isDark),
-                stops: _getGradientStops(weatherType),
               ),
             ),
           ),
         ),
 
-        // Animated weather effects with RepaintBoundary
+        // Animated effects
         Positioned.fill(
           child: RepaintBoundary(
             child: AnimatedBuilder(
               animation: shimmerController,
-              builder: (context, child) {
-                // Only rebuild when animation value changes significantly
-                final roundedValue = (shimmerController.value * 20).round() / 20;
+              builder: (context, _) {
                 return CustomPaint(
-                  painter: _WeatherEffectsPainter(
+                  painter: WeatherPainter(
                     weatherType: weatherType,
-                    animationValue: roundedValue,
-                    isDark: isDark,
+                    animationValue: shimmerController.value,
                   ),
                   isComplex: true,
                   willChange: true,
@@ -60,28 +55,7 @@ class WeatherBackground extends StatelessWidget {
           ),
         ),
 
-        // Additional atmospheric layer with RepaintBoundary
-        if (_needsAtmosphericLayer(weatherType))
-          Positioned.fill(
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: shimmerController,
-                builder: (context, child) {
-                  final roundedValue = (shimmerController.value * 15).round() / 15;
-                  return CustomPaint(
-                    painter: _AtmosphericLayerPainter(
-                      weatherType: weatherType,
-                      animationValue: roundedValue,
-                    ),
-                    isComplex: true,
-                    willChange: false,
-                  );
-                },
-              ),
-            ),
-          ),
-
-        // Text readability overlay (static)
+        // Overlay gradient
         Positioned.fill(
           child: IgnorePointer(
             child: Container(
@@ -89,8 +63,11 @@ class WeatherBackground extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: _getOverlayColors(weatherType),
-                  stops: const [0.0, 0.15, 0.75, 1.0],
+                  colors: [
+                    Colors.black.withOpacity(0.25),
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.2),
+                  ],
                 ),
               ),
             ),
@@ -104,527 +81,280 @@ class WeatherBackground extends StatelessWidget {
     final c = condition.toLowerCase().trim();
 
     if (isDay == 0) {
-      if (c.contains('rain') || c.contains('drizzle') || c.contains('shower')) {
-        return WeatherType.nightRain;
-      } else if (c.contains('storm') || c.contains('thunder')) {
-        return WeatherType.nightStorm;
-      } else if (c.contains('snow') || c.contains('sleet')) {
-        return WeatherType.nightSnow;
-      } else if (c.contains('cloud') || c.contains('overcast')) {
-        return WeatherType.nightCloudy;
-      } else if (c.contains('fog') || c.contains('mist')) {
-        return WeatherType.nightFog;
-      } else {
-        return WeatherType.nightClear;
-      }
+      if (c.contains('rain') || c.contains('drizzle')) return WeatherType.nightRain;
+      if (c.contains('storm') || c.contains('thunder')) return WeatherType.nightStorm;
+      if (c.contains('snow')) return WeatherType.nightSnow;
+      if (c.contains('cloud')) return WeatherType.nightCloudy;
+      return WeatherType.nightClear;
     } else {
-      if (c.contains('rain') || c.contains('drizzle') || c.contains('shower')) {
-        return WeatherType.rainy;
-      } else if (c.contains('storm') || c.contains('thunder')) {
-        return WeatherType.stormy;
-      } else if (c.contains('snow') || c.contains('sleet')) {
-        return WeatherType.snowy;
-      } else if (c.contains('overcast')) {
-        return WeatherType.overcast;
-      } else if (c.contains('cloud')) {
-        return WeatherType.cloudy;
-      } else if (c.contains('fog') || c.contains('mist')) {
-        return WeatherType.foggy;
-      } else if (c.contains('sunny') || c.contains('clear')) {
-        return WeatherType.sunny;
-      } else {
-        return WeatherType.sunny;
-      }
+      if (c.contains('rain') || c.contains('drizzle')) return WeatherType.rainy;
+      if (c.contains('storm') || c.contains('thunder')) return WeatherType.stormy;
+      if (c.contains('snow')) return WeatherType.snowy;
+      if (c.contains('cloud')) return WeatherType.cloudy;
+      return WeatherType.sunny;
     }
   }
 
   List<Color> _getGradientColors(WeatherType type, bool isDark) {
     switch (type) {
       case WeatherType.sunny:
-        return [
-          const Color(0xFF1E88E5),
-          const Color(0xFF42A5F5),
-          const Color(0xFF64B5F6),
-          const Color(0xFFFFA726),
-        ];
+        return [const Color(0xFF1E88E5), const Color(0xFF64B5F6)];
       case WeatherType.cloudy:
-        return [
-          const Color(0xFF5C6BC0),
-          const Color(0xFF7986CB),
-          const Color(0xFF9FA8DA),
-          const Color(0xFFB0BEC5),
-        ];
-      case WeatherType.overcast:
-        return [
-          const Color(0xFF546E7A),
-          const Color(0xFF607D8B),
-          const Color(0xFF78909C),
-          const Color(0xFF90A4AE),
-        ];
+        return [const Color(0xFF5C6BC0), const Color(0xFF9FA8DA)];
       case WeatherType.rainy:
-        return [
-          const Color(0xFF455A64),
-          const Color(0xFF546E7A),
-          const Color(0xFF607D8B),
-          const Color(0xFF78909C),
-        ];
+        return [const Color(0xFF455A64), const Color(0xFF78909C)];
       case WeatherType.snowy:
-        return [
-          const Color(0xFF64B5F6),
-          const Color(0xFF90CAF9),
-          const Color(0xFFBBDEFB),
-          const Color(0xFFE3F2FD),
-        ];
+        return [const Color(0xFF64B5F6), const Color(0xFFE3F2FD)];
       case WeatherType.stormy:
-        return [
-          const Color(0xFF263238),
-          const Color(0xFF37474F),
-          const Color(0xFF455A64),
-          const Color(0xFF546E7A),
-        ];
-      case WeatherType.foggy:
-        return [
-          const Color(0xFF78909C),
-          const Color(0xFF90A4AE),
-          const Color(0xFFB0BEC5),
-          const Color(0xFFCFD8DC),
-        ];
+        return [const Color(0xFF263238), const Color(0xFF546E7A)];
       case WeatherType.nightClear:
-        return [
-          const Color(0xFF0A192F),
-          const Color(0xFF1B2838),
-          const Color(0xFF2C3E50),
-          const Color(0xFF34495E),
-        ];
+        return [const Color(0xFF0A192F), const Color(0xFF34495E)];
       case WeatherType.nightRain:
-        return [
-          const Color(0xFF1A237E),
-          const Color(0xFF283593),
-          const Color(0xFF3949AB),
-          const Color(0xFF5C6BC0),
-        ];
+        return [const Color(0xFF1A237E), const Color(0xFF5C6BC0)];
       case WeatherType.nightStorm:
-        return [
-          const Color(0xFF000000),
-          const Color(0xFF212121),
-          const Color(0xFF424242),
-          const Color(0xFF616161),
-        ];
+        return [const Color(0xFF000000), const Color(0xFF424242)];
       case WeatherType.nightSnow:
-        return [
-          const Color(0xFF1A237E),
-          const Color(0xFF283593),
-          const Color(0xFF3949AB),
-          const Color(0xFF5C6BC0),
-        ];
+        return [const Color(0xFF1A237E), const Color(0xFF5C6BC0)];
       case WeatherType.nightCloudy:
-        return [
-          const Color(0xFF263238),
-          const Color(0xFF37474F),
-          const Color(0xFF455A64),
-          const Color(0xFF546E7A),
-        ];
-      case WeatherType.nightFog:
-        return [
-          const Color(0xFF37474F),
-          const Color(0xFF455A64),
-          const Color(0xFF546E7A),
-          const Color(0xFF607D8B),
-        ];
-    }
-  }
-
-  List<double> _getGradientStops(WeatherType type) {
-    switch (type) {
-      case WeatherType.sunny:
-        return [0.0, 0.4, 0.7, 1.0];
-      case WeatherType.cloudy:
-      case WeatherType.overcast:
-        return [0.0, 0.35, 0.65, 1.0];
-      case WeatherType.rainy:
-      case WeatherType.stormy:
-        return [0.0, 0.3, 0.6, 1.0];
+        return [const Color(0xFF263238), const Color(0xFF546E7A)];
       default:
-        return [0.0, 0.33, 0.66, 1.0];
+        return [const Color(0xFF1E88E5), const Color(0xFF64B5F6)];
     }
-  }
-
-  List<Color> _getOverlayColors(WeatherType type) {
-    switch (type) {
-      case WeatherType.sunny:
-        return [
-          Colors.black.withOpacity(0.25),
-          Colors.black.withOpacity(0.08),
-          Colors.transparent,
-          Colors.black.withOpacity(0.15),
-        ];
-      case WeatherType.cloudy:
-      case WeatherType.overcast:
-        return [
-          Colors.black.withOpacity(0.35),
-          Colors.black.withOpacity(0.15),
-          Colors.black.withOpacity(0.05),
-          Colors.black.withOpacity(0.25),
-        ];
-      case WeatherType.rainy:
-      case WeatherType.stormy:
-        return [
-          Colors.black.withOpacity(0.4),
-          Colors.black.withOpacity(0.2),
-          Colors.black.withOpacity(0.1),
-          Colors.black.withOpacity(0.3),
-        ];
-      case WeatherType.foggy:
-        return [
-          Colors.black.withOpacity(0.3),
-          Colors.black.withOpacity(0.12),
-          Colors.transparent,
-          Colors.black.withOpacity(0.2),
-        ];
-      default:
-        return [
-          Colors.black.withOpacity(0.35),
-          Colors.black.withOpacity(0.15),
-          Colors.transparent,
-          Colors.black.withOpacity(0.25),
-        ];
-    }
-  }
-
-  bool _needsAtmosphericLayer(WeatherType type) {
-    return type == WeatherType.cloudy ||
-        type == WeatherType.overcast ||
-        type == WeatherType.foggy ||
-        type == WeatherType.nightCloudy;
   }
 }
 
-// =============================================================================
-// OPTIMIZED WEATHER EFFECTS PAINTER
-// =============================================================================
-class _WeatherEffectsPainter extends CustomPainter {
+class WeatherPainter extends CustomPainter {
   final WeatherType weatherType;
   final double animationValue;
-  final bool isDark;
+  final Paint _paint = Paint();
 
-  // Cached paint objects
-  static final Map<String, Paint> _paintCache = {};
-
-  _WeatherEffectsPainter({
+  WeatherPainter({
     required this.weatherType,
     required this.animationValue,
-    required this.isDark,
   });
-
-  Paint _getPaint(String key, Color color, {PaintingStyle? style, double? strokeWidth}) {
-    final cacheKey = '$key-${color.value}-${style?.index}-$strokeWidth';
-    return _paintCache.putIfAbsent(
-      cacheKey,
-          () => Paint()
-        ..color = color
-        ..style = style ?? PaintingStyle.fill
-        ..strokeWidth = strokeWidth ?? 1.0,
-    );
-  }
 
   @override
   void paint(Canvas canvas, Size size) {
     switch (weatherType) {
       case WeatherType.sunny:
-        _drawSunEffect(canvas, size);
-        break;
-      case WeatherType.rainy:
-        _drawRainEffect(canvas, size, intensity: 0.6);
-        break;
-      case WeatherType.snowy:
-        _drawSnowEffect(canvas, size);
-        break;
-      case WeatherType.stormy:
-        _drawRainEffect(canvas, size, intensity: 1.0);
-        _drawLightningFlash(canvas, size);
+        _drawSunRays(canvas, size);
         break;
       case WeatherType.cloudy:
-        _drawCloudsEffect(canvas, size, density: 0.7);
+      case WeatherType.nightCloudy:
+        _drawClouds(canvas, size);
         break;
-      case WeatherType.overcast:
-        _drawCloudsEffect(canvas, size, density: 1.0);
-        _drawDarkCloudsLayer(canvas, size);
+      case WeatherType.rainy:
+      case WeatherType.nightRain:
+        _drawRain(canvas, size);
         break;
-      case WeatherType.foggy:
-        _drawFogEffect(canvas, size);
+      case WeatherType.stormy:
+      case WeatherType.nightStorm:
+        _drawStorm(canvas, size);
+        break;
+      case WeatherType.snowy:
+      case WeatherType.nightSnow:
+        _drawSnow(canvas, size);
         break;
       case WeatherType.nightClear:
-        _drawStarsEffect(canvas, size);
-        _drawMoonEffect(canvas, size);
+        _drawStars(canvas, size);
         break;
-      case WeatherType.nightRain:
-        _drawRainEffect(canvas, size, intensity: 0.6);
-        _drawStarsEffect(canvas, size);
-        break;
-      case WeatherType.nightStorm:
-        _drawRainEffect(canvas, size, intensity: 1.0);
-        _drawLightningFlash(canvas, size);
-        break;
-      case WeatherType.nightSnow:
-        _drawSnowEffect(canvas, size);
-        _drawStarsEffect(canvas, size);
-        break;
-      case WeatherType.nightCloudy:
-        _drawCloudsEffect(canvas, size, density: 0.8);
-        _drawStarsEffect(canvas, size);
-        break;
-      case WeatherType.nightFog:
-        _drawFogEffect(canvas, size);
+      default:
         break;
     }
   }
 
-  void _drawSunEffect(Canvas canvas, Size size) {
-    final rayPaint = _getPaint('sunRay', Colors.white.withOpacity(0.06));
-    final center = Offset(size.width * 0.85, size.height * 0.15);
+  void _drawSunRays(Canvas canvas, Size size) {
+    _paint
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
 
-    // Reduced from 12 to 8 rays
+    final center = Offset(size.width * 0.8, size.height * 0.15);
+    final rotation = animationValue * 2 * math.pi;
+
     for (int i = 0; i < 8; i++) {
-      final angle = (i / 8) * 2 * math.pi + animationValue * math.pi * 0.5;
+      final angle = (i * math.pi / 4) + rotation;
+      final startRadius = 40.0;
+      final endRadius = 120.0;
+
       final path = Path()
-        ..moveTo(center.dx, center.dy)
-        ..lineTo(center.dx + math.cos(angle) * 40, center.dy + math.sin(angle) * 40)
-        ..lineTo(
-          center.dx + math.cos(angle + 0.15) * 90,
-          center.dy + math.sin(angle + 0.15) * 90,
+        ..moveTo(
+          center.dx + math.cos(angle - 0.1) * startRadius,
+          center.dy + math.sin(angle - 0.1) * startRadius,
         )
         ..lineTo(
-          center.dx + math.cos(angle - 0.15) * 90,
-          center.dy + math.sin(angle - 0.15) * 90,
+          center.dx + math.cos(angle) * endRadius,
+          center.dy + math.sin(angle) * endRadius,
+        )
+        ..lineTo(
+          center.dx + math.cos(angle + 0.1) * startRadius,
+          center.dy + math.sin(angle + 0.1) * startRadius,
         )
         ..close();
-      canvas.drawPath(path, rayPaint);
-    }
 
-    // Reduced from 15 to 8 particles
-    final particlePaint = _getPaint('particle', Colors.white.withOpacity(0.1));
-    for (int i = 0; i < 8; i++) {
-      final x = (size.width * (i / 8)) + (animationValue * 30);
-      final y = size.height * 0.35 + math.sin(animationValue * math.pi * 2 + i) * 20;
-      canvas.drawCircle(Offset(x % size.width, y), 2.5, particlePaint);
+      canvas.drawPath(path, _paint);
     }
   }
 
-  void _drawRainEffect(Canvas canvas, Size size, {required double intensity}) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.35 * intensity)
-      ..strokeWidth = intensity > 0.8 ? 2.5 : 1.8
+  void _drawClouds(Canvas canvas, Size size) {
+    _paint
+      ..color = Colors.white.withOpacity(0.15)
+      ..style = PaintingStyle.fill;
+
+    // 3 clouds moving slowly
+    for (int i = 0; i < 3; i++) {
+      final offsetX = (animationValue * size.width + i * size.width / 3) % (size.width + 200) - 100;
+      final y = size.height * 0.2 + i * 80.0;
+
+      _drawCloud(canvas, Offset(offsetX, y));
+    }
+  }
+
+  void _drawCloud(Canvas canvas, Offset position) {
+    // Simple cloud made of circles
+    canvas.drawCircle(position, 25, _paint);
+    canvas.drawCircle(position.translate(30, 0), 30, _paint);
+    canvas.drawCircle(position.translate(60, 0), 25, _paint);
+    canvas.drawCircle(position.translate(30, -15), 28, _paint);
+  }
+
+  void _drawRain(Canvas canvas, Size size) {
+    _paint
+      ..color = Colors.white.withOpacity(0.4)
+      ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    // Reduced from 50 to 30 drops
-    final dropCount = (30 * intensity).toInt();
-    for (int i = 0; i < dropCount; i++) {
-      final x = (size.width / dropCount) * i;
-      final speed = 0.65 + (i % 3) * 0.2 * intensity;
-      final y = (size.height * ((animationValue * speed) % 1.0)) - 18;
-      final length = 14.0 + (i % 4) * 4 * intensity;
+    // 30 raindrops
+    final random = math.Random(42);
+    for (int i = 0; i < 30; i++) {
+      final x = size.width * (i / 30.0) + math.sin(animationValue * math.pi + i) * 10;
+      final y = (size.height * ((animationValue * 1.5 + i * 0.1) % 1.0));
 
       canvas.drawLine(
         Offset(x, y),
-        Offset(x - (intensity * 2), y + length),
-        paint,
+        Offset(x - 3, y + 15),
+        _paint,
       );
-    }
-
-    // Reduced splashes from 20 to 10
-    if (intensity > 0.7) {
-      final splashPaint = Paint()..style = PaintingStyle.fill;
-
-      for (int i = 0; i < 10; i++) {
-        final x = (size.width / 10) * i;
-        final progress = (animationValue * 3.5 + i * 0.15) % 1.0;
-        final y = size.height - 18;
-        final radius = progress * 7;
-
-        canvas.drawCircle(
-          Offset(x, y),
-          radius,
-          splashPaint..color = Colors.white.withOpacity((1.0 - progress) * 0.12),
-        );
-      }
     }
   }
 
-  void _drawSnowEffect(Canvas canvas, Size size) {
-    final paint = _getPaint('snow', Colors.white.withOpacity(0.75));
+  void _drawStorm(Canvas canvas, Size size) {
+    // Draw heavy rain
+    _paint
+      ..color = Colors.white.withOpacity(0.5)
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
 
-    // Reduced from 40 to 25 snowflakes
-    for (int i = 0; i < 25; i++) {
-      final speed = 0.22 + (i % 4) * 0.07;
-      final x = (size.width / 25) * i + math.sin(animationValue * math.pi * 2 + i) * 18;
-      final y = (size.height * ((animationValue * speed) % 1.0));
-      final radius = 1.9 + (i % 3) * 0.7;
+    for (int i = 0; i < 40; i++) {
+      final x = size.width * (i / 40.0) + math.sin(animationValue * math.pi + i) * 15;
+      final y = (size.height * ((animationValue * 2 + i * 0.08) % 1.0));
 
-      canvas.drawCircle(Offset(x, y), radius, paint);
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(x - 5, y + 20),
+        _paint,
+      );
+    }
 
-      // Reduced from 6 to 4 arms
-      final armPaint = Paint()
-        ..color = Colors.white.withOpacity(0.55)
-        ..strokeWidth = 1
+    // Lightning flash
+    if (animationValue > 0.85 && animationValue < 0.88) {
+      _paint
+        ..color = Colors.white.withOpacity(0.3)
+        ..style = PaintingStyle.fill;
+      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _paint);
+
+      // Lightning bolt
+      _paint
+        ..color = Colors.white.withOpacity(0.8)
+        ..strokeWidth = 3
         ..style = PaintingStyle.stroke;
 
-      for (int j = 0; j < 4; j++) {
-        final angle = (j / 4) * 2 * math.pi;
-        canvas.drawLine(
-          Offset(x, y),
-          Offset(x + math.cos(angle) * radius * 1.4, y + math.sin(angle) * radius * 1.4),
-          armPaint,
-        );
+      final lightningPath = Path()
+        ..moveTo(size.width * 0.6, 0)
+        ..lineTo(size.width * 0.55, size.height * 0.3)
+        ..lineTo(size.width * 0.58, size.height * 0.3)
+        ..lineTo(size.width * 0.52, size.height * 0.6);
+
+      canvas.drawPath(lightningPath, _paint);
+    }
+  }
+
+  void _drawSnow(Canvas canvas, Size size) {
+    _paint
+      ..color = Colors.white.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+
+    // 40 snowflakes with gentle drift
+    for (int i = 0; i < 40; i++) {
+      final baseX = size.width * (i / 40.0);
+      final drift = math.sin(animationValue * math.pi * 2 + i) * 20;
+      final x = baseX + drift;
+      final y = (size.height * ((animationValue * 0.5 + i * 0.025) % 1.0));
+
+      // Draw snowflake
+      canvas.drawCircle(Offset(x, y), 2.5, _paint);
+
+      // Add cross pattern for snowflake detail
+      _paint
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(x - 3, y), Offset(x + 3, y), _paint);
+      canvas.drawLine(Offset(x, y - 3), Offset(x, y + 3), _paint);
+
+      _paint.style = PaintingStyle.fill;
+    }
+  }
+
+  void _drawStars(Canvas canvas, Size size) {
+    _paint.style = PaintingStyle.fill;
+
+    // 50 stars with twinkling
+    final random = math.Random(123);
+    for (int i = 0; i < 50; i++) {
+      final x = size.width * (i * 7 % 100 / 100);
+      final y = size.height * (i * 13 % 100 / 100);
+
+      // Twinkling effect
+      final twinkle = (math.sin(animationValue * math.pi * 2 + i * 0.5) + 1) / 2;
+      final opacity = 0.3 + twinkle * 0.5;
+      final starSize = 1.0 + twinkle * 1.5;
+
+      _paint.color = Colors.white.withOpacity(opacity);
+
+      // Draw star
+      canvas.drawCircle(Offset(x, y), starSize, _paint);
+
+      // Add star points
+      if (starSize > 1.8) {
+        _paint.strokeWidth = 0.5;
+        _paint.style = PaintingStyle.stroke;
+        canvas.drawLine(Offset(x - 3, y), Offset(x + 3, y), _paint);
+        canvas.drawLine(Offset(x, y - 3), Offset(x, y + 3), _paint);
+        _paint.style = PaintingStyle.fill;
       }
     }
-  }
 
-  void _drawCloudsEffect(Canvas canvas, Size size, {required double density}) {
-    final paint = _getPaint('cloud', Colors.white.withOpacity(0.08 * density));
+    // Shooting star occasionally
+    if (animationValue > 0.3 && animationValue < 0.35) {
+      _paint
+        ..color = Colors.white.withOpacity(0.8)
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
 
-    // Reduced from 4 to 3 clouds
-    final cloudCount = (3 * density).toInt();
-    for (int i = 0; i < cloudCount; i++) {
-      final x = (size.width * (i / cloudCount) + animationValue * 55) %
-          (size.width + 140) - 70;
-      final y = size.height * (0.18 + i * 0.14);
-      final cloudSize = 60.0 + i * 12;
+      final progress = (animationValue - 0.3) / 0.05;
+      final startX = size.width * 0.7;
+      final startY = size.height * 0.2;
+      final endX = startX + 100 * progress;
+      final endY = startY + 50 * progress;
 
-      // Reduced circles per cloud
-      canvas.drawCircle(Offset(x, y), cloudSize * 0.52, paint);
-      canvas.drawCircle(Offset(x - cloudSize * 0.32, y), cloudSize * 0.38, paint);
-      canvas.drawCircle(Offset(x + cloudSize * 0.32, y), cloudSize * 0.38, paint);
-    }
-  }
-
-  void _drawDarkCloudsLayer(Canvas canvas, Size size) {
-    final paint = _getPaint('darkCloud', Colors.black.withOpacity(0.12));
-
-    for (int i = 0; i < 2; i++) {
-      final x = (size.width * (i / 2) + animationValue * 35) % (size.width + 100) - 50;
-      final y = size.height * (0.25 + i * 0.12);
-      final cloudSize = 70.0 + i * 10;
-
-      canvas.drawCircle(Offset(x, y), cloudSize * 0.48, paint);
-    }
-  }
-
-  void _drawFogEffect(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.14)
-      ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
-
-    // Reduced from 4 to 3
-    for (int i = 0; i < 3; i++) {
-      final offset = (animationValue * 45 + i * 28) % size.width;
-      canvas.drawOval(
-        Rect.fromLTWH(offset - 55, size.height * (0.32 + i * 0.18), 150, 65),
-        paint,
-      );
-    }
-  }
-
-  void _drawStarsEffect(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    // Reduced from 60 to 40 stars
-    for (int i = 0; i < 40; i++) {
-      final x = (size.width * (i / 40));
-      final y = (size.height * ((i * 7) % 40 / 40));
-      final twinkle = (math.sin(animationValue * math.pi * 2 + i) + 1) / 2;
-      final radius = 0.95 + (i % 3) * 0.45;
-
-      paint.color = Colors.white.withOpacity(0.28 + twinkle * 0.52);
-      canvas.drawCircle(Offset(x, y), radius * twinkle, paint);
-    }
-  }
-
-  void _drawMoonEffect(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.85, size.height * 0.16);
-
-    final glowPaint = Paint()
-      ..color = Colors.white.withOpacity(0.18)
-      ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28);
-
-    canvas.drawCircle(center, 38, glowPaint);
-
-    final moonPaint = _getPaint('moon', Colors.white.withOpacity(0.28));
-    canvas.drawCircle(center, 26, moonPaint);
-  }
-
-  void _drawLightningFlash(Canvas canvas, Size size) {
-    if (animationValue > 0.85 && animationValue < 0.88) {
-      final paint = _getPaint('lightning', Colors.white.withOpacity(0.15));
-      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), _paint);
     }
   }
 
   @override
-  bool shouldRepaint(_WeatherEffectsPainter oldDelegate) {
-    // Only repaint if weather type changes or animation value changed significantly
-    return oldDelegate.weatherType != weatherType ||
-        (oldDelegate.animationValue - animationValue).abs() > 0.05;
-  }
-}
-
-// =============================================================================
-// OPTIMIZED ATMOSPHERIC LAYER PAINTER
-// =============================================================================
-class _AtmosphericLayerPainter extends CustomPainter {
-  final WeatherType weatherType;
-  final double animationValue;
-
-  _AtmosphericLayerPainter({
-    required this.weatherType,
-    required this.animationValue,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 35);
-
-    switch (weatherType) {
-      case WeatherType.cloudy:
-        paint.color = Colors.white.withOpacity(0.05);
-        break;
-      case WeatherType.overcast:
-        paint.color = Colors.black.withOpacity(0.08);
-        break;
-      case WeatherType.foggy:
-        paint.color = Colors.white.withOpacity(0.12);
-        break;
-      case WeatherType.nightCloudy:
-        paint.color = Colors.black.withOpacity(0.15);
-        break;
-      default:
-        return;
-    }
-
-    final path = Path();
-    path.moveTo(0, size.height * 0.4);
-
-    // Reduced sampling from 10 to 20 pixels
-    for (double x = 0; x <= size.width; x += 20) {
-      final y = size.height * 0.4 +
-          math.sin((x / size.width + animationValue) * 2 * math.pi) * 40;
-      path.lineTo(x, y);
-    }
-
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_AtmosphericLayerPainter oldDelegate) {
-    return oldDelegate.weatherType != weatherType ||
-        (oldDelegate.animationValue - animationValue).abs() > 0.067;
+  bool shouldRepaint(WeatherPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue;
   }
 }
