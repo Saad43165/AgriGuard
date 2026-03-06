@@ -5,8 +5,9 @@ import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/faq_card
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/support_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import '../../core/constants/app_routes.dart';
+import 'package:provider/provider.dart';
+import '../../../core/services/translation_service.dart';
+import '../../../core/constants/app_routes.dart';
 
 class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});
@@ -56,12 +57,13 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: isDark ? const Color(0xFF0F0F23) : const Color(0xFFF5F7FA),
       appBar: CustomAppBar(
-        title: 'Help & Support',
+        title: translation.get('help_support'),
         topPadding: 20.0,
         onBackPressed: _handleBackPressed,
       ),

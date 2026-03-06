@@ -58,13 +58,13 @@ class FaqCategoryFilters extends StatelessWidget {
   }
 
   Widget _buildChip(
-      BuildContext context, {
-        required String label,
-        required IconData icon,
-        required bool isSelected,
-        required bool isDark,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Material(
@@ -76,36 +76,43 @@ class FaqCategoryFilters extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              gradient: isSelected
-                  ? LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                ],
-              )
-                  : null,
-              color: isSelected
-                  ? null
-                  : (isDark ? const Color(0xFF1E1E2E) : Colors.white),
+              gradient:
+                  isSelected
+                      ? LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.8),
+                        ],
+                      )
+                      : null,
+              color:
+                  isSelected
+                      ? null
+                      : (isDark ? const Color(0xFF1E1E2E) : Colors.white),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color:
+                    isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(
+                          context,
+                        ).colorScheme.outline.withOpacity(0.2),
                 width: 2,
               ),
-              boxShadow: isSelected
-                  ? [
-                BoxShadow(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-                  : null,
+              boxShadow:
+                  isSelected
+                      ? [
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                      : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -113,17 +120,19 @@ class FaqCategoryFilters extends StatelessWidget {
                 Icon(
                   icon,
                   size: 18,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
+                  color:
+                      isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurface,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: TextStyle(
-                    color: isSelected
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurface,
+                    color:
+                        isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                     fontSize: 14,
                   ),

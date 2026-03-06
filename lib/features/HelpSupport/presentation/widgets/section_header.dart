@@ -28,24 +28,20 @@ class SectionHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
-              ? [color.withOpacity(0.15), color.withOpacity(0.05)]
-              : [color.withOpacity(0.08), color.withOpacity(0.03)],
+          colors:
+              isDark
+                  ? [color.withOpacity(0.15), color.withOpacity(0.05)]
+                  : [color.withOpacity(0.08), color.withOpacity(0.03)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1.5,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.7)],
-              ),
+              gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -77,10 +73,9 @@ class SectionHeader extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 12,
                     ),
                   ),

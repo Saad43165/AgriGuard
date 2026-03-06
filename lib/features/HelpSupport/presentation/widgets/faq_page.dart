@@ -1,7 +1,8 @@
 // lib/features/support/widgets/faq_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/app_measurements.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import '../models/faq_category.dart';
 import '../models/faq_data.dart';
 import '../models/faq_items.dart';
@@ -9,6 +10,7 @@ import 'faq_category_filters.dart';
 import 'faq_empty_state.dart';
 import 'faq_list_item.dart';
 import 'faq_search_bar.dart';
+import 'support_app_bar.dart';
 
 class FaqPage extends StatefulWidget {
   const FaqPage({super.key});
@@ -17,212 +19,175 @@ class FaqPage extends StatefulWidget {
   State<FaqPage> createState() => _FaqPageState();
 }
 
-class _FaqPageState extends State<FaqPage> with TickerProviderStateMixin {
-  late TextEditingController _searchController;
+class _FaqPageState extends State<FaqPage> {
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  List<FaqItem> _filteredFaqs = [];
   FaqCategory? _selectedCategory;
-  List<FaqItem> _filteredFaqItems = [];
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
-    _filteredFaqItems = FaqData.allFaqItems;
+    _filteredFaqs = FaqData.allFaqItems;
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _filterFaqs() {
-    setState(() {
-      String query = _searchController.text.toLowerCase();
-      _filteredFaqItems = FaqData.allFaqItems.where((faq) {
-        bool matchesCategory =
-            _selectedCategory == null || faq.category == _selectedCategory;
-        bool matchesSearch = query.isEmpty ||
-            faq.question.toLowerCase().contains(query) ||
-            faq.answer.toLowerCase().contains(query) ||
-            faq.tags.any((tag) => tag.toLowerCase().contains(query));
+  void _filterFaqs(TranslationService translation) {
+    final query = _searchController.text.toLowerCase();
 
-        return matchesCategory && matchesSearch;
+    setState(() {
+      _filteredFaqs = FaqData.allFaqItems.where((faq) {
+        // Filter by category first
+        if (_selectedCategory != null && faq.category != _selectedCategory) {
+          return false;
+        }
+
+        // Then filter by search query if exists
+        if (query.isEmpty) return true;
+
+        final question = faq.getQuestion(translation.isUrdu).toLowerCase();
+        final answer = faq.getAnswer(translation.isUrdu).toLowerCase();
+        final tags = faq.tags.join(' ').toLowerCase();
+
+        return question.contains(query) ||
+            answer.contains(query) ||
+            tags.contains(query);
       }).toList();
     });
   }
 
-  void _selectCategory(FaqCategory? category) {
+  void _onCategorySelected(FaqCategory? category) {
     setState(() => _selectedCategory = category);
-    _filterFaqs();
+    _filterFaqs(Provider.of<TranslationService>(context, listen: false));
   }
 
-  void _clearSearch() {
-    _searchController.clear();
-    _filterFaqs();
+  void _clearFilters() {
+    setState(() {
+      _selectedCategory = null;
+      _searchController.clear();
+      _filteredFaqs = FaqData.allFaqItems;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F0F23) : const Color(0xFFF5F7FA),
-      appBar: _buildAppBar(),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: FaqSearchBar(
-                controller: _searchController,
-                onSearchChanged: _filterFaqs,
-                onClear: _clearSearch,
-              ),
-            ),
-
-            // Category Filters
-            FaqCategoryFilters(
-              selectedCategory: _selectedCategory,
-              onCategorySelected: _selectCategory,
-            ),
-
-            const SizedBox(height: 16),
-
-            // Results Counter
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${_filteredFaqItems.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _filteredFaqItems.length == 1 ? 'result found' : 'results found',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // FAQ List
-            Expanded(
-              child: _filteredFaqItems.isEmpty
-                  ? const FaqEmptyState()
-                  : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: _filteredFaqItems.length,
-                itemBuilder: (context, index) {
-                  return FaqListItem(
-                    faq: _filteredFaqItems[index],
-                    index: index,
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+      appBar: CustomAppBar(
+        title: translation.get('all_faqs'),
+        showLanguageToggle: true,
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight + 8),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+              const Color(0xFF0F0F23),
+              const Color(0xFF16213E),
+              const Color(0xFF1A1A2E),
+              const Color(0xFF0F0F23),
+            ]
+                : [
+              const Color(0xFFF5F7FA),
+              const Color(0xFFE8EDF2),
+              const Color(0xFFF0F4F8),
+              const Color(0xFFF5F7FA),
+            ],
+            stops: const [0.0, 0.3, 0.7, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
             children: [
-              // Back Button (LEFT)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.pop(context);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Icon(
-                        Icons.arrow_back_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 24,
-                      ),
-                    ),
-                  ),
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: FaqSearchBar(
+                  controller: _searchController,
+                  onSearchChanged: () => _filterFaqs(translation),
+                  onClear: _clearFilters,
                 ),
               ),
 
-              // Title (CENTER)
+              // Category Filters
+              FaqCategoryFilters(
+                selectedCategory: _selectedCategory,
+                onCategorySelected: _onCategorySelected,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Results Count & Clear Filter Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.help_outline_rounded,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_filteredFaqs.length} ${_filteredFaqs.length == 1 ? translation.get('result') ?? 'result' : translation.get('results') ?? 'results'}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_selectedCategory != null || _searchController.text.isNotEmpty)
+                      TextButton.icon(
+                        onPressed: _clearFilters,
+                        icon: const Icon(Icons.clear_all_rounded, size: 16),
+                        label: Text(
+                          translation.get('clear_filters') ?? 'Clear Filters',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // FAQ List
               Expanded(
-                child: Center(
-                  child: ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary,
-                        Theme.of(context).colorScheme.secondary,
-                      ],
-                    ).createShader(bounds),
-                    child: Text(
-                      'FAQs',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 26,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                child: _filteredFaqs.isEmpty
+                    ? const FaqEmptyState()
+                    : ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _filteredFaqs.length,
+                  itemBuilder: (context, index) {
+                    final faq = _filteredFaqs[index];
+                    return FaqListItem(
+                      faq: faq,
+                      index: index,
+                    );
+                  },
                 ),
               ),
-
-              // Spacer (RIGHT) - to keep title centered
-              const SizedBox(width: 48),
             ],
           ),
         ),

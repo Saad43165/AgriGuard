@@ -1,7 +1,10 @@
 // lib/features/support/widgets/contact_form_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../../core/services/translation_service.dart';
 
 class ContactFormCard extends StatefulWidget {
   const ContactFormCard({super.key});
@@ -28,6 +31,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 500),
@@ -97,14 +101,14 @@ class _ContactFormCardState extends State<ContactFormCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Send us a Message',
+                          translation.get('send_message'),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'We\'ll get back to you soon',
+                          translation.get('get_back_soon'),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -122,37 +126,40 @@ class _ContactFormCardState extends State<ContactFormCard> {
 
               // Form Fields
               _buildTextField(
+                translation,
                 controller: _nameController,
-                label: 'Your Name',
+                labelKey: 'your_name',
                 icon: Icons.person_rounded,
-                hint: 'Enter your full name',
-                validator: (v) => v!.isEmpty ? 'Name is required' : null,
+                hintKey: 'enter_full_name',
+                validator: (v) => v!.isEmpty ? translation.get('name_required') : null,
               ),
               const SizedBox(height: 16),
               _buildTextField(
+                translation,
                 controller: _emailController,
-                label: 'Email Address',
+                labelKey: 'email_address',
                 icon: Icons.email_rounded,
-                hint: 'your.email@example.com',
+                hintKey: 'email_placeholder',
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) {
-                  if (v!.isEmpty) return 'Email is required';
+                  if (v!.isEmpty) return translation.get('email_required');
                   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) {
-                    return 'Enter a valid email address';
+                    return translation.get('valid_email');
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               _buildTextField(
+                translation,
                 controller: _messageController,
-                label: 'Your Message',
+                labelKey: 'your_message',
                 icon: Icons.message_rounded,
-                hint: 'Type your message here...',
+                hintKey: 'type_message',
                 maxLines: 5,
                 validator: (v) {
-                  if (v!.isEmpty) return 'Message is required';
-                  if (v.length < 10) return 'Message is too short (min 10 characters)';
+                  if (v!.isEmpty) return translation.get('message_required');
+                  if (v.length < 10) return translation.get('message_too_short');
                   return null;
                 },
               ),
@@ -163,7 +170,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitForm,
+                  onPressed: _isSubmitting ? null : () => _submitForm(translation),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
@@ -212,15 +219,15 @@ class _ContactFormCardState extends State<ContactFormCard> {
                           strokeWidth: 2,
                         ),
                       )
-                          : const Row(
+                          : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.send_rounded,
+                          const Icon(Icons.send_rounded,
                               color: Colors.white, size: 20),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
-                            'Send Message',
-                            style: TextStyle(
+                            translation.get('send_message_btn'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -239,15 +246,16 @@ class _ContactFormCardState extends State<ContactFormCard> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? hint,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-    TextInputType? keyboardType,
-  }) {
+  Widget _buildTextField(
+      TranslationService translation, {
+        required TextEditingController controller,
+        required String labelKey,
+        required IconData icon,
+        required String hintKey,
+        String? Function(String?)? validator,
+        int maxLines = 1,
+        TextInputType? keyboardType,
+      }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -258,7 +266,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
             Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 6),
             Text(
-              label,
+              translation.get(labelKey),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
@@ -274,7 +282,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
           validator: validator,
           style: const TextStyle(fontSize: 15),
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: translation.get(hintKey),
             hintStyle: TextStyle(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
               fontSize: 14,
@@ -315,14 +323,15 @@ class _ContactFormCardState extends State<ContactFormCard> {
                 width: 2,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _submitForm() async {
+  Future<void> _submitForm(TranslationService translation) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
@@ -347,11 +356,11 @@ class _ContactFormCardState extends State<ContactFormCard> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
+              content: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text('Message sent successfully!'),
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text(translation.get('message_sent')),
                 ],
               ),
               backgroundColor: const Color(0xFF10B981),

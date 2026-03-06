@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'section_header.dart';
 import 'detail_row.dart';
 
@@ -34,20 +36,21 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
   }
 
   void _copyAllDetails() {
+    final translation = Provider.of<TranslationService>(context, listen: false);
     final displayInfo = _getDiseaseDisplayInfo();
     final StringBuffer buffer = StringBuffer();
 
-    buffer.writeln('=== Plant Analysis Details ===\n');
+    buffer.writeln('=== ${translation.get('plant_analysis_details')} ===\n');
     buffer.writeln('${displayInfo['label']}: ${displayInfo['value']}');
 
     if (widget.scanData['plantName'] != null) {
-      buffer.writeln('Plant: ${widget.scanData['plantName']}');
+      buffer.writeln('${translation.get('plant_species')}: ${widget.scanData['plantName']}');
     }
     if (widget.scanData['severity'] != null) {
-      buffer.writeln('Severity: ${widget.scanData['severity']}');
+      buffer.writeln('${translation.get('severity')}: ${widget.scanData['severity']}');
     }
     if (widget.scanData['confidence'] != null) {
-      buffer.writeln('Confidence: ${widget.scanData['confidence']}%');
+      buffer.writeln('${translation.get('confidence_level')}: ${widget.scanData['confidence']}%');
     }
 
     Clipboard.setData(ClipboardData(text: buffer.toString()));
@@ -55,11 +58,11 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Analysis details copied to clipboard'),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(translation.get('details_copied')),
           ],
         ),
         behavior: SnackBarBehavior.floating,
@@ -70,8 +73,10 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
   }
 
   Map<String, dynamic> _getDiseaseDisplayInfo() {
-    String label = 'Health Status';
-    String value = 'Healthy';
+    final translation = Provider.of<TranslationService>(context, listen: false);
+
+    String label = translation.get('health_status');
+    String value = translation.get('healthy');
     IconData icon = Icons.verified_rounded;
     Color color = const Color(0xFF10B981);
 
@@ -89,13 +94,15 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
       if (parts.length >= 2) {
         final diseasePart = parts[1].replaceAll('_', ' ').trim();
         if (diseasePart.toLowerCase() != 'healthy') {
-          label = 'Detected Disease';
-          value = diseasePart
-              .split(' ')
-              .map((word) => word.isNotEmpty
-              ? word[0].toUpperCase() + word.substring(1).toLowerCase()
-              : word)
-              .join(' ');
+          label = translation.get('detected_disease');
+          value = translation.translateDisease(
+              diseasePart
+                  .split(' ')
+                  .map((word) => word.isNotEmpty
+                  ? word[0].toUpperCase() + word.substring(1).toLowerCase()
+                  : word)
+                  .join(' ')
+          );
           icon = Icons.medical_services_rounded;
 
           final severity = widget.scanData['severity']?.toString() ?? 'Medium';
@@ -117,8 +124,8 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
         processedDisease.toLowerCase() != 'healthy' &&
         processedDisease.toLowerCase() != 'no disease detected' &&
         processedDisease.toLowerCase() != 'health analysis') {
-      label = 'Detected Disease';
-      value = processedDisease;
+      label = translation.get('detected_disease');
+      value = translation.translateDisease(processedDisease);
       icon = Icons.medical_services_rounded;
 
       final severity = widget.scanData['severity']?.toString() ?? 'Medium';
@@ -146,6 +153,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     final displayInfo = _getDiseaseDisplayInfo();
     final String? plantName = widget.scanData['plantName']?.toString();
@@ -171,9 +179,9 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
               children: [
                 Expanded(
                   child: SectionHeader(
-                    title: 'Analysis Details',
+                    title: translation.get('analysis_details'),
                     icon: Icons.analytics_rounded,
-                    subtitle: 'Comprehensive diagnosis breakdown',
+                    subtitle: translation.get('comprehensive_diagnosis'),
                     iconColor: const Color(0xFF8B5CF6),
                   ),
                 ),
@@ -197,7 +205,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                     color: const Color(0xFF8B5CF6),
                     iconSize: 20,
                     onPressed: _copyAllDetails,
-                    tooltip: 'Copy All Details',
+                    tooltip: translation.get('copy_all_details'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -228,7 +236,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                       HapticFeedback.selectionClick();
                       setState(() => _isExpanded = !_isExpanded);
                     },
-                    tooltip: _isExpanded ? 'Collapse' : 'Expand',
+                    tooltip: _isExpanded ? translation.get('collapse') : translation.get('expand'),
                   ),
                 ),
               ],
@@ -244,20 +252,12 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: isDark
-                        ? [
-                      const Color(0xFF1E293B),
-                      const Color(0xFF0F172A),
-                    ]
-                        : [
-                      Colors.white,
-                      const Color(0xFFF8FAFC),
-                    ],
+                        ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                        : [Colors.white, const Color(0xFFF8FAFC)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.06),
+                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
                     width: 2,
                   ),
                   boxShadow: [
@@ -281,10 +281,8 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            (displayInfo['color'] as Color)
-                                .withOpacity(isDark ? 0.15 : 0.08),
-                            (displayInfo['color'] as Color)
-                                .withOpacity(isDark ? 0.08 : 0.03),
+                            (displayInfo['color'] as Color).withOpacity(isDark ? 0.15 : 0.08),
+                            (displayInfo['color'] as Color).withOpacity(isDark ? 0.08 : 0.03),
                           ],
                         ),
                         borderRadius: const BorderRadius.only(
@@ -293,8 +291,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                         ),
                         border: Border(
                           bottom: BorderSide(
-                            color: (displayInfo['color'] as Color)
-                                .withOpacity(0.2),
+                            color: (displayInfo['color'] as Color).withOpacity(0.2),
                             width: 2,
                           ),
                         ),
@@ -318,8 +315,8 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                               plantName.isNotEmpty &&
                               plantName != 'Unknown Plant') ...[
                             _AnimatedDetailRow(
-                              label: 'Plant Species',
-                              value: plantName,
+                              label: translation.get('plant_species'),
+                              value: translation.translatePlant(plantName),
                               icon: Icons.eco_rounded,
                               iconColor: const Color(0xFF10B981),
                               delay: 0.1,
@@ -336,8 +333,8 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                               severity.isNotEmpty &&
                               severity.toLowerCase() != 'none') ...[
                             _AnimatedDetailRow(
-                              label: 'Severity Level',
-                              value: severity,
+                              label: translation.get('severity_level'),
+                              value: translation.translateSeverity(severity),
                               icon: Icons.warning_rounded,
                               iconColor: _getSeverityColor(severity),
                               valueColor: _getSeverityColor(severity),
@@ -352,7 +349,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                           // Confidence Level
                           if (confidence != null && confidence.isNotEmpty) ...[
                             _AnimatedDetailRow(
-                              label: 'AI Confidence',
+                              label: translation.get('ai_confidence'),
                               value: '${_formatConfidence(confidence)}%',
                               icon: Icons.analytics_rounded,
                               iconColor: _getConfidenceColor(confidence),
@@ -368,7 +365,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                           // Cause Information
                           if (hasDisease && cause != null && cause.isNotEmpty) ...[
                             _AnimatedDetailRow(
-                              label: 'Likely Cause',
+                              label: translation.get('likely_cause'),
                               value: cause,
                               icon: Icons.search_rounded,
                               iconColor: const Color(0xFF8B5CF6),
@@ -412,10 +409,10 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                                       size: 24,
                                     ),
                                     const SizedBox(width: 12),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
-                                        'No diseases detected. Plant appears to be in excellent health!',
-                                        style: TextStyle(
+                                        translation.get('no_diseases_detected'),
+                                        style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: Color(0xFF10B981),

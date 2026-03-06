@@ -1,3 +1,4 @@
+// lib/core/services/translation_service.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,8 +9,9 @@ class TranslationService extends ChangeNotifier {
 
   bool _isUrdu = false;
   bool get isUrdu => _isUrdu;
+  String get currentLanguage => _isUrdu ? 'ur' : 'en';
 
-  static const String _languageKey = 'capture_screen_language';
+  static const String _languageKey = 'app_language';
 
   Future<void> loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -28,15 +30,134 @@ class TranslationService extends ChangeNotifier {
     return _isUrdu ? _urduTranslations[key] ?? key : _englishTranslations[key] ?? key;
   }
 
+  // Translate plant names
+  String translatePlant(String plantName) {
+    if (!_isUrdu) return plantName;
+    final normalized = plantName.toLowerCase().trim();
+    return _plantTranslations[normalized]?['ur'] ?? plantName;
+  }
+
+  // Translate disease names
+  String translateDisease(String diseaseName) {
+    if (!_isUrdu) return diseaseName;
+    final normalized = diseaseName.toLowerCase().trim();
+    return _diseaseTranslations[normalized]?['ur'] ?? diseaseName;
+  }
+
+  // Translate severity
+  String translateSeverity(String severity) {
+    if (!_isUrdu) return severity;
+    final normalized = severity.toLowerCase().trim();
+    return _severityTranslations[normalized] ?? severity;
+  }
+
   // English translations
   static const Map<String, String> _englishTranslations = {
-    // App Bar
+    // App Basic
     'app_title': 'AGRIGUARD',
     'analysis_method': 'Analysis Method',
     'image_source': 'Image Source',
     'analyzing': 'Analyzing...',
 
-    // Welcome Screen
+    // Results Screen
+    'analysis_results': 'Analysis Results',
+    'diagnosis': 'Diagnosis',
+    'diagnosis_summary': 'Diagnosis Summary',
+    'analysis_details': 'Analysis Details',
+    'comprehensive_diagnosis': 'Comprehensive diagnosis breakdown',
+    'disease_causes': 'Disease Causes',
+    'possible_causes': 'Possible Causes',
+    'understanding_causes': 'Understanding the root causes',
+    'recommendations': 'Recommendations',
+    'treatment_steps': 'Treatment Steps',
+    'follow_steps': 'Follow these steps in order',
+    'next_steps': 'Next Steps',
+    'recommended_actions': 'Recommended actions to take',
+    'preventive_measures': 'Preventive Measures',
+
+    // Status
+    'healthy': 'Healthy',
+    'healthy_plant': 'Healthy Plant',
+    'diseased': 'Diseased',
+    'disease_detected': 'Disease Detected',
+    'unknown': 'Unknown',
+
+    // Severity
+    'severity': 'Severity',
+    'severity_level': 'Severity Level',
+    'low': 'Low',
+    'medium': 'Medium',
+    'high': 'High',
+    'critical': 'Critical',
+    'none': 'None',
+    'n/a': 'N/A',
+
+    // Details
+    'plant_species': 'Plant Species',
+    'plant_name': 'Plant name',
+    'disease_name': 'Disease Name',
+    'confidence_level': 'Confidence Level',
+    'ai_confidence': 'AI Confidence',
+    'scientific_name': 'Scientific Name',
+    'common_name': 'Common Name',
+    'description': 'Description',
+    'health_status': 'Health Status',
+    'detected_disease': 'Detected Disease',
+    'likely_cause': 'Likely Cause',
+
+    // Actions
+    'generate_pdf': 'Generate PDF',
+    'generating': 'Generating...',
+    'save_pdf': 'Save PDF',
+    'share_pdf': 'Share PDF',
+    'advanced_search': 'Advanced Search',
+    'want_deeper_analysis': 'Want deeper analysis?',
+    'try_advanced_ai': 'Try Advanced AI Search with AI & Plant.id',
+    'consult_expert': 'Consult an Expert',
+    'monitor_plant': 'Monitor Your Plant',
+    'apply_treatment': 'Apply Treatment',
+    'copy_all_details': 'Copy All Details',
+    'collapse': 'Collapse',
+    'expand': 'Expand',
+    'copied_to_clipboard': 'copied to clipboard',
+    'details_copied': 'Analysis details copied to clipboard',
+
+    // Messages
+    'no_image_available': 'No image available',
+    'analysis_failed': 'Analysis could not be completed',
+    'please_try_again': 'Please try again',
+    'loading': 'Loading...',
+    'no_diseases_detected': 'No diseases detected. Plant appears to be in excellent health!',
+    'plant_analysis_details': 'Plant Analysis Details',
+
+    // Next Steps Actions
+    'monitor_progress': 'Monitor Progress',
+    'monitor_progress_desc': 'Check back in 3-5 days to track healing progress',
+    'get_treatment': 'Get Treatment Products',
+    'get_treatment_desc': 'Find recommended products at your local store',
+    'consult_expert_desc': 'Contact a specialist if symptoms worsen',
+
+    // Disease Causes
+    'no_disease_analysis': 'No Disease Analysis Available',
+    'analysis_not_available': 'Analysis data is not available for this scan',
+
+    // Recommendations
+    'treatment_plan': 'Treatment Plan',
+    'no_recommendations': 'No Recommendations Available',
+    'consult_expert_guidance': 'Consult an expert for personalized guidance',
+    'completed': 'COMPLETED',
+    'step': 'STEP',
+    'cause': 'CAUSE',
+
+    // Image Detection
+    'image_not_recognized': 'Image Not Recognized',
+    'non_plant_image': 'Non-Plant Image',
+    'analyzing_image': 'Analyzing image...',
+    'checking_leaf': 'Checking if image is a plant leaf',
+    'getting_severity': 'Getting severity and recommendations...',
+    'analyzing_severity': 'Analyzing disease severity and treatment options',
+
+    // Welcome & Onboarding
     'welcome_title': 'Plant Disease Detection',
     'welcome_subtitle': 'AI-Powered Agricultural Assistant',
     'welcome_description': 'Identify plant diseases instantly using advanced AI technology',
@@ -57,9 +178,6 @@ class TranslationService extends ChangeNotifier {
     'advanced_ai': 'Advanced AI',
     'advanced_ai_desc': 'Accurate • Detailed • Expert',
     'advanced_ai_features': '• Cloud-based analysis\n• Expert recommendations\n• Detailed treatment plans\n• Weather integration',
-    'model_loading': 'Loading AI models...',
-    'model_plant': 'Plant Identification',
-    'model_disease': 'Disease Detection',
 
     // Source Selection
     'source_title': 'Select Image Source',
@@ -90,14 +208,12 @@ class TranslationService extends ChangeNotifier {
     'error_load_models': 'Failed to load AI models. Please restart the app.',
     'error_sign_in': 'Please sign in to continue',
     'error_file_not_found': 'Image file not found',
-
-    // Guest Limit
     'limit_reached': 'Scan Limit Reached',
     'limit_message': 'You have reached your free scan limit',
     'limit_benefit': 'Sign up for unlimited scans and advanced features!',
     'sign_in_now': 'Sign In Now',
 
-    // Info Dialog
+    // Info & Help
     'info_title': 'How It Works',
     'info_step1': 'Select Analysis Method',
     'info_step1_desc': 'Choose between fast on-device AI or advanced cloud analysis',
@@ -111,24 +227,9 @@ class TranslationService extends ChangeNotifier {
     'info_tip3': '📏 Include whole leaf if possible',
     'info_tip4': '🔍 Avoid blurry images',
     'got_it': 'Got It',
-
-    // How It Works
     'how_it_works': 'How It Works',
-    'take_photo': 'Take Photo',
-    'choose_method': 'Choose Method',
-    'ai_analysis': 'AI Analysis',
-    'get_results': 'Get Results',
-    'step1_text': 'Capture or upload a clear photo of the plant leaf',
-    'step2_text': 'Choose between fast on-device or detailed cloud analysis',
-    'step3_text': 'Our AI analyzes the image for identification',
-    'step4_text': 'Receive instant diagnosis and treatment advice',
 
-    // Guest Stats
-    'guest_stats_title': 'Guest Mode',
-    'guest_stats_scans': 'scans remaining',
-    'guest_stats_signup': 'Sign up for unlimited scans and save your history',
-
-    // Feature Highlights
+    // Features
     'features_title': 'Key Features',
     'feature_identify': 'Identify Plants',
     'feature_identify_desc': '50,000+ species',
@@ -139,52 +240,7 @@ class TranslationService extends ChangeNotifier {
     'feature_offline': 'Offline Mode',
     'feature_offline_desc': 'No internet needed',
 
-    // Comparison Table
-    'comparison_title': 'Method Comparison',
-    'comparison_subtitle': 'Choose what suits you best',
-    'comparison_ondevice': 'On-Device',
-    'comparison_cloudai': 'Cloud AI',
-    'comparison_internet': 'Internet',
-    'comparison_not_required': 'Not Required',
-    'comparison_required': 'Required',
-    'comparison_speed': 'Speed',
-    'comparison_instant': 'Instant',
-    'comparison_database': 'Database',
-    'comparison_species': 'Species',
-    'comparison_privacy': 'Privacy',
-    'comparison_private': '100% Private',
-    'comparison_cloud_based': 'Cloud Based',
-    'comparison_bestfor': 'Best For',
-    'comparison_quick': 'Quick Checks',
-    'comparison_deep': 'Deep Analysis',
-
-    // Processing Overlay
-    'processing_analyzing': 'Analyzing Your Plant',
-    'processing_ondevice_subtitle': 'Using on-device AI for instant results',
-    'processing_cloud_subtitle': 'Connecting to cloud AI for detailed analysis',
-    'processing_image_captured': 'Image Captured',
-    'processing_analyzing_stage': 'Analyzing',
-    'processing_generating': 'Generating Report',
-    'processing_text': 'Processing...',
-    'processing_guest_scans': 'scans remaining in guest mode',
-    'processing_cancel': 'Cancel Analysis',
-
-    // Source Card
-    'source_tips': 'Tips for Best Results',
-    'source_select': 'Select This Option',
-    'source_loading': 'Loading...',
-    'tap_to_begin': 'Tap to Begin',
-    'start_ai_analysis': 'Start AI Analysis',
-    'quick_easy': 'Quick & Easy',
-
-
-    // Advance Scan
-    'advanced_analysis': 'Advanced Analysis',
-    'step_choose': 'Choose Analysis Method',
-    'step_choose_subtitle': 'Select how to analyze your plant',
-    'your_scan': 'Your Scan',
-    'plant_image_ready': 'Plant Image Ready',
-    'image_not_available': 'Image Not Available',
+    // Analysis Methods
     'analysis_methods': 'Analysis Methods',
     'gemini_ai': 'Gemini AI',
     'gemini_desc': 'Fast AI-powered disease detection',
@@ -192,8 +248,13 @@ class TranslationService extends ChangeNotifier {
     'plantid_ai': 'Plant.id',
     'plantid_desc': 'Professional plant identification',
     'plantid_best': 'Best for detailed analysis',
+    'cloud_ai': 'Cloud AI',
+    'cloud_ai_desc': 'Fast AI-powered disease detection',
+    'plantid': 'Plant.id',
+    'plantiddesc': 'Professional plant identification',
     'duration': 'Duration',
     'seconds': 'seconds',
+    'Seconds': 'seconds',
     'start_analysis': 'Start Analysis',
     'Analyzing': 'Analyzing',
     'selected': 'Selected',
@@ -203,22 +264,178 @@ class TranslationService extends ChangeNotifier {
     'plant_id': 'Plant identification',
     'disease_diagnosis': 'Disease diagnosis',
     'treatment_plans': 'Treatment plans',
-    'cloud_ai': 'Cloud AI',
-    'cloud_ai_desc': 'Fast AI-powered disease detection',
-    'plantid': 'Plant.id',
-    'plantiddesc': 'Professional plant identification',
-    'Seconds': 'seconds',
+
+    // ===== HELP & SUPPORT TRANSLATIONS =====
+
+    // Help & Support Screen
+    'help_support': 'Help & Support',
+    'get_in_touch': 'Get in Touch',
+    'help_questions': 'We\'re here to help you with any questions',
+
+    // Contact Info
+    'email': 'Email',
+    'phone': 'Phone',
+    'instagram': 'Instagram',
+
+    // Contact Form
+    'send_message': 'Send us a Message',
+    'get_back_soon': 'We\'ll get back to you soon',
+    'your_name': 'Your Name',
+    'enter_full_name': 'Enter your full name',
+    'email_address': 'Email Address',
+    'email_placeholder': 'your.email@example.com',
+    'your_message': 'Your Message',
+    'type_message': 'Type your message here...',
+    'send_message_btn': 'Send Message',
+
+    // Form Validation
+    'name_required': 'Name is required',
+    'email_required': 'Email is required',
+    'valid_email': 'Enter a valid email address',
+    'message_required': 'Message is required',
+    'message_too_short': 'Message is too short (min 10 characters)',
+    'message_sent': 'Message sent successfully!',
+
+    // FAQ Section
+    'quick_answers': 'Quick Answers',
+    'find_answers': 'Find answers to common questions',
+    'view_all_faqs': 'View All FAQs',
+    'all_faqs': 'All FAQs',
+    'search_faqs': 'Search FAQs...',
+    'no_results': 'No results found',
+    'try_different': 'Try searching with different keywords',
+
+    // FAQ Questions & Answers (4 preview questions)
+    'faq_scan_q': 'How do I scan a plant?',
+    'faq_scan_a': 'Open the app, tap the scan button, and point your camera at the plant. Ensure good lighting for accurate results.',
+
+    'faq_plants_q': 'What plants can the app identify?',
+    'faq_plants_a': 'The app supports a wide range of plants, including common houseplants, garden plants, and crops. Check the plant database for specifics.',
+
+    'faq_accuracy_q': 'How accurate are the results?',
+    'faq_accuracy_a': 'Our AI model provides high accuracy, but results depend on image quality and plant condition. Always consult a professional for critical cases.',
+
+    'faq_history_q': 'Can I save my scan history?',
+    'faq_history_a': 'Yes, all scans are saved in your profile. You can view, delete, or share them from the history section.',
+
+    // Additional FAQ Questions (Add more as needed)
+    'faq_what_is_agriguard_q': 'What is AgriGuard?',
+    'faq_what_is_agriguard_a': 'AgriGuard is an AI-powered plant identification and disease detection app that uses TensorFlow machine learning to identify 12 plant species and detect 18 common plant diseases from photos, even without internet connection.',
+
+    'faq_offline_q': 'Can I use the app without internet?',
+    'faq_offline_a': 'Yes! PlantDetect works completely offline thanks to our optimized TensorFlow Lite model. All plant identification and disease detection happens on your device without needing internet connection.',
+
+    'faq_best_photo_q': 'How do I take the best photo for scanning?',
+    'faq_best_photo_a': 'For optimal results: 1) Use natural lighting, 2) Focus on leaves or affected areas, 3) Keep camera steady, 4) Fill frame with plant, 5) Take multiple angles if needed. Avoid shadows and blurry images.',
   };
 
   // Urdu translations
   static const Map<String, String> _urduTranslations = {
-    // App Bar
+    // App Basic
     'app_title': 'ایگری گارڈ',
     'analysis_method': 'تجزیہ کا طریقہ',
     'image_source': 'تصویر کا ذریعہ',
     'analyzing': 'تجزیہ جاری ہے...',
 
-    // Welcome Screen
+    // Results Screen
+    'analysis_results': 'تجزیہ کے نتائج',
+    'diagnosis': 'تشخیص',
+    'diagnosis_summary': 'تشخیص کا خلاصہ',
+    'analysis_details': 'تجزیہ کی تفصیلات',
+    'comprehensive_diagnosis': 'تشخیص کی مکمل تفصیل',
+    'disease_causes': 'بیماری کی وجوہات',
+    'possible_causes': 'ممکنہ وجوہات',
+    'understanding_causes': 'بیماری کی بنیادی وجوہات',
+    'recommendations': 'سفارشات',
+    'treatment_steps': 'علاج کے مراحل',
+    'follow_steps': 'ترتیب سے ان مراحل پر عمل کریں',
+    'next_steps': 'اگلے اقدامات',
+    'recommended_actions': 'تجویز کردہ اقدامات',
+    'preventive_measures': 'احتیاطی تدابیر',
+
+    // Status
+    'healthy': 'صحت مند',
+    'healthy_plant': 'صحت مند پودا',
+    'diseased': 'بیمار',
+    'disease_detected': 'بیماری کی تشخیص',
+    'unknown': 'نامعلوم',
+
+    // Severity
+    'severity': 'شدت',
+    'severity_level': 'شدت کی سطح',
+    'low': 'کم',
+    'medium': 'درمیانہ',
+    'high': 'زیادہ',
+    'critical': 'انتہائی خطرناک',
+    'none': 'کوئی نہیں',
+    'n/a': 'لاگو نہیں',
+
+    // Details
+    'plant_species': 'پودے کی قسم',
+    'plant_name': 'پودے کا نام',
+    'disease_name': 'بیماری کا نام',
+    'confidence_level': 'اعتماد کی سطح',
+    'ai_confidence': 'AI کا اعتماد',
+    'scientific_name': 'سائنسی نام',
+    'common_name': 'عام نام',
+    'description': 'تفصیل',
+    'health_status': 'صحت کی حالت',
+    'detected_disease': 'بیماری کی تشخیص',
+    'likely_cause': 'ممکنہ وجہ',
+
+    // Actions
+    'generate_pdf': 'پی ڈی ایف بنائیں',
+    'generating': 'بنایا جا رہا ہے...',
+    'save_pdf': 'پی ڈی ایف محفوظ کریں',
+    'share_pdf': 'پی ڈی ایف شیئر کریں',
+    'advanced_search': 'اعلیٰ تلاش',
+    'want_deeper_analysis': 'مزید تفصیلی تجزیہ چاہتے ہیں؟',
+    'try_advanced_ai': 'AI اور Plant.id کے ساتھ جدید تلاش آزمائیں',
+    'consult_expert': 'ماہر سے مشورہ کریں',
+    'monitor_plant': 'اپنے پودے کی نگرانی کریں',
+    'apply_treatment': 'علاج کریں',
+    'copy_all_details': 'تمام تفصیلات کاپی کریں',
+    'collapse': 'بند کریں',
+    'expand': 'کھولیں',
+    'copied_to_clipboard': 'کاپی ہو گیا',
+    'details_copied': 'تجزیہ کی تفصیلات کاپی ہو گئیں',
+
+    // Messages
+    'no_image_available': 'کوئی تصویر دس��یاب نہیں',
+    'analysis_failed': 'تجزیہ مکمل نہیں ہو سکا',
+    'please_try_again': 'براہ کرم دوبارہ کوشش کریں',
+    'loading': 'لوڈ ہو رہا ہے...',
+    'no_diseases_detected': 'کوئی بیماری نہیں ملی۔ پودا بہترین صحت میں ہے!',
+    'plant_analysis_details': 'پودے کے تجزیہ کی تفصیلات',
+
+    // Next Steps Actions
+    'monitor_progress': 'پیشرفت کی نگرانی کریں',
+    'monitor_progress_desc': 'علاج کی پیشرفت دیکھنے کے لیے 3-5 دنوں بعد چیک کریں',
+    'get_treatment': 'علاج کی مصنوعات حاصل کریں',
+    'get_treatment_desc': 'اپنے مقامی اسٹور سے تجویز کردہ مصنوعات تلاش کریں',
+    'consult_expert_desc': 'اگر علامات بڑھیں تو ماہر سے رابطہ کریں',
+
+    // Disease Causes
+    'no_disease_analysis': 'بیماری کا تجزیہ دستیاب نہیں',
+    'analysis_not_available': 'اس اسکین کے لیے تجزیہ کا ڈیٹا دستیاب نہیں ہے',
+
+    // Recommendations
+    'treatment_plan': 'علاج کا منصوبہ',
+    'no_recommendations': 'کوئی سفارشات دستیاب نہیں',
+    'consult_expert_guidance': 'ذاتی رہنمائی کے لیے ماہر سے مشورہ کریں',
+    'completed': 'مکمل',
+    'step': 'مرحلہ',
+    'cause': 'وجہ',
+
+    // Image Detection
+    'image_not_recognized': 'تصویر کی شناخت نہیں ہوئی',
+    'non_plant_image': 'غیر پودے کی تصویر',
+    'analyzing_image': 'تصویر کا تجزیہ ہو رہا ہے...',
+    'checking_leaf': 'چیک ہو رہا ہے کہ تصویر پودے کا پتہ ہے',
+    'getting_severity': 'شدت اور سفارشات حاصل کی جا رہی ہیں...',
+    'analyzing_severity': 'بیماری کی شدت اور علاج کے اخ��یارات کا تجزیہ',
+
+    // Welcome & Onboarding
     'welcome_title': 'پودوں کی بیماریوں کی تشخیص',
     'welcome_subtitle': 'AI سے چلنے والا زرعی معاون',
     'welcome_description': 'جدید AI ٹیکنالوجی کا استعمال کرتے ہوئے فوری طور پر پودوں کی بیماریوں کی شناخت کریں',
@@ -239,9 +456,6 @@ class TranslationService extends ChangeNotifier {
     'advanced_ai': 'ایڈوانسڈ AI',
     'advanced_ai_desc': 'درست • تفصیلی • ماہر',
     'advanced_ai_features': '• کلاؤڈ پر مبنی تجزیہ\n• ماہرین کی سفارشات\n• تفصیلی علاج کے منصوبے\n• موسم کی معلومات',
-    'model_loading': 'AI ماڈل لوڈ ہو رہے ہیں...',
-    'model_plant': 'پودے کی شناخت',
-    'model_disease': 'بیماری کی تشخیص',
 
     // Source Selection
     'source_title': 'تصویر کا ذریعہ منتخب کریں',
@@ -272,14 +486,12 @@ class TranslationService extends ChangeNotifier {
     'error_load_models': 'AI ماڈل لوڈ کرنے میں ناکامی۔ براہ کرم ایپ دوبارہ شروع کریں۔',
     'error_sign_in': 'جاری رکھنے کے لیے براہ کرم سائن ان کریں',
     'error_file_not_found': 'تصویر کی فائل نہیں ملی',
-
-    // Guest Limit
     'limit_reached': 'اسکین کی حد پوری ہو گئی',
     'limit_message': 'آپ اپنی مفت اسکین کی حد تک پہنچ گئے ہیں',
     'limit_benefit': 'لامحدود اسکینز اور جدید خصوصیات کے لیے سائن اپ کریں!',
     'sign_in_now': 'ابھی سائن ان کریں',
 
-    // Info Dialog
+    // Info & Help
     'info_title': 'یہ کیسے کام کرتا ہے',
     'info_step1': 'تجزیہ کا طریقہ منتخب کریں',
     'info_step1_desc': 'تیز آن ڈیوائس AI یا جدید کلاؤڈ تجزیہ میں سے انتخاب کریں',
@@ -293,24 +505,9 @@ class TranslationService extends ChangeNotifier {
     'info_tip3': '📏 ممکن ہو تو پورا پتہ شامل کریں',
     'info_tip4': '🔍 دھندلی تصاویر سے بچیں',
     'got_it': 'سمجھ گیا',
-
-    // How It Works
     'how_it_works': 'یہ کیسے کام کرتا ہے',
-    'take_photo': 'تصویر لیں',
-    'choose_method': 'طریقہ منتخب کریں',
-    'ai_analysis': 'AI تجزیہ',
-    'get_results': 'نتائج حاصل کریں',
-    'step1_text': 'پودے کے پتے کی واضح تصویر لیں یا اپ لوڈ کریں',
-    'step2_text': 'تیز آن ڈیوائس یا تفصیلی کلاؤڈ تجزیہ میں سے انتخاب کریں',
-    'step3_text': 'ہماری AI شناخت کے لیے تصویر کا تجزیہ کرتی ہے',
-    'step4_text': 'فوری تشخیص اور علاج کی مشورہ حاصل کریں',
 
-    // Guest Stats
-    'guest_stats_title': 'مہمان موڈ',
-    'guest_stats_scans': 'اسکینز باقی',
-    'guest_stats_signup': 'لامحدود اسکینز اور اپنی سرگزشت محفوظ کرنے کے لیے سائن اپ کریں',
-
-    // Feature Highlights
+    // Features
     'features_title': 'اہم خصوصیات',
     'feature_identify': 'پودوں کی شناخت',
     'feature_identify_desc': '50,000+ اقسام',
@@ -321,51 +518,7 @@ class TranslationService extends ChangeNotifier {
     'feature_offline': 'آف لائن موڈ',
     'feature_offline_desc': 'انٹرنیٹ کی ضرورت نہیں',
 
-    // Comparison Table
-    'comparison_title': 'طریقوں کا موازنہ',
-    'comparison_subtitle': 'منتخب کریں جو آپ کے لیے بہتر ہے',
-    'comparison_ondevice': 'آن ڈیوائس',
-    'comparison_cloudai': 'کلاؤڈ AI',
-    'comparison_internet': 'انٹرنیٹ',
-    'comparison_not_required': 'ضروری نہیں',
-    'comparison_required': 'ضروری',
-    'comparison_speed': 'رفتار',
-    'comparison_instant': 'فوری',
-    'comparison_database': 'ڈیٹا بیس',
-    'comparison_species': 'اقسام',
-    'comparison_privacy': 'رازداری',
-    'comparison_private': '100% نجی',
-    'comparison_cloud_based': 'کلاؤڈ پر مبنی',
-    'comparison_bestfor': 'بہترین',
-    'comparison_quick': 'فوری جانچ',
-    'comparison_deep': 'گہرا تجزیہ',
-
-    // Processing Overlay
-    'processing_analyzing': 'آپ کے پودے کا تجزیہ',
-    'processing_ondevice_subtitle': 'فوری نتائج کے لیے آن ڈیوائس AI استعمال کر رہے ہیں',
-    'processing_cloud_subtitle': 'تفصیلی تجزیہ کے لیے کلاؤڈ AI سے جڑ رہے ہیں',
-    'processing_image_captured': 'تصویر محفوظ',
-    'processing_analyzing_stage': 'تجزیہ جاری',
-    'processing_generating': 'رپورٹ تیار کر رہے ہیں',
-    'processing_text': 'پروسیسنگ جاری ہے...',
-    'processing_guest_scans': 'مہمان موڈ میں اسکینز باقی',
-    'processing_cancel': 'تجزیہ منسوخ کریں',
-
-    // Source Card
-    'source_tips': 'بہترین نتائج کے لیے تجاویز',
-    'source_select': 'یہ آپشن منتخب کریں',
-    'source_loading': 'لوڈ ہو رہا ہے...',
-    'tap_to_begin': 'شروع کرنے کے لیے ٹیپ کریں',
-    'start_ai_analysis': 'AI تشخیص شروع کریں',
-    'quick_easy': 'فوری اور آسان',
-
-//Advance Scan
-    'advanced_analysis': 'جدید تجزیہ',
-    'step_choose': 'تجزیہ کا طریقہ منتخب کریں',
-    'step_choose_subtitle': 'اپنے پودے کا تجزیہ کرنے کا طریقہ منتخب کریں',
-    'your_scan': 'آپ کا اسکین',
-    'plant_image_ready': 'پودے کی تصویر تجزیہ کے لیے تیار',
-    'image_not_available': 'تصویر دستیاب نہیں',
+    // Analysis Methods
     'analysis_methods': 'تجزیہ کے طریقے',
     'gemini_ai': 'Gemini AI',
     'gemini_desc': 'تیز AI سے بیماری کی تشخیص',
@@ -373,8 +526,13 @@ class TranslationService extends ChangeNotifier {
     'plantid_ai': 'Plant.id',
     'plantid_desc': 'پیشہ ورانہ پودوں کی شناخت',
     'plantid_best': 'تفصیلی تجزیہ کے لیے بہترین',
+    'cloud_ai': 'Cloud AI',
+    'cloud_ai_desc': 'تیز AI سے بیماری کی تشخیص',
+    'plantid': 'Plant.id',
+    'plantiddesc': 'پیشہ ورانہ پودوں کی شناخت',
     'duration': 'دورانیہ',
     'seconds': 'سیکنڈ',
+    'Seconds': 'سیکنڈ',
     'start_analysis': 'تجزیہ شروع کریں',
     'Analyzing': 'تجزیہ جاری ہے',
     'selected': 'منتخب',
@@ -384,10 +542,131 @@ class TranslationService extends ChangeNotifier {
     'plant_id': 'پودوں کی شناخت',
     'disease_diagnosis': 'بیماری کی تشخیص',
     'treatment_plans': 'علاج کے منصوبے',
-    'cloud_ai': 'Cloud AI',
-    'cloud_ai_desc': 'تیز AI سے بیماری کی تشخیص',
-    'plantid': 'Plant.id',
-    'plantiddesc': 'پیشہ ورانہ پودوں کی شناخت',
-    'Seconds': 'سیکنڈ',
+
+    // ===== HELP & SUPPORT TRANSLATIONS (URDU) =====
+
+    // Help & Support Screen
+    'help_support': 'مدد اور سپورٹ',
+    'get_in_touch': 'رابطے میں رہیں',
+    'help_questions': 'ہم آپ کی کسی بھی سوال میں مدد کے لیے حاضر ہیں',
+
+    // Contact Info
+    'email': 'ای میل',
+    'phone': 'فون',
+    'instagram': 'انسٹاگرام',
+
+    // Contact Form
+    'send_message': 'ہمیں پیغام بھیجیں',
+    'get_back_soon': 'ہم جلد آپ سے رابطہ کریں گے',
+    'your_name': 'آپ کا نام',
+    'enter_full_name': 'اپنا پورا نام درج کریں',
+    'email_address': 'ای میل ایڈریس',
+    'email_placeholder': 'آپ کا.ای میل@مثال.com',
+    'your_message': 'آپ کا پیغام',
+    'type_message': 'اپنا پیغام یہاں لکھیں...',
+    'send_message_btn': 'پیغام بھیجیں',
+
+    // Form Validation
+    'name_required': 'نام ضروری ہے',
+    'email_required': 'ای میل ضروری ہے',
+    'valid_email': 'درست ای میل ایڈریس درج کریں',
+    'message_required': 'پیغام ضروری ہے',
+    'message_too_short': 'پیغام بہت مختصر ہے (کم از کم 10 حروف)',
+    'message_sent': 'پیغام کامیابی سے بھیج دیا گیا!',
+
+    // FAQ Section
+    'quick_answers': 'فوری جوابات',
+    'find_answers': 'عام سوالات کے جوابات تلاش کریں',
+    'view_all_faqs': 'تمام سوالات دیکھیں',
+    'all_faqs': 'تمام سوالات',
+    'search_faqs': 'سوالات تلاش کریں...',
+    'no_results': 'کوئی نتیجہ نہیں ملا',
+    'try_different': 'مختلف مطلوبہ الفاظ سے تلاش کریں',
+
+    // FAQ Questions & Answers (4 preview questions)
+    'faq_scan_q': 'میں پودے کو کیسے اسکین کروں؟',
+    'faq_scan_a': 'ایپ کھولیں، اسکین بٹن دب��ئیں، اور اپنا کیمرہ پودے کی طرف کریں۔ درست نتائج کے لیے اچھی روشنی کو یقینی بنائیں۔',
+
+    'faq_plants_q': 'ایپ کون سے پودوں کی شناخت کر سکتی ہے؟',
+    'faq_plants_a': 'ایپ پودوں کی وسیع رینج کو سپورٹ کرتی ہے، بشمول عام گھریلو پودے، باغ کے پودے اور فصلیں۔ تفصیلات کے لیے پودوں کا ڈیٹا بیس چیک کریں۔',
+
+    'faq_accuracy_q': 'نتائج کتنے درست ہیں؟',
+    'faq_accuracy_a': 'ہمارا AI ماڈل اعلیٰ درستگی فراہم کرتا ہے، لیکن نتائج تصویر کے معیار اور پودے کی حالت پر منحصر ہیں۔ نازک معاملات کے لیے ہمیشہ پیشہ ور سے مشورہ کریں۔',
+
+    'faq_history_q': 'کیا میں اپنی اسکین ہسٹری محفوظ کر سکتا ہوں؟',
+    'faq_history_a': 'جی ہاں، تمام اسکینز آپ کی پروفائل میں محفوظ ہیں۔ آپ انہیں ہسٹری سیکشن سے دیکھ، حذف یا شیئر کر سکتے ہیں۔',
+
+    // Additional FAQ Questions
+    'faq_what_is_agriguard_q': 'AgriGuard کیا ہے؟',
+    'faq_what_is_agriguard_a': 'AgriGuard ایک AI سے چلنے والی پودوں کی شناخت اور بیماری کا پتہ لگانے والی ایپ ہے جو TensorFlow مشین لرننگ استعمال کرتی ہے تاکہ 12 پودوں کی اقسام کی شناخت اور تصاویر سے 18 عام پودوں کی بیماریوں کا پتہ لگایا جا سکے، انٹرنیٹ کنکشن کے بغیر بھی۔',
+
+    'faq_offline_q': 'کیا میں ایپ کو انٹرنیٹ کے بغیر استعمال کر سکتا ہوں؟',
+    'faq_offline_a': 'جی ہاں! PlantDetect ہمارے بہتر شدہ TensorFlow Lite ماڈل کی بدولت مکمل طور پر آف لائن کام کرتا ہے۔ تمام پودوں کی شناخت اور بیماری کی تشخیص آپ کے ڈیوائس پر انٹرنیٹ کنکشن کی ضرورت کے بغیر ہوتی ہے۔',
+
+    'faq_best_photo_q': 'اسکیننگ کے لیے بہترین تصویر کیسے لی جائے؟',
+    'faq_best_photo_a': 'بہترین نتائج کے لیے: 1) قدرتی روشنی استعمال کریں، 2) پتوں یا متاثرہ علاقوں پر توجہ دیں، 3) کیمرہ کو مستحکم رکھیں، 4) فریم کو پودے سے بھریں، 5) ضرورت پڑنے پر مختلف زاویوں سے لیں۔ سائے اور دھندلی تصاویر سے بچیں۔',
+  };
+
+  // Plant translations
+  static const Map<String, Map<String, String>> _plantTranslations = {
+    'tomato': {'en': 'Tomato', 'ur': 'ٹماٹر'},
+    'potato': {'en': 'Potato', 'ur': 'آلو'},
+    'corn': {'en': 'Corn', 'ur': 'مکئی'},
+    'maize': {'en': 'Maize', 'ur': 'مکئی'},
+    'wheat': {'en': 'Wheat', 'ur': 'گندم'},
+    'rice': {'en': 'Rice', 'ur': 'چاول'},
+    'cotton': {'en': 'Cotton', 'ur': 'کپاس'},
+    'sugarcane': {'en': 'Sugarcane', 'ur': 'گنا'},
+    'pepper': {'en': 'Pepper', 'ur': 'مرچ'},
+    'bell pepper': {'en': 'Bell Pepper', 'ur': 'شملہ مرچ'},
+    'apple': {'en': 'Apple', 'ur': 'سیب'},
+    'grape': {'en': 'Grape', 'ur': 'انگور'},
+    'strawberry': {'en': 'Strawberry', 'ur': 'اسٹرابیری'},
+    'peach': {'en': 'Peach', 'ur': 'آڑو'},
+    'cherry': {'en': 'Cherry', 'ur': 'چیری'},
+    'orange': {'en': 'Orange', 'ur': 'مالٹا'},
+    'lemon': {'en': 'Lemon', 'ur': 'لیموں'},
+    'mango': {'en': 'Mango', 'ur': 'آم'},
+    'banana': {'en': 'Banana', 'ur': 'کیلا'},
+    'guava': {'en': 'Guava', 'ur': 'امرود'},
+    'soybean': {'en': 'Soybean', 'ur': 'سویابین'},
+  };
+
+  // Disease translations
+  static const Map<String, Map<String, String>> _diseaseTranslations = {
+    'healthy': {'en': 'Healthy', 'ur': 'صحت مند'},
+    'bacterial spot': {'en': 'Bacterial Spot', 'ur': 'بیکٹیریل داغ'},
+    'early blight': {'en': 'Early Blight', 'ur': 'ابتدائی جھلساؤ'},
+    'late blight': {'en': 'Late Blight', 'ur': 'تاخیری جھلساؤ'},
+    'leaf mold': {'en': 'Leaf Mold', 'ur': 'پتوں کی سڑن'},
+    'septoria leaf spot': {'en': 'Septoria Leaf Spot', 'ur': 'سیپٹوریا داغ'},
+    'spider mites': {'en': 'Spider Mites', 'ur': 'مکڑی کیڑے'},
+    'target spot': {'en': 'Target Spot', 'ur': 'ہدف داغ'},
+    'mosaic virus': {'en': 'Mosaic Virus', 'ur': 'موزیک وائرس'},
+    'yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
+    'powdery mildew': {'en': 'Powdery Mildew', 'ur': 'سفید پھپھوندی'},
+    'rust': {'en': 'Rust', 'ur': 'زنگ'},
+    'blight': {'en': 'Blight', 'ur': 'جھلساؤ'},
+    'leaf blight': {'en': 'Leaf Blight', 'ur': 'پتوں کا جھلساؤ'},
+    'black rot': {'en': 'Black Rot', 'ur': 'کالی سڑن'},
+    'apple scab': {'en': 'Apple Scab', 'ur': 'سیب کا خارش'},
+    'common rust': {'en': 'Common Rust', 'ur': 'عام زنگ'},
+    'northern leaf blight': {'en': 'Northern Leaf Blight', 'ur': 'شمالی پتوں کا جھلساؤ'},
+    'cercospora leaf spot': {'en': 'Cercospora Leaf Spot', 'ur': 'سرکوسپورا پتوں کا داغ'},
+    'esca': {'en': 'Esca', 'ur': 'ایسکا'},
+    'black measles': {'en': 'Black Measles', 'ur': 'کالا خسرہ'},
+    'leaf scorch': {'en': 'Leaf Scorch', 'ur': 'پتوں کا جھلساؤ'},
+    'stripe rust': {'en': 'Stripe Rust', 'ur': 'دھاری دار زنگ'},
+    'yellow rust': {'en': 'Yellow Rust', 'ur': 'پیلا زنگ'},
+  };
+
+  // Severity translations
+  static const Map<String, String> _severityTranslations = {
+    'low': 'کم',
+    'medium': 'درمیانہ',
+    'high': 'زیادہ',
+    'critical': 'انتہائی خطرناک',
+    'none': 'کوئی نہیں',
+    'n/a': 'لاگو نہیں',
   };
 }

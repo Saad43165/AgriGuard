@@ -1,9 +1,10 @@
 // lib/core/widgets/support_app_bar.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
+import '../../../../core/services/translation_service.dart';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String title;
@@ -12,6 +13,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final double elevation;
   final double topPadding;
+  final bool showLanguageToggle;
 
   const CustomAppBar({
     super.key,
@@ -21,6 +23,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.actions,
     this.elevation = 0,
     this.topPadding = 8.0,
+    this.showLanguageToggle = true,
   });
 
   @override
@@ -57,14 +60,10 @@ class _CustomAppBarState extends State<CustomAppBar>
 
   void _handleBack(BuildContext context) {
     HapticFeedback.lightImpact();
-
-    // If custom callback is provided, use it
     if (widget.onBackPressed != null) {
       widget.onBackPressed!();
       return;
     }
-
-    // Default behavior: try to pop, otherwise go to profile
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
     } else {
@@ -76,6 +75,7 @@ class _CustomAppBarState extends State<CustomAppBar>
   Widget build(BuildContext context) {
     final padding = AppMeasurements.getResponsivePadding(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -89,19 +89,19 @@ class _CustomAppBarState extends State<CustomAppBar>
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Back Button on LEFT SIDE
+              // Back Button
               if (widget.showBackButton)
                 _buildBackButton(context, padding, isDark)
               else
                 const SizedBox(width: 50),
 
-              // Title in Center with Gradient
-              Expanded(
-                child: _buildTitle(context),
-              ),
+              // Title
+              Expanded(child: _buildTitle(context)),
 
-              // Actions or Empty Spacer on RIGHT SIDE
-              if (widget.actions != null && widget.actions!.isNotEmpty)
+              // Language Toggle or Actions
+              if (widget.showLanguageToggle)
+                _buildLanguageToggle(context, translation, isDark)
+              else if (widget.actions != null && widget.actions!.isNotEmpty)
                 Row(children: widget.actions!)
               else
                 const SizedBox(width: 50),
@@ -157,6 +157,60 @@ class _CustomAppBarState extends State<CustomAppBar>
     );
   }
 
+  Widget _buildLanguageToggle(
+      BuildContext context, TranslationService translation, bool isDark) {
+    final currentLang = translation.currentLanguage;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        translation.toggleLanguage();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+            ],
+          ),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.language_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              currentLang == 'en' ? 'EN' : 'اردو',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTitle(BuildContext context) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 600),
@@ -165,10 +219,7 @@ class _CustomAppBarState extends State<CustomAppBar>
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(0, 10 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
+          child: Opacity(opacity: value, child: child),
         );
       },
       child: ShaderMask(

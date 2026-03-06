@@ -5,7 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/navigation/app_router.dart';
 import 'core/widgets/app_themes.dart';
-import 'core/services/notification_service.dart';  // ADD THIS
+import 'core/services/notification_service.dart';
+import 'core/services/translation_service.dart';
+import 'core/services/localization_service.dart';
 import 'features/auth/Login_Screen/services/guest_service.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'firebase_options.dart';
@@ -21,12 +23,23 @@ Future<void> main() async {
   // Initialize Guest Service
   await GuestService().initialize();
 
-  // Initialize Notifications (ADD THIS)
+  // Initialize Notifications
   await NotificationService().initialize();
 
+  // Initialize Translation Services
+  final translationService = TranslationService();
+  await translationService.loadLanguage();
+
+  final localizationService = LocalizationService();
+  await localizationService.init();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider.value(value: translationService),
+        ChangeNotifierProvider.value(value: localizationService),
+      ],
       child: const AgriGuardApp(),
     ),
   );

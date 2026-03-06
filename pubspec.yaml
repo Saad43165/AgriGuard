@@ -86,6 +86,8 @@ flutter:
     - assets/data/disease_causes.json
     - assets/data/mapping.json
     - assets/data/cities.json
+    - assets/translations/
+    - assets/data/
 
 
 # Launcher Icon Configuration

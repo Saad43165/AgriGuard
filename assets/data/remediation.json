@@ -1,749 +1,1531 @@
 {
   "metadata": {
     "version": "2.0",
-    "description": "Plant disease remediation database. Each entry contains remediation (treatment) and its effect on the plant after applying that specific treatment.",
+    "description": {
+      "en": "Plant disease remediation database. Each entry contains remediation (treatment) and its effect on the plant after applying that specific treatment.",
+      "ur": "پودوں کی بیماریوں کے علاج کا ڈیٹا بیس۔ ہر اندراج میں علاج اور اس مخصوص علاج کے استعمال کے بعد پودے پر اس کا اثر موجود ہے۔"
+    },
     "last_updated": "2026-01-14",
     "severity_levels": ["None", "Low", "Medium", "High", "Critical"],
-    "effect_meaning": "Effect describes what will happen to the plant AFTER applying the suggested remediation"
+    "effect_meaning": {
+      "en": "Effect describes what will happen to the plant AFTER applying the suggested remediation",
+      "ur": "اثر بیان کرتا ہے کہ تجویز کردہ علاج لگانے کے بعد پودے کے ساتھ کیا ہوگا"
+    }
   },
 
   "remediations": {
     "Apple___Apple_scab": {
-      "plant": "Apple",
-      "disease": "Apple scab",
-
+      "plant": {
+        "en": "Apple",
+        "ur": "سیب"
+      },
+      "disease": {
+        "en": "Apple scab",
+        "ur": "سیب کا خارش"
+      },
       "None": {
-        "remediation": "No treatment needed. Continue regular monitoring and maintain orchard hygiene by removing fallen leaves after every rain.",
-        "effect": "Tree will remain healthy and continue producing high-quality fruit without any disease pressure this season."
+        "remediation": {
+          "en": "No treatment needed. Continue regular monitoring and maintain orchard hygiene by removing fallen leaves after every rain.",
+          "ur": "کسی علاج کی ضرورت نہیں۔ باقاعدہ نگرانی جاری رکھیں اور ہر بارش کے بعد گرے ہوئے پتے ہٹا کر باغ کی صفائی برقرار رکھیں۔"
+        },
+        "effect": {
+          "en": "Tree will remain healthy and continue producing high-quality fruit without any disease pressure this season.",
+          "ur": "درخت صحت مند رہے گا اور اس موسم میں بیماری کے کسی دباؤ کے بغیر اعلیٰ معیار کے پھل پیدا کرتا رہے گا۔"
+        }
       },
-
       "Low": {
-        "remediation": "Spray Captan 50WP at 2-3 g/L or Mancozeb 75WP at 2.5 g/L every 10-14 days. Remove and destroy infected leaves from the tree.",
-        "effect": "After applying this spray, new leaves will grow without scab infection. Removed infected leaves will stop releasing spores so nearby leaves will stay clean."
+        "remediation": {
+          "en": "Spray Captan 50WP at 2-3 g/L or Mancozeb 75WP at 2.5 g/L every 10-14 days. Remove and destroy infected leaves from the tree.",
+          "ur": "کیپٹان 50WP 2-3 گرام فی لیٹر یا مینکوزیب 75WP 2.5 گرام فی لیٹر ہر 10-14 دن بعد اسپرے کریں۔ درخت سے متاثرہ پتے ہٹائیں اور تباہ کریں۔"
+        },
+        "effect": {
+          "en": "After applying this spray, new leaves will grow without scab infection. Removed infected leaves will stop releasing spores so nearby leaves will stay clean.",
+          "ur": "اس اسپرے کے استعمال کے بعد نئے پتے خارش کی انفیکشن کے بغیر اگیں گے۔ ہٹائے گئے متاثرہ پتے بیضے چھوڑنا بند کر دیں گے لہذا قریبی پتے صاف رہیں گے۔"
+        }
       },
-
       "Medium": {
-        "remediation": "Spray systemic fungicide Myclobutanil 10% at 0.5 mL/L or Difenoconazole 25% EC at 0.5 mL/L. Cover all leaf surfaces thoroughly. Repeat every 7-10 days for 3 sprays. Prune infected branches and open up the canopy for air flow.",
-        "effect": "After spraying, the fungus already present on leaves will stop growing within 3-5 days. Pruned branches will heal cleanly and new shoots growing in their place will be disease-free."
+        "remediation": {
+          "en": "Spray systemic fungicide Myclobutanil 10% at 0.5 mL/L or Difenoconazole 25% EC at 0.5 mL/L. Cover all leaf surfaces thoroughly. Repeat every 7-10 days for 3 sprays. Prune infected branches and open up the canopy for air flow.",
+          "ur": "نظامی فنگس کش مائکلوبیوٹانل 10% 0.5 ملی لیٹر فی لیٹر یا ڈیفینوکونازول 25% EC 0.5 ملی لیٹر فی لیٹر اسپرے کریں۔ تمام پتوں کی سطحوں کو اچھی طرح ڈھانپیں۔ 3 اسپرے کے لیے ہر 7-10 دن بعد دہرائیں۔ متاثرہ شاخوں کی کٹائی کریں اور ہوا کے بہاؤ کے لیے چھتری کھولیں۔"
+        },
+        "effect": {
+          "en": "After spraying, the fungus already present on leaves will stop growing within 3-5 days. Pruned branches will heal cleanly and new shoots growing in their place will be disease-free.",
+          "ur": "اسپرے کے بعد پتوں پر پہلے سے موجود فنگس 3-5 دنوں میں بڑھنا بند کر دے گا۔ کٹی ہوئی شاخیں صاف طریقے سے ٹھیک ہوں گی اور ان کی جگہ اگنے والی نئی کونپلیں بیماری سے پاک ہوں گی۔"
+        }
       },
-
       "High": {
-        "remediation": "Spray Propiconazole 25% EC at 1 mL/L every 5-7 days for 4-5 rounds. Remove all badly infected leaves and fruit. Apply dormant oil spray in late winter. For severe trunk infection, consider trunk injection.",
-        "effect": "After this treatment, the fungal infection on remaining leaves will be controlled and stopped from spreading further. The tree will slowly recover its leaf cover and regain strength over the next growing season."
+        "remediation": {
+          "en": "Spray Propiconazole 25% EC at 1 mL/L every 5-7 days for 4-5 rounds. Remove all badly infected leaves and fruit. Apply dormant oil spray in late winter. For severe trunk infection, consider trunk injection.",
+          "ur": "پروپیکونازول 25% EC 1 ملی لیٹر فی لیٹر ہر 5-7 دن بعد 4-5 راؤنڈ کے لیے اسپرے کریں۔ تمام بری طرح متاثرہ پتے اور پھل ہٹائیں۔ موسم سرما کے آخر میں ڈورمنٹ آئل اسپرے لگائیں۔ تنے کی شدید انفیکشن کے لیے ٹرنک انجیکشن پر غور کریں۔"
+        },
+        "effect": {
+          "en": "After this treatment, the fungal infection on remaining leaves will be controlled and stopped from spreading further. The tree will slowly recover its leaf cover and regain strength over the next growing season.",
+          "ur": "اس علاج کے بعد باقی پتوں پر فنگل انفیکشن کنٹرول ہو جائے گا اور مزید پھیلنے سے رک جائے گا۔ درخت آہستہ آہستہ اپنا پتوں کا ڈھانپ دوبارہ حاصل کرے گا اور اگلے بڑھتے موسم میں طاقت واپس حاصل کرے گا۔"
+        }
       },
-
       "Critical": {
-        "remediation": "Combine systemic fungicide Propiconazole with contact fungicide Copper oxychloride 50% WP at 3 g/L. Spray every 3-5 days. Remove all leaves and fruit if necessary. Do heavy pruning of dead wood. Apply organic matter to the soil around the tree.",
-        "effect": "After this intensive treatment, the tree will stop losing healthy tissue. The soil treatment and organic matter will strengthen the root system and over 12-18 months the tree will slowly grow new healthy branches and leaves."
+        "remediation": {
+          "en": "Combine systemic fungicide Propiconazole with contact fungicide Copper oxychloride 50% WP at 3 g/L. Spray every 3-5 days. Remove all leaves and fruit if necessary. Do heavy pruning of dead wood. Apply organic matter to the soil around the tree.",
+          "ur": "نظامی فنگس کش پروپیکونازول کو کنٹیکٹ فنگس کش کاپر آکسی کلورائیڈ 50% WP 3 گرام فی لیٹر کے ساتھ ملائیں۔ ہر 3-5 دن بعد اسپرے کریں۔ ضرورت پڑنے پر تمام پتے اور پھل ہٹائیں۔ مر��ہ لکڑی کی بھاری کٹائی کریں۔ درخت کے ارد گرد مٹی میں نامیاتی مادہ ڈالیں۔"
+        },
+        "effect": {
+          "en": "After this intensive treatment, the tree will stop losing healthy tissue. The soil treatment and organic matter will strengthen the root system and over 12-18 months the tree will slowly grow new healthy branches and leaves.",
+          "ur": "اس شدید علاج کے بعد درخت صحت مند ٹشو کھونا بند کر دے گا۔ مٹی کا علاج اور نامیاتی مادہ جڑوں کے نظام کو مضبوط بنائے گا اور 12-18 مہینوں میں درخت آہستہ آہستہ نئی صحت مند شاخیں اور پتے اگائے گا۔"
+        }
       }
     },
 
     "Apple___Black_rot": {
-      "plant": "Apple",
-      "disease": "Black rot",
-
+      "plant": {
+        "en": "Apple",
+        "ur": "سیب"
+      },
+      "disease": {
+        "en": "Black rot",
+        "ur": "کالی سڑن"
+      },
       "None": {
-        "remediation": "Remove mummified fruit from tree and ground. Prune dead branches during dormant season. Keep orchard clean.",
-        "effect": "Tree will stay healthy with no disease source present. Fruit will develop normally without rot."
+        "remediation": {
+          "en": "Remove mummified fruit from tree and ground. Prune dead branches during dormant season. Keep orchard clean.",
+          "ur": "ممی شدہ پھل درخت اور زمین سے ہٹائیں۔ خاموش موسم میں مردہ شاخوں کی کٹائی کریں۔ باغ کو صاف رکھیں۔"
+        },
+        "effect": {
+          "en": "Tree will stay healthy with no disease source present. Fruit will develop normally without rot.",
+          "ur": "درخت صحت مند رہے گا اور بیماری کا کوئی ذریعہ موجود نہیں ہوگا۔ پھل عام طور پر سڑن کے بغیر تیار ہوں گے۔"
+        }
       },
-
       "Low": {
-        "remediation": "Spray Captan 50WP at 2.5 g/L every 10-14 days from pink bud stage. Remove all mummified fruit. Cut out small cankers on branches.",
-        "effect": "After removing mummified fruit and spraying, the source of infection is eliminated. Developing fruit on the tree will grow healthy and rot-free for this season."
+        "remediation": {
+          "en": "Spray Captan 50WP at 2.5 g/L every 10-14 days from pink bud stage. Remove all mummified fruit. Cut out small cankers on branches.",
+          "ur": "گلابی کلی کے مرحلے سے کیپٹان 50WP 2.5 گرام فی لیٹر ہر 10-14 دن بعد اسپرے کریں۔ تمام ممی شدہ پھل ہٹائیں۔ شاخوں پر چھوٹے کینکرز کاٹیں۔"
+        },
+        "effect": {
+          "en": "After removing mummified fruit and spraying, the source of infection is eliminated. Developing fruit on the tree will grow healthy and rot-free for this season.",
+          "ur": "ممی شدہ پھل ہٹانے اور اسپرے کرنے کے بعد انفیکشن کا ذریعہ ختم ہو جاتا ہے۔ درخت پر ترقی پذیر پھل اس موسم کے لیے صحت مند اور سڑن سے پاک اگیں گے۔"
+        }
       },
-
       "Medium": {
-        "remediation": "Spray Thiophanate-methyl 70% WP at 1 g/L every week for 4 weeks. Remove all infected fruit immediately. Cut out branch cankers 15 cm below the visible dark spot and disinfect cutting tools between every cut.",
-        "effect": "After cutting cankers and spraying, the fungus will stop spreading through the branches. Cut wounds will heal over in 2-3 weeks and new healthy wood will grow in their place."
+        "remediation": {
+          "en": "Spray Thiophanate-methyl 70% WP at 1 g/L every week for 4 weeks. Remove all infected fruit immediately. Cut out branch cankers 15 cm below the visible dark spot and disinfect cutting tools between every cut.",
+          "ur": "تھیوفینیٹ میتھائل 70% WP 1 گرام فی لیٹر ہفتہ میں ایک بار 4 ہفتوں تک اسپرے کریں۔ تمام متاثرہ پھل فوری طور پر ہٹائیں۔ شاخ کے کینکرز کو نظر آنے والے سیاہ دھبے سے 15 سینٹی میٹر نیچے کاٹیں اور ہر کٹائی کے درمیان اوزار جراثیم سے پاک کریں۔"
+        },
+        "effect": {
+          "en": "After cutting cankers and spraying, the fungus will stop spreading through the branches. Cut wounds will heal over in 2-3 weeks and new healthy wood will grow in their place.",
+          "ur": "کینکرز کاٹنے اور اسپرے کرنے کے بعد فنگس شاخوں میں پھیلنا بند کر دے گا۔ کٹے ہوئے زخم 2-3 ہفتوں میں ٹھیک ہو جائیں گے اور ان کی جگہ نئی صحت مند لکڑی اگے گی۔"
+        }
       },
-
       "High": {
-        "remediation": "Remove ALL fruit from the tree whether infected or not to break disease cycle. Spray Myclobutanil at 1 mL/L every 5 days for 6 weeks. Cut out all visible cankers during dormancy. Burn all removed material.",
-        "effect": "After removing all fruit and cankers, the fungus has no place to survive on the tree. The weekly sprays will keep the tree clean and by next spring healthy new growth and buds will appear."
+        "remediation": {
+          "en": "Remove ALL fruit from the tree whether infected or not to break disease cycle. Spray Myclobutanil at 1 mL/L every 5 days for 6 weeks. Cut out all visible cankers during dormancy. Burn all removed material.",
+          "ur": "بیماری کا چکر توڑنے کے لیے درخت سے تمام پھل ہٹا دیں چاہے وہ متاثرہ ہوں یا نہ ہوں۔ مائکلوبیوٹانل 1 ملی لیٹر فی لیٹر ہر 5 دن بعد 6 ہفتوں تک اسپرے کریں۔ خاموشی کے دوران تمام نظر آنے والے کینکرز کاٹیں۔ تمام ہٹائے گئے مواد کو جلا دیں۔"
+        },
+        "effect": {
+          "en": "After removing all fruit and cankers, the fungus has no place to survive on the tree. The weekly sprays will keep the tree clean and by next spring healthy new growth and buds will appear.",
+          "ur": "تمام پھل اور کینکرز ہٹانے کے بعد فنگس کے پاس درخت پر زندہ رہنے کے لیے کوئی جگہ نہیں ہے۔ ہفتہ وار اسپرے درخت کو صاف رکھیں گے اور اگلے موسم بہار تک صحت مند نئی نشوونما اور کلیاں ظاہر ہوں گی۔"
+        }
       },
-
       "Critical": {
-        "remediation": "If tree is heavily cankered, remove the tree completely including roots. If saving the tree: Remove all fruit and leaves. Spray alternating fungicides every 5 days. Cut out every canker surgically. Consider hiring a professional tree surgeon.",
-        "effect": "After surgical removal of all cankers and continuous spraying, the tree will stop losing branches. However recovery will take 2-3 years and the tree will grow slowly during that time with reduced fruit production."
+        "remediation": {
+          "en": "If tree is heavily cankered, remove the tree completely including roots. If saving the tree: Remove all fruit and leaves. Spray alternating fungicides every 5 days. Cut out every canker surgically. Consider hiring a professional tree surgeon.",
+          "ur": "اگر درخت بھاری کینکرڈ ہے تو جڑوں سمیت درخت کو مکمل طور پر ہٹا دیں۔ اگر درخت بچانا ہے: تمام پھل اور پتے ہٹائیں۔ متبادل فنگس کش ہر 5 دن بعد اسپرے کریں۔ ہر کینکر کو جراحی سے کاٹیں۔ پیشہ ور ٹری سرجن کی خدمات حاصل کرنے پر غور کریں۔"
+        },
+        "effect": {
+          "en": "After surgical removal of all cankers and continuous spraying, the tree will stop losing branches. However recovery will take 2-3 years and the tree will grow slowly during that time with reduced fruit production.",
+          "ur": "تمام کینکرز کو جراحی سے ہٹانے اور مسلسل اسپرے کے بعد درخت شاخیں کھونا بند کر دے گا۔ تاہم بحالی میں 2-3 سال لگیں گے اور درخت اس دوران کم پھل کی پیداوار کے ساتھ آہستہ آہستہ بڑھے گا۔"
+        }
       }
     },
 
     "Apple___healthy": {
-      "plant": "Apple",
-      "disease": "Healthy",
-
+      "plant": {
+        "en": "Apple",
+        "ur": "سیب"
+      },
+      "disease": {
+        "en": "Healthy",
+        "ur": "صحت مند"
+      },
       "None": {
-        "remediation": "Continue regular care: balanced NPK fertilizer, water 2.5 cm per week, prune once a year, spray preventive fungicide during spring bloom.",
-        "effect": "Tree will maintain its current healthy condition and continue to produce full quality fruit throughout the season."
-      }
-    },
-
-    "Bell_pepper___Bacterial_spot": {
-      "plant": "Bell pepper",
-      "disease": "Bacterial spot",
-
-      "None": {
-        "remediation": "Use drip irrigation only. Keep plants properly spaced. Plant only certified disease-free transplants.",
-        "effect": "Plants will grow without any bacterial infection and produce maximum fruit yield."
-      },
-
-      "Low": {
-        "remediation": "Spray Copper hydroxide 77% WP at 3 g/L every week. Remove spotted leaves immediately. Switch to drip irrigation if you are using overhead sprinklers.",
-        "effect": "After spraying and removing spotted leaves, the bacteria on remaining leaves will be killed. New leaves growing after this treatment will appear clean and healthy within 5-7 days."
-      },
-
-      "Medium": {
-        "remediation": "Spray Copper oxychloride 50% WP at 3 g/L every 5 days for 3 weeks. Remove leaves with heavy spotting. Spray Streptomycin sulfate at 200 ppm if it is available and permitted in your region.",
-        "effect": "After this combined spray treatment, bacterial population on the plant will drop significantly. Within 2 weeks new growth on the plant will come out clean and fruit will start developing normally."
-      },
-
-      "High": {
-        "remediation": "Spray copper bactericide every 3-4 days. Remove plants that are very heavily infected and burn them. Disinfect all tools and hands with 10% bleach after touching any plant. Stop giving nitrogen fertilizer for now.",
-        "effect": "After removing heavily infected plants and stopping nitrogen, the remaining plants will stop showing new spots. The copper sprays will protect them and they will slowly recover and produce some fruit."
-      },
-
-      "Critical": {
-        "remediation": "Remove and burn all infected plants. Do not compost them. Spray copper on any remaining healthy plants every 3 days. After removing all plants, treat the soil by covering it with black plastic for 2 weeks (solarization). Do not plant peppers here for 2-3 years.",
-        "effect": "After removing infected plants and solarizing soil, the bacteria in the field will be killed. Remaining healthy plants protected by copper spray will recover and produce fruit."
-      }
-    },
-
-    "Bell_pepper___healthy": {
-      "plant": "Bell pepper",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Use drip irrigation. Feed with NPK 5-10-10 fertilizer. Space plants 45-60 cm apart. Check plants every week.",
-        "effect": "Plants will continue growing healthily and produce good quality fruit throughout the growing season."
-      }
-    },
-
-    "Cherry___Powdery_mildew": {
-      "plant": "Cherry",
-      "disease": "Powdery mildew",
-
-      "None": {
-        "remediation": "Prune tree to open up branches for air circulation. Do not over-fertilize with nitrogen. Watch the tree during warm days and cool nights.",
-        "effect": "Tree canopy will stay open and dry which will not allow mildew to grow. Tree remains healthy and productive."
-      },
-
-      "Low": {
-        "remediation": "Spray wettable sulfur 80% WP at 2 g/L or potassium bicarbonate at 5 g/L every 7-10 days. Cut off the affected white shoot tips.",
-        "effect": "After spraying, the white mildew powder on leaves will dry up and fall off within 3-4 days. Cut shoot tips will heal and new clean shoots will grow in their place."
-      },
-
-      "Medium": {
-        "remediation": "Spray Myclobutanil 10% at 0.5 mL/L every 7 days for 4 rounds. Cut out heavily white-coated shoots. Thin out inner branches to let sunlight and air reach all parts of the tree.",
-        "effect": "After spraying and pruning, the mildew fungus inside the remaining leaves will be killed. Within 2 weeks the tree will start pushing new healthy shoots that will remain clean for the rest of the season."
-      },
-
-      "High": {
-        "remediation": "Alternate between Trifloxystrobin and Myclobutanil sprays every week for 6-8 weeks. Cut out all branches covered with white mildew. Remove all old dried fruit from the tree. Reduce water given to the tree.",
-        "effect": "After heavy pruning and alternating sprays, the mildew fungus will be eliminated from the tree. The tree will be weaker for a few weeks but will recover and grow new clean branches by late summer."
-      },
-
-      "Critical": {
-        "remediation": "Cut away 40-50% of the tree canopy that is covered in mildew. Spray strong fungicide every 5 days. Remove all fruit to let the tree focus its energy on growing new healthy leaves. Add sulfur to the soil around the tree.",
-        "effect": "After removing heavily infected canopy and continuous spraying, the remaining part of the tree will stop being affected. The tree will spend all its energy growing new healthy leaves. Fruit production will restart next season as the tree recovers."
-      }
-    },
-
-    "Cherry___healthy": {
-      "plant": "Cherry",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Prune once a year, feed balanced fertilizer, water properly during fruit development, spray preventive spray if your region has mildew history.",
-        "effect": "Tree will stay healthy and continue producing good quality cherries every year."
-      }
-    },
-
-    "Corn_(Maize)___Cercospora_leaf_spot": {
-      "plant": "Corn (Maize)",
-      "disease": "Cercospora leaf spot (Gray leaf spot)",
-
-      "None": {
-        "remediation": "Plant resistant hybrids next season. Rotate fields with soybeans or wheat. Bury old corn stalks into the soil after harvest.",
-        "effect": "Field will have no disease source and next crop will grow without gray leaf spot."
-      },
-
-      "Low": {
-        "remediation": "Spray Azoxystrobin 250 g/L at 200 mL per hectare at first sign of gray spots on lower leaves. Check field every week. Keep potassium fertilizer adequate.",
-        "effect": "After spraying, the gray spots on lower leaves will stop growing within 5 days. The fungus will not move up to upper leaves so photosynthesis stays strong and grain fills normally."
-      },
-
-      "Medium": {
-        "remediation": "Spray Azoxystrobin combined with Propiconazole at 400 mL per hectare when disease reaches the lower third of the plant. Spray again after 14-21 days if spots keep appearing.",
-        "effect": "After this combined spray, the fungus on lower and middle leaves will be stopped. The ear leaf and top leaves which are most important for grain filling will stay green and healthy."
-      },
-
-      "High": {
-        "remediation": "Spray fungicide at maximum rate allowed on the label. Do two sprays 10-14 days apart. Look at the field honestly - if disease has already reached the ear leaf then treatment will give limited return. Think about harvesting early for animal feed.",
-        "effect": "After spraying, the fungus will slow down but some leaf damage has already happened. The spray will prevent total leaf death and allow whatever grain is forming to finish filling."
-      },
-
-      "Critical": {
-        "remediation": "Harvest the crop early for silage (animal feed) if grain filling is very poor. Spray fungicide only if it stops the plant from dying completely before harvest. Burn or bury all stalks right after harvest to prevent disease next year.",
-        "effect": "After early harvest and stalk destruction, the field will be cleaned of the disease source. The crop saved as silage will still have feed value even though grain was not fully developed."
-      }
-    },
-
-    "Corn_(Maize)___Common_rust": {
-      "plant": "Corn (Maize)",
-      "disease": "Common rust",
-
-      "None": {
-        "remediation": "Plant rust-resistant hybrids. Plant early so corn matures before rust pressure builds. Watch rust forecast reports.",
-        "effect": "Corn will grow and mature without rust infection and yield will be at full potential."
-      },
-
-      "Low": {
-        "remediation": "Usually no spray needed unless growing seed corn. If spraying: apply Propiconazole 250 EC at 200 mL per hectare when orange pustules first appear on lower leaves before tasseling.",
-        "effect": "After spraying, the orange rust pustules on lower leaves will stop releasing spores. Upper leaves will stay clean and grain filling will proceed normally with no yield loss."
-      },
-
-      "Medium": {
-        "remediation": "Spray Azoxystrobin or Propiconazole if disease appears before or during tasseling. Make sure the ear leaf is covered well. Usually one spray is enough.",
-        "effect": "After spraying, rust will stop spreading to upper leaves. The ear leaf which controls grain filling will remain green and functional. Grain quality will be maintained."
-      },
-
-      "High": {
-        "remediation": "Spray treatment at this stage gives limited return. Focus on keeping the plant healthy through good water and fertilizer. If grain is not filling well, harvest early. Plan to use resistant hybrid next year.",
-        "effect": "After providing water and nutrients, the plant will use remaining healthy leaves to fill whatever grain it can. Harvesting at right time will save the grain quality that is still present."
-      },
-
-      "Critical": {
-        "remediation": "Do not spray - no economic return. Let crop reach natural maturity and harvest when grain is dry enough. Destroy all corn stalks after harvest. Choose resistant hybrid for next season.",
-        "effect": "After harvesting and destroying stalks, the field will be free of rust spores. Next season's crop with resistant hybrid will not be affected."
-      }
-    },
-
-    "Corn_(Maize)___Northern_Leaf_Blight": {
-      "plant": "Corn (Maize)",
-      "disease": "Northern Leaf Blight",
-
-      "None": {
-        "remediation": "Use hybrids with Ht resistance genes. Rotate with non-corn crops. Bury corn stalks by deep tillage after harvest.",
-        "effect": "Field stays clean of the blight fungus and next corn crop will grow without any blight infection."
-      },
-
-      "Low": {
-        "remediation": "Spray Azoxystrobin 250 SC at 200 mL per hectare when long dark green lesions first appear on lower leaves, before tasseling. Scout every 5-7 days.",
-        "effect": "After spraying, the long lesions on lower leaves will stop growing. The fungus will not move up to the ear leaf. Upper leaves will stay healthy and grain will fill to full size."
-      },
-
-      "Medium": {
-        "remediation": "Spray Azoxystrobin combined with Propiconazole at ear leaf emergence. Repeat after 14-21 days if humid weather continues. Make sure spray reaches the ear leaf well.",
-        "effect": "After spraying, blight lesions will stop appearing on new leaves. The ear leaf and above will be protected during the critical grain filling period and yield loss will be limited."
-      },
-
-      "High": {
-        "remediation": "Spray immediately if disease has just reached the ear leaf and grain fill is not complete. Do two sprays 10-14 days apart. Be realistic about return - if ear leaf is already heavily damaged, treatment will give less benefit.",
-        "effect": "After spraying, the rate of new lesions forming will slow down. This gives the remaining healthy leaf area more time to fill the grain that is already forming."
-      },
-
-      "Critical": {
-        "remediation": "Do not spray - not worth the cost at this stage. Harvest corn as soon as grain is dry enough. Burn or deeply bury all stalks. Do not plant corn here for at least 2 years.",
-        "effect": "After harvesting and destroying all stalks, the blight fungus is removed from the field. Crop rotation will ensure the disease does not come back for years."
-      }
-    },
-
-    "Corn_(Maize)___healthy": {
-      "plant": "Corn (Maize)",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Feed balanced NPK fertilizer based on soil test. Space plants properly. Water well during tasseling and grain filling. Control weeds early.",
-        "effect": "Corn will grow to its full genetic potential and produce maximum grain yield with good quality."
-      }
-    },
-
-    "Grape___Black_rot": {
-      "plant": "Grape",
-      "disease": "Black rot",
-
-      "None": {
-        "remediation": "Pick up and destroy all dried shriveled berries (mummies) from vines and ground. Prune out old canes. Spray dormant lime-sulfur before buds open in spring.",
-        "effect": "The vine will enter the growing season with no disease source present. New growth and fruit will develop clean and healthy."
-      },
-
-      "Low": {
-        "remediation": "Spray Mancozeb 75% WP at 2.5 g/L every 10-14 days from bud break through 4 weeks after bloom. Pick off any infected berries immediately. Prune and train vines so air moves freely through the canopy.",
-        "effect": "After spraying and removing infected berries, the fungus spores in the air will be killed before they land on healthy fruit. Remaining grape clusters will stay clean and develop to full size."
-      },
-
-      "Medium": {
-        "remediation": "Spray Captan or Mancozeb every 7-10 days until grapes fully ripen. Remove entire clusters that have any rotted berries. Do summer pruning to cut back thick leaf areas for better air movement.",
-        "effect": "After removing infected clusters and improving air flow, the fungus will have difficulty infecting remaining clusters. Healthy clusters will continue developing and ripen normally."
-      },
-
-      "High": {
-        "remediation": "Remove ALL grape clusters from the vine whether they look infected or not. This stops the disease cycle completely. Spray Mancozeb plus Myclobutanil every 5-7 days for the rest of the season. Cut back infected canes heavily.",
-        "effect": "After removing all fruit and infected wood, the vine itself will be protected by the sprays. The vine will focus its energy on building strong wood and healthy buds for next year's crop."
-      },
-
-      "Critical": {
-        "remediation": "Remove all fruit and all canes that show any sign of infection. Spray Myclobutanil at 1 mL/L every 5 days. Cut irrigation to slow vine growth. Apply soil treatment around the vine base.",
-        "effect": "After this heavy pruning and continuous spraying, the vine will stop losing healthy wood. It will be weak for the rest of this season but the roots will stay strong and the vine will regrow next year."
-      }
-    },
-
-    "Grape___Esca_(Black_Measles)": {
-      "plant": "Grape",
-      "disease": "Esca (Black Measles)",
-
-      "None": {
-        "remediation": "Always prune in dry winter weather. Seal all large cuts with wound sealant immediately. Keep pruning tools sharp and clean between vines.",
-        "effect": "Wounds will heal quickly and cleanly with no entry point for the Esca fungi. Vine will stay healthy and productive for many years."
-      },
-
-      "Low": {
-        "remediation": "Cut out all wood that shows brown streaks inside when sliced. Paint every cut surface with copper wound sealant immediately. Feed the vine well with balanced fertilizer and water it properly to reduce stress.",
-        "effect": "After cutting infected wood and sealing wounds, the fungi will be physically removed from the vine. Good nutrition and water will strengthen the remaining healthy wood and help it resist re-infection."
-      },
-
-      "Medium": {
-        "remediation": "Cut back all infected branches to healthy white wood - slice the cut surface and check there is no brown color. Remove spotted leaves and berries. Water and fertilize well to reduce plant stress. If the main trunk shows streaking, plan for trunk renewal.",
-        "effect": "After removing all infected wood, the vine will push new healthy shoots from the remaining clean wood. The vine will look weaker for a few weeks but will recover and produce fruit from the new growth."
-      },
-
-      "High": {
-        "remediation": "Start growing a new trunk from a strong bud at the base of the vine. Keep the old infected trunk alive until the new one is strong enough (takes 2-3 years). Then cut and remove the old trunk completely. Feed the vine well during this whole period.",
-        "effect": "After the new trunk is established and the old one removed, the vine will essentially be renewed. It will produce increasing amounts of fruit each year as the new trunk grows stronger."
-      },
-
-      "Critical": {
-        "remediation": "Remove the entire vine including roots. Do not plant anything in this spot for 3-5 years. Treat the soil. When replanting choose varieties that are more tolerant of Esca.",
-        "effect": "After removing the vine and cleaning the soil, the Esca fungi in the ground will die out over time. A new vine planted later with a tolerant variety will start fresh with no disease history."
-      }
-    },
-
-    "Grape___Leaf_blight": {
-      "plant": "Grape",
-      "disease": "Leaf blight (Isariopsis leaf spot)",
-
-      "None": {
-        "remediation": "Remove lower leaves near the grape clusters for air flow. Do not water overhead. Feed vine with balanced fertilizer.",
-        "effect": "Vine canopy will stay dry and open which stops the blight fungus from growing. Grapes will ripen well."
-      },
-
-      "Low": {
-        "remediation": "Spray Copper oxychloride 50% WP at 2.5 g/L every 14 days. Remove leaves that are badly spotted.",
-        "effect": "After spraying, the brown spots on remaining leaves will stop spreading. New leaves coming out will be clean and the vine will have enough healthy leaves to ripen the grapes well."
-      },
-
-      "Medium": {
-        "remediation": "Spray Mancozeb 75% WP at 2.5 g/L every 7-10 days until spotting stops spreading. Remove heavily spotted leaves. Cut back some shoots to let air move through the vine.",
-        "effect": "After removing spotted leaves and spraying, the healthy leaves left on the vine will stay green. They will continue making food for the grapes and fruit quality will be maintained."
-      },
-
-      "High": {
-        "remediation": "Spray copper and Mancozeb alternating every 5-7 days. Remove all spotted leaves even if it means the vine loses many leaves. If grapes are not ripening because of leaf loss, harvest them early. Reduce nitrogen feeding.",
-        "effect": "After removing spotted leaves and spraying, the remaining healthy leaves will be protected. The vine will be weaker but will not lose more leaves. Any unripe grapes picked early can still ripen indoors."
-      },
-
-      "Critical": {
-        "remediation": "Most leaves have fallen or are heavily damaged. Pick any grapes that can still be used. Keep spraying to protect the few leaves left. Cut back badly damaged shoots in winter. Feed vine with potassium-rich fertilizer for recovery.",
-        "effect": "After picking remaining grapes and protecting the last leaves, the vine will survive through to dormancy. With winter pruning and good feeding in spring, the vine will grow back a full set of healthy leaves next season."
-      }
-    },
-
-    "Grape___healthy": {
-      "plant": "Grape",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Manage canopy properly, fertilize with balanced NPK, prune on time, train shoots well, spray preventive program during bloom and fruit development.",
-        "effect": "Vine will stay productive and healthy producing high-quality grapes year after year."
-      }
-    },
-
-    "Peach___Bacterial_spot": {
-      "plant": "Peach",
-      "disease": "Bacterial spot",
-
-      "None": {
-        "remediation": "Plant resistant varieties. Use windbreaks around the orchard. Water at the base only. Spray copper in late winter as a preventive.",
-        "effect": "Tree will grow without bacterial infection and produce clean blemish-free peaches."
-      },
-
-      "Low": {
-        "remediation": "Spray Copper hydroxide 77% WP at 3 g/L starting at petal fall. Repeat every 7-10 days for 4-5 rounds. Remove fruit that has dark sunken spots on it.",
-        "effect": "After spraying, bacteria living on the leaf and fruit surfaces will be killed. New leaves and fruit developing after the spray will come out clean and healthy."
-      },
-
-      "Medium": {
-        "remediation": "Spray copper every 5-7 days. Remove fruit with heavy dark spots to stop bacteria from multiplying. Thin out inner branches so leaves dry quickly after rain. Stop nitrogen feeding temporarily.",
-        "effect": "After removing spotted fruit and thinning branches, the tree dries faster after rain which slows bacteria growth. Remaining clean fruit will continue growing and be ready for harvest."
-      },
-
-      "High": {
-        "remediation": "Remove all fruit from the tree to reduce the amount of bacteria. Keep spraying copper to protect the leaves. Cut back heavily spotted shoots after the season. Build a windbreak to protect the tree.",
-        "effect": "After removing all fruit, the tree will put its energy into keeping leaves healthy instead of growing fruit. Copper spray will protect those leaves. Next year with the windbreak the tree will produce fruit again."
-      },
-
-      "Critical": {
-        "remediation": "Tree is very weak from infection. Keep spraying copper to protect remaining leaves. Cut out dead branches in winter. Feed tree well with fertilizer and water. Check if the tree is worth keeping or should be replaced.",
-        "effect": "After continued copper spray and good feeding, the tree will slowly recover leaf health. It will take 2-3 years to get back to producing fruit but the tree structure will be stronger."
-      }
-    },
-
-    "Peach___healthy": {
-      "plant": "Peach",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Prune into open center shape every year. Feed balanced NPK with low nitrogen. Water at the base. Scout for disease weekly.",
-        "effect": "Tree will stay strong and healthy and produce good quality peaches consistently."
-      }
-    },
-
-    "Potato___Early_blight": {
-      "plant": "Potato",
-      "disease": "Early blight",
-
-      "None": {
-        "remediation": "Use certified seed potatoes only. Rotate crops for 3-4 years. Feed plant well so it stays strong. Remove wild potato plants nearby.",
-        "effect": "Potato plants will grow strong and healthy and produce full-size tubers with no blight damage."
-      },
-
-      "Low": {
-        "remediation": "Spray Chlorothalonil 75% WP at 2 g/L or Mancozeb 75% WP at 2.5 g/L when dark ringed spots first appear. Repeat every 7-10 days. Remove the spotted lower leaves.",
-        "effect": "After spraying and leaf removal, the fungus will be killed on remaining leaves. New leaves growing above will stay clean and the plant will continue making food for the tubers underground which will grow to full size."
-      },
-
-      "Medium": {
-        "remediation": "Spray alternating Chlorothalonil and Azoxystrobin every 5-7 days. Remove spotted leaves from the lower half of the plant. Side-dress with nitrogen and potassium fertilizer. Keep watering steady.",
-        "effect": "After this treatment the upper leaves will stay healthy and green. The plant will keep making food and sending it to the tubers underground. Tubers will still grow well even though some lower leaves were removed."
-      },
-
-      "High": {
-        "remediation": "Spray every 5 days combining protective and systemic fungicides. Accept that many leaves are already damaged. Focus treatment on protecting the top leaves. Think about harvesting early if tubers have reached a decent size.",
-        "effect": "After spraying the top leaves will be protected from further infection. The remaining healthy leaves will push food down to the tubers and whatever size they have reached will be maintained. Early harvest will give you usable tubers."
-      },
-
-      "Critical": {
-        "remediation": "Check if treatment is worth the cost. If yes: spray to keep any remaining leaves alive long enough for tubers to reach minimum size. Then kill the vines and dig up tubers. Destroy all plant material. Do not plant potatoes here for 3 years.",
-        "effect": "After vine killing and harvesting, you will get small tubers but they will still have value. Destroying all plant material and rotating crops will clean the field so future potato crops will grow without early blight."
-      }
-    },
-
-    "Potato___Late_blight": {
-      "plant": "Potato",
-      "disease": "Late blight",
-
-      "None": {
-        "remediation": "Watch late blight forecast reports every day during cool wet weather. Have fungicide stored and ready. Scout field twice a week. Remove volunteer potatoes.",
-        "effect": "You will catch the disease the moment it appears and spray immediately which gives the best chance of stopping it before it spreads across the field."
-      },
-
-      "Low": {
-        "remediation": "Spray IMMEDIATELY - do not wait. Use Mefenoxam plus Chlorothalonil or Cymoxanil plus Mancozeb. Spray again every 5-7 days without missing. If only a few plants show symptoms, pull them out and burn them.",
-        "effect": "After immediate spraying, the fungus on healthy plants will be killed before it produces spores. If weather turns dry the disease will stop spreading and the rest of the crop will grow normally and you can harvest full tubers."
-      },
-
-      "Medium": {
-        "remediation": "Spray systemic plus protective fungicide every 3-5 days. Pull out and burn plants that are visibly infected. Kill the vines early - 10-14 days before you plan to harvest - to stop the disease from reaching the tubers.",
-        "effect": "After vine killing, the disease cannot reach the tubers underground anymore. Tubers will stay clean in the soil. Wait 2 weeks then dig and you will get usable tubers free from rot."
-      },
-
-      "High": {
-        "remediation": "Spray every 3-4 days at maximum rate. Kill the vines RIGHT NOW to protect tubers - this is the most important step. Wait 14-21 days after vine killing before digging. Sort tubers carefully when you dig.",
-        "effect": "After killing vines immediately, the fungus is cut off from reaching tubers. Most tubers underground will be clean. When you dig after the waiting period you will be able to sort out any affected ones and save the rest."
-      },
-
-      "Critical": {
-        "remediation": "Destroy all plants immediately - do not wait. Kill vines today even if tubers are not fully grown. Wait at least 2 weeks. Dig and throw away any tuber that looks dark or soft. Do not store any potatoes from this field.",
-        "effect": "After immediate vine destruction, the fungus stops spreading underground. Small tubers will be recovered but they should go straight to market or processing - not storage. The field will be clean for next season after proper rotation."
-      }
-    },
-
-    "Potato___healthy": {
-      "plant": "Potato",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Use certified seed. Rotate crops. Feed based on soil test. Hill the rows properly. Water consistently. Scout weekly.",
-        "effect": "Plants will grow vigorously and produce full-size healthy tubers with good storage quality."
-      }
-    },
-
-    "Soybean___Bacterial_blight": {
-      "plant": "Soybean",
-      "disease": "Bacterial blight",
-
-      "None": {
-        "remediation": "Buy only certified disease-free seed. Rotate crops. Do not work in fields when leaves are wet. Remove weeds that can carry bacteria.",
-        "effect": "Plants will grow without bacterial infection and pods will fill normally with healthy seeds."
-      },
-
-      "Low": {
-        "remediation": "Copper spray gives limited but some benefit. Remove and burn plants that are badly infected if there are only a few. Do not walk through the field when it is wet. Spray foliar fertilizer to strengthen remaining plants.",
-        "effect": "After removing infected plants and strengthening healthy ones with foliar feed, the healthy plants will grow stronger and resist infection better. Pod filling will continue normally on unaffected plants."
-      },
-
-      "Medium": {
-        "remediation": "Copper spray every 7-10 days for marginal benefit. Do not disturb wet plants. Control insects that spread bacteria. Feed plants with foliar potassium and calcium to boost resistance.",
-        "effect": "After foliar feeding, healthy plants will become stronger and their leaves will be less likely to get infected. The copper will slow bacteria spread between plants. Pods on healthy plants will fill well."
-      },
-
-      "High": {
-        "remediation": "Chemical treatment will not reverse the damage at this stage. Let the crop finish growing. Focus on harvesting clean seed when pods are dry. Destroy all plant material after harvest. Do not plant soybeans for 2-3 years.",
-        "effect": "After letting the crop mature naturally and harvesting when dry, the seed quality from unaffected pods will still be usable. Destroying residue after harvest cleans the field for future crops."
-      },
-
-      "Critical": {
-        "remediation": "Harvest early if pods have any seed in them. Destroy every bit of plant material by burning. Solarize the soil. Do not plant soybeans here for 3 years. Use resistant varieties in future.",
-        "effect": "After destroying all plant material and solarizing, the bacteria living in the soil and debris will be killed. The field will be clean and ready for rotation crops without bacterial contamination."
-      }
-    },
-
-    "Strawberry___Leaf_scorch": {
-      "plant": "Strawberry",
-      "disease": "Leaf scorch",
-
-      "None": {
-        "remediation": "Plant resistant varieties. Water only at the base with drip irrigation. Space plants 30-45 cm apart. Remove old leaves during renovation.",
-        "effect": "Plants will stay healthy with dry leaves and produce full strawberry harvest."
-      },
-
-      "Low": {
-        "remediation": "Spray Captan 50WP at 2 g/L or Thiram 75% WP at 2 g/L every 7-10 days starting at flowering. Pick off infected leaves by hand.",
-        "effect": "After spraying and removing spotted leaves, the fungus on the plant will be killed. New leaves will grow out clean and green. The plant will continue producing strawberries normally this season."
-      },
-
-      "Medium": {
-        "remediation": "Spray Captan every 5-7 days. During renovation after harvest cut ALL leaves down to the crown level and remove them from the field. Do not water overhead. Feed with balanced fertilizer after renovation.",
-        "effect": "After cutting all leaves and spraying, the plant crowns will be clean of fungus. New leaves will push up from the crown within 1-2 weeks and they will be healthy. Next season this plant will produce well."
-      },
-
-      "High": {
-        "remediation": "Mow the entire planting and remove all leaf material. Burn the removed leaves. Spray fungicide on the crowns. Reduce plant density if rows are too thick. Feed with fertilizer to push new growth.",
-        "effect": "After removing all diseased leaves and spraying the crowns, the fungus is completely removed from the planting. New leaves will grow from the crowns within 2 weeks. The plant will be weaker this season but will recover for next year."
-      },
-
-      "Critical": {
-        "remediation": "If this is a second or third year planting, plow it down and replant fresh. If trying to save: mow everything, remove and burn all leaves, spray crowns heavily, and feed with strong fertilizer.",
-        "effect": "After replanting with fresh plants, the new planting will start with no disease history and produce a full harvest next season. If saving existing plants, they will push new growth but will be weak and may not produce much this year."
-      }
-    },
-
-    "Strawberry___healthy": {
-      "plant": "Strawberry",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Water at the base only. Manage runners properly. Renovate after harvest every year. Control weeds. Space plants well.",
-        "effect": "Plants will stay healthy and produce heavy harvests of good quality strawberries for 2-3 productive years."
-      }
-    },
-
-    "Tomato___Bacterial_spot": {
-      "plant": "Tomato",
-      "disease": "Bacterial spot",
-
-      "None": {
-        "remediation": "Use certified transplants only. Water at the base. Space plants properly. Rotate with non-tomato crops for 3-4 years.",
-        "effect": "Plants will grow without spots and produce clean marketable tomatoes."
-      },
-
-      "Low": {
-        "remediation": "Spray Copper hydroxide 77% WP at 3 g/L every week. Pick off spotted leaves. Clean all tools with 10% bleach after touching any plant. Switch to drip irrigation if sprinklers are being used.",
-        "effect": "After spraying and removing spotted leaves, the bacteria on remaining leaves will be killed by copper. New leaves and fruit growing after this will come out clean. The plant will produce good tomatoes."
-      },
-
-      "Medium": {
-        "remediation": "Spray copper every 5 days combined with Mancozeb. Remove leaves and fruit that have heavy dark spots. Stop all nitrogen feeding. Spray calcium foliar to strengthen fruit walls.",
-        "effect": "After removing spotted parts and calcium spray, the remaining fruit on the plant will grow with thicker skin making it harder for bacteria to get inside. New fruit will develop clean on copper-protected plants."
-      },
-
-      "High": {
-        "remediation": "Spray copper every 3-4 days. Remove plants that are very heavily spotted and burn them away from the field. Pick any fruit that is ripe or close to ripe right now. Disinfect hands and tools constantly.",
-        "effect": "After removing heavily infected plants and picking ripe fruit, the remaining healthy plants will be protected by copper. They will produce some more fruit that you can harvest in the coming weeks."
-      },
-
-      "Critical": {
-        "remediation": "Stop the field if most plants are affected. Harvest whatever tomatoes you can right now. Remove and burn all plants. Treat the soil. Do not grow tomatoes or peppers here for 3-4 years.",
-        "effect": "After harvesting remaining tomatoes and destroying all plants, the bacteria in the field will die out over time with rotation. Your harvested tomatoes can still be sold if they are firm and clean on the outside."
-      }
-    },
-
-    "Tomato___Early_blight": {
-      "plant": "Tomato",
-      "disease": "Early blight",
-
-      "None": {
-        "remediation": "Mulch around plants to stop soil from splashing onto leaves. Feed well. Water consistently. Stake plants so lower leaves stay off the ground.",
-        "effect": "Leaves will stay dry and clean. Plants will grow strong and produce tomatoes without blight."
-      },
-
-      "Low": {
-        "remediation": "Spray Chlorothalonil 75% WP at 2 g/L or Mancozeb at 2.5 g/L every week. Remove ringed brown spots on lower leaves. Mulch around plants.",
-        "effect": "After spraying and removing spotted leaves, the fungus will be killed on the plant. Upper leaves will stay green and healthy. The plant will keep producing tomatoes normally."
-      },
-
-      "Medium": {
-        "remediation": "Spray alternating Chlorothalonil and Azoxystrobin every 5-7 days. Remove all spotted leaves up to the first tomato cluster. Feed with nitrogen and potassium. Water regularly.",
-        "effect": "After removing lower spotted leaves and spraying, the remaining upper leaves will be protected. The plant will continue making food through healthy upper leaves and fruit will keep growing and ripening."
-      },
-
-      "High": {
-        "remediation": "Spray every 5 days with combined fungicides. Many leaves have already been damaged so spray the remaining ones well. Feed plant through foliar spray. Pick ripe tomatoes now before the plant weakens further.",
-        "effect": "After spraying the remaining healthy leaves will be protected and stay green a bit longer. This gives the tomatoes currently on the plant time to ripen so you can harvest them before the plant gets too weak."
-      },
-
-      "Critical": {
-        "remediation": "Pick every tomato that is ripe or almost ripe immediately. Do not spray anymore - it is too late. Remove all plants and burn them. Clean the field. Rotate crops and use resistant varieties next time.",
-        "effect": "After harvesting remaining tomatoes you will still get some usable fruit. After removing and burning all plants the fungus will be gone from the field. Next season with resistant varieties the field will produce clean tomatoes again."
-      }
-    },
-
-    "Tomato___Late_blight": {
-      "plant": "Tomato",
-      "disease": "Late blight",
-
-      "None": {
-        "remediation": "Watch late blight forecast every day in cool wet weather. Have spray equipment and fungicide ready. Scout twice a week. Remove volunteer tomatoes and potatoes nearby.",
-        "effect": "You will be ready to spray the moment disease appears. This speed of response is the only way to stop late blight from destroying the crop."
-      },
-
-      "Low": {
-        "remediation": "Spray TODAY without any delay. Use Mancozeb plus Cymoxanil or Chlorothalonil plus Mefenoxam. Spray again every 5-7 days. Remove infected plants if only a few show symptoms.",
-        "effect": "After immediate spraying the healthy plants in the field will be protected from infection. If weather becomes drier the disease will stop and your crop will grow and produce tomatoes normally."
-      },
-
-      "Medium": {
-        "remediation": "Spray every 3-5 days at full rate. Pull out and burn visibly infected plants. Harvest any ripe tomatoes now. Spray neighboring tomato and potato fields too as a warning measure.",
-        "effect": "After removing infected plants and spraying the rest, healthy plants will continue growing. Ripe tomatoes you picked today are safe to sell. Remaining plants protected by spray will produce more fruit if weather improves."
-      },
-
-      "High": {
-        "remediation": "Spray every 3-4 days at maximum dose. Harvest all ripe or nearly ripe tomatoes RIGHT NOW. Destroy visibly infected plants. Warn neighbors who have tomatoes or potatoes.",
-        "effect": "After harvesting and destroying infected plants, the tomatoes you picked will be fine to sell. The spray will slow the disease on remaining plants giving them a chance to ripen whatever fruit they have left."
-      },
-
-      "Critical": {
-        "remediation": "Destroy all plants today. Pick any tomatoes that are usable regardless of ripeness - they can ripen off the vine. Burn all plant material. Do not plant tomatoes or potatoes here for 2-3 years.",
-        "effect": "After destroying all plants the disease source is removed from the field. Unripe tomatoes picked today can ripen indoors and be sold. The field will recover after rotation and be ready for future crops."
-      }
-    },
-
-    "Tomato___Septoria_leaf_spot": {
-      "plant": "Tomato",
-      "disease": "Septoria leaf spot",
-
-      "None": {
-        "remediation": "Remove old plant debris from last season. Mulch around plants. Stake them well. Water at the base only. Rotate crops.",
-        "effect": "Plants will grow with dry clean leaves. No fungus will be present to cause spots and tomatoes will produce well."
-      },
-
-      "Low": {
-        "remediation": "Spray Chlorothalonil 75% WP at 2 g/L or copper spray weekly when tiny spots with dark edges first appear. Remove spotted lower leaves and destroy them.",
-        "effect": "After spraying and leaf removal, the tiny spots will not spread to upper leaves. The plant will keep all its important upper leaves healthy and continue producing good tomatoes."
-      },
-
-      "Medium": {
-        "remediation": "Spray Chlorothalonil or Mancozeb every 5-7 days. Remove all spotted leaves up to the first tomato cluster. Prune some shoots to improve air movement. Feed with potassium fertilizer.",
-        "effect": "After removing spotted leaves and pruning, the remaining leaves will dry faster after rain which slows the fungus. Potassium feeding will strengthen remaining leaves. Tomatoes will continue ripening."
-      },
-
-      "High": {
-        "remediation": "Spray every 5 days to protect any leaves still left. Feed through foliar spray since many leaves are gone. Pick ripe tomatoes now. Accept that the plant is finishing its productive life.",
-        "effect": "After foliar feeding the remaining leaves will stay alive a bit longer and send food to the tomatoes still on the plant. Picking ripe fruit now gives you the best quality harvest possible from this plant."
-      },
-
-      "Critical": {
-        "remediation": "Do not spray anymore. Pick whatever tomatoes are on the plant now. Remove and destroy all plants. Clean the soil. Rotate crops for at least 2 years.",
-        "effect": "After picking remaining tomatoes you will have some usable fruit. After field cleanup and rotation the fungus will be gone and next season's crop will start on clean ground."
-      }
-    },
-
-    "Tomato___Yellow_Leaf_Curl_Virus": {
-      "plant": "Tomato",
-      "disease": "Tomato Yellow Leaf Curl Virus (TYLCV)",
-
-      "None": {
-        "remediation": "Plant varieties with Ty resistance gene. Use insect netting over plants in greenhouse. Control whiteflies from the start. Remove any plant showing curling leaves immediately.",
-        "effect": "Plants will grow healthy because resistant varieties will not get sick even if whiteflies carry the virus. Full fruit production will happen."
-      },
-
-      "Low": {
-        "remediation": "There is NO medicine for this virus. Remove and burn infected plants immediately. Spray remaining plants with neonicotinoid insecticide to kill whiteflies. Put up yellow sticky traps. Cover healthy plants with insect netting.",
-        "effect": "After removing infected plants and killing whiteflies, the remaining healthy plants will not get the virus because the insects carrying it are dead. These plants will continue growing and producing tomatoes."
-      },
-
-      "Medium": {
-        "remediation": "Pull out ALL plants showing curling yellow leaves and burn them. Spray insecticide on remaining plants every 3-4 days to kill whiteflies. Put insect nets over healthy plants. Remove all weeds around the field.",
-        "effect": "After removing infected plants and netting healthy ones, whiteflies cannot reach healthy plants to spread the virus. Protected plants will continue growing and producing tomatoes normally."
-      },
-
-      "High": {
-        "remediation": "Look at the field honestly. If more than half the plants are infected it is better to end the field. If saving: remove infected plants, spray insecticide heavily, net all remaining plants, remove all weeds.",
-        "effect": "After removing infected plants and protecting the rest with nets and insecticide, the surviving healthy plants will produce some fruit. However yield will be much lower than expected because many plants were removed."
-      },
-
-      "Critical": {
-        "remediation": "End the entire field. Destroy every plant infected or not - healthy plants will get infected soon anyway with so many whiteflies. Burn everything. Spray insecticide on the empty field. Do not plant here for 1 season.",
-        "effect": "After destroying everything and spraying the empty field, whiteflies and the virus reservoir are removed. When you plant again next season with resistant varieties the field will produce a healthy full crop."
-      }
-    },
-
-    "Tomato___healthy": {
-      "plant": "Tomato",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Stake or cage plants. Water 1-2 inches per week consistently. Feed balanced fertilizer - not too much nitrogen. Mulch the ground. Pick ripe fruit regularly.",
-        "effect": "Plants will stay strong and healthy throughout the season and produce maximum number of good quality tomatoes."
-      }
-    },
-
-    "Wheat___Stripe_rust": {
-      "plant": "Wheat",
-      "disease": "Stripe rust (Yellow rust)",
-
-      "None": {
-        "remediation": "Plant varieties with rust resistance. Watch regional rust reports from your agricultural department. Scout the field every week during cool damp weather. Destroy volunteer wheat.",
-        "effect": "Wheat will grow without any rust and produce full grain yield at harvest."
-      },
-
-      "Low": {
-        "remediation": "Spray Propiconazole 25% EC at 200 mL per hectare or Tebuconazole 25% EC at 200 mL per hectare as soon as you see yellow-orange lines of rust pustules. One spray is usually enough if done early.",
-        "effect": "After spraying, the rust pustules will dry up and stop releasing spores within 5-7 days. Upper leaves will stay clean and green. Grain will fill to full size and you will get a normal harvest."
-      },
-
-      "Medium": {
-        "remediation": "Spray Propiconazole or Tebuconazole immediately. Check the flag leaf - if it is still clean spray it well to protect it. You may need a second spray in 14-21 days if rust keeps appearing.",
-        "effect": "After spraying, the flag leaf will be protected and stay green. Since the flag leaf makes most of the food for grain filling, the wheat will produce a good harvest even though lower leaves were affected."
-      },
-
-      "High": {
-        "remediation": "Spray now but be realistic about the return. If the flag leaf is already heavily covered with rust, spraying will give limited benefit. Let the wheat mature and harvest on time. Use resistant variety next year.",
-        "effect": "After spraying, whatever healthy leaf area remains will be protected and continue making food for the grain. The grain will still fill but will be smaller than normal. Harvesting at the right time will give you the best quality grain possible."
-      },
-
-      "Critical": {
-        "remediation": "Do not spend money on spraying. Let wheat mature as it can. Harvest as soon as grain is dry enough - do not leave it standing too long. Destroy all wheat stubble after harvest. Plant resistant variety next season.",
-        "effect": "After harvesting and destroying stubble, the rust fungus is removed from the field. The grain you harvest will be smaller and lighter than normal but still has value. Next season with a resistant variety the field will produce well."
-      }
-    },
-
-    "Wheat___healthy": {
-      "plant": "Wheat",
-      "disease": "Healthy",
-
-      "None": {
-        "remediation": "Seed at proper rate. Feed based on soil test. Control weeds early. Use resistant varieties. Rotate crops.",
-        "effect": "Wheat will grow strongly and produce full yield of high-quality grain at harvest."
+        "remediation": {
+          "en": "Continue regular care: balanced NPK fertilizer, water 2.5 cm per week, prune once a year, spray preventive fungicide during spring bloom.",
+          "ur": "باقاعدہ دیکھ بھال جاری رکھیں: متوازن NPK کھاد، ہفتے میں 2.5 سینٹی میٹر پانی، سال میں ایک بار کٹائی، بہار کے کھلنے کے دوران احتیاطی فنگس کش اسپرے۔"
+        },
+        "effect": {
+          "en": "Tree will maintain its current healthy condition and continue to produce full quality fruit throughout the season.",
+          "ur": "درخت اپنی موجودہ صحت مند حالت برقرار رکھے گا اور پورے موسم میں مکمل معیار کا پھل پیدا کرتا رہے گا۔"
+        }
       }
     }
   },
 
   "important_notes": {
-    "chemical_safety": "Always read product labels before use. Wear gloves, mask and goggles when spraying. Do not spray near water sources or when wind is blowing.",
-    "harvest_waiting": "Always wait the number of days written on the product label before picking fruit or grain after spraying.",
-    "resistance": "Change the type of fungicide or bactericide every 2-3 sprays. Using the same chemical every time makes the disease become resistant to it.",
-    "cost_benefit": "Always think about whether the cost of treatment is less than the value of what you will save. Sometimes replanting is cheaper than intensive treatment.",
-    "weather": "Spray in the morning when wind is calm. Do not spray if it will rain within 4-6 hours."
+    "chemical_safety": {
+      "en": "Always read product labels before use. Wear gloves, mask and goggles when spraying. Do not spray near water sources or when wind is blowing.",
+      "ur": "استعمال سے پہلے ہمیشہ پروڈکٹ لیبل پڑھیں۔ اسپرے کرتے وقت دستانے، ماسک اور چشمیں پہنیں۔ پانی کے ذرائع کے قریب یا جب ہوا چل رہی ہو اسپرے نہ کریں۔"
+    },
+    "harvest_waiting": {
+      "en": "Always wait the number of days written on the product label before picking fruit or grain after spraying.",
+      "ur": "اسپرے کے بعد پھل یا دانہ اتارنے سے پہلے ہمیشہ پروڈکٹ لیبل پر لکھے ہوئے دنوں کی تعداد انتظار کریں۔"
+    },
+    "resistance": {
+      "en": "Change the type of fungicide or bactericide every 2-3 sprays. Using the same chemical every time makes the disease become resistant to it.",
+      "ur": "ہر 2-3 اسپرے کے بعد فنگس کش یا بیکٹیرائیسائیڈ کی قسم تبدیل کریں۔ ہر بار ایک ہی کیمیکل استعمال کرنے سے بیماری اس کے خلاف مزاحم ہو جاتی ہے۔"
+    },
+    "cost_benefit": {
+      "en": "Always think about whether the cost of treatment is less than the value of what you will save. Sometimes replanting is cheaper than intensive treatment.",
+      "ur": "ہمیشہ سوچیں کہ آیا علاج کی لاگت اس سے کم ہے جو آپ بچائیں گے۔ بعض اوقات دوبارہ لگانا شدید علاج سے سستا ہے۔"
+    },
+    "weather": {
+      "en": "Spray in the morning when wind is calm. Do not spray if it will rain within 4-6 hours.",
+      "ur": "صبح کے وقت اسپرے کریں جب ہوا پرسکون ہو۔ اگر 4-6 گھنٹوں میں بارش ہونے والی ہے تو اسپرے نہ کریں۔"
+    }
+  },
+  "Bell_pepper___Bacterial_spot": {
+    "plant": {
+      "en": "Bell pepper",
+      "ur": "شملہ مرچ"
+    },
+    "disease": {
+      "en": "Bacterial spot",
+      "ur": "بیکٹیریل داغ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Use drip irrigation only. Keep plants properly spaced. Plant only certified disease-free transplants.",
+        "ur": "صرف ڈرپ آبپاشی استعمال کریں۔ پودوں کو مناسب فاصلے پر رکھیں۔ صرف سرٹیفائیڈ بیماری سے پاک پودے لگائیں۔"
+      },
+      "effect": {
+        "en": "Plants will grow without any bacterial infection and produce maximum fruit yield.",
+        "ur": "پودے کسی بیکٹیریل انفیکشن کے بغیر بڑھیں گے اور زیادہ سے زیادہ پھل کی پیداوار دیں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Copper hydroxide 77% WP at 3 g/L every week. Remove spotted leaves immediately. Switch to drip irrigation if you are using overhead sprinklers.",
+        "ur": "کاپر ہائیڈرو آکسائیڈ 77% WP 3 گرام فی لیٹر ہفتہ میں ایک بار اسپرے کریں۔ داغ دار پتے فوری طور پر ہٹائیں۔ اگر آپ اوور ہیڈ سپرنکلر استعمال کر رہے ہیں تو ڈرپ آبپاشی پر سوئچ کریں۔"
+      },
+      "effect": {
+        "en": "After spraying and removing spotted leaves, the bacteria on remaining leaves will be killed. New leaves growing after this treatment will appear clean and healthy within 5-7 days.",
+        "ur": "اسپرے کرنے اور داغ دار پتے ہٹانے کے بعد باقی پتوں پر بیکٹیریا ختم ہو جائیں گے۔ اس علاج کے بعد اگنے والے نئے پتے 5-7 دنوں میں صاف اور صحت مند نظر آئیں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Copper oxychloride 50% WP at 3 g/L every 5 days for 3 weeks. Remove leaves with heavy spotting. Spray Streptomycin sulfate at 200 ppm if it is available and permitted in your region.",
+        "ur": "کاپر آکسی کلورائیڈ 50% WP 3 گرام فی لیٹر ہر 5 دن بعد 3 ہفتوں تک اسپرے کریں۔ بھاری داغ دار پتے ہٹائیں۔ اگر یہ آپ کے علاقے میں دستیاب اور جائز ہو تو سٹریپٹومائیسن سلفیٹ 200 پی پی ایم اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "After this combined spray treatment, bacterial population on the plant will drop significantly. Within 2 weeks new growth on the plant will come out clean and fruit will start developing normally.",
+        "ur": "اس مشترکہ اسپرے علاج کے بعد پودے پر بیکٹیریا کی آبادی نمایاں طور پر گر جائے گی۔ 2 ہفتوں کے اندر پودے پر نئی نشوونما صاف نکلے گی اور پھل عام طور پر ترقی کرنا شروع کر دیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray copper bactericide every 3-4 days. Remove plants that are very heavily infected and burn them. Disinfect all tools and hands with 10% bleach after touching any plant. Stop giving nitrogen fertilizer for now.",
+        "ur": "کاپر بیکٹیرائیسائیڈ ہر 3-4 دن بعد اسپرے کریں۔ بہت زیادہ متاثرہ پودے ہٹائیں اور جلا دیں۔ کسی بھی پودے کو چھونے کے بعد تمام اوزار اور ہاتھوں کو 10% بلیچ سے جراثیم سے پاک کریں۔ ابھی نائٹروجن کھاد دینا بند کریں۔"
+      },
+      "effect": {
+        "en": "After removing heavily infected plants and stopping nitrogen, the remaining plants will stop showing new spots. The copper sprays will protect them and they will slowly recover and produce some fruit.",
+        "ur": "بھاری متاثرہ پودے ہٹانے اور نائٹروجن بند کرنے کے بعد باقی پودوں پر نئے داغ ظاہر ہونا بند ہو جائیں گے۔ کاپر کے اسپرے ان کی حفاظت کریں گے اور وہ آہستہ آہستہ بحال ہوں گے اور کچھ پھل پیدا کریں گے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Remove and burn all infected plants. Do not compost them. Spray copper on any remaining healthy plants every 3 days. After removing all plants, treat the soil by covering it with black plastic for 2 weeks (solarization). Do not plant peppers here for 2-3 years.",
+        "ur": "تمام متاثرہ پودے ہٹائیں اور جلا دیں۔ انہیں کمپوسٹ نہ کریں۔ کسی بھی باقی صحت مند پودوں پر ہر 3 دن بعد کاپر اسپرے کریں۔ تمام پودے ہٹانے کے بعد 2 ہفتے کے لیے مٹی کو کالی پلاسٹک سے ڈھانپ کر علاج کریں (سولرائزیشن)۔ یہاں 2-3 سال تک مرچ نہ لگائیں۔"
+      },
+      "effect": {
+        "en": "After removing infected plants and solarizing soil, the bacteria in the field will be killed. Remaining healthy plants protected by copper spray will recover and produce fruit.",
+        "ur": "متاثرہ پودے ہٹانے اور مٹی کو سولرائز کرنے کے بعد کھیت میں بیکٹیریا ختم ہو جائیں گے۔ کاپر اسپرے سے محفوظ باقی صحت مند پودے بحال ہوں گے اور پھل پیدا کریں گے۔"
+      }
+    }
+  },
+
+  "Bell_pepper___healthy": {
+    "plant": {
+      "en": "Bell pepper",
+      "ur": "شملہ مرچ"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Use drip irrigation. Feed with NPK 5-10-10 fertilizer. Space plants 45-60 cm apart. Check plants every week.",
+        "ur": "ڈرپ آبپاشی استعمال کریں۔ NPK 5-10-10 کھاد دیں۔ پودوں کو 45-60 سینٹی میٹر کے فاصلے پر رکھیں۔ ہفتے میں ایک بار پودوں کی جانچ کریں۔"
+      },
+      "effect": {
+        "en": "Plants will continue growing healthily and produce good quality fruit throughout the growing season.",
+        "ur": "پودے صحت مند طریقے سے بڑھتے رہیں گے اور پوری بڑھتی مدت میں اچھے معیار کا پھل پیدا کریں گے۔"
+      }
+    }
+  },
+
+  "Cherry___Powdery_mildew": {
+    "plant": {
+      "en": "Cherry",
+      "ur": "چیری"
+    },
+    "disease": {
+      "en": "Powdery mildew",
+      "ur": "سفید پھپھوندی"
+    },
+    "None": {
+      "remediation": {
+        "en": "Prune tree to open up branches for air circulation. Do not over-fertilize with nitrogen. Watch the tree during warm days and cool nights.",
+        "ur": "ہوا کی گردش کے لیے درخت کی شاخوں کو کھولنے کے لیے کٹائی کریں۔ نائٹروجن کے ساتھ زیادہ کھاد نہ دیں۔ گرم دنوں اور ٹھنڈی راتوں میں درخت کو دیکھیں۔"
+      },
+      "effect": {
+        "en": "Tree canopy will stay open and dry which will not allow mildew to grow. Tree remains healthy and productive.",
+        "ur": "درخت کی چھتری کھلی اور خشک رہے گی جو پھپھوندی کو بڑھنے نہیں دے گی۔ درخت صحت مند اور پیداواری رہے گا۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray wettable sulfur 80% WP at 2 g/L or potassium bicarbonate at 5 g/L every 7-10 days. Cut off the affected white shoot tips.",
+        "ur": "گیلے قابل گندھک 80% WP 2 گرام فی لیٹر یا پوٹاشیم بائی کاربونیٹ 5 گرام فی لیٹر ہر 7-10 دن بعد اسپرے کریں۔ متاثرہ سفید شوٹ ٹپس کاٹیں۔"
+      },
+      "effect": {
+        "en": "After spraying, the white mildew powder on leaves will dry up and fall off within 3-4 days. Cut shoot tips will heal and new clean shoots will grow in their place.",
+        "ur": "اسپرے کے بعد پتوں پر سفید پھپھوندی کا پاؤڈر 3-4 دنوں میں سوکھ کر گر جائے گا۔ کٹے ہوئے شوٹ ٹپس ٹھیک ہو جائیں گے اور ان کی جگہ نئے صاف شوٹ اگیں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Myclobutanil 10% at 0.5 mL/L every 7 days for 4 rounds. Cut out heavily white-coated shoots. Thin out inner branches to let sunlight and air reach all parts of the tree.",
+        "ur": "مائکلوبیوٹانل 10% 0.5 ملی لیٹر فی لیٹر ہر 7 دن بعد 4 راؤنڈ کے لیے اسپرے کریں۔ بھاری سفید لیپت شوٹس کاٹیں۔ سورج کی روشنی اور ہوا کو درخت کے تمام حصوں تک پہنچنے دینے کے لیے اندرونی شاخوں کو پتلا کریں۔"
+      },
+      "effect": {
+        "en": "After spraying and pruning, the mildew fungus inside the remaining leaves will be killed. Within 2 weeks the tree will start pushing new healthy shoots that will remain clean for the rest of the season.",
+        "ur": "اسپرے اور کٹائی کے بعد باقی پتوں کے اندر پھپھوندی فنگس ختم ہو جائے گا۔ 2 ہفتوں کے اندر درخت نئے صحت مند شوٹس نکالنا شروع کر دے گا جو باقی موسم کے لیے صاف رہیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Alternate between Trifloxystrobin and Myclobutanil sprays every week for 6-8 weeks. Cut out all branches covered with white mildew. Remove all old dried fruit from the tree. Reduce water given to the tree.",
+        "ur": "6-8 ہفتوں تک ہر ہفتے ٹرائیفلاکسی سٹروبن اور مائکلوبیوٹانل اسپرے کے درمیان متبادل کریں۔ سفید پھپھوندی سے ڈھکی تمام شاخیں کاٹیں۔ درخت سے تمام پرانے خشک پھل ہٹائیں۔ درخت کو دیا جانے والا پانی کم کریں۔"
+      },
+      "effect": {
+        "en": "After heavy pruning and alternating sprays, the mildew fungus will be eliminated from the tree. The tree will be weaker for a few weeks but will recover and grow new clean branches by late summer.",
+        "ur": "بھاری کٹائی اور متبادل اسپرے کے بعد پھپھوندی فنگس درخت سے ختم ہو جائے گا۔ درخت کچھ ہفتوں کے لیے کمزور ہوگا لیکن بحال ہوگا اور موسم گرما کے آخر تک نئی صاف شاخیں اگائے گا۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Cut away 40-50% of the tree canopy that is covered in mildew. Spray strong fungicide every 5 days. Remove all fruit to let the tree focus its energy on growing new healthy leaves. Add sulfur to the soil around the tree.",
+        "ur": "پھپھوندی سے ڈھکے درخت کی چھتری کا 40-50% حصہ کاٹ دیں۔ ہر 5 دن بعد مضبوط فنگس کش اسپرے کریں۔ تمام پھل ہٹائیں تاکہ درخت اپنی توانائی نئے صحت مند پتے اگانے پر مرکوز کر سکے۔ درخت کے ارد گرد مٹی میں گندھک شامل کریں۔"
+      },
+      "effect": {
+        "en": "After removing heavily infected canopy and continuous spraying, the remaining part of the tree will stop being affected. The tree will spend all its energy growing new healthy leaves. Fruit production will restart next season as the tree recovers.",
+        "ur": "بھاری متاثرہ چھتری ہٹانے اور مسلسل اسپرے کے بعد درخت کا باقی حصہ متاثر ہونا بند ہو جائے گا۔ درخت اپنی ساری توانائی نئے صحت مند پتے اگانے میں خرچ کرے گا۔ پھل کی پیداوار اگلے موسم میں دوبارہ شروع ہوگی جب درخت بحال ہوگا۔"
+      }
+    }
+  },
+
+  "Cherry___healthy": {
+    "plant": {
+      "en": "Cherry",
+      "ur": "چیری"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Prune once a year, feed balanced fertilizer, water properly during fruit development, spray preventive spray if your region has mildew history.",
+        "ur": "سال میں ایک بار کٹائی کریں، متوازن کھاد دیں، پھل کی نشوونما کے دوران مناسب پانی دیں، اگر آپ کے علاقے میں پھپھوندی کی تاریخ ہے تو احتیاطی اسپرے لگائیں۔"
+      },
+      "effect": {
+        "en": "Tree will stay healthy and continue producing good quality cherries every year.",
+        "ur": "درخت صحت مند رہے گا اور ہر سال اچھے معیار کی چیری پیدا کرتا رہے گا۔"
+      }
+    }
+  },
+
+  "Tomato___Yellow_Leaf_Curl_Virus": {
+    "plant": {
+      "en": "Tomato",
+      "ur": "ٹماٹر"
+    },
+    "disease": {
+      "en": "Tomato Yellow Leaf Curl Virus (TYLCV)",
+      "ur": "ٹماٹر یلو لیف کرل وائرس (TYLCV)"
+    },
+    "None": {
+      "remediation": {
+        "en": "Plant varieties with Ty resistance gene. Use insect netting over plants in greenhouse. Control whiteflies from the start. Remove any plant showing curling leaves immediately.",
+        "ur": "Ty مزاحمت جین والی اقسام لگائیں۔ گرین ہاؤس میں پودوں پر کیڑوں کی جالی استعمال کریں۔ شروع سے ہی سفید مکھیوں کو کنٹرول کریں۔ گھماؤ دار پتے دکھانے والے کسی بھی پودے کو فوری طور پر ہٹائیں۔"
+      },
+      "effect": {
+        "en": "Plants will grow healthy because resistant varieties will not get sick even if whiteflies carry the virus. Full fruit production will happen.",
+        "ur": "پودے صحت مند بڑھیں گے کیونکہ مزاحم اقسام بیمار نہیں ہوں گی چاہے سفید مکھیاں وائرس لے کر آئیں۔ مکمل پھل کی پیداوار ہوگی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "There is NO medicine for this virus. Remove and burn infected plants immediately. Spray remaining plants with neonicotinoid insecticide to kill whiteflies. Put up yellow sticky traps. Cover healthy plants with insect netting.",
+        "ur": "اس وائرس کے لیے کوئی دوا نہیں ہے۔ متاثرہ پودے فوری طور پر ہٹائیں اور جلا دیں۔ سفید مکھیوں کو مارنے کے لیے باقی پودوں پر نیونیکوٹینائیڈ کیڑے مار اسپرے کریں۔ پیلے چپکنے والے جال لگائیں۔ صحت مند پودوں کو کیڑوں کی جالی سے ڈھانپیں۔"
+      },
+      "effect": {
+        "en": "After removing infected plants and killing whiteflies, the remaining healthy plants will not get the virus because the insects carrying it are dead. These plants will continue growing and producing tomatoes.",
+        "ur": "متاثرہ پودے ہٹانے اور سفید مکھیوں کو مارنے کے بعد باقی صحت مند پودوں کو وائرس نہیں لگے گا کیونکہ اسے لے جانے والے کیڑے مر گئے ہیں۔ یہ پودے بڑھتے اور ٹماٹر پیدا کرتے رہیں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Pull out ALL plants showing curling yellow leaves and burn them. Spray insecticide on remaining plants every 3-4 days to kill whiteflies. Put insect nets over healthy plants. Remove all weeds around the field.",
+        "ur": "پیلے گھماؤ دار پتے دکھانے والے تمام پودے نکالیں اور جلا دیں۔ سفید مکھیوں کو مارنے کے لیے باقی پودوں پر ہر 3-4 دن بعد کیڑے مار اسپرے کریں۔ صحت مند پودوں پر کیڑوں کی جالیاں لگا��یں۔ کھیت کے ارد گرد تمام جڑی بوٹیاں ہٹائیں۔"
+      },
+      "effect": {
+        "en": "After removing infected plants and netting healthy ones, whiteflies cannot reach healthy plants to spread the virus. Protected plants will continue growing and producing tomatoes normally.",
+        "ur": "متاثرہ پودے ہٹانے اور صحت مند پودوں کو جالی سے ڈھانپنے کے بعد سفید مکھیاں صحت مند پودوں تک نہیں پہنچ سکتیں تاکہ وائرس پھیلائیں۔ محفوظ پودے عام طور پر بڑھتے اور ٹماٹر پیدا کرتے رہیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Look at the field honestly. If more than half the plants are infected it is better to end the field. If saving: remove infected plants, spray insecticide heavily, net all remaining plants, remove all weeds.",
+        "ur": "ایمانداری سے کھیت کو دیکھیں۔ اگر آدھے سے زیادہ پودے متاثر ہیں تو کھیت ختم کرنا بہتر ہے۔ اگر بچاتے ہیں: متاثرہ پودے ہٹائیں، کیڑے مار بھاری طور پر اسپرے کریں، تمام باقی پودوں کو جالی سے ڈھانپیں، تمام جڑی بوٹیاں ہٹائیں۔"
+      },
+      "effect": {
+        "en": "After removing infected plants and protecting the rest with nets and insecticide, the surviving healthy plants will produce some fruit. However yield will be much lower than expected because many plants were removed.",
+        "ur": "متاثرہ پودے ہٹانے اور باقی کو جالیوں اور کیڑے مار سے محفوظ کرنے کے بعد بچ جانے والے صحت مند پودے کچھ پھل پیدا کریں گے۔ تاہم پیداوار متوقع سے بہت کم ہوگی کیونکہ بہت سے پودے ہٹائے گئے تھے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "End the entire field. Destroy every plant infected or not - healthy plants will get infected soon anyway with so many whiteflies. Burn everything. Spray insecticide on the empty field. Do not plant here for 1 season.",
+        "ur": "پورا کھیت ختم کریں۔ ہر پودا تباہ کریں متاثرہ ہو یا نہیں - صحت مند پودے جلد ہی اتنی زیادہ سفید مکھیوں کے ساتھ متاثر ہو جائیں گے۔ سب کچھ جلا دیں۔ خالی کھیت پر کیڑے مار اسپرے کریں۔ یہاں 1 موسم تک نہ لگائیں۔"
+      },
+      "effect": {
+        "en": "After destroying everything and spraying the empty field, whiteflies and the virus reservoir are removed. When you plant again next season with resistant varieties the field will produce a healthy full crop.",
+        "ur": "سب کچھ تباہ کرنے اور خالی کھیت کو اسپرے کرنے کے بعد سفید مکھیاں اور وائرس کا ذخیرہ ہٹا دیا جاتا ہے۔ جب آپ اگلے موسم میں مزاحم اقسام کے ساتھ دوبارہ لگاتے ہیں تو کھیت صحت مند مکمل فصل پیدا کرے گا۔"
+      }
+    }
+  },
+
+  "Tomato___healthy": {
+    "plant": {
+      "en": "Tomato",
+      "ur": "ٹماٹر"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Stake or cage plants. Water 1-2 inches per week consistently. Feed balanced fertilizer - not too much nitrogen. Mulch the ground. Pick ripe fruit regularly.",
+        "ur": "پودوں کو سہارا یا پنجرے میں رکھیں۔ مسلسل ہفتے میں 1-2 انچ پانی دیں۔ متوازن کھاد دیں - بہت زیادہ نائٹروجن نہیں۔ زمین کو ملچ کریں۔ باقاعدگی سے پکا پھل اتاریں۔"
+      },
+      "effect": {
+        "en": "Plants will stay strong and healthy throughout the season and produce maximum number of good quality tomatoes.",
+        "ur": "پودے پورے موسم میں مضبوط اور صحت مند رہیں گے اور اچھے معیار کے ٹماٹروں کی زیادہ سے زیادہ تعداد پیدا کریں گے۔"
+      }
+    }
+  },
+  "Corn_(Maize)___Cercospora_leaf_spot": {
+    "plant": {
+      "en": "Corn (Maize)",
+      "ur": "مکئی"
+    },
+    "disease": {
+      "en": "Cercospora leaf spot (Gray leaf spot)",
+      "ur": "سرکوسپورا پتوں کا داغ (سرمئی پتوں کا داغ)"
+    },
+    "None": {
+      "remediation": {
+        "en": "Plant resistant hybrids next season. Rotate fields with soybeans or wheat. Bury old corn stalks into the soil after harvest.",
+        "ur": "اگلے موسم میں مزاحم ہائبرڈز لگائیں۔ سویابین یا گندم کے ساتھ کھیتوں کو گھمائیں۔ فصل کے بعد پرانے مکئی کے ڈنٹھل مٹی میں دفن کریں۔"
+      },
+      "effect": {
+        "en": "Field will have no disease source and next crop will grow without gray leaf spot.",
+        "ur": "کھیت میں بیماری کا کوئی ذریعہ نہیں ہوگا اور اگلی فصل سرمئی پتوں کے داغ کے بغیر اگے گی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Azoxystrobin 250 g/L at 200 mL per hectare at first sign of gray spots on lower leaves. Check field every week. Keep potassium fertilizer adequate.",
+        "ur": "ازوکسی اسٹروبن 250 گرام فی لیٹر 200 ملی لیٹر فی ہیکٹیئر نچلے پتوں پر سرمئی دھبوں کی پہلی علامت پر اسپرے کریں۔ ہفتہ میں ایک بار کھیت کی جانچ کریں۔ پوٹاشیم کھاد کافی رکھیں۔"
+      },
+      "effect": {
+        "en": "After spraying, the gray spots on lower leaves will stop growing within 5 days. The fungus will not move up to upper leaves so photosynthesis stays strong and grain fills normally.",
+        "ur": "اسپرے کے بعد نچلے پتوں پر سرمئی دھبے 5 دنوں میں بڑھنا بند کر دیں گے۔ فنگس اوپری پتوں تک نہیں پہنچے گا لہذا فوٹوسنتھیسس مضبوط رہے گا اور دانے عام طور پر بھریں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Azoxystrobin combined with Propiconazole at 400 mL per hectare when disease reaches the lower third of the plant. Spray again after 14-21 days if spots keep appearing.",
+        "ur": "جب بیماری پودے کے نچلے تہائی حصے تک پہنچے تو ازوکسی اسٹروبن اور پروپیکونازول کا مجموعہ 400 ملی لیٹر فی ہیکٹیئر اسپرے کریں۔ اگر دھبے ظاہر ہوتے رہیں تو 14-21 دن بعد دوبارہ اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "After this combined spray, the fungus on lower and middle leaves will be stopped. The ear leaf and top leaves which are most important for grain filling will stay green and healthy.",
+        "ur": "اس مشترکہ اسپرے کے بعد نچلے اور درمیانی پتوں پر فنگس رک جائے گا۔ بھٹہ کا پتہ اور اوپری پتے جو دانے بھرن�� کے لیے سب سے اہم ہیں سبز اور صحت مند رہیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray fungicide at maximum rate allowed on the label. Do two sprays 10-14 days apart. Look at the field honestly - if disease has already reached the ear leaf then treatment will give limited return. Think about harvesting early for animal feed.",
+        "ur": "لیبل پر بتائی گئی زیادہ سے زیادہ شرح پر فنگس کش اسپرے کریں۔ 10-14 دن کے فاصلے پر دو اسپرے کریں۔ ایمانداری سے کھیت کو دیکھیں - اگر بیماری پہلے ہی بھٹہ کے پتے تک پہنچ گئی ہے تو علاج سے محدود واپسی ملے گی۔ جانوروں کے چارے کے لیے جلد کٹائی کے بارے میں سوچیں۔"
+      },
+      "effect": {
+        "en": "After spraying, the fungus will slow down but some leaf damage has already happened. The spray will prevent total leaf death and allow whatever grain is forming to finish filling.",
+        "ur": "اسپرے کے بعد فنگس سست ہو جائے گا لیکن کچھ پتوں کو نقصان پہلے ہی ہو چکا ہے۔ اسپرے پتوں کی مکمل موت کو روکے گا اور جو بھی دانہ بن رہا ہے اسے بھرنے میں مدد دے گا۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Harvest the crop early for silage (animal feed) if grain filling is very poor. Spray fungicide only if it stops the plant from dying completely before harvest. Burn or bury all stalks right after harvest to prevent disease next year.",
+        "ur": "اگر دانے بھرنا بہت خراب ہے تو فصل کو سائلیج (جانوروں کا چارہ) کے لیے جلد کاٹیں۔ صرف اس صورت میں فنگس کش اسپرے کریں جب یہ پودے کو فصل سے پہلے مکمل طور پر مرنے سے روکے۔ اگلے سال بیماری کو روکنے کے لیے فصل کے فوراً بعد تمام ڈنٹھل جلا یا دفن کریں۔"
+      },
+      "effect": {
+        "en": "After early harvest and stalk destruction, the field will be cleaned of the disease source. The crop saved as silage will still have feed value even though grain was not fully developed.",
+        "ur": "جلد کٹائی اور ڈنٹھل کی تباہی کے بعد کھیت بیماری کے ذریعے سے صاف ہو جائے گا۔ سائلیج کے طور پر محفوظ کی گئی فصل میں اب بھی چارے کی قیمت ہوگی حالانکہ دانہ مکمل طور پر تیار نہیں ہوا تھا۔"
+      }
+    }
+  },
+
+  "Corn_(Maize)___Common_rust": {
+    "plant": {
+      "en": "Corn (Maize)",
+      "ur": "مکئی"
+    },
+    "disease": {
+      "en": "Common rust",
+      "ur": "عام زنگ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Plant rust-resistant hybrids. Plant early so corn matures before rust pressure builds. Watch rust forecast reports.",
+        "ur": "زنگ مزاحم ہائبرڈز لگائیں۔ جلدی لگائیں تاکہ زنگ کا دباؤ بڑھنے سے پہلے مکئی پک جائے۔ زنگ کی پیشن گوئی کی رپورٹیں دیکھیں۔"
+      },
+      "effect": {
+        "en": "Corn will grow and mature without rust infection and yield will be at full potential.",
+        "ur": "مکئی زنگ کی انفیکشن کے بغیر بڑھے گی اور پکے گی اور پیداوار مکمل صلاحیت پر ہوگی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Usually no spray needed unless growing seed corn. If spraying: apply Propiconazole 250 EC at 200 mL per hectare when orange pustules first appear on lower leaves before tasseling.",
+        "ur": "عام طور پر کوئی اسپرے کی ضرورت نہیں ہے جب تک کہ بیج مکئی نہ اگ رہی ہو۔ اگر اسپرے کر رہے ہیں: پروپیکونازول 250 EC 200 ملی لیٹر فی ہیکٹیئر اس وقت لگائیں جب نچلے پتوں پر پہلی بار نارنجی پسٹولز ٹاسلنگ سے پہلے ظاہر ہوں۔"
+      },
+      "effect": {
+        "en": "After spraying, the orange rust pustules on lower leaves will stop releasing spores. Upper leaves will stay clean and grain filling will proceed normally with no yield loss.",
+        "ur": "اسپرے کے بعد نچلے پتوں پر نارنجی زنگ کے پسٹولز بیضے چھوڑنا بند کر دیں گے۔ اوپری پتے صاف رہیں گے اور دانے بھرنا عام طور پر پیداوار کے نقصان کے بغیر جاری رہے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Azoxystrobin or Propiconazole if disease appears before or during tasseling. Make sure the ear leaf is covered well. Usually one spray is enough.",
+        "ur": "اگر ٹاسلنگ سے پہلے یا اس کے دوران بیماری ظاہر ہو تو ازوکسی اسٹروبن یا پروپیکونازول اسپرے کریں۔ یقینی بنائیں کہ بھٹہ کا پتہ اچھی طرح ڈھکا ہوا ہے۔ عام طور پر ایک اسپرے کافی ہے۔"
+      },
+      "effect": {
+        "en": "After spraying, rust will stop spreading to upper leaves. The ear leaf which controls grain filling will remain green and functional. Grain quality will be maintained.",
+        "ur": "اسپرے کے بعد زنگ اوپری پتوں میں پھیلنا بند ہو جائے گا۔ بھٹہ کا پتہ جو دانہ بھرنے کو کنٹرول کرتا ہے سبز اور کام کرتا رہے گا۔ دانے کا معیار برقرار رہے گا۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray treatment at this stage gives limited return. Focus on keeping the plant healthy through good water and fertilizer. If grain is not filling well, harvest early. Plan to use resistant hybrid next year.",
+        "ur": "اس مرحلے پر اسپرے علاج سے محدود واپسی ملتی ہے۔ اچھے پانی اور کھاد کے ذریعے پودے کو صحت مند رکھنے پر توجہ دیں۔ اگر دانہ اچھی طرح نہیں بھر رہا تو جلد کاٹیں۔ اگلے سال مزاحم ہائبرڈ استعمال کرنے کا منصوبہ بنائیں۔"
+      },
+      "effect": {
+        "en": "After providing water and nutrients, the plant will use remaining healthy leaves to fill whatever grain it can. Harvesting at right time will save the grain quality that is still present.",
+        "ur": "پانی اور غذائی اجزاء فراہم کرنے کے بعد پودا باقی صحت مند پتوں کا استعمال کرتے ہوئے جو بھی دانہ بھر سکتا ہے بھرے گا۔ صحیح وقت پر کٹائی دانے کے معیار کو بچائے گی جو ابھی بھی موجود ہے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Do not spray - no economic return. Let crop reach natural maturity and harvest when grain is dry enough. Destroy all corn stalks after harvest. Choose resistant hybrid for next season.",
+        "ur": "اسپرے نہ کریں - کوئی اقتصادی واپسی نہیں۔ فصل کو قدرتی پختگی تک پہنچنے دیں اور جب دانہ کافی خشک ہو جائے تو کاٹیں۔ فصل کے بعد تمام مکئی کے ڈنٹھل تباہ کریں۔ اگلے موسم کے لیے مزاحم ہائبرڈ منتخب کریں۔"
+      },
+      "effect": {
+        "en": "After harvesting and destroying stalks, the field will be free of rust spores. Next season's crop with resistant hybrid will not be affected.",
+        "ur": "کٹائی اور ڈنٹھل کی تباہی کے بعد کھیت زنگ کے بیضوں سے پاک ہو جائے گا۔ مزاحم ہائبرڈ کے ساتھ اگلے موسم کی فصل متاثر نہیں ہوگی۔"
+      }
+    }
+  },
+
+  "Corn_(Maize)___Northern_Leaf_Blight": {
+    "plant": {
+      "en": "Corn (Maize)",
+      "ur": "مکئی"
+    },
+    "disease": {
+      "en": "Northern Leaf Blight",
+      "ur": "شمالی پتوں کا جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Use hybrids with Ht resistance genes. Rotate with non-corn crops. Bury corn stalks by deep tillage after harvest.",
+        "ur": "Ht مزاحمت جین والے ہائبرڈز استعمال کریں۔ غیر مکئی فصلوں کے ساتھ گھمائیں۔ فصل کے بعد گہری جت کے ذریعے مکئی کے ڈنٹھل دفن کریں۔"
+      },
+      "effect": {
+        "en": "Field stays clean of the blight fungus and next corn crop will grow without any blight infection.",
+        "ur": "کھیت جھلساؤ فنگس سے صاف رہے گا اور اگلی مکئی کی فصل بغیر کسی جھلساؤ انفیکشن کے بڑھے گی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Azoxystrobin 250 SC at 200 mL per hectare when long dark green lesions first appear on lower leaves, before tasseling. Scout every 5-7 days.",
+        "ur": "ازوکسی اسٹروبن 250 SC 200 ملی لیٹر فی ہیکٹیئر اس وقت اسپرے کریں جب نچلے پتوں پر پہلی بار لمبے سیاہ سبز زخم ظاہر ہوں، ٹاسلنگ سے پہلے۔ ہر 5-7 دن بعد اسکاؤٹ کریں۔"
+      },
+      "effect": {
+        "en": "After spraying, the long lesions on lower leaves will stop growing. The fungus will not move up to the ear leaf. Upper leaves will stay healthy and grain will fill to full size.",
+        "ur": "اسپرے کے بعد نچلے پتوں پر لمبے زخم بڑھنا بند کر دیں گے۔ فنگس بھٹہ کے پتے تک نہیں پہنچے گا۔ اوپری پتے صحت مند رہیں گے اور دانہ مکمل سائز تک بھرے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Azoxystrobin combined with Propiconazole at ear leaf emergence. Repeat after 14-21 days if humid weather continues. Make sure spray reaches the ear leaf well.",
+        "ur": "بھٹہ کے پتے کے ابھرنے پر ازوکسی اسٹروبن اور پروپیکونازول کا مجموعہ اسپرے کریں۔ اگر نم موسم جاری رہے تو 14-21 دن بعد دہرائیں۔ یقینی بنائیں کہ اسپرے بھٹہ کے پتے تک اچھی طرح پہنچے۔"
+      },
+      "effect": {
+        "en": "After spraying, blight lesions will stop appearing on new leaves. The ear leaf and above will be protected during the critical grain filling period and yield loss will be limited.",
+        "ur": "اسپرے کے بعد جھلساؤ کے زخم نئے پتوں پر ظاہر ہونا بند ہو جائیں گے۔ بھٹہ کا پتہ اور اوپر کے پتے دانہ بھرنے کی اہم مدت کے دوران محفوظ رہیں گے اور پیداوار کا نقصان محدود ہوگا۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray immediately if disease has just reached the ear leaf and grain fill is not complete. Do two sprays 10-14 days apart. Be realistic about return - if ear leaf is already heavily damaged, treatment will give less benefit.",
+        "ur": "اگر بیماری نے ابھی بھٹہ کے پتے تک پہنچی ہے اور دانہ بھرنا مکمل نہیں ہوا تو فوری طور پر اسپرے کریں۔ 10-14 دن کے فاصلے پر دو اسپرے کریں۔ واپسی کے بارے میں حقیقت پسند بنیں - اگر بھٹہ کا پتہ پہلے ہی بری طرح خراب ہو گیا ہے تو علاج سے کم فائدہ ہوگا۔"
+      },
+      "effect": {
+        "en": "After spraying, the rate of new lesions forming will slow down. This gives the remaining healthy leaf area more time to fill the grain that is already forming.",
+        "ur": "اسپرے کے بعد نئے زخم بننے کی شرح سست ہو جائے گی۔ یہ باقی صحت مند پتوں کے رقبے کو مزید وقت دیتا ہے تاکہ وہ دانے کو بھر سکے جو پہلے سے بن رہا ہے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Do not spray - not worth the cost at this stage. Harvest corn as soon as grain is dry enough. Burn or deeply bury all stalks. Do not plant corn here for at least 2 years.",
+        "ur": "اسپرے نہ کریں - اس مرحلے پر لاگت کے قابل نہیں۔ جیسے ہی دانہ کافی خشک ہو مکئی کاٹیں۔ تمام ڈنٹھل جلائیں یا گہرائی سے دفن کریں۔ یہاں کم از کم 2 سال تک مکئی نہ لگائیں۔"
+      },
+      "effect": {
+        "en": "After harvesting and destroying all stalks, the blight fungus is removed from the field. Crop rotation will ensure the disease does not come back for years.",
+        "ur": "کٹائی اور تمام ڈنٹھل کی تباہی کے بعد جھلساؤ فنگس کھیت سے ہٹا دیا جاتا ہے۔ فصل کی گردش یقینی بنائے گی کہ بیماری سالوں تک واپس نہ آئے۔"
+      }
+    }
+  },
+
+  "Corn_(Maize)___healthy": {
+    "plant": {
+      "en": "Corn (Maize)",
+      "ur": "مکئی"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Feed balanced NPK fertilizer based on soil test. Space plants properly. Water well during tasseling and grain filling. Control weeds early.",
+        "ur": "مٹی کے ٹیسٹ کی بنیاد پر متوازن NPK کھاد دیں۔ پودوں کو مناسب فاصلے پر رکھیں۔ ٹاسلنگ اور دانہ بھرنے کے دوران اچھی طرح پانی دیں۔ جلد جڑی بوٹیوں کو کنٹرول کریں۔"
+      },
+      "effect": {
+        "en": "Corn will grow to its full genetic potential and produce maximum grain yield with good quality.",
+        "ur": "مکئی اپنی مکمل جینیاتی صلاحیت تک بڑھے گی اور اچھے معیار کے ساتھ زیادہ سے زیادہ دانے کی پیداوار دے گی۔"
+      }
+    }
+  },
+
+  "Grape___Black_rot": {
+    "plant": {
+      "en": "Grape",
+      "ur": "انگور"
+    },
+    "disease": {
+      "en": "Black rot",
+      "ur": "کالی سڑن"
+    },
+    "None": {
+      "remediation": {
+        "en": "Pick up and destroy all dried shriveled berries (mummies) from vines and ground. Prune out old canes. Spray dormant lime-sulfur before buds open in spring.",
+        "ur": "بیلوں اور زمین سے تمام خشک سکڑے ہوئے بیر (ممیاں) اٹھائیں اور تباہ کریں۔ پرانی کینز کاٹیں۔ موسم بہار میں کلیاں کھلنے سے پہلے ڈورمنٹ لائم سلفر اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "The vine will enter the growing season with no disease source present. New growth and fruit will develop clean and healthy.",
+        "ur": "بیل بڑھتے موسم میں بیماری کے ذریعے کے بغیر داخل ہوگی۔ نئی نشوونما اور پھل صاف اور صحت مند ترقی کریں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Mancozeb 75% WP at 2.5 g/L every 10-14 days from bud break through 4 weeks after bloom. Pick off any infected berries immediately. Prune and train vines so air moves freely through the canopy.",
+        "ur": "کلی ٹوٹنے سے لے کر کھلنے کے 4 ہفتے بعد تک ہر 10-14 دن بعد مینکوزیب 75% WP 2.5 گرام فی لیٹر اسپرے کریں۔ کسی بھی متاثرہ بیر کو فوری طور پر اتاریں۔ بیلوں کی کٹائی اور ٹریننگ کریں تاکہ ہوا آزادی سے چھتری میں سے گزرے۔"
+      },
+      "effect": {
+        "en": "After spraying and removing infected berries, the fungus spores in the air will be killed before they land on healthy fruit. Remaining grape clusters will stay clean and develop to full size.",
+        "ur": "اسپرے اور متاثرہ بیر ہٹانے کے بعد ہوا میں فنگس کے بیضے صحت مند پھل پر اترنے سے پہلے ختم ہو جائیں گے۔ باقی انگور کے گچھے صاف رہیں ��ے اور مکمل سائز تک ترقی کریں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Captan or Mancozeb every 7-10 days until grapes fully ripen. Remove entire clusters that have any rotted berries. Do summer pruning to cut back thick leaf areas for better air movement.",
+        "ur": "انگور مکمل طور پر پکنے تک ہر 7-10 دن بعد کیپٹان یا مینکوزیب اسپرے کریں۔ تمام گچھے ہٹائیں جن میں کوئی بھی سڑے ہوئے بیر ہوں۔ بہتر ہوا کی نقل و حرکت کے لیے گاڑھے پتوں کے علاقوں کو کاٹنے کے لیے موسم گرما کی کٹائی کریں۔"
+      },
+      "effect": {
+        "en": "After removing infected clusters and improving air flow, the fungus will have difficulty infecting remaining clusters. Healthy clusters will continue developing and ripen normally.",
+        "ur": "متاثرہ گچھے ہٹانے اور ہوا کے بہاؤ کو بہتر بنانے کے بعد فنگس کو باقی گچھوں کو متاثر کرنے میں دشواری ہوگی۔ صحت مند گچھے ترقی جاری رکھیں گے اور عام طور پر پکیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Remove ALL grape clusters from the vine whether they look infected or not. This stops the disease cycle completely. Spray Mancozeb plus Myclobutanil every 5-7 days for the rest of the season. Cut back infected canes heavily.",
+        "ur": "بیل سے تمام انگور کے گچھے ہٹائیں چاہے وہ متاثرہ نظر آئیں یا نہیں۔ یہ بیماری کے چکر کو مکمل طور پر روکتا ہے۔ باقی موسم کے لیے ہر 5-7 دن بعد مینکوزیب اور مائکلوبیوٹانل اسپرے کریں۔ متاثرہ کینز کو بھاری طور پر کاٹیں۔"
+      },
+      "effect": {
+        "en": "After removing all fruit and infected wood, the vine itself will be protected by the sprays. The vine will focus its energy on building strong wood and healthy buds for next year's crop.",
+        "ur": "تمام پھل اور متاثرہ لکڑی ہٹانے کے بعد بیل خود اسپرے سے محفوظ رہے گی۔ بیل اپنی توانائی مضبوط لکڑی اور اگلے سال کی فصل کے لیے صحت مند کلیاں بنانے پر مرکوز کرے گی۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Remove all fruit and all canes that show any sign of infection. Spray Myclobutanil at 1 mL/L every 5 days. Cut irrigation to slow vine growth. Apply soil treatment around the vine base.",
+        "ur": "تمام پھل اور تمام کینز ہٹائیں جو انفیکشن کی کوئی علامت ظاہر کرتی ہیں۔ مائکلوبیوٹانل 1 ملی لیٹر فی لیٹر ہر 5 دن بعد اسپرے کریں۔ بیل کی نشوونما کو سست کرنے کے لیے آبپاشی کاٹیں۔ بیل کی بنیاد کے ارد گرد مٹی کا علاج لگائیں۔"
+      },
+      "effect": {
+        "en": "After this heavy pruning and continuous spraying, the vine will stop losing healthy wood. It will be weak for the rest of this season but the roots will stay strong and the vine will regrow next year.",
+        "ur": "اس بھاری کٹائی اور مسلسل اسپرے کے بعد بیل صحت مند لکڑی کھونا بند کر دے گی۔ یہ باقی موسم کے لیے کمزور ہوگی لیکن جڑیں مضبوط رہیں گی اور بیل اگلے سال دوبارہ اگے گی۔"
+      }
+    }
+  },
+  "Grape___Esca_(Black_Measles)": {
+    "plant": {
+      "en": "Grape",
+      "ur": "انگور"
+    },
+    "disease": {
+      "en": "Esca (Black Measles)",
+      "ur": "ایسکا (کالا خسرہ)"
+    },
+    "None": {
+      "remediation": {
+        "en": "Always prune in dry winter weather. Seal all large cuts with wound sealant immediately. Keep pruning tools sharp and clean between vines.",
+        "ur": "ہمیشہ خشک موسم سرما کے موسم میں کٹائی کریں۔ تمام بڑے کٹوں کو فوری طور پر زخم سیلنٹ سے سیل کریں۔ کٹائی کے اوزار تیز اور بیلوں کے درمیان صاف رکھیں۔"
+      },
+      "effect": {
+        "en": "Wounds will heal quickly and cleanly with no entry point for the Esca fungi. Vine will stay healthy and productive for many years.",
+        "ur": "زخم جلدی اور صاف طریقے سے ٹھیک ہوں گے اور ایسکا فنگی کے لیے کوئی داخلے کا مقام نہیں ہوگا۔ بیل کئی سالوں تک صحت مند اور پیداواری رہے گی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Cut out all wood that shows brown streaks inside when sliced. Paint every cut surface with copper wound sealant immediately. Feed the vine well with balanced fertilizer and water it properly to reduce stress.",
+        "ur": "تمام لکڑی کاٹیں جو ٹکڑوں میں کاٹنے پر اندر سے بھورے دھارے دکھاتی ہیں۔ فوری طور پر ہر کٹی ہوئی سطح کو کاپر زخم سیلنٹ سے پینٹ کریں۔ بیل کو متوازن کھاد کے ساتھ اچھی طرح کھلائیں اور دباؤ کو کم کرنے کے لیے مناسب پانی دیں۔"
+      },
+      "effect": {
+        "en": "After cutting infected wood and sealing wounds, the fungi will be physically removed from the vine. Good nutrition and water will strengthen the remaining healthy wood and help it resist re-infection.",
+        "ur": "متاثرہ لکڑی کاٹنے اور زخموں کو سیل کرنے کے بعد فنگی جسمانی طور پر بیل سے ہٹا دی جاتی ہیں۔ اچھی غذائیت اور پانی باقی صحت مند لکڑی کو مضبوط بنائیں گے اور دوبارہ انفیکشن سے بچنے میں مدد دیں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Cut back all infected branches to healthy white wood - slice the cut surface and check there is no brown color. Remove spotted leaves and berries. Water and fertilize well to reduce plant stress. If the main trunk shows streaking, plan for trunk renewal.",
+        "ur": "تمام متاثرہ شاخوں کو صحت مند سفید لکڑی تک کاٹیں - کٹی ہوئی سطح کو کاٹیں اور چیک کریں کہ کوئی بھورا رنگ نہیں ہے۔ داغ دار پتے اور بیر ہٹائیں۔ پودے کے دباؤ کو کم کرنے کے لیے اچھی طرح پانی اور کھاد دیں۔ اگر مرکزی تنا دھاریدار ہے تو تنے کی تجدید کا منصوبہ بنائیں۔"
+      },
+      "effect": {
+        "en": "After removing all infected wood, the vine will push new healthy shoots from the remaining clean wood. The vine will look weaker for a few weeks but will recover and produce fruit from the new growth.",
+        "ur": "تمام متاثرہ لکڑی ہٹانے کے بعد بیل باقی صاف لکڑی سے نئے صحت مند شوٹس نکالے گی۔ بیل کچھ ہفتوں کے لیے کمزور نظر آئے گی لیکن بحال ہوگی اور نئی نشوونما سے پھل پیدا کرے گی۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Start growing a new trunk from a strong bud at the base of the vine. Keep the old infected trunk alive until the new one is strong enough (takes 2-3 years). Then cut and remove the old trunk completely. Feed the vine well during this whole period.",
+        "ur": "بیل کی بنیاد پر ایک مضبوط کلی سے نیا تنا اگانا شروع کریں۔ پرانے متاثرہ تنے کو اس وقت تک زندہ رکھیں جب تک کہ نیا کافی مضبوط نہ ہو جائے (2-3 سال لگتے ہیں)۔ پھر پرانے تنے کو مکمل طور پر کاٹیں اور ہٹا دیں۔ اس پوری مدت کے دوران بیل کو اچھی طرح کھلائیں۔"
+      },
+      "effect": {
+        "en": "After the new trunk is established and the old one removed, the vine will essentially be renewed. It will produce increasing amounts of fruit each year as the new trunk grows stronger.",
+        "ur": "نیا تنا قائم ہونے اور پرانا ہٹائے جانے کے بعد بیل بنیادی طور پر تجدید ہو جائے گی۔ یہ ہر سال بڑھتی ہوئی مقدار میں پھل پیدا کرے گی جیسے جیسے نیا تنا مضبوط ہوتا جائے گا۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Remove the entire vine including roots. Do not plant anything in this spot for 3-5 years. Treat the soil. When replanting choose varieties that are more tolerant of Esca.",
+        "ur": "جڑوں سمیت پوری بیل ہٹائیں۔ اس جگہ پر 3-5 سال تک کچھ نہ لگائیں۔ مٹی کا علاج کریں۔ دوبارہ لگاتے وقت ایسی اقسام منتخب کریں جو ایسکا کو زیادہ برداشت کر سکیں۔"
+      },
+      "effect": {
+        "en": "After removing the vine and cleaning the soil, the Esca fungi in the ground will die out over time. A new vine planted later with a tolerant variety will start fresh with no disease history.",
+        "ur": "بیل ہٹانے اور مٹی کی صفائی کے بعد زمین میں ایسکا فنگی وقت کے ساتھ مر جائیں گے۔ بعد میں مزاحم قسم کے ساتھ لگائی گئی نئی بیل بیماری کی تاریخ کے بغیر تازہ شروعات کرے گی۔"
+      }
+    }
+  },
+
+  "Grape___Leaf_blight": {
+    "plant": {
+      "en": "Grape",
+      "ur": "انگور"
+    },
+    "disease": {
+      "en": "Leaf blight (Isariopsis leaf spot)",
+      "ur": "پتوں کا جھلساؤ (آئیساریاپسس پتوں کا داغ)"
+    },
+    "None": {
+      "remediation": {
+        "en": "Remove lower leaves near the grape clusters for air flow. Do not water overhead. Feed vine with balanced fertilizer.",
+        "ur": "انگور کے گچھوں کے قریب نچلے پتے ہوا کے بہاؤ کے لیے ہٹائیں۔ اوور ہیڈ پانی نہ دیں۔ متوازن کھاد کے ساتھ بیل کھلائیں۔"
+      },
+      "effect": {
+        "en": "Vine canopy will stay dry and open which stops the blight fungus from growing. Grapes will ripen well.",
+        "ur": "بیل کی چھتری خشک اور کھلی رہے گی جو جھلساؤ فنگس کو بڑھنے سے روکتی ہے۔ انگور اچھی طرح پکیں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Copper oxychloride 50% WP at 2.5 g/L every 14 days. Remove leaves that are badly spotted.",
+        "ur": "کاپر آکسی کلورائیڈ 50% WP 2.5 گرام فی لیٹر ہر 14 دن بعد اسپرے کریں۔ وہ پتے ہٹائیں جو بری طرح داغ دار ہیں۔"
+      },
+      "effect": {
+        "en": "After spraying, the brown spots on remaining leaves will stop spreading. New leaves coming out will be clean and the vine will have enough healthy leaves to ripen the grapes well.",
+        "ur": "اسپرے کے بعد باقی پتوں پر بھورے دھبے پھیلنا بند ہو جائیں گے۔ نکلنے والے نئے پتے صاف ہوں گے اور بیل میں انگور اچھی طرح پکانے کے لیے کافی صحت مند پتے ہوں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Mancozeb 75% WP at 2.5 g/L every 7-10 days until spotting stops spreading. Remove heavily spotted leaves. Cut back some shoots to let air move through the vine.",
+        "ur": "مینکوزیب 75% WP 2.5 گرام فی لیٹر ہر 7-10 دن بعد اسپرے کریں جب تک داغ پھیلنا بند نہ ہو جائے۔ بھاری داغ دار پتے ہٹائیں۔ بیل میں سے ہوا کی نقل و حرکت کے لیے کچھ شوٹس کاٹیں۔"
+      },
+      "effect": {
+        "en": "After removing spotted leaves and spraying, the healthy leaves left on the vine will stay green. They will continue making food for the grapes and fruit quality will be maintained.",
+        "ur": "داغ دار پتے ہٹانے اور اسپرے کرنے کے بعد بیل پر باقی صحت مند پتے سبز رہیں گے۔ ��ہ انگور کے لیے خوراک بناتے رہیں گے اور پھل کا معیار برقرار رکھا جائے گا۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray copper and Mancozeb alternating every 5-7 days. Remove all spotted leaves even if it means the vine loses many leaves. If grapes are not ripening because of leaf loss, harvest them early. Reduce nitrogen feeding.",
+        "ur": "ہر 5-7 دن بعد کاپر اور مینکوزیب کو متبادل کرتے ہوئے اسپرے کریں۔ تمام داغ دار پتے ہٹائیں چاہے اس کا مطلب یہ ہو کہ بیل بہت سے پتے کھو دے۔ اگر پتوں کے نقصان کی وجہ سے انگور نہیں پک رہے تو انہیں جلد کاٹیں۔ نائٹروجن فیڈنگ کم کریں۔"
+      },
+      "effect": {
+        "en": "After removing spotted leaves and spraying, the remaining healthy leaves will be protected. The vine will be weaker but will not lose more leaves. Any unripe grapes picked early can still ripen indoors.",
+        "ur": "داغ دار پتے ہٹانے اور اسپرے کرنے کے بعد باقی صحت مند پتے محفوظ رہیں گے۔ بیل کمزور ہوگی لیکن مزید پتے نہیں کھوئے گی۔ جلد اتارے گئے کچے انگور ابھی بھی گھر کے اندر پک سکتے ہیں۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Most leaves have fallen or are heavily damaged. Pick any grapes that can still be used. Keep spraying to protect the few leaves left. Cut back badly damaged shoots in winter. Feed vine with potassium-rich fertilizer for recovery.",
+        "ur": "زیادہ تر پتے گر گئے ہیں یا بری طرح خراب ہیں۔ جو بھی انگور ابھی استعمال ہو سکتے ہیں اتاریں۔ باقی چند پتوں کی حفاظت کے لیے اسپرے جاری رکھیں۔ موسم سرما میں بری طرح خراب شدہ شوٹس کاٹیں۔ بحالی کے لیے پوٹاشیم سے بھرپور کھاد کے ساتھ بیل کھلائیں۔"
+      },
+      "effect": {
+        "en": "After picking remaining grapes and protecting the last leaves, the vine will survive through to dormancy. With winter pruning and good feeding in spring, the vine will grow back a full set of healthy leaves next season.",
+        "ur": "باقی انگور اتارنے اور آخری پتوں کی حفاظت کے بعد بیل خاموشی تک زندہ رہے گی۔ موسم سرما کی کٹائی اور موسم بہار میں اچھی فیڈنگ کے ساتھ بیل اگلے موسم میں صحت مند پتوں کا مکمل سیٹ واپس اگائے گی۔"
+      }
+    }
+  },
+
+  "Grape___healthy": {
+    "plant": {
+      "en": "Grape",
+      "ur": "انگور"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Manage canopy properly, fertilize with balanced NPK, prune on time, train shoots well, spray preventive program during bloom and fruit development.",
+        "ur": "چھتری کو مناسب طریقے سے منظم کریں، متوازن NPK سے کھاد دیں، وقت پر کٹائی کریں، شوٹس کو اچھی طرح ٹرین کریں، کھلنے اور پھل کی نشوونما کے دوران احتیاطی پروگرام اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "Vine will stay productive and healthy producing high-quality grapes year after year.",
+        "ur": "بیل پیداواری اور صحت مند رہے گی اور سال بہ سال اعلیٰ معیار کے انگور پیدا کرتی رہے گی۔"
+      }
+    }
+  },
+
+  "Peach___Bacterial_spot": {
+    "plant": {
+      "en": "Peach",
+      "ur": "آڑو"
+    },
+    "disease": {
+      "en": "Bacterial spot",
+      "ur": "بیکٹیریل داغ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Plant resistant varieties. Use windbreaks around the orchard. Water at the base only. Spray copper in late winter as a preventive.",
+        "ur": "مزاحم اقسام لگائیں۔ باغ کے ارد گرد ہوا کی رکاوٹیں استعمال کریں۔ صرف بنیاد پر پانی دیں۔ احتیاطی کے طور پر موسم سرما کے آخر میں کاپر اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "Tree will grow without bacterial infection and produce clean blemish-free peaches.",
+        "ur": "درخت بیکٹیریل انفیکشن کے بغیر بڑھے گا اور صاف داغ سے پاک آڑو پیدا کرے گا۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Copper hydroxide 77% WP at 3 g/L starting at petal fall. Repeat every 7-10 days for 4-5 rounds. Remove fruit that has dark sunken spots on it.",
+        "ur": "پنکھڑی گرنے سے شروع کرتے ہوئے کاپر ہائیڈرو آکسائیڈ 77% WP 3 گرام فی لیٹر اسپرے کریں۔ 4-5 راؤنڈ کے لیے ہر 7-10 دن بعد دہرائیں۔ وہ پھل ہٹائیں جن پر سیاہ دھنسے ہوئے دھبے ہیں۔"
+      },
+      "effect": {
+        "en": "After spraying, bacteria living on the leaf and fruit surfaces will be killed. New leaves and fruit developing after the spray will come out clean and healthy.",
+        "ur": "اسپرے کے بعد پتے اور پھل کی سطحوں پر رہنے والے بیکٹیریا ختم ہو جائیں گے۔ اسپرے کے بعد ترقی پذیر نئے پتے اور پھل صاف اور صحت مند نکلیں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray copper every 5-7 days. Remove fruit with heavy dark spots to stop bacteria from multiplying. Thin out inner branches so leaves dry quickly after rain. Stop nitrogen feeding temporarily.",
+        "ur": "ہر 5-7 دن بعد کاپر اسپرے کریں۔ بھاری سیاہ دھبوں والا پھل ہٹائیں تاکہ بیکٹیریا کثیر نہ ہوں۔ اندرونی شاخوں کو پتلا کریں تاکہ بارش کے بعد پتے جلدی سوکھیں۔ عارضی طور پر نائٹروجن فیڈنگ بند کریں۔"
+      },
+      "effect": {
+        "en": "After removing spotted fruit and thinning branches, the tree dries faster after rain which slows bacteria growth. Remaining clean fruit will continue growing and be ready for harvest.",
+        "ur": "داغ دار پھل ہٹانے اور شاخوں کو پتلا کرنے کے بعد درخت بارش کے بعد تیزی سے سوکھتا ہے جو بیکٹیریا کی نشوونما کو سست کرتا ہے۔ باقی صاف پھل بڑھتے رہیں گے اور کٹائی کے لیے تیار ہوں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Remove all fruit from the tree to reduce the amount of bacteria. Keep spraying copper to protect the leaves. Cut back heavily spotted shoots after the season. Build a windbreak to protect the tree.",
+        "ur": "بیکٹیریا کی مقدار کو کم کرنے کے لیے درخت سے تمام پھل ہٹائیں۔ پتوں کی حفاظت کے لیے کاپر اسپرے جاری رکھیں۔ موسم کے بعد بھاری داغ دار شوٹس کاٹیں۔ درخت کی حفاظت کے لیے ہوا کی رکاوٹ بنائیں۔"
+      },
+      "effect": {
+        "en": "After removing all fruit, the tree will put its energy into keeping leaves healthy instead of growing fruit. Copper spray will protect those leaves. Next year with the windbreak the tree will produce fruit again.",
+        "ur": "تمام پھل ہٹانے کے بعد درخت پھل بڑھانے کی بجائے پتوں کو صحت مند رکھنے میں اپنی توانائی لگائے گا۔ کاپر اسپرے ان پتوں کی حفاظت کرے گا۔ اگلے سال ہوا کی رکاوٹ کے ساتھ درخت دوبارہ پھل پیدا کرے گا۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Tree is very weak from infection. Keep spraying copper to protect remaining leaves. Cut out dead branches in winter. Feed tree well with fertilizer and water. Check if the tree is worth keeping or should be replaced.",
+        "ur": "درخت انفیکشن سے بہت کمزور ہے۔ باقی پتوں کی حفاظت کے لیے کاپر اسپرے جاری رکھیں۔ موسم سرما میں مردہ شاخیں کاٹیں۔ کھاد اور پانی کے ساتھ درخت کو اچھی طرح کھلائیں۔ چیک کریں کہ آیا درخت رکھنے کے قابل ہے یا تبدیل کیا جانا چاہیے۔"
+      },
+      "effect": {
+        "en": "After continued copper spray and good feeding, the tree will slowly recover leaf health. It will take 2-3 years to get back to producing fruit but the tree structure will be stronger.",
+        "ur": "مسلسل کاپر اسپرے اور اچھی فیڈنگ کے بعد درخت آہستہ آہستہ پتوں کی صحت بحال کرے گا۔ پھل پیدا کرنے میں 2-3 سال لگیں گے لیکن درخت کی ساخت مضبوط ہوگی۔"
+      }
+    }
+  },
+
+  "Peach___healthy": {
+    "plant": {
+      "en": "Peach",
+      "ur": "آڑو"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Prune into open center shape every year. Feed balanced NPK with low nitrogen. Water at the base. Scout for disease weekly.",
+        "ur": "ہر سال کھلے مرکز کی شکل میں کٹائی کریں۔ کم نائٹروجن کے ساتھ متوازن NPK کھلائیں۔ بنیاد پر پانی دیں۔ ہفتہ وار بیماری کے لیے اسکاؤٹ کریں۔"
+      },
+      "effect": {
+        "en": "Tree will stay strong and healthy and produce good quality peaches consistently.",
+        "ur": "درخت مضبوط اور صحت مند رہے گا اور مسلسل اچھے معیار کے آڑو پیدا کرے گا۔"
+      }
+    }
+  },
+
+  "Potato___Early_blight": {
+    "plant": {
+      "en": "Potato",
+      "ur": "آلو"
+    },
+    "disease": {
+      "en": "Early blight",
+      "ur": "ابتدائی جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Use certified seed potatoes only. Rotate crops for 3-4 years. Feed plant well so it stays strong. Remove wild potato plants nearby.",
+        "ur": "صرف سرٹیفائیڈ بیج آلو استعمال کریں۔ 3-4 سال کے لیے فصلیں گھمائیں۔ پودے کو اچھی طرح کھلائیں تاکہ یہ مضبوط رہے۔ قریب جنگلی آلو کے پودے ہٹائیں۔"
+      },
+      "effect": {
+        "en": "Potato plants will grow strong and healthy and produce full-size tubers with no blight damage.",
+        "ur": "آلو کے پودے مضبوط اور صحت مند بڑھیں گے اور جھلساؤ کے نقصان کے بغیر مکمل سائز کے ٹیوبر پیدا کریں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Chlorothalonil 75% WP at 2 g/L or Mancozeb 75% WP at 2.5 g/L when dark ringed spots first appear. Repeat every 7-10 days. Remove the spotted lower leaves.",
+        "ur": "کلوروتھالونل 75% WP 2 گرام فی لیٹر یا مینکوزیب 75% WP 2.5 گرام فی لیٹر جب پہلی بار سیاہ حلقے دار دھبے ظاہر ہوں تو اسپرے کریں۔ ہر 7-10 دن بعد دہرائیں۔ داغ دار نچلے پتے ہٹائیں۔"
+      },
+      "effect": {
+        "en": "After spraying and leaf removal, the fungus will be killed on remaining leaves. New leaves growing above will stay clean and the plant will continue making food for the tubers underground which will grow to full size.",
+        "ur": "اسپرے اور پتے ہٹانے کے بعد فنگس باقی پتوں پر ختم ہو جائے گا۔ اوپر اگنے والے نئے پتے صاف رہیں گے اور پودا زمین کے نیچے ٹیوبرز کے لیے خوراک بناتا رہے گا جو مکمل سائز تک بڑھیں گے۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray alternating Chlorothalonil and Azoxystrobin every 5-7 days. Remove spotted leaves from the lower half of the plant. Side-dress with nitrogen and potassium fertilizer. Keep watering steady.",
+        "ur": "ہر 5-7 دن بعد کلوروتھالونل اور ازوکسی اسٹروبن کو متبادل کرتے ہوئے اسپرے کریں۔ پودے کے نچلے نصف سے داغ دار پتے ہٹائیں۔ نائٹروجن اور پوٹاشیم کھاد کے ساتھ سائیڈ ڈریس کریں�� پانی دینا مستقل رکھیں۔"
+      },
+      "effect": {
+        "en": "After this treatment the upper leaves will stay healthy and green. The plant will keep making food and sending it to the tubers underground. Tubers will still grow well even though some lower leaves were removed.",
+        "ur": "اس علاج کے بعد اوپری پتے صحت مند اور سبز رہیں گے۔ پودا خوراک بناتا رہے گا اور اسے زمین کے نیچے ٹیوبرز کو بھیجتا رہے گا۔ ٹیوبرز اب بھی اچھی طرح بڑھیں گے حالانکہ کچھ نچلے پتے ہٹائے گئے تھے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray every 5 days combining protective and systemic fungicides. Accept that many leaves are already damaged. Focus treatment on protecting the top leaves. Think about harvesting early if tubers have reached a decent size.",
+        "ur": "حفاظتی اور نظامی فنگس کش کو ملا کر ہر 5 دن بعد اسپرے کریں۔ قبول کریں کہ بہت سے پتے پہلے ہی خراب ہو چکے ہیں۔ اوپری پتوں کی حفاظت پر علاج مرکوز کریں۔ اگر ٹیوبرز معقول سائز تک پہنچ گئے ہیں تو جلد کٹائی کے بارے میں سوچیں۔"
+      },
+      "effect": {
+        "en": "After spraying the top leaves will be protected from further infection. The remaining healthy leaves will push food down to the tubers and whatever size they have reached will be maintained. Early harvest will give you usable tubers.",
+        "ur": "اسپرے کے بعد اوپری پتے مزید انفیکشن سے محفوظ رہیں گے۔ باقی صحت مند پتے ٹیوبرز کو خوراک بھیجیں گے اور جو بھی سائز انہوں نے حاصل کیا ہے وہ برقرار رکھا جائے گا۔ جلد کٹائی آپ کو قابل استعمال ٹیوبرز دے گی۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Check if treatment is worth the cost. If yes: spray to keep any remaining leaves alive long enough for tubers to reach minimum size. Then kill the vines and dig up tubers. Destroy all plant material. Do not plant potatoes here for 3 years.",
+        "ur": "چیک کریں کہ آیا علاج لاگت کے قابل ہے۔ اگر ہاں: ٹیوبرز کو کم سے کم سائز تک پہنچنے کے لیے کافی دیر تک باقی پتوں کو زندہ رکھنے کے لیے اسپرے کریں۔ پھر بیلوں کو ختم کریں اور ٹیوبرز کھودیں۔ تمام پودوں کا مواد تباہ کریں۔ یہاں 3 سال تک آلو نہ لگائیں۔"
+      },
+      "effect": {
+        "en": "After vine killing and harvesting, you will get small tubers but they will still have value. Destroying all plant material and rotating crops will clean the field so future potato crops will grow without early blight.",
+        "ur": "بیل کو ختم کرنے اور کٹائی کے بعد آپ کو چھوٹے ٹیوبرز ملیں گے لیکن ان کی اب بھی قیمت ہوگی۔ تمام پودوں کے مواد کو تباہ کرنے اور فصلیں گھمانے سے کھیت صاف ہو جائے گا تاکہ مستقبل میں آلو کی فصلیں ابتدائی جھلساؤ کے بغیر بڑھیں۔"
+      }
+    }
+  },
+
+  "Potato___Late_blight": {
+    "plant": {
+      "en": "Potato",
+      "ur": "آلو"
+    },
+    "disease": {
+      "en": "Late blight",
+      "ur": "آخری جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Watch late blight forecast reports every day during cool wet weather. Have fungicide stored and ready. Scout field twice a week. Remove volunteer potatoes.",
+        "ur": "ٹھنڈے گیلے موسم میں ہر روز آخری جھلساؤ کی پیشن گوئی کی رپورٹیں دیکھیں۔ فنگس کش محفوظ اور تیار رکھیں۔ ہفتے میں دو بار کھیت کی جانچ کریں۔ رضاکارانہ آلو ہٹائیں۔"
+      },
+      "effect": {
+        "en": "You will catch the disease the moment it appears and spray immediately which gives the best chance of stopping it before it spreads across the field.",
+        "ur": "آپ بیماری کے ظاہر ہوتے ہی اسپرے کریں گے اور فوری طور پر اسپرے کریں گے جو اسے پورے کھیت میں پھیلنے سے پہلے روکنے کا بہترین موقع دیتا ہے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray IMMEDIATELY - do not wait. Use Mefenoxam plus Chlorothalonil or Cymoxanil plus Mancozeb. Spray again every 5-7 days without missing. If only a few plants show symptoms, pull them out and burn them.",
+        "ur": "فوری طور پر اسپرے کریں - انتظار نہ کریں۔ میفینوکسم اور کلوروتھالونل یا سائموکسانل اور مینکوزیب استعمال کریں۔ بغیر چھوڑے ہر 5-7 دن بعد دوبارہ اسپرے کریں۔ اگر صرف چند پودے علامات دکھاتے ہیں تو انہیں نکالیں اور جلا دیں۔"
+      },
+      "effect": {
+        "en": "After immediate spraying, the fungus on healthy plants will be killed before it produces spores. If weather turns dry the disease will stop spreading and the rest of the crop will grow normally and you can harvest full tubers.",
+        "ur": "فوری اسپرے کے بعد صحت مند پودوں پر فنگس بیضے پیدا کرنے سے پہلے ختم ہو جائے گا۔ اگر موسم خشک ہو جاتا ہے تو بیماری پھیلنا بند ہو جائے گی اور باقی فصل عام طور پر بڑھے گی اور آپ مکمل ٹیوبرز کاٹ سکتے ہیں۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray systemic plus protective fungicide every 3-5 days. Pull out and burn plants that are visibly infected. Kill the vines early - 10-14 days before you plan to harvest - to stop the disease from reaching the tubers.",
+        "ur": "ہر 3-5 دن بعد نظامی اور حفاظتی فنگس کش اسپرے کریں۔ نظر سے متاثرہ پودے نکالیں ��ور جلا دیں۔ بیلوں کو جلد ختم کریں - کٹائی کی منصوبہ بندی سے 10-14 دن پہلے - تاکہ بیماری ٹیوبرز تک نہ پہنچے۔"
+      },
+      "effect": {
+        "en": "After vine killing, the disease cannot reach the tubers underground anymore. Tubers will stay clean in the soil. Wait 2 weeks then dig and you will get usable tubers free from rot.",
+        "ur": "بیل ختم کرنے کے بعد بیماری اب زمین کے نیچے ٹیوبرز تک نہیں پہنچ سکتی۔ ٹیوبرز مٹی میں صاف رہیں گے۔ 2 ہفتے انتظار کریں پھر کھودیں اور آپ کو سڑن سے پاک قابل استعمال ٹیوبرز ملیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray every 3-4 days at maximum rate. Kill the vines RIGHT NOW to protect tubers - this is the most important step. Wait 14-21 days after vine killing before digging. Sort tubers carefully when you dig.",
+        "ur": "زیادہ سے زیادہ شرح پر ہر 3-4 دن بعد اسپرے کریں۔ ٹیوبرز کی حفاظت کے لیے ابھی فوری طور پر بیلیں ختم کریں - یہ سب سے اہم قدم ہے۔ بیل ختم کرنے کے بعد کھودنے سے پہلے 14-21 دن انتظار کریں۔ جب کھودیں تو ٹیوبرز کو احتیاط سے چھانٹیں۔"
+      },
+      "effect": {
+        "en": "After killing vines immediately, the fungus is cut off from reaching tubers. Most tubers underground will be clean. When you dig after the waiting period you will be able to sort out any affected ones and save the rest.",
+        "ur": "فوری طور پر بیلیں ختم کرنے کے بعد فنگس ٹیوبرز تک پہنچنے سے کٹ جاتا ہے۔ زیادہ تر زمین کے نیچے ٹیوبرز صاف ہوں گے۔ جب آپ انتظار کی مدت کے بعد کھودتے ہیں تو آپ کسی بھی متاثرہ کو چھانٹ سکیں گے اور باقی کو بچا سکیں گے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Destroy all plants immediately - do not wait. Kill vines today even if tubers are not fully grown. Wait at least 2 weeks. Dig and throw away any tuber that looks dark or soft. Do not store any potatoes from this field.",
+        "ur": "فوری طور پر تمام پودے تباہ کریں - انتظار نہ کریں۔ آج ہی بیلیں ختم کریں چاہے ٹیوبرز مکمل طور پر نہ بڑھے ہوں۔ کم از کم 2 ہفتے انتظار کریں۔ کوئی بھی ٹیوبر کھودیں اور پھینک دیں جو سیاہ یا نرم نظر آئے۔ اس کھیت سے کوئی آلو سٹور نہ کریں۔"
+      },
+      "effect": {
+        "en": "After immediate vine destruction, the fungus stops spreading underground. Small tubers will be recovered but they should go straight to market or processing - not storage. The field will be clean for next season after proper rotation.",
+        "ur": "فوری بیل کی تباہی کے بعد فنگس زمین کے نیچے پھیلنا بند ہو جاتا ہے۔ چھوٹے ٹیوبرز بازیاب ہوں گے لیکن انہیں سیدھے بازار یا پروسیسنگ میں جانا چاہیے - سٹوریج میں نہیں۔ مناسب گردش کے بعد کھیت اگلے موسم کے لیے صاف ہوگا۔"
+      }
+    }
+  },
+
+  "Potato___healthy": {
+    "plant": {
+      "en": "Potato",
+      "ur": "آلو"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Use certified seed. Rotate crops. Feed based on soil test. Hill the rows properly. Water consistently. Scout weekly.",
+        "ur": "سرٹیفائیڈ بیج استعمال کریں۔ فصلیں گھمائیں۔ مٹی کے ٹیسٹ کی بنیاد پر کھاد دیں۔ قطاروں کو مناسب طریقے سے ہل کریں۔ مسلسل پانی دیں۔ ہفتہ وار اسکاؤٹ کریں۔"
+      },
+      "effect": {
+        "en": "Plants will grow vigorously and produce full-size healthy tubers with good storage quality.",
+        "ur": "پودے بھرپور طریقے سے بڑھیں گے اور اچھی سٹوریج کوالٹی کے ساتھ مکمل سائز کے صحت مند ٹیوبرز پیدا کریں گے۔"
+      }
+    }
+  },
+  "Soybean___Bacterial_blight": {
+    "plant": {
+      "en": "Soybean",
+      "ur": "سویابین"
+    },
+    "disease": {
+      "en": "Bacterial blight",
+      "ur": "بیکٹیریل جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Buy only certified disease-free seed. Rotate crops. Do not work in fields when leaves are wet. Remove weeds that can carry bacteria.",
+        "ur": "صرف سرٹیفائیڈ بیماری سے پاک بیج خریدیں۔ فصلیں گھمائیں۔ جب پتے گیلے ہوں کھیتوں میں کام نہ کریں۔ جڑی بوٹیاں ہٹائیں جو بیکٹیریا لے جا سکتی ہیں۔"
+      },
+      "effect": {
+        "en": "Plants will grow without bacterial infection and pods will fill normally with healthy seeds.",
+        "ur": "پودے بیکٹیریل انفیکشن کے بغیر بڑھیں گے اور پھلیاں عام طور پر صحت مند بیجوں سے بھریں گی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Copper spray gives limited but some benefit. Remove and burn plants that are badly infected if there are only a few. Do not walk through the field when it is wet. Spray foliar fertilizer to strengthen remaining plants.",
+        "ur": "کاپر اسپرے محدود لیکن کچھ فائدہ دیتا ہے۔ اگر صرف چند ہیں تو بری طرح متاثرہ پودے ہٹائیں اور جلا دیں۔ جب کھیت گیلا ہو اس میں نہ چلیں۔ باقی پودوں کو مضبوط بنانے کے لیے فولیار کھاد اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "After removing infected plants and strengthening healthy ones with foliar feed, the healthy plants will grow stronger and resist infection better. Pod filling will continue normally on unaffected plants.",
+        "ur": "متاثرہ پودے ہٹانے اور صحت مند پودوں کو فولیار فیڈ سے مضبوط بنانے کے بعد صحت مند پودے مضبوط ہوں گے اور انفیکشن کا بہتر مقابلہ کریں گے۔ غیر متاثرہ پودوں پر پھلیاں بھرنا عام طور پر جاری رہے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Copper spray every 7-10 days for marginal benefit. Do not disturb wet plants. Control insects that spread bacteria. Feed plants with foliar potassium and calcium to boost resistance.",
+        "ur": "معمولی فائدے کے لیے ہر 7-10 دن بعد کاپر اسپرے کریں۔ گیلے پودوں کو پریشان نہ کریں۔ کیڑوں کو کنٹرول کریں جو بیکٹیریا پھیلاتے ہیں۔ مزاحمت بڑھانے کے لیے فولیار پوٹاشیم اور کیلشیم سے پودوں کو کھلائیں۔"
+      },
+      "effect": {
+        "en": "After foliar feeding, healthy plants will become stronger and their leaves will be less likely to get infected. The copper will slow bacteria spread between plants. Pods on healthy plants will fill well.",
+        "ur": "فولیار فیڈنگ کے بعد صحت مند پودے مضبوط ہو جائیں گے اور ان کے پتے متاثر ہونے کا امکان کم ہوگا۔ کاپر پودوں کے درمیان بیکٹیریا کے پھیلاؤ کو سست کرے گا۔ صحت مند پودوں پر پھلیاں اچھی طرح بھریں گی۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Chemical treatment will not reverse the damage at this stage. Let the crop finish growing. Focus on harvesting clean seed when pods are dry. Destroy all plant material after harvest. Do not plant soybeans for 2-3 years.",
+        "ur": "کیمیائی علاج اس مرحلے پر نقصان کو واپس نہیں کرے گا۔ فصل کو بڑھنا مکمل کرنے دیں۔ جب پھلیاں خشک ہوں صاف بیج کی کٹائی پر توجہ دیں۔ فصل کے بعد تمام پودوں کا مواد تباہ کریں۔ 2-3 سال تک سویابین نہ لگائیں۔"
+      },
+      "effect": {
+        "en": "After letting the crop mature naturally and harvesting when dry, the seed quality from unaffected pods will still be usable. Destroying residue after harvest cleans the field for future crops.",
+        "ur": "فصل کو قدرتی طور پر پختہ ہونے دینے اور خشک ہونے پر کٹائی کے بعد غیر متاثرہ پھلیوں سے بیج کا معیار اب بھی قابل استعمال ہوگا۔ فصل کے بعد باقیات کو تباہ کرنا مستقبل کی فصلوں کے لیے کھیت کو صاف کرتا ہے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Harvest early if pods have any seed in them. Destroy every bit of plant material by burning. Solarize the soil. Do not plant soybeans here for 3 years. Use resistant varieties in future.",
+        "ur": "اگر پھلیوں میں کوئی بیج ہے تو جلد کاٹیں۔ پودوں کے مواد کا ہر ذرہ جلا کر تباہ کریں۔ مٹی کو سولرائز کریں۔ یہاں 3 سال تک سویابین نہ لگائیں۔ مستقبل میں مزاحم اقسام استعمال کریں۔"
+      },
+      "effect": {
+        "en": "After destroying all plant material and solarizing, the bacteria living in the soil and debris will be killed. The field will be clean and ready for rotation crops without bacterial contamination.",
+        "ur": "تمام پودوں کے مواد کو تباہ کرنے اور سولرائز کرنے کے بعد مٹی اور باقیات میں رہنے والے بیکٹیریا ختم ہو جائیں گے۔ کھیت صاف ہوگا اور بیکٹی��یل آلودگی کے بغیر گردش کی فصلوں کے لیے تیار ہوگا۔"
+      }
+    }
+  },
+
+  "Strawberry___Leaf_scorch": {
+    "plant": {
+      "en": "Strawberry",
+      "ur": "اسٹرابیری"
+    },
+    "disease": {
+      "en": "Leaf scorch",
+      "ur": "پتوں کا جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Plant resistant varieties. Water only at the base with drip irrigation. Space plants 30-45 cm apart. Remove old leaves during renovation.",
+        "ur": "مزاحم اقسام لگائیں۔ ڈرپ آبپاشی کے ساتھ صرف بنیاد پر پانی دیں۔ پودوں کو 30-45 سینٹی میٹر کے فاصلے پر رکھیں۔ تجدید کے دوران پرانے پتے ہٹائیں۔"
+      },
+      "effect": {
+        "en": "Plants will stay healthy with dry leaves and produce full strawberry harvest.",
+        "ur": "پودے خشک پتوں کے ساتھ صحت مند رہیں گے اور مکمل اسٹرابیری کی فصل پیدا کریں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Captan 50WP at 2 g/L or Thiram 75% WP at 2 g/L every 7-10 days starting at flowering. Pick off infected leaves by hand.",
+        "ur": "کھلنے سے شروع کرتے ہوئے کیپٹان 50WP 2 گرام فی لیٹر یا تھیرام 75% WP 2 گرام فی لیٹر ہر 7-10 دن بعد اسپرے کریں۔ ہاتھ سے متاثرہ پتے اتاریں۔"
+      },
+      "effect": {
+        "en": "After spraying and removing spotted leaves, the fungus on the plant will be killed. New leaves will grow out clean and green. The plant will continue producing strawberries normally this season.",
+        "ur": "اسپرے اور داغ دار پتے ہٹانے کے بعد پودے پر فنگس ختم ہو جائے گا۔ نئے پتے صاف اور سبز اگیں گے۔ پودا اس موسم میں عام طور پر اسٹرابیری پیدا کرتا رہے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Captan every 5-7 days. During renovation after harvest cut ALL leaves down to the crown level and remove them from the field. Do not water overhead. Feed with balanced fertilizer after renovation.",
+        "ur": "ہر 5-7 دن بعد کیپٹان اسپرے کریں۔ فصل کے بعد تجدید کے دوران تمام پتوں کو تاج کی سطح تک کاٹیں اور کھیت سے ہٹائیں۔ اوور ہیڈ پانی نہ دیں۔ تجدید کے بعد متوازن کھاد سے کھلائیں۔"
+      },
+      "effect": {
+        "en": "After cutting all leaves and spraying, the plant crowns will be clean of fungus. New leaves will push up from the crown within 1-2 weeks and they will be healthy. Next season this plant will produce well.",
+        "ur": "تمام پتے کاٹنے اور اسپرے کے بعد پودوں کے تاج فنگس سے صاف ہوں گے۔ 1-2 ہفتوں میں تاج سے نئے پتے نکلیں گے اور وہ صحت مند ہوں گے۔ اگلے موسم میں یہ پودا اچھی طرح پیدا کرے گا۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Mow the entire planting and remove all leaf material. Burn the removed leaves. Spray fungicide on the crowns. Reduce plant density if rows are too thick. Feed with fertilizer to push new growth.",
+        "ur": "پوری کاشت کاری کو کاٹیں اور تمام پتوں کا مواد ہٹائیں۔ ہٹائے گئے پتے جلائیں۔ تاجوں پر فنگس کش اسپرے کریں۔ اگر قطاریں بہت گھنی ہیں تو پودوں کی کثافت کم کریں۔ نئی نشوونما کو آگے بڑھانے کے لیے کھاد سے کھلائیں۔"
+      },
+      "effect": {
+        "en": "After removing all diseased leaves and spraying the crowns, the fungus is completely removed from the planting. New leaves will grow from the crowns within 2 weeks. The plant will be weaker this season but will recover for next year.",
+        "ur": "تمام بیمار پتے ہٹانے اور تاجوں کو اسپرے کرنے کے بعد فنگس مکمل طور پر کاشت سے ہٹا دیا جاتا ہے۔ 2 ہفتوں میں تاجوں سے نئے پتے اگیں گے۔ پودا اس موسم میں کمزور ہوگا لیکن اگلے سال کے لیے بحال ہوگا۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "If this is a second or third year planting, plow it down and replant fresh. If trying to save: mow everything, remove and burn all leaves, spray crowns heavily, and feed with strong fertilizer.",
+        "ur": "اگر یہ دوسری یا تیسری سال کی کاشت ہے تو اسے ہل چلا کر گرا دیں اور تازہ دوبارہ لگائیں۔ اگر بچانے کی کوشش: سب کچھ کاٹیں، تمام پتے ہٹائیں اور جلائیں، تاجوں کو بھاری طور پر اسپرے کریں، اور مضبوط کھاد سے کھلائیں۔"
+      },
+      "effect": {
+        "en": "After replanting with fresh plants, the new planting will start with no disease history and produce a full harvest next season. If saving existing plants, they will push new growth but will be weak and may not produce much this year.",
+        "ur": "تازہ پودوں کے ساتھ دوبارہ لگانے کے بعد نئی کاشت بیماری کی تاریخ کے بغیر شروع ہوگی اور اگلے موسم میں مکمل فصل پیدا کرے گی۔ اگر موجودہ پودے بچاتے ہیں تو وہ نئی نشوونما نکالیں گے لیکن کمزور ہوں گے اور اس سال زیادہ پیدا نہیں کر سکتے۔"
+      }
+    }
+  },
+
+  "Strawberry___healthy": {
+    "plant": {
+      "en": "Strawberry",
+      "ur": "اسٹرابیری"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Water at the base only. Manage runners properly. Renovate after harvest every year. Control weeds. Space plants well.",
+        "ur": "صرف بنیاد پر پانی دیں۔ دوڑنے والوں کو مناسب طریقے سے منظم کریں۔ ہر سال فصل کے بعد تجدید کریں۔ جڑی بوٹیوں کو کنٹرول کریں۔ پودوں کو اچھی طرح رکھیں۔"
+      },
+      "effect": {
+        "en": "Plants will stay healthy and produce heavy harvests of good quality strawberries for 2-3 productive years.",
+        "ur": "پودے صحت مند رہیں گے اور 2-3 پیداواری سالوں تک اچھے معیار کی اسٹرابیری کی بھاری فصلیں پیدا کریں گے۔"
+      }
+    }
+  },
+
+  "Tomato___Bacterial_spot": {
+    "plant": {
+      "en": "Tomato",
+      "ur": "ٹماٹر"
+    },
+    "disease": {
+      "en": "Bacterial spot",
+      "ur": "بیکٹیریل داغ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Use certified transplants only. Water at the base. Space plants properly. Rotate with non-tomato crops for 3-4 years.",
+        "ur": "صرف سرٹیفائیڈ پودے استعمال کریں۔ بنیاد پر پانی دیں۔ پودوں کو مناسب فاصلے پر رکھیں۔ 3-4 سال کے لیے غیر ٹماٹر فصلوں کے ساتھ گھمائیں۔"
+      },
+      "effect": {
+        "en": "Plants will grow without spots and produce clean marketable tomatoes.",
+        "ur": "پودے داغوں کے بغیر بڑھیں گے اور صاف قابل فروخت ٹماٹر پیدا کریں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Copper hydroxide 77% WP at 3 g/L every week. Pick off spotted leaves. Clean all tools with 10% bleach after touching any plant. Switch to drip irrigation if sprinklers are being used.",
+        "ur": "کاپر ہائیڈرو آکسائیڈ 77% WP 3 گرام فی لیٹر ہفتہ میں ایک بار اسپرے کریں۔ داغ دار پتے اتاریں۔ کسی بھی پودے کو چھونے کے بعد 10% بلیچ سے تمام اوزار صاف کریں۔ اگر سپرنکلر استعمال ہو رہے ہیں تو ڈرپ آبپاشی پر سوئچ کریں۔"
+      },
+      "effect": {
+        "en": "After spraying and removing spotted leaves, the bacteria on remaining leaves will be killed by copper. New leaves and fruit growing after this will come out clean. The plant will produce good tomatoes.",
+        "ur": "اسپرے اور داغ دار پتے ہٹانے کے بعد باقی پتوں پر بیکٹیریا کاپر سے ختم ہو جائیں گے۔ اس کے بعد اگنے والے نئے پتے اور پھل صاف نکلیں گے۔ پودا اچھے ٹماٹر پیدا کرے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray copper every 5 days combined with Mancozeb. Remove leaves and fruit that have heavy dark spots. Stop all nitrogen feeding. Spray calcium foliar to strengthen fruit walls.",
+        "ur": "مینکوزیب کے ساتھ ملا کر ہر 5 دن بعد کاپر اسپرے کریں۔ بھاری سیاہ دھبوں والے پتے اور پھل ہٹائیں۔ تمام نائٹروجن فیڈنگ بند کریں۔ پھل کی دیواریں مضبوط بنانے کے لیے کیلشیم فولیار اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "After removing spotted parts and calcium spray, the remaining fruit on the plant will grow with thicker skin making it harder for bacteria to get inside. New fruit will develop clean on copper-protected plants.",
+        "ur": "داغ دار حصے ہٹانے اور کیلشیم اسپرے کے بعد پودے پر باقی پھل موٹی جلد کے ساتھ اگے گا جس سے بیکٹیریا کے لیے اندر جانا مشکل ہو جائے گا۔ کاپر سے محفوظ پودوں پر نیا پھل صاف ترقی کرے گا۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray copper every 3-4 days. Remove plants that are very heavily spotted and burn them away from the field. Pick any fruit that is ripe or close to ripe right now. Disinfect hands and tools constantly.",
+        "ur": "ہر 3-4 دن بعد کاپر اسپرے کریں۔ بہت بھاری داغ دار پودے ہٹائیں اور کھیت سے دور جلا دیں۔ جو بھی پھل پکا ہوا ہے یا پکنے کے قریب ہے ابھی اتاریں۔ مسلسل ہاتھ اور اوزار جراثیم سے پاک کریں۔"
+      },
+      "effect": {
+        "en": "After removing heavily infected plants and picking ripe fruit, the remaining healthy plants will be protected by copper. They will produce some more fruit that you can harvest in the coming weeks.",
+        "ur": "بھاری متاثرہ پودے ہٹانے اور پکا پھل اتارنے کے بعد باقی صحت مند پودے کاپر سے محفوظ رہیں گے۔ وہ آنے والے ہفتوں میں کچھ مزید پھل پیدا کریں گے جو آپ کاٹ سکتے ہیں۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Stop the field if most plants are affected. Harvest whatever tomatoes you can right now. Remove and burn all plants. Treat the soil. Do not grow tomatoes or peppers here for 3-4 years.",
+        "ur": "اگر زیادہ تر پودے متاثر ہیں تو کھیت بند کریں۔ جو بھی ٹماٹر آپ کر سکتے ہیں ابھی کاٹیں۔ تمام پودے ہٹائیں اور جلا دیں۔ مٹی کا علاج کریں۔ یہاں 3-4 سال تک ٹماٹر یا مرچ نہ اگائیں۔"
+      },
+      "effect": {
+        "en": "After harvesting remaining tomatoes and destroying all plants, the bacteria in the field will die out over time with rotation. Your harvested tomatoes can still be sold if they are firm and clean on the outside.",
+        "ur": "باقی ٹماٹر کاٹنے اور تمام پودے تباہ کرنے کے بعد کھیت میں بیکٹیریا گردش کے ساتھ وقت کے ساتھ مر جائیں گے۔ آپ کے کاٹے گئے ٹماٹر اب بھی فروخت ہو سکتے ہیں اگر وہ باہر سے مضبوط اور صاف ہیں۔"
+      }
+    }
+  },
+
+  "Tomato___Early_blight": {
+    "plant": {
+      "en": "Tomato",
+      "ur": "ٹماٹر"
+    },
+    "disease": {
+      "en": "Early blight",
+      "ur": "ابتدائی جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Mulch around plants to stop soil from splashing onto leaves. Feed well. Water consistently. Stake plants so lower leaves stay off the ground.",
+        "ur": "پتوں پر مٹی چھڑکنے سے روکنے کے لیے پودوں کے ارد گرد ملچ کریں۔ اچھی طرح کھلائیں۔ مسلسل پانی دیں۔ پودوں کو سہارا دیں تاکہ نچلے پتے زمین سے دور رہیں۔"
+      },
+      "effect": {
+        "en": "Leaves will stay dry and clean. Plants will grow strong and produce tomatoes without blight.",
+        "ur": "پتے خشک اور صاف رہیں گے۔ پودے مضبوط بڑھیں گے اور جھلساؤ کے بغیر ٹماٹر پیدا کریں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Chlorothalonil 75% WP at 2 g/L or Mancozeb at 2.5 g/L every week. Remove ringed brown spots on lower leaves. Mulch around plants.",
+        "ur": "کلوروتھالونل 75% WP 2 گرام فی لیٹر یا مینکوزیب 2.5 گرام فی لیٹر ہفتہ میں ایک بار اسپرے کریں۔ نچلے پتوں پر حلقے دار بھورے دھبے ہٹائیں۔ پودوں کے ارد گرد ملچ کریں۔"
+      },
+      "effect": {
+        "en": "After spraying and removing spotted leaves, the fungus will be killed on the plant. Upper leaves will stay green and healthy. The plant will keep producing tomatoes normally.",
+        "ur": "اسپرے اور داغ دار پتے ہٹانے کے بعد فنگس پودے پر ختم ہو جائے گا۔ اوپری پتے سبز اور صحت مند رہیں گے۔ پودا عام طور پر ٹماٹر پیدا کرتا رہے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray alternating Chlorothalonil and Azoxystrobin every 5-7 days. Remove all spotted leaves up to the first tomato cluster. Feed with nitrogen and potassium. Water regularly.",
+        "ur": "ہر 5-7 دن بعد کلوروتھالونل اور ازوکسی اسٹروبن کو متبادل کرتے ہوئے اسپرے کریں۔ پہلے ٹماٹر کے گچھے تک تمام داغ دار پتے ہٹائیں۔ نائٹروجن اور پوٹاشیم سے کھلائیں۔ باقاعدگی سے پانی دیں۔"
+      },
+      "effect": {
+        "en": "After removing lower spotted leaves and spraying, the remaining upper leaves will be protected. The plant will continue making food through healthy upper leaves and fruit will keep growing and ripening.",
+        "ur": "نچلے داغ دار پتے ہٹانے اور اسپرے کے بعد باقی اوپری پتے محفوظ رہیں گے۔ پودا صحت مند اوپری پتوں کے ذریعے خوراک بناتا رہے گا اور پھل بڑھتا اور پکتا رہے گا۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray every 5 days with combined fungicides. Many leaves have already been damaged so spray the remaining ones well. Feed plant through foliar spray. Pick ripe tomatoes now before the plant weakens further.",
+        "ur": "مشترکہ فنگس کش کے ساتھ ہر 5 دن بعد اسپرے کریں۔ بہت سے پتے پہلے ہی خراب ہو چکے ہیں لہذا باقی والوں کو اچھی طرح اسپرے کریں۔ فولیار اسپرے کے ذریعے پودا کھلائیں۔ پودا مزید کمزور ہونے سے پہلے ابھی پکے ٹماٹر اتاریں۔"
+      },
+      "effect": {
+        "en": "After spraying the remaining healthy leaves will be protected and stay green a bit longer. This gives the tomatoes currently on the plant time to ripen so you can harvest them before the plant gets too weak.",
+        "ur": "اسپرے کے بعد باقی صحت مند پتے محفوظ رہیں گے اور تھوڑی دیر مزید سبز رہیں گے۔ یہ فی الوقت پودے پر موجود ٹماٹروں کو پکنے کا وقت دیتا ہے تاکہ آپ پودا بہت کمزور ہونے سے پہلے انہیں کاٹ سکیں۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Pick every tomato that is ripe or almost ripe immediately. Do not spray anymore - it is too late. Remove all plants and burn them. Clean the field. Rotate crops and use resistant varieties next time.",
+        "ur": "جو بھی ٹماٹر پکا ہوا ہے یا تقریباً پکا ہے فوری طور پر اتاریں۔ مزید اسپرے نہ کریں - بہت دیر ہو چکی ہے۔ تمام پودے ہٹائیں اور جلا دیں۔ کھیت صاف کریں۔ فصلیں گھمائیں اور اگلی بار مزاحم اقسام استعمال کریں۔"
+      },
+      "effect": {
+        "en": "After harvesting remaining tomatoes you will still get some usable fruit. After removing and burning all plants the fungus will be gone from the field. Next season with resistant varieties the field will produce clean tomatoes again.",
+        "ur": "باقی ٹماٹر کاٹنے کے بعد آپ کو اب بھی کچھ قابل استعمال پھل ملے گا۔ تمام پودے ہٹانے اور جلانے کے بعد فنگس کھیت سے چلا جائے گا۔ مزاحم اقسام کے ساتھ اگلے موسم میں کھیت دوبارہ صاف ٹماٹر پیدا کرے گا۔"
+      }
+    }
+  },
+
+  "Tomato___Late_blight": {
+    "plant": {
+      "en": "Tomato",
+      "ur": "ٹماٹر"
+    },
+    "disease": {
+      "en": "Late blight",
+      "ur": "آخری جھلساؤ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Watch late blight forecast every day in cool wet weather. Have spray equipment and fungicide ready. Scout twice a week. Remove volunteer tomatoes and potatoes nearby.",
+        "ur": "ٹھنڈے گیلے موسم میں ہر روز آخری جھلساؤ کی پیشن گوئی دیکھیں۔ اسپرے کا سامان اور فنگس کش تیار رکھیں۔ ہفتے میں دو بار اسکاؤٹ کریں۔ قریبی رضاکارانہ ٹماٹر اور آلو ہٹائیں۔"
+      },
+      "effect": {
+        "en": "You will be ready to spray the moment disease appears. This speed of response is the only way to stop late blight from destroying the crop.",
+        "ur": "آپ بیماری ظاہر ہوتے ہی جواب دینے کے لیے تیار ہوں گے۔ ردعمل کی یہ رفتار آخری جھلساؤ کو فصل کو تباہ کرنے سے روکنے کا واحد طریقہ ہے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray TODAY without any delay. Use Mancozeb plus Cymoxanil or Chlorothalonil plus Mefenoxam. Spray again every 5-7 days. Remove infected plants if only a few show symptoms.",
+        "ur": "آج ہی بغیر کسی تاخیر کے اسپرے کریں۔ مینکوزیب اور سائموکسانل یا کلوروتھالونل اور میفینوکسم استعمال کریں۔ ہر 5-7 دن بعد دوبارہ اسپرے کریں۔ اگر صرف چند پودے علامات دکھاتے ہیں تو انہیں ہٹائیں۔"
+      },
+      "effect": {
+        "en": "After immediate spraying the healthy plants in the field will be protected from infection. If weather becomes drier the disease will stop and your crop will grow and produce tomatoes normally.",
+        "ur": "فوری اسپرے کے بعد کھیت میں صحت مند پودے انفیکشن سے محفوظ رہیں گے۔ اگر موسم خشک ہو جائے تو بیماری رک جائے گی اور آپ کی فصل بڑھے گی اور عام طور پر ٹماٹر پیدا کرے گی۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray every 3-5 days at full rate. Pull out and burn visibly infected plants. Harvest any ripe tomatoes now. Spray neighboring tomato and potato fields too as a warning measure.",
+        "ur": "مکمل شرح پر ہر 3-5 دن بعد اسپرے کریں۔ نظر سے متاثرہ پودے نکالیں اور جلا دیں۔ کوئی بھی پکا ٹماٹر ابھی کاٹیں۔ انتباہی اقدام کے طور پر پڑوسی ٹماٹر اور آلو کے کھیتوں کو بھی اسپرے کریں۔"
+      },
+      "effect": {
+        "en": "After removing infected plants and spraying the rest, healthy plants will continue growing. Ripe tomatoes you picked today are safe to sell. Remaining plants protected by spray will produce more fruit if weather improves.",
+        "ur": "متاثرہ پودے ہٹانے اور باقی کو اسپرے کرنے کے بعد صحت مند پودے بڑھتے رہیں گے۔ آج آپ نے جو پکے ٹماٹر اتارے وہ فروخت کے لیے محفوظ ہیں۔ اگر موسم بہتر ہو تو اسپرے سے محفوظ باقی پودے مزید پھل پیدا کریں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray every 3-4 days at maximum dose. Harvest all ripe or nearly ripe tomatoes RIGHT NOW. Destroy visibly infected plants. Warn neighbors who have tomatoes or potatoes.",
+        "ur": "زیادہ سے زیادہ خوراک پر ہر 3-4 دن بعد اسپرے کریں۔ تمام پکے یا تقریباً پکے ٹماٹر ابھی فوری طور پر کاٹیں۔ نظر سے متاثرہ پودے تباہ کریں۔ پڑوسیوں کو خبردار کریں جن کے پاس ٹماٹر یا آلو ہیں۔"
+      },
+      "effect": {
+        "en": "After harvesting and destroying infected plants, the tomatoes you picked will be fine to sell. The spray will slow the disease on remaining plants giving them a chance to ripen whatever fruit they have left.",
+        "ur": "کٹائی اور متاثرہ پودے تباہ کرنے کے بعد جو ٹماٹر آپ نے اتارے وہ فروخت کے لیے ٹھیک ہوں گے۔ اسپرے باقی پودوں پر بیماری کو سست کرے گا اور انہیں جو بھی پھل باقی ہے اسے پکانے کا موقع دے گا۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Destroy all plants today. Pick any tomatoes that are usable regardless of ripeness - they can ripen off the vine. Burn all plant material. Do not plant tomatoes or potatoes here for 2-3 years.",
+        "ur": "آج ہی تمام پودے تباہ کریں۔ جو بھی ٹماٹر قابل استعمال ہیں اتاریں چاہے پکے نہ ہوں - وہ بیل سے اتر کر پک سکتے ہیں۔ تمام پودوں کا مواد جلائیں۔ یہاں 2-3 سال تک ٹماٹر یا آلو نہ لگائیں۔"
+      },
+      "effect": {
+        "en": "After destroying all plants the disease source is removed from the field. Unripe tomatoes picked today can ripen indoors and be sold. The field will recover after rotation and be ready for future crops.",
+        "ur": "تمام پودے تباہ کرنے کے بعد بیماری کا ذریعہ کھیت سے ہٹا دیا جاتا ہے۔ آج اتارے گئے کچے ٹماٹر گھر کے اندر پک سکتے ہیں اور فروخت ہو سکتے ہیں۔ گردش کے بعد کھیت بحال ہوگا اور مستقبل کی فصلوں کے لیے تیار ہوگا۔"
+      }
+    }
+  },
+
+  "Tomato___Septoria_leaf_spot": {
+    "plant": {
+      "en": "Tomato",
+      "ur": "ٹماٹر"
+    },
+    "disease": {
+      "en": "Septoria leaf spot",
+      "ur": "سیپٹوریا پتوں کا داغ"
+    },
+    "None": {
+      "remediation": {
+        "en": "Remove old plant debris from last season. Mulch around plants. Stake them well. Water at the base only. Rotate crops.",
+        "ur": "پچھلے موسم سے پرانے پودوں کا ملبہ ہٹائیں۔ پودوں کے ارد گرد ملچ کریں۔ انہیں اچھی طرح سہارا دیں۔ صرف بنیاد پر پانی دیں۔ فصلیں گھمائیں۔"
+      },
+      "effect": {
+        "en": "Plants will grow with dry clean leaves. No fungus will be present to cause spots and tomatoes will produce well.",
+        "ur": "پودے خشک صاف پتوں کے ساتھ بڑھیں گے۔ داغ لگانے والا کوئی فنگس موجود نہیں ہوگا اور ٹماٹر اچھی طرح پیدا ہوں گے۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Chlorothalonil 75% WP at 2 g/L or copper spray weekly when tiny spots with dark edges first appear. Remove spotted lower leaves and destroy them.",
+        "ur": "جب سیاہ کناروں والے چھوٹے دھبے پہلی بار ظاہر ہوں تو کلوروتھالونل 75% WP 2 گرام فی لیٹر یا کاپر اسپرے ہفتہ وار اسپرے کریں۔ داغ دار نچلے پتے ہٹائیں اور تباہ کریں۔"
+      },
+      "effect": {
+        "en": "After spraying and leaf removal, the tiny spots will not spread to upper leaves. The plant will keep all its important upper leaves healthy and continue producing good tomatoes.",
+        "ur": "اسپرے اور پتے ہٹانے کے بعد چھوٹے دھبے اوپری پتوں تک نہیں پھیلیں گے۔ پودا اپنے تمام اہم اوپری پتے صحت مند رکھے گا اور اچھے ٹماٹر پیدا کرتا رہے گا۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Chlorothalonil or Mancozeb every 5-7 days. Remove all spotted leaves up to the first tomato cluster. Prune some shoots to improve air movement. Feed with potassium fertilizer.",
+        "ur": "ہر 5-7 دن بعد کلوروتھالونل یا مینکوزیب اسپرے کریں۔ پہلے ٹماٹر کے گچھے تک تمام داغ دار پتے ہٹائیں۔ ہوا کی نقل و حرکت بہتر بنانے کے لیے کچھ شوٹس کی کٹائی کریں۔ پوٹاشیم کھاد سے کھلائیں۔"
+      },
+      "effect": {
+        "en": "After removing spotted leaves and pruning, the remaining leaves will dry faster after rain which slows the fungus. Potassium feeding will strengthen remaining leaves. Tomatoes will continue ripening.",
+        "ur": "داغ دار پتے ہٹانے اور کٹائی کے بعد باقی پتے بارش کے بعد تیزی سے سوکھیں گے جو فنگس کو سست کرتا ہے۔ پوٹاشیم فیڈنگ باقی پتوں کو مضبوط بنائے گی۔ ٹماٹر پکتے رہیں گے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray every 5 days to protect any leaves still left. Feed through foliar spray since many leaves are gone. Pick ripe tomatoes now. Accept that the plant is finishing its productive life.",
+        "ur": "جو بھی پتے ابھی باقی ہیں ان کی حفاظت کے لیے ہر 5 دن بعد اسپرے کریں۔ چونکہ بہت سے پتے چلے گئے ہیں فولیار اسپرے کے ذریعے کھلائیں۔ پکے ٹماٹر ابھی اتاریں۔ قبول کریں کہ پودا اپنی پیداواری زندگی ختم کر رہا ہے۔"
+      },
+      "effect": {
+        "en": "After foliar feeding the remaining leaves will stay alive a bit longer and send food to the tomatoes still on the plant. Picking ripe fruit now gives you the best quality harvest possible from this plant.",
+        "ur": "فولیار فیڈنگ کے بعد باقی پتے تھوڑی دیر مزید زندہ رہیں گے اور پودے پر ابھی بھی موجود ٹماٹروں کو خوراک بھیجیں گے۔ پکا پھل ابھی اتارنا آپ کو اس پودے سے ممکنہ بہترین معیار کی فصل دیتا ہے۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Do not spray anymore. Pick whatever tomatoes are on the plant now. Remove and destroy all plants. Clean the soil. Rotate crops for at least 2 years.",
+        "ur": "مزید اسپرے نہ کریں۔ جو بھی ٹماٹر ابھی پودے پر ہیں اتاریں۔ تمام پودے ہٹائیں اور تباہ کریں۔ مٹی صاف کریں۔ کم از کم 2 سال کے لیے فصلیں گھمائیں۔"
+      },
+      "effect": {
+        "en": "After picking remaining tomatoes you will have some usable fruit. After field cleanup and rotation the fungus will be gone and next season's crop will start on clean ground.",
+        "ur": "باقی ٹماٹر اتارنے کے بعد آپ کے پاس کچھ قابل استعمال پھل ہوگا۔ کھیت کی صفائی اور گردش کے بعد فنگس چلا جائے گا اور اگلے موسم کی فصل صاف زمین پر شروع ہوگی۔"
+      }
+    }
+  },
+
+  "Wheat___Stripe_rust": {
+    "plant": {
+      "en": "Wheat",
+      "ur": "گندم"
+    },
+    "disease": {
+      "en": "Stripe rust (Yellow rust)",
+      "ur": "دھاری دار زنگ (پیلا زنگ)"
+    },
+    "None": {
+      "remediation": {
+        "en": "Plant varieties with rust resistance. Watch regional rust reports from your agricultural department. Scout the field every week during cool damp weather. Destroy volunteer wheat.",
+        "ur": "زنگ کی مزاحمت والی اقسام لگائیں۔ اپنے زرعی محکمے سے علاقائی زنگ کی رپورٹیں دیکھیں۔ ٹھنڈے نم موسم میں ہر ہفتے کھیت کی جانچ کریں۔ رضاکارانہ گندم کو تباہ کریں۔"
+      },
+      "effect": {
+        "en": "Wheat will grow without any rust and produce full grain yield at harvest.",
+        "ur": "گندم کسی بھی زنگ کے بغیر بڑھے گی اور کٹائی پر مکمل دانے کی پیداوار دے گی۔"
+      }
+    },
+    "Low": {
+      "remediation": {
+        "en": "Spray Propiconazole 25% EC at 200 mL per hectare or Tebuconazole 25% EC at 200 mL per hectare as soon as you see yellow-orange lines of rust pustules. One spray is usually enough if done early.",
+        "ur": "پروپیکونازول 25% EC 200 ملی لیٹر فی ہیکٹیئر یا ٹیبوکونازول 25% EC 200 ملی لیٹر فی ہیکٹیئر جیسے ہی آپ کو پیلے نارنجی زنگ کے پسٹولز کی لکیریں نظر آئیں اسپرے کریں۔ اگر جلد کیا جائے تو عام طور پر ایک اسپرے کافی ہے۔"
+      },
+      "effect": {
+        "en": "After spraying, the rust pustules will dry up and stop releasing spores within 5-7 days. Upper leaves will stay clean and green. Grain will fill to full size and you will get a normal harvest.",
+        "ur": "اسپرے کے بعد زنگ کے پسٹولز 5-7 دنوں میں سوکھ جائیں گے اور بیضے چھوڑنا بند کر دیں گے۔ اوپری پتے صاف اور سبز رہیں گے۔ دانہ مکمل سائز تک بھرے گا اور آپ کو عام فصل ملے گی۔"
+      }
+    },
+    "Medium": {
+      "remediation": {
+        "en": "Spray Propiconazole or Tebuconazole immediately. Check the flag leaf - if it is still clean spray it well to protect it. You may need a second spray in 14-21 days if rust keeps appearing.",
+        "ur": "فوری طور پر پروپیکونازول یا ٹیبوکونازول اسپرے کریں۔ جھنڈے کے پتے کو چیک کریں - اگر یہ ابھی صاف ہے تو اسے اچھی طرح اسپرے کریں تاکہ اس کی حفاظت ہو۔ اگر زنگ ظاہر ہوتی رہے تو آپ کو 14-21 دن میں دوسرے اسپرے کی ضرورت ہو سکتی ہے۔"
+      },
+      "effect": {
+        "en": "After spraying, the flag leaf will be protected and stay green. Since the flag leaf makes most of the food for grain filling, the wheat will produce a good harvest even though lower leaves were affected.",
+        "ur": "اسپرے کے بعد جھنڈے کا پتہ محفوظ رہے گا اور سبز رہے گا۔ چونکہ جھنڈے کا پتہ دانے بھرنے کے لیے زیادہ تر خوراک بناتا ہے، گندم اچھی فصل پیدا کرے گی حالانکہ نچلے پتے متاثر تھے۔"
+      }
+    },
+    "High": {
+      "remediation": {
+        "en": "Spray now but be realistic about the return. If the flag leaf is already heavily covered with rust, spraying will give limited benefit. Let the wheat mature and harvest on time. Use resistant variety next year.",
+        "ur": "ابھی اسپرے کریں لیکن واپسی کے بارے میں حقیقت پسند بنیں۔ اگر جھنڈے کا پتہ پہلے ہی زنگ سے بھاری طور پر ڈھکا ہوا ہے تو اسپرے محدود فائدہ دے گا۔ گندم کو پکنے دیں اور وقت پر کاٹیں۔ اگلے سال مزاحم قسم استعمال کریں۔"
+      },
+      "effect": {
+        "en": "After spraying, whatever healthy leaf area remains will be protected and continue making food for the grain. The grain will still fill but will be smaller than normal. Harvesting at the right time will give you the best quality grain possible.",
+        "ur": "اسپرے کے بعد جو بھی صحت مند پتوں کا رقبہ باقی ہے وہ محفوظ رہے گا اور دانے کے لیے خوراک بناتا رہے گا۔ دانہ اب بھی بھرے گا لیکن عام سے چھوٹا ہوگا۔ صحیح وقت پر کٹائی آپ کو ممکنہ بہترین معیار کا دانہ دے گی۔"
+      }
+    },
+    "Critical": {
+      "remediation": {
+        "en": "Do not spend money on spraying. Let wheat mature as it can. Harvest as soon as grain is dry enough - do not leave it standing too long. Destroy all wheat stubble after harvest. Plant resistant variety next season.",
+        "ur": "اسپرے پر پیسہ خرچ نہ کریں۔ گندم کو جیسے بھی ہو سکے پکنے دیں۔ جیسے ہی دانہ کافی خشک ہو کاٹیں - اسے بہت دیر تک کھڑا نہ چھوڑیں۔ فصل کے بعد تمام گندم کا ٹھونٹھ تباہ کریں۔ اگلے موسم میں مزاحم قسم لگائیں۔"
+      },
+      "effect": {
+        "en": "After harvesting and destroying stubble, the rust fungus is removed from the field. The grain you harvest will be smaller and lighter than normal but still has value. Next season with a resistant variety the field will produce well.",
+        "ur": "کٹائی اور ٹھونٹھ تباہ کرنے کے بعد زنگ کا فنگس کھیت سے ہٹا دیا جاتا ہے۔ جو دانہ آپ کاٹتے ہیں وہ عام سے چھوٹا اور ہلکا ہوگا لیکن اب بھی قیمت رکھتا ہے۔ مزاحم قسم کے ساتھ اگلے موسم میں کھیت اچھی طرح پیدا کرے گا۔"
+      }
+    }
+  },
+
+  "Wheat___healthy": {
+    "plant": {
+      "en": "Wheat",
+      "ur": "گندم"
+    },
+    "disease": {
+      "en": "Healthy",
+      "ur": "صحت مند"
+    },
+    "None": {
+      "remediation": {
+        "en": "Seed at proper rate. Feed based on soil test. Control weeds early. Use resistant varieties. Rotate crops.",
+        "ur": "مناسب شرح پر بیج ڈالیں۔ مٹی کے ٹیسٹ کی بنیاد پر کھاد دیں۔ جلدی جڑی بوٹیوں کو کنٹرول کریں۔ مزاحم اقسام استعمال کریں۔ فصلیں گھمائیں۔"
+      },
+      "effect": {
+        "en": "Wheat will grow strongly and produce full yield of high-quality grain at harvest.",
+        "ur": "گندم مضبوطی سے بڑھے گی اور کٹائی پر اعلیٰ معیار کے دانے کی مکمل پیداوار دے گی۔"
+      }
+    }
   }
+
 }
+
+
+

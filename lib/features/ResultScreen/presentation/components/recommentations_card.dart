@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'section_header.dart';
 
 class RecommendationsCard extends StatefulWidget {
@@ -50,6 +52,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,9 +61,9 @@ class _RecommendationsCardState extends State<RecommendationsCard>
           children: [
             Expanded(
               child: SectionHeader(
-                title: 'Treatment Plan',
+                title: translation.get('treatment_plan'),
                 icon: Icons.medical_services_rounded,
-                subtitle: 'Follow these steps in order',
+                subtitle: translation.get('follow_steps'),
                 iconColor: const Color(0xFFEF4444),
               ),
             ),
@@ -109,20 +112,12 @@ class _RecommendationsCardState extends State<RecommendationsCard>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDark
-                  ? [
-                const Color(0xFF1E293B),
-                const Color(0xFF0F172A),
-              ]
-                  : [
-                Colors.white,
-                const Color(0xFFF8FAFC),
-              ],
+                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
               width: 2,
             ),
             boxShadow: [
@@ -139,7 +134,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
             ],
           ),
           child: widget.recommendations.isEmpty
-              ? _buildEmptyState(context, isDark)
+              ? _buildEmptyState(context, isDark, translation)
               : Column(
             children: List.generate(
               widget.recommendations.length,
@@ -159,7 +154,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isDark) {
+  Widget _buildEmptyState(BuildContext context, bool isDark, TranslationService translation) {
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -187,7 +182,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
           ),
           const SizedBox(height: 20),
           Text(
-            'No Recommendations Available',
+            translation.get('no_recommendations'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -196,12 +191,10 @@ class _RecommendationsCardState extends State<RecommendationsCard>
           ),
           const SizedBox(height: 8),
           Text(
-            'Consult an expert for personalized guidance',
+            translation.get('consult_expert_guidance'),
             style: TextStyle(
               fontSize: 14,
-              color: isDark
-                  ? Colors.white.withOpacity(0.6)
-                  : Colors.black.withOpacity(0.5),
+              color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -211,7 +204,6 @@ class _RecommendationsCardState extends State<RecommendationsCard>
   }
 }
 
-// Timeline Recommendation Item
 class _TimelineRecommendationItem extends StatelessWidget {
   final String text;
   final int index;
@@ -233,6 +225,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<TranslationService>(context);
     final stepColors = [
       const Color(0xFFEF4444),
       const Color(0xFFF59E0B),
@@ -250,8 +243,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
       animation: animationController,
       builder: (context, child) {
         final delay = index * 0.1;
-        final adjustedValue =
-        (animationController.value - delay).clamp(0.0, 1.0);
+        final adjustedValue = (animationController.value - delay).clamp(0.0, 1.0);
 
         return Opacity(
           opacity: adjustedValue,
@@ -275,9 +267,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
                 ? null
                 : Border(
               bottom: BorderSide(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.04),
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
                 width: 1.5,
               ),
             ),
@@ -287,7 +277,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Timeline with animated checkmark
+                // Timeline
                 SizedBox(
                   width: 48,
                   child: Column(
@@ -298,23 +288,13 @@ class _TimelineRecommendationItem extends StatelessWidget {
                         height: 48,
                         decoration: BoxDecoration(
                           gradient: isCompleted
-                              ? const LinearGradient(
-                            colors: [Color(0xFF10B981), Color(0xFF059669)],
-                          )
-                              : LinearGradient(
-                            colors: [stepColor, stepColor.withOpacity(0.8)],
-                          ),
+                              ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
+                              : LinearGradient(colors: [stepColor, stepColor.withOpacity(0.8)]),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 2,
-                          ),
+                          border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: (isCompleted
-                                  ? const Color(0xFF10B981)
-                                  : stepColor)
-                                  .withOpacity(0.4),
+                              color: (isCompleted ? const Color(0xFF10B981) : stepColor).withOpacity(0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -324,31 +304,16 @@ class _TimelineRecommendationItem extends StatelessWidget {
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             transitionBuilder: (child, animation) {
-                              return ScaleTransition(
-                                scale: animation,
-                                child: child,
-                              );
+                              return ScaleTransition(scale: animation, child: child);
                             },
                             child: isCompleted
-                                ? const Icon(
-                              Icons.check_rounded,
-                              key: ValueKey('check'),
-                              color: Colors.white,
-                              size: 28,
-                            )
-                                : Text(
-                              '${index + 1}',
-                              key: ValueKey('number'),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 20,
-                              ),
-                            ),
+                                ? const Icon(Icons.check_rounded, key: ValueKey('check'), color: Colors.white, size: 28)
+                                : Text('${index + 1}',
+                                key: const ValueKey('number'),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
                           ),
                         ),
                       ),
-                      // Timeline connector
                       if (!isLast)
                         Container(
                           width: 2,
@@ -358,10 +323,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [
-                                stepColor.withOpacity(0.5),
-                                stepColor.withOpacity(0.2),
-                              ],
+                              colors: [stepColor.withOpacity(0.5), stepColor.withOpacity(0.2)],
                             ),
                           ),
                         ),
@@ -376,37 +338,23 @@ class _TimelineRecommendationItem extends StatelessWidget {
                     children: [
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (isCompleted
-                              ? const Color(0xFF10B981)
-                              : stepColor)
-                              .withOpacity(0.1),
+                          color: (isCompleted ? const Color(0xFF10B981) : stepColor).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: (isCompleted
-                                ? const Color(0xFF10B981)
-                                : stepColor)
-                                .withOpacity(0.3),
+                            color: (isCompleted ? const Color(0xFF10B981) : stepColor).withOpacity(0.3),
                             width: 1,
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isCompleted ? 'COMPLETED' : 'STEP ${index + 1}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: isCompleted
-                                    ? const Color(0xFF10B981)
-                                    : stepColor,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          isCompleted ? translation.get('completed') : '${translation.get('step')} ${index + 1}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: isCompleted ? const Color(0xFF10B981) : stepColor,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -417,13 +365,9 @@ class _TimelineRecommendationItem extends StatelessWidget {
                           height: 1.6,
                           fontWeight: FontWeight.w600,
                           color: isCompleted
-                              ? (isDark
-                              ? Colors.white.withOpacity(0.5)
-                              : Colors.black.withOpacity(0.4))
+                              ? (isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.4))
                               : (isDark ? Colors.white : Colors.black87),
-                          decoration: isCompleted
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
+                          decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
                         ),
                         child: Text(cleanText),
                       ),

@@ -1,6 +1,9 @@
 // lib/features/support/widgets/faq_search_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../core/services/translation_service.dart';
 
 class FaqSearchBar extends StatefulWidget {
   final TextEditingController controller;
@@ -49,6 +52,7 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasText = widget.controller.text.isNotEmpty;
+    final translation = Provider.of<TranslationService>(context);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -84,10 +88,11 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
-                hintText: 'Search FAQs...',
+                hintText: translation.get('search_faqs'),
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  color:
+                  Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),
@@ -100,8 +105,6 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
             ),
           ),
 
-
-
           // Clear Button
           if (hasText)
             Material(
@@ -113,7 +116,10 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
                   padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.close_rounded,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.5),
                     size: 20,
                   ),
                 ),

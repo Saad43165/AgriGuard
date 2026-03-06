@@ -11,9 +11,7 @@ class FaqEmptyState extends StatelessWidget {
         return SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -26,8 +24,12 @@ class FaqEmptyState extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.1),
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.05),
                           ],
                         ),
                         shape: BoxShape.circle,
@@ -35,7 +37,9 @@ class FaqEmptyState extends StatelessWidget {
                       child: Icon(
                         Icons.search_off_rounded,
                         size: 64,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.5),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -50,10 +54,9 @@ class FaqEmptyState extends StatelessWidget {
                     Text(
                       'Try adjusting your search\nor select a different category',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -64,10 +67,14 @@ class FaqEmptyState extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.3),
                         ),
                       ),
                       child: Row(

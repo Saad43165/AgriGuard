@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../../../core/constants/app_measurements.dart';
 import '../../../../../core/widgets/severity_indicator.dart';
+import '../../../../../core/services/translation_service.dart';
 import 'diagnosis_result.dart';
 
 class DiagnosisCard extends StatefulWidget {
@@ -62,7 +64,7 @@ class _DiagnosisCardState extends State<DiagnosisCard>
     super.dispose();
   }
 
-  Color getDiseaseColor(DiagnosisResult result) {
+  Color _getDiseaseColor(DiagnosisResult result) {
     if (result.isHealthy) return const Color(0xFF10B981);
     if (result.requiresUrgentAction) return const Color(0xFFEF4444);
     if (result.severity.toLowerCase() == 'medium') return const Color(0xFFF59E0B);
@@ -70,15 +72,15 @@ class _DiagnosisCardState extends State<DiagnosisCard>
     return const Color(0xFFEF4444);
   }
 
-  IconData getDiseaseIcon(DiagnosisResult result) {
+  IconData _getDiseaseIcon(DiagnosisResult result) {
     if (result.isHealthy) return Icons.verified_rounded;
     if (result.requiresUrgentAction) return Icons.error_rounded;
-    if (result.severity.toLowerCase() == 'medium')
-      return Icons.warning_amber_rounded;
+    if (result.severity.toLowerCase() == 'medium') return Icons.warning_amber_rounded;
     return Icons.info_rounded;
   }
 
   void _copyToClipboard(String text, String label) {
+    final translation = Provider.of<TranslationService>(context, listen: false);
     Clipboard.setData(ClipboardData(text: text));
     HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +89,7 @@ class _DiagnosisCardState extends State<DiagnosisCard>
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            Text('$label copied to clipboard'),
+            Text('$label ${translation.get('copied_to_clipboard')}'),
           ],
         ),
         behavior: SnackBarBehavior.floating,
@@ -102,12 +104,10 @@ class _DiagnosisCardState extends State<DiagnosisCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
-    final Color diseaseColor = getDiseaseColor(widget.diagnosisResult);
-    final IconData diseaseIcon = getDiseaseIcon(widget.diagnosisResult);
-    final String confidenceText = '${widget.diagnosisResult.confidence}%';
-    final double confidence =
-        double.tryParse(widget.diagnosisResult.confidence) ?? 0;
+    final Color diseaseColor = _getDiseaseColor(widget.diagnosisResult);
+    final IconData diseaseIcon = _getDiseaseIcon(widget.diagnosisResult);
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -121,20 +121,12 @@ class _DiagnosisCardState extends State<DiagnosisCard>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: isDark
-                    ? [
-                  const Color(0xFF1E293B),
-                  const Color(0xFF0F172A),
-                ]
-                    : [
-                  Colors.white,
-                  const Color(0xFFF8FAFC),
-                ],
+                    ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                    : [Colors.white, const Color(0xFFF8FAFC)],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.06),
+                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
                 width: 2,
               ),
               boxShadow: [
@@ -153,52 +145,34 @@ class _DiagnosisCardState extends State<DiagnosisCard>
             ),
             child: Column(
               children: [
-                // Animated Header
                 _AnimatedHeader(
                   diseaseColor: diseaseColor,
                   diseaseIcon: diseaseIcon,
-                  disease: widget.diagnosisResult.disease,
-                  confidence: confidence,
-                  confidenceText: confidenceText,
+                  disease: translation.translateDisease(widget.diagnosisResult.disease),
                   isHealthy: widget.diagnosisResult.isHealthy,
                   isDark: isDark,
                   onCopy: () => _copyToClipboard(
                     widget.diagnosisResult.disease,
-                    'Disease name',
+                    translation.get('disease_name'),
                   ),
                 ),
-
-                // Content
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Plant Name with Copy
                       _PlantInfoCard(
-                        plantName: widget.diagnosisResult.plantName,
+                        plantName: translation.translatePlant(widget.diagnosisResult.plantName),
                         scientificName: widget.diagnosisResult.scientificName,
                         isDark: isDark,
                         onCopy: () => _copyToClipboard(
                           widget.diagnosisResult.plantName,
-                          'Plant name',
+                          translation.get('plant_name'),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
-                      // Confidence Meter
-                      _ConfidenceMeter(
-                        confidence: confidence,
-                        color: diseaseColor,
-                        isDark: isDark,
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Description (expandable)
                       if (widget.diagnosisResult.description != null &&
-                          widget.diagnosisResult.description!.isNotEmpty)
+                          widget.diagnosisResult.description!.isNotEmpty) ...[
                         _ExpandableDescription(
                           description: widget.diagnosisResult.description!,
                           diseaseColor: diseaseColor,
@@ -209,14 +183,10 @@ class _DiagnosisCardState extends State<DiagnosisCard>
                             setState(() => _isExpanded = !_isExpanded);
                           },
                         ),
-
-                      if (widget.diagnosisResult.description != null &&
-                          widget.diagnosisResult.description!.isNotEmpty)
                         const SizedBox(height: 20),
-
-                      // Severity with Animation
+                      ],
                       _AnimatedSeverityIndicator(
-                        severity: widget.diagnosisResult.severity,
+                        severity: translation.translateSeverity(widget.diagnosisResult.severity),
                         color: diseaseColor,
                       ),
                     ],
@@ -231,13 +201,10 @@ class _DiagnosisCardState extends State<DiagnosisCard>
   }
 }
 
-// Animated Header Component
 class _AnimatedHeader extends StatefulWidget {
   final Color diseaseColor;
   final IconData diseaseIcon;
   final String disease;
-  final double confidence;
-  final String confidenceText;
   final bool isHealthy;
   final bool isDark;
   final VoidCallback onCopy;
@@ -246,8 +213,6 @@ class _AnimatedHeader extends StatefulWidget {
     required this.diseaseColor,
     required this.diseaseIcon,
     required this.disease,
-    required this.confidence,
-    required this.confidenceText,
     required this.isHealthy,
     required this.isDark,
     required this.onCopy,
@@ -278,6 +243,8 @@ class _AnimatedHeaderState extends State<_AnimatedHeader>
 
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<TranslationService>(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -302,7 +269,6 @@ class _AnimatedHeaderState extends State<_AnimatedHeader>
       ),
       child: Row(
         children: [
-          // Pulsing Disease Icon
           AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
@@ -312,14 +278,13 @@ class _AnimatedHeaderState extends State<_AnimatedHeader>
                   gradient: LinearGradient(
                     colors: [
                       widget.diseaseColor,
-                      widget.diseaseColor.withOpacity(0.8)
+                      widget.diseaseColor.withOpacity(0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: widget.diseaseColor
-                          .withOpacity(0.4 + _pulseController.value * 0.3),
+                      color: widget.diseaseColor.withOpacity(0.4 + _pulseController.value * 0.3),
                       blurRadius: 12 + _pulseController.value * 8,
                       offset: const Offset(0, 4),
                     ),
@@ -339,81 +304,29 @@ class _AnimatedHeaderState extends State<_AnimatedHeader>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.isHealthy ? 'Healthy Plant' : 'Disease Detected',
+                  widget.isHealthy ? translation.get('healthy_plant') : translation.get('disease_detected'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: widget.isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : Colors.black.withOpacity(0.5),
+                    color: widget.isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
                     letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(height: 4),
                 GestureDetector(
                   onLongPress: widget.onCopy,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.disease,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: widget.diseaseColor,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    widget.disease,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: widget.diseaseColor,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          // Animated Confidence Badge
-          TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 1500),
-            curve: Curves.easeOutCubic,
-            tween: Tween(begin: 0.0, end: widget.confidence),
-            builder: (context, value, child) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: widget.isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: widget.diseaseColor.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      '${value.toInt()}%',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: widget.diseaseColor,
-                      ),
-                    ),
-                    Text(
-                      'Confidence',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: widget.isDark
-                            ? Colors.white.withOpacity(0.5)
-                            : Colors.black.withOpacity(0.4),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
           ),
         ],
       ),
@@ -421,7 +334,6 @@ class _AnimatedHeaderState extends State<_AnimatedHeader>
   }
 }
 
-// Plant Info Card with Copy
 class _PlantInfoCard extends StatelessWidget {
   final String plantName;
   final String? scientificName;
@@ -437,6 +349,8 @@ class _PlantInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<TranslationService>(context);
+
     return GestureDetector(
       onLongPress: onCopy,
       child: Container(
@@ -488,13 +402,11 @@ class _PlantInfoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Plant Species',
+                    translation.get('plant_species'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? Colors.white.withOpacity(0.5)
-                          : Colors.black.withOpacity(0.4),
+                      color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.4),
                       letterSpacing: 0.8,
                     ),
                   ),
@@ -508,20 +420,17 @@ class _PlantInfoCard extends StatelessWidget {
                       letterSpacing: -0.3,
                     ),
                   ),
-                  if (scientificName != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        scientificName!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          color: isDark
-                              ? Colors.white.withOpacity(0.5)
-                              : Colors.black.withOpacity(0.5),
-                        ),
+                  if (scientificName != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      scientificName!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
@@ -532,94 +441,6 @@ class _PlantInfoCard extends StatelessWidget {
   }
 }
 
-// Confidence Meter
-class _ConfidenceMeter extends StatelessWidget {
-  final double confidence;
-  final Color color;
-  final bool isDark;
-
-  const _ConfidenceMeter({
-    required this.confidence,
-    required this.color,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Confidence Level',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color:
-                isDark ? Colors.white.withOpacity(0.8) : Colors.black87,
-              ),
-            ),
-            Text(
-              '${confidence.toInt()}%',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: TweenAnimationBuilder<double>(
-            duration: const Duration(milliseconds: 1500),
-            curve: Curves.easeOutCubic,
-            tween: Tween(begin: 0.0, end: confidence / 100),
-            builder: (context, value, child) {
-              return Stack(
-                children: [
-                  Container(
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: value,
-                    child: Container(
-                      height: 12,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [color, color.withOpacity(0.8)],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// Expandable Description
 class _ExpandableDescription extends StatelessWidget {
   final String description;
   final Color diseaseColor;
@@ -637,6 +458,8 @@ class _ExpandableDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<TranslationService>(context);
+
     return GestureDetector(
       onTap: onToggle,
       child: AnimatedContainer(
@@ -644,14 +467,10 @@ class _ExpandableDescription extends StatelessWidget {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : Colors.black.withOpacity(0.02),
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.black.withOpacity(0.06),
+            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
             width: 1.5,
           ),
         ),
@@ -660,15 +479,11 @@ class _ExpandableDescription extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  size: 20,
-                  color: diseaseColor,
-                ),
+                Icon(Icons.info_outline_rounded, size: 20, color: diseaseColor),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Description',
+                    translation.get('description'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -679,10 +494,7 @@ class _ExpandableDescription extends StatelessWidget {
                 AnimatedRotation(
                   duration: const Duration(milliseconds: 300),
                   turns: isExpanded ? 0.5 : 0,
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: diseaseColor,
-                  ),
+                  child: Icon(Icons.keyboard_arrow_down_rounded, color: diseaseColor),
                 ),
               ],
             ),
@@ -697,9 +509,7 @@ class _ExpandableDescription extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.6,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.8)
-                        : Colors.black.withOpacity(0.7),
+                    color: isDark ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.7),
                   ),
                 ),
               )
@@ -712,8 +522,7 @@ class _ExpandableDescription extends StatelessWidget {
   }
 }
 
-// Animated Severity Indicator
-class _AnimatedSeverityIndicator extends StatefulWidget {
+class _AnimatedSeverityIndicator extends StatelessWidget {
   final String severity;
   final Color color;
 
@@ -722,13 +531,6 @@ class _AnimatedSeverityIndicator extends StatefulWidget {
     required this.color,
   });
 
-  @override
-  State<_AnimatedSeverityIndicator> createState() =>
-      _AnimatedSeverityIndicatorState();
-}
-
-class _AnimatedSeverityIndicatorState
-    extends State<_AnimatedSeverityIndicator> {
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
@@ -739,7 +541,7 @@ class _AnimatedSeverityIndicatorState
         return Transform.scale(
           scale: value,
           child: SeverityIndicator(
-            severity: widget.severity,
+            severity: severity,
             showLabel: true,
             showDescription: true,
           ),

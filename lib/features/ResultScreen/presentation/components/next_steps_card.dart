@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'section_header.dart';
 
 class NextStepsCard extends StatelessWidget {
@@ -9,20 +11,20 @@ class NextStepsCard extends StatelessWidget {
     this.actionItems = const [
       ActionItemData(
         icon: Icons.history_rounded,
-        title: 'Monitor Progress',
-        subtitle: 'Check back in 3-5 days to track healing progress',
+        titleKey: 'monitor_progress',
+        subtitleKey: 'monitor_progress_desc',
         color: Color(0xFF3B82F6),
       ),
       ActionItemData(
         icon: Icons.local_pharmacy_rounded,
-        title: 'Get Treatment Products',
-        subtitle: 'Find recommended products at your local store',
+        titleKey: 'get_treatment',
+        subtitleKey: 'get_treatment_desc',
         color: Color(0xFF10B981),
       ),
       ActionItemData(
         icon: Icons.people_rounded,
-        title: 'Consult Expert',
-        subtitle: 'Contact a specialist if symptoms worsen',
+        titleKey: 'consult_expert',
+        subtitleKey: 'consult_expert_desc',
         color: Color(0xFFF59E0B),
       ),
     ],
@@ -32,14 +34,15 @@ class NextStepsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'Next Steps',
+          title: translation.get('next_steps'),
           icon: Icons.next_plan_rounded,
-          subtitle: 'Recommended actions to take',
+          subtitle: translation.get('recommended_actions'),
           iconColor: const Color(0xFF10B981),
         ),
         const SizedBox(height: 16),
@@ -49,20 +52,12 @@ class NextStepsCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDark
-                  ? [
-                const Color(0xFF1E293B),
-                const Color(0xFF0F172A),
-              ]
-                  : [
-                Colors.white,
-                const Color(0xFFF8FAFC),
-              ],
+                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
               width: 2,
             ),
             boxShadow: [
@@ -79,7 +74,7 @@ class NextStepsCard extends StatelessWidget {
             ],
           ),
           child: actionItems.isEmpty
-              ? _buildEmptyState(context, isDark)
+              ? _buildEmptyState(context, isDark, translation)
               : Column(
             children: List.generate(
               actionItems.length,
@@ -89,6 +84,7 @@ class NextStepsCard extends StatelessWidget {
                 index: index,
                 isLast: index == actionItems.length - 1,
                 isDark: isDark,
+                translation: translation,
               ),
             ),
           ),
@@ -97,7 +93,7 @@ class NextStepsCard extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isDark) {
+  Widget _buildEmptyState(BuildContext context, bool isDark, TranslationService translation) {
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -117,15 +113,15 @@ class NextStepsCard extends StatelessWidget {
                 width: 2,
               ),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.info_outline_rounded,
               size: 48,
-              color: const Color(0xFF10B981),
+              color: Color(0xFF10B981),
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            'No Next Steps Available',
+            translation.get('no_next_steps'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -143,6 +139,7 @@ class NextStepsCard extends StatelessWidget {
     required int index,
     required bool isLast,
     required bool isDark,
+    required TranslationService translation,
   }) {
     final itemColor = item.color ?? const Color(0xFF10B981);
 
@@ -152,9 +149,7 @@ class NextStepsCard extends StatelessWidget {
             ? null
             : Border(
           bottom: BorderSide(
-            color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
             width: 1.5,
           ),
         ),
@@ -209,7 +204,7 @@ class NextStepsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.title,
+                        translation.get(item.titleKey),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -217,24 +212,21 @@ class NextStepsCard extends StatelessWidget {
                           letterSpacing: -0.3,
                         ),
                       ),
-                      if (item.subtitle.isNotEmpty) ...[
+                      if (item.subtitleKey.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          item.subtitle,
+                          translation.get(item.subtitleKey),
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.5,
                             fontWeight: FontWeight.w500,
-                            color: isDark
-                                ? Colors.white.withOpacity(0.6)
-                                : Colors.black.withOpacity(0.5),
+                            color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                // Arrow
                 const SizedBox(width: 12),
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -263,15 +255,15 @@ class NextStepsCard extends StatelessWidget {
 
 class ActionItemData {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String titleKey;
+  final String subtitleKey;
   final VoidCallback? onTap;
   final Color? color;
 
   const ActionItemData({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.titleKey,
+    required this.subtitleKey,
     this.onTap,
     this.color,
   });

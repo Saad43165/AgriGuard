@@ -1,7 +1,10 @@
 // lib/features/support/widgets/contact_info_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../../core/services/translation_service.dart';
 
 class ContactInfoCard extends StatelessWidget {
   const ContactInfoCard({super.key});
@@ -9,19 +12,20 @@ class ContactInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Get in Touch',
+          translation.get('get_in_touch'),
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'We\'re here to help you with any questions',
+          translation.get('help_questions'),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
           ),
@@ -29,8 +33,9 @@ class ContactInfoCard extends StatelessWidget {
         const SizedBox(height: 20),
         _buildContactItem(
           context,
+          translation,
           icon: Icons.email_rounded,
-          label: 'Email',
+          labelKey: 'email',
           value: 'agriguardsupport@gmail.com',
           color: const Color(0xFF0EA5E9),
           onTap: () => _launchEmail(context, 'agriguardsupport@gmail.com'),
@@ -39,8 +44,9 @@ class ContactInfoCard extends StatelessWidget {
         const SizedBox(height: 12),
         _buildContactItem(
           context,
+          translation,
           icon: Icons.phone_rounded,
-          label: 'Phone',
+          labelKey: 'phone',
           value: '+92 341 4279749',
           color: const Color(0xFF10B981),
           onTap: () => _launchPhone(context, '+923414279749'),
@@ -49,8 +55,9 @@ class ContactInfoCard extends StatelessWidget {
         const SizedBox(height: 12),
         _buildContactItem(
           context,
+          translation,
           icon: Icons.camera_alt_rounded,
-          label: 'Instagram',
+          labelKey: 'instagram',
           value: '@agriguard',
           color: const Color(0xFFE4405F),
           onTap: () => _launchSocial(
@@ -64,9 +71,10 @@ class ContactInfoCard extends StatelessWidget {
   }
 
   Widget _buildContactItem(
-      BuildContext context, {
+      BuildContext context,
+      TranslationService translation, {
         required IconData icon,
-        required String label,
+        required String labelKey,
         required String value,
         required Color color,
         required VoidCallback onTap,
@@ -119,7 +127,7 @@ class ContactInfoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      label,
+                      translation.get(labelKey),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .colorScheme
@@ -140,11 +148,7 @@ class ContactInfoCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: color,
-                size: 18,
-              ),
+              Icon(Icons.arrow_forward_ios_rounded, color: color, size: 18),
             ],
           ),
         ),
@@ -155,17 +159,13 @@ class ContactInfoCard extends StatelessWidget {
   Future<void> _launchEmail(BuildContext context, String email) async {
     final uri = Uri(scheme: 'mailto', path: email);
     HapticFeedback.lightImpact();
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> _launchPhone(BuildContext context, String phone) async {
     final uri = Uri(scheme: 'tel', path: phone);
     HapticFeedback.lightImpact();
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   Future<void> _launchSocial(BuildContext context, String url) async {

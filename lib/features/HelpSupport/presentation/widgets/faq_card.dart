@@ -1,41 +1,17 @@
 // lib/features/support/widgets/faq_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'faq_page.dart';
 
 class FaqCard extends StatelessWidget {
   const FaqCard({super.key});
 
-  // Sample preview FAQs
-  static final List<Map<String, dynamic>> _previewFaqs = [
-    {
-      'question': 'How do I scan a plant?',
-      'answer': 'Open the app, tap the scan button, and point your camera at the plant. Ensure good lighting for accurate results.',
-      'icon': Icons.camera_alt_rounded,
-      'color': const Color(0xFF0EA5E9),
-    },
-    {
-      'question': 'What plants can the app identify?',
-      'answer': 'The app supports a wide range of plants, including common houseplants, garden plants, and crops. Check the plant database for specifics.',
-      'icon': Icons.eco_rounded,
-      'color': const Color(0xFF10B981),
-    },
-    {
-      'question': 'How accurate are the results?',
-      'answer': 'Our AI model provides high accuracy, but results depend on image quality and plant condition. Always consult a professional for critical cases.',
-      'icon': Icons.analytics_rounded,
-      'color': const Color(0xFFF97316),
-    },
-    {
-      'question': 'Can I save my scan history?',
-      'answer': 'Yes, all scans are saved in your profile. You can view, delete, or share them from the history section.',
-      'icon': Icons.history_rounded,
-      'color': const Color(0xFF8B5CF6),
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final translation = Provider.of<TranslationService>(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -89,14 +65,14 @@ class FaqCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Quick Answers',
+                      translation.get('quick_answers'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Find answers to common questions',
+                      translation.get('find_answers'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .colorScheme
@@ -114,20 +90,37 @@ class FaqCard extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Expandable Preview FAQs
-        ..._previewFaqs.asMap().entries.map((entry) {
-          final index = entry.key;
-          final faq = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _ExpandableFaqItem(
-              question: faq['question'],
-              answer: faq['answer'],
-              icon: faq['icon'],
-              color: faq['color'],
-              index: index,
-            ),
-          );
-        }).toList(),
+        _ExpandableFaqItem(
+          questionKey: 'faq_scan_q',
+          answerKey: 'faq_scan_a',
+          icon: Icons.camera_alt_rounded,
+          color: const Color(0xFF0EA5E9),
+          index: 0,
+        ),
+        const SizedBox(height: 12),
+        _ExpandableFaqItem(
+          questionKey: 'faq_plants_q',
+          answerKey: 'faq_plants_a',
+          icon: Icons.eco_rounded,
+          color: const Color(0xFF10B981),
+          index: 1,
+        ),
+        const SizedBox(height: 12),
+        _ExpandableFaqItem(
+          questionKey: 'faq_accuracy_q',
+          answerKey: 'faq_accuracy_a',
+          icon: Icons.analytics_rounded,
+          color: const Color(0xFFF97316),
+          index: 2,
+        ),
+        const SizedBox(height: 12),
+        _ExpandableFaqItem(
+          questionKey: 'faq_history_q',
+          answerKey: 'faq_history_a',
+          icon: Icons.history_rounded,
+          color: const Color(0xFF8B5CF6),
+          index: 3,
+        ),
 
         const SizedBox(height: 16),
 
@@ -169,21 +162,21 @@ class FaqCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 alignment: Alignment.center,
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.library_books_rounded, color: Colors.white, size: 20),
-                    SizedBox(width: 8),
+                    const Icon(Icons.library_books_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
                     Text(
-                      'View All FAQs',
-                      style: TextStyle(
+                      translation.get('view_all_faqs'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
                   ],
                 ),
               ),
@@ -197,15 +190,15 @@ class FaqCard extends StatelessWidget {
 
 // Expandable FAQ Item Widget
 class _ExpandableFaqItem extends StatefulWidget {
-  final String question;
-  final String answer;
+  final String questionKey;
+  final String answerKey;
   final IconData icon;
   final Color color;
   final int index;
 
   const _ExpandableFaqItem({
-    required this.question,
-    required this.answer,
+    required this.questionKey,
+    required this.answerKey,
     required this.icon,
     required this.color,
     required this.index,
@@ -256,6 +249,7 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return TweenAnimationBuilder<double>(
       duration: Duration(milliseconds: 300 + (widget.index * 100)),
@@ -319,7 +313,7 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        widget.question,
+                        translation.get(widget.questionKey),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
@@ -351,7 +345,7 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: Text(
-                      widget.answer,
+                      translation.get(widget.answerKey),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context)
                             .colorScheme

@@ -1,5 +1,8 @@
 // lib/features/support/widgets/faq_list_item.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
+import '../models/faq_category.dart';
 import '../models/faq_items.dart';
 
 class FaqListItem extends StatefulWidget {
@@ -52,6 +55,7 @@ class _FaqListItemState extends State<FaqListItem>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
     final categoryColor = _getCategoryColor(widget.faq.category);
 
     return TweenAnimationBuilder(
@@ -126,7 +130,7 @@ class _FaqListItemState extends State<FaqListItem>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.faq.question,
+                              widget.faq.getQuestion(translation.isUrdu),
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyLarge
@@ -146,7 +150,7 @@ class _FaqListItemState extends State<FaqListItem>
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                widget.faq.category.label,
+                                widget.faq.category.getLabel(translation.isUrdu),
                                 style: TextStyle(
                                   color: categoryColor,
                                   fontSize: 11,
@@ -194,7 +198,7 @@ class _FaqListItemState extends State<FaqListItem>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        widget.faq.answer,
+                        widget.faq.getAnswer(translation.isUrdu),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
@@ -257,17 +261,20 @@ class _FaqListItemState extends State<FaqListItem>
     );
   }
 
-  Color _getCategoryColor(dynamic category) {
-    // You can customize colors per category
-    switch (category.toString()) {
-      case 'FaqCategory.scanning':
-        return const Color(0xFF0EA5E9);
-      case 'FaqCategory.diagnosis':
-        return const Color(0xFFF97316);
-      case 'FaqCategory.treatment':
-        return const Color(0xFF10B981);
-      case 'FaqCategory.account':
+  Color _getCategoryColor(FaqCategory category) {
+    switch (category) {
+      case FaqCategory.general:
         return const Color(0xFF8B5CF6);
+      case FaqCategory.scanning:
+        return const Color(0xFF0EA5E9);
+      case FaqCategory.database:
+        return const Color(0xFFF59E0B);
+      case FaqCategory.account:
+        return const Color(0xFF10B981);
+      case FaqCategory.technical:
+        return const Color(0xFFEF4444);
+      case FaqCategory.sharing:
+        return const Color(0xFFEC4899);
       default:
         return Theme.of(context).colorScheme.primary;
     }

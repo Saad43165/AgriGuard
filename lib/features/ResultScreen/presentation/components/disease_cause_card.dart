@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'section_header.dart';
 
 class DiseaseCausesCard extends StatelessWidget {
@@ -13,14 +15,15 @@ class DiseaseCausesCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final translation = Provider.of<TranslationService>(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: 'Disease Causes',
+          title: translation.get('disease_causes'),
           icon: Icons.science_rounded,
-          subtitle: 'Understanding the root causes',
+          subtitle: translation.get('understanding_causes'),
           iconColor: const Color(0xFF6366F1),
         ),
         const SizedBox(height: 16),
@@ -30,20 +33,12 @@ class DiseaseCausesCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDark
-                  ? [
-                const Color(0xFF1E293B),
-                const Color(0xFF0F172A),
-              ]
-                  : [
-                Colors.white,
-                const Color(0xFFF8FAFC),
-              ],
+                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
               width: 2,
             ),
             boxShadow: [
@@ -60,7 +55,7 @@ class DiseaseCausesCard extends StatelessWidget {
             ],
           ),
           child: causes.isEmpty
-              ? _buildEmptyState(context, isDark)
+              ? _buildEmptyState(context, isDark, translation)
               : Column(
             children: List.generate(
               causes.length,
@@ -70,6 +65,7 @@ class DiseaseCausesCard extends StatelessWidget {
                 index: index,
                 isLast: index == causes.length - 1,
                 isDark: isDark,
+                translation: translation,
               ),
             ),
           ),
@@ -78,7 +74,7 @@ class DiseaseCausesCard extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isDark) {
+  Widget _buildEmptyState(BuildContext context, bool isDark, TranslationService translation) {
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -98,15 +94,15 @@ class DiseaseCausesCard extends StatelessWidget {
                 width: 2,
               ),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.search_off_rounded,
               size: 48,
-              color: const Color(0xFF6366F1),
+              color: Color(0xFF6366F1),
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            'No Disease Analysis Available',
+            translation.get('no_disease_analysis'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -115,12 +111,10 @@ class DiseaseCausesCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Analysis data is not available for this scan',
+            translation.get('analysis_not_available'),
             style: TextStyle(
               fontSize: 14,
-              color: isDark
-                  ? Colors.white.withOpacity(0.6)
-                  : Colors.black.withOpacity(0.5),
+              color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -135,11 +129,14 @@ class DiseaseCausesCard extends StatelessWidget {
     required int index,
     required bool isLast,
     required bool isDark,
+    required TranslationService translation,
   }) {
     String cleanText = text.trim();
     if (cleanText.isEmpty) return const SizedBox.shrink();
 
-    // Cause type icons
+    // Translate the cause text if it's in English
+    final translatedText = _translateCauseText(cleanText, translation);
+
     final causeIcons = [
       Icons.bug_report_rounded,
       Icons.water_drop_rounded,
@@ -156,9 +153,7 @@ class DiseaseCausesCard extends StatelessWidget {
             ? null
             : Border(
           bottom: BorderSide(
-            color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
             width: 1.5,
           ),
         ),
@@ -168,7 +163,6 @@ class DiseaseCausesCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cause Icon Container
             Container(
               width: 48,
               height: 48,
@@ -198,7 +192,6 @@ class DiseaseCausesCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            // Cause Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,10 +199,7 @@ class DiseaseCausesCard extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6366F1).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -219,7 +209,7 @@ class DiseaseCausesCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'CAUSE ${index + 1}',
+                          '${translation.get('cause')} ${index + 1}',
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -232,7 +222,7 @@ class DiseaseCausesCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    cleanText,
+                    translatedText,
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.6,
@@ -243,12 +233,60 @@ class DiseaseCausesCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            // Info Badge
-
           ],
         ),
       ),
     );
+  }
+
+  String _translateCauseText(String text, TranslationService translation) {
+    if (!translation.isUrdu) return text;
+
+    // Common cause translations
+    final Map<String, String> causeTranslations = {
+      // Environmental factors
+      'high humidity': 'زیادہ نمی',
+      'low temperature': 'کم درجہ حرارت',
+      'high temperature': 'زیادہ درجہ حرارت',
+      'excessive moisture': 'زیادہ نمی',
+      'poor air circulation': 'ہوا کی کم گردش',
+      'overcrowding': 'زیادہ بھیڑ',
+
+      // Watering issues
+      'overwatering': 'زیادہ پانی دینا',
+      'underwatering': 'کم پانی دینا',
+      'poor drainage': 'خراب نکاسی',
+      'waterlogged soil': 'پانی سے بھری مٹی',
+
+      // Pathogen related
+      'fungal infection': 'فنگل انفیکشن',
+      'bacterial infection': 'بیکٹیریل انفیکشن',
+      'viral infection': 'وائرل انفیکشن',
+      'pathogen spread': 'جراثیم کا پھیلاؤ',
+
+      // Plant stress
+      'nutrient deficiency': 'غذائیت کی کمی',
+      'poor soil quality': 'خراب مٹی کا معیار',
+      'contaminated soil': 'آلودہ مٹی',
+      'infected plant debris': 'متاثرہ پودوں کا ملبہ',
+
+      // Common phrases
+      'caused by': 'کی وجہ سے',
+      'leads to': 'کا باعث بنتا ہے',
+      'results in': 'کا نتیجہ',
+      'spreads through': 'کے ذریعے پھیلتا ہے',
+    };
+
+    String translatedText = text;
+
+    // Replace common terms
+    causeTranslations.forEach((english, urdu) {
+      translatedText = translatedText.replaceAll(
+        RegExp(english, caseSensitive: false),
+        urdu,
+      );
+    });
+
+    return translatedText;
   }
 }
