@@ -1,104 +1,19 @@
+// lib/features/ResultScreen/presentation/components/diagnosis_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/widgets/severity_indicator.dart';
-import '../../../../../core/services/translation_service.dart';
-import 'diagnosis_result.dart';
+import '../../../../core/widgets/severity_indicator.dart';
+import '../../../../core/services/translation_service.dart';
+import '../models/diagnosis_result.dart';
 
-class DiagnosisCard extends StatefulWidget {
+class DiagnosisCard extends StatelessWidget {
   final DiagnosisResult diagnosisResult;
 
-  const DiagnosisCard({super.key, required this.diagnosisResult});
-
-  @override
-  State<DiagnosisCard> createState() => _DiagnosisCardState();
-}
-
-class _DiagnosisCardState extends State<DiagnosisCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
-  bool _isExpanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
-      ),
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  Color _getDiseaseColor(DiagnosisResult result) {
-    if (result.isHealthy) return const Color(0xFF10B981);
-    if (result.requiresUrgentAction) return const Color(0xFFEF4444);
-    if (result.severity.toLowerCase() == 'medium') return const Color(0xFFF59E0B);
-    if (result.severity.toLowerCase() == 'low') return const Color(0xFF3B82F6);
-    return const Color(0xFFEF4444);
-  }
-
-  IconData _getDiseaseIcon(DiagnosisResult result) {
-    if (result.isHealthy) return Icons.verified_rounded;
-    if (result.requiresUrgentAction) return Icons.error_rounded;
-    if (result.severity.toLowerCase() == 'medium') return Icons.warning_amber_rounded;
-    return Icons.info_rounded;
-  }
-
-  void _copyToClipboard(String text, String label) {
-    final translation = Provider.of<TranslationService>(context, listen: false);
-    Clipboard.setData(ClipboardData(text: text));
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 12),
-            Text('$label ${translation.get('copied_to_clipboard')}'),
-          ],
-        ),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: const Color(0xFF10B981),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+  const DiagnosisCard({
+    super.key,
+    required this.diagnosisResult,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -106,447 +21,248 @@ class _DiagnosisCardState extends State<DiagnosisCard>
     final isDark = theme.brightness == Brightness.dark;
     final translation = Provider.of<TranslationService>(context);
 
-    final Color diseaseColor = _getDiseaseColor(widget.diagnosisResult);
-    final IconData diseaseIcon = _getDiseaseIcon(widget.diagnosisResult);
-
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                    : [Colors.white, const Color(0xFFF8FAFC)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: diseaseColor.withOpacity(isDark ? 0.2 : 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                  spreadRadius: 0,
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _AnimatedHeader(
-                  diseaseColor: diseaseColor,
-                  diseaseIcon: diseaseIcon,
-                  disease: translation.translateDisease(widget.diagnosisResult.disease),
-                  isHealthy: widget.diagnosisResult.isHealthy,
-                  isDark: isDark,
-                  onCopy: () => _copyToClipboard(
-                    widget.diagnosisResult.disease,
-                    translation.get('disease_name'),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _PlantInfoCard(
-                        plantName: translation.translatePlant(widget.diagnosisResult.plantName),
-                        scientificName: widget.diagnosisResult.scientificName,
-                        isDark: isDark,
-                        onCopy: () => _copyToClipboard(
-                          widget.diagnosisResult.plantName,
-                          translation.get('plant_name'),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (widget.diagnosisResult.description != null &&
-                          widget.diagnosisResult.description!.isNotEmpty) ...[
-                        _ExpandableDescription(
-                          description: widget.diagnosisResult.description!,
-                          diseaseColor: diseaseColor,
-                          isDark: isDark,
-                          isExpanded: _isExpanded,
-                          onToggle: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _isExpanded = !_isExpanded);
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                      _AnimatedSeverityIndicator(
-                        severity: translation.translateSeverity(widget.diagnosisResult.severity),
-                        color: diseaseColor,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AnimatedHeader extends StatefulWidget {
-  final Color diseaseColor;
-  final IconData diseaseIcon;
-  final String disease;
-  final bool isHealthy;
-  final bool isDark;
-  final VoidCallback onCopy;
-
-  const _AnimatedHeader({
-    required this.diseaseColor,
-    required this.diseaseIcon,
-    required this.disease,
-    required this.isHealthy,
-    required this.isDark,
-    required this.onCopy,
-  });
-
-  @override
-  State<_AnimatedHeader> createState() => _AnimatedHeaderState();
-}
-
-class _AnimatedHeaderState extends State<_AnimatedHeader>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final translation = Provider.of<TranslationService>(context);
-
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            widget.diseaseColor.withOpacity(widget.isDark ? 0.15 : 0.1),
-            widget.diseaseColor.withOpacity(widget.isDark ? 0.08 : 0.05),
-          ],
+          colors: isDark
+              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+              : [Colors.white, const Color(0xFFF8FAFC)],
         ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(22),
-          topRight: Radius.circular(22),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+          width: 2,
         ),
-        border: Border(
-          bottom: BorderSide(
-            color: widget.diseaseColor.withOpacity(0.2),
-            width: 2,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      widget.diseaseColor,
-                      widget.diseaseColor.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.diseaseColor.withOpacity(0.4 + _pulseController.value * 0.3),
-                      blurRadius: 12 + _pulseController.value * 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  widget.diseaseIcon,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.isHealthy ? translation.get('healthy_plant') : translation.get('disease_detected'),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: widget.isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                GestureDetector(
-                  onLongPress: widget.onCopy,
-                  child: Text(
-                    widget.disease,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: widget.diseaseColor,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _PlantInfoCard extends StatelessWidget {
-  final String plantName;
-  final String? scientificName;
-  final bool isDark;
-  final VoidCallback onCopy;
-
-  const _PlantInfoCard({
-    required this.plantName,
-    this.scientificName,
-    required this.isDark,
-    required this.onCopy,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final translation = Provider.of<TranslationService>(context);
-
-    return GestureDetector(
-      onLongPress: onCopy,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [
-              const Color(0xFF10B981).withOpacity(0.15),
-              const Color(0xFF10B981).withOpacity(0.05),
-            ]
-                : [
-              const Color(0xFF10B981).withOpacity(0.08),
-              const Color(0xFF10B981).withOpacity(0.03),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF10B981).withOpacity(0.3),
-            width: 2,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF059669)],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.eco_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    translation.get('plant_species'),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.4),
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    plantName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : Colors.black87,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  if (scientificName != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      scientificName!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                        color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ExpandableDescription extends StatelessWidget {
-  final String description;
-  final Color diseaseColor;
-  final bool isDark;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-
-  const _ExpandableDescription({
-    required this.description,
-    required this.diseaseColor,
-    required this.isDark,
-    required this.isExpanded,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final translation = Provider.of<TranslationService>(context);
-
-    return GestureDetector(
-      onTap: onToggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
-            width: 1.5,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Plant Name
             Row(
               children: [
-                Icon(Icons.info_outline_rounded, size: 20, color: diseaseColor),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    translation.get('description'),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.eco_rounded,
+                    color: Color(0xFF10B981),
+                    size: 20,
                   ),
                 ),
-                AnimatedRotation(
-                  duration: const Duration(milliseconds: 300),
-                  turns: isExpanded ? 0.5 : 0,
-                  child: Icon(Icons.keyboard_arrow_down_rounded, color: diseaseColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        translation.get('plant_name'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        translation.translatePlant(diagnosisResult.plantName),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: isExpanded
-                  ? Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                    color: isDark ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.7),
+
+            const SizedBox(height: 16),
+
+            // Disease Name
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: diagnosisResult.isHealthy
+                        ? const Color(0xFF10B981).withOpacity(0.1)
+                        : const Color(0xFFEF4444).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    diagnosisResult.isHealthy ? Icons.check_circle : Icons.warning,
+                    color: diagnosisResult.isHealthy ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                    size: 20,
                   ),
                 ),
-              )
-                  : const SizedBox.shrink(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        translation.get('disease_detected'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        translation.translateDisease(diagnosisResult.disease),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: diagnosisResult.isHealthy
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+
+            const SizedBox(height: 16),
+
+            // Severity
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _getSeverityColor(diagnosisResult.severity).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.speed_rounded,
+                    color: _getSeverityColor(diagnosisResult.severity),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        translation.get('severity_level'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getSeverityColor(diagnosisResult.severity),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              translation.translateSeverity(diagnosisResult.severity),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${diagnosisResult.confidence}% Confidence',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white.withOpacity(0.7) : Colors.black.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            if (diagnosisResult.description != null && diagnosisResult.description!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+                  ),
+                ),
+                child: Text(
+                  diagnosisResult.description!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white.withOpacity(0.8) : Colors.black87,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+
+            if (diagnosisResult.scientificName != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.science_rounded, size: 16, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      diagnosisResult.scientificName!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: isDark ? Colors.white.withOpacity(0.6) : Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
   }
-}
 
-class _AnimatedSeverityIndicator extends StatelessWidget {
-  final String severity;
-  final Color color;
-
-  const _AnimatedSeverityIndicator({
-    required this.severity,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeOutBack,
-      tween: Tween(begin: 0.0, end: 1.0),
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: SeverityIndicator(
-            severity: severity,
-            showLabel: true,
-            showDescription: true,
-          ),
-        );
-      },
-    );
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'low':
+      case 'mild':
+        return const Color(0xFF3B82F6);
+      case 'medium':
+      case 'moderate':
+        return const Color(0xFFF59E0B);
+      case 'high':
+      case 'severe':
+        return const Color(0xFFEF4444);
+      case 'critical':
+        return const Color(0xFFDC2626);
+      default:
+        return const Color(0xFF6B7280);
+    }
   }
 }

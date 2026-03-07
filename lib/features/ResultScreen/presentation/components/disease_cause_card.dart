@@ -1,10 +1,12 @@
+// lib/features/ResultScreen/presentation/components/disease_cause_card.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/translation_service.dart';
 import 'section_header.dart';
 
 class DiseaseCausesCard extends StatelessWidget {
-  final List<String> causes;
+  final List<dynamic> causes; // Changed from List<String> to List<dynamic>
 
   const DiseaseCausesCard({
     super.key,
@@ -61,7 +63,7 @@ class DiseaseCausesCard extends StatelessWidget {
               causes.length,
                   (index) => _buildCauseItem(
                 context: context,
-                text: causes[index],
+                causeData: causes[index],
                 index: index,
                 isLast: index == causes.length - 1,
                 isDark: isDark,
@@ -125,17 +127,25 @@ class DiseaseCausesCard extends StatelessWidget {
 
   Widget _buildCauseItem({
     required BuildContext context,
-    required String text,
+    required dynamic causeData, // Can be String or Map
     required int index,
     required bool isLast,
     required bool isDark,
     required TranslationService translation,
   }) {
-    String cleanText = text.trim();
-    if (cleanText.isEmpty) return const SizedBox.shrink();
+    // Handle both old format (String) and new format (Map with en/ur)
+    String causeText;
+    if (causeData is Map) {
+      // New bilingual format
+      causeText = translation.isUrdu
+          ? (causeData['ur'] ?? causeData['en'] ?? '')
+          : (causeData['en'] ?? causeData['ur'] ?? '');
+    } else {
+      // Old format - single string
+      causeText = causeData.toString().trim();
+    }
 
-    // Translate the cause text if it's in English
-    final translatedText = _translateCauseText(cleanText, translation);
+    if (causeText.isEmpty) return const SizedBox.shrink();
 
     final causeIcons = [
       Icons.bug_report_rounded,
@@ -218,17 +228,42 @@ class DiseaseCausesCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      // Add Urdu indicator if showing Urdu
+                      if (translation.isUrdu && causeData is Map && causeData['ur'] != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.green.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              'اردو',
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    translatedText,
+                    causeText,
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.6,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
+                    textAlign: translation.isUrdu ? TextAlign.right : TextAlign.left,
                   ),
                 ],
               ),
@@ -237,56 +272,5 @@ class DiseaseCausesCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _translateCauseText(String text, TranslationService translation) {
-    if (!translation.isUrdu) return text;
-
-    // Common cause translations
-    final Map<String, String> causeTranslations = {
-      // Environmental factors
-      'high humidity': 'زیادہ نمی',
-      'low temperature': 'کم درجہ حرارت',
-      'high temperature': 'زیادہ درجہ حرارت',
-      'excessive moisture': 'زیادہ نمی',
-      'poor air circulation': 'ہوا کی کم گردش',
-      'overcrowding': 'زیادہ بھیڑ',
-
-      // Watering issues
-      'overwatering': 'زیادہ پانی دینا',
-      'underwatering': 'کم پانی دینا',
-      'poor drainage': 'خراب نکاسی',
-      'waterlogged soil': 'پانی سے بھری مٹی',
-
-      // Pathogen related
-      'fungal infection': 'فنگل انفیکشن',
-      'bacterial infection': 'بیکٹیریل انفیکشن',
-      'viral infection': 'وائرل انفیکشن',
-      'pathogen spread': 'جراثیم کا پھیلاؤ',
-
-      // Plant stress
-      'nutrient deficiency': 'غذائیت کی کمی',
-      'poor soil quality': 'خراب مٹی کا معیار',
-      'contaminated soil': 'آلودہ مٹی',
-      'infected plant debris': 'متاثرہ پودوں کا ملبہ',
-
-      // Common phrases
-      'caused by': 'کی وجہ سے',
-      'leads to': 'کا باعث بنتا ہے',
-      'results in': 'کا نتیجہ',
-      'spreads through': 'کے ذریعے پھیلتا ہے',
-    };
-
-    String translatedText = text;
-
-    // Replace common terms
-    causeTranslations.forEach((english, urdu) {
-      translatedText = translatedText.replaceAll(
-        RegExp(english, caseSensitive: false),
-        urdu,
-      );
-    });
-
-    return translatedText;
   }
 }

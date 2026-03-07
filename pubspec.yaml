@@ -58,7 +58,8 @@ dependencies:
   crypto: ^3.0.3
   flutter_dotenv: ^5.1.0
   flutter_typeahead: ^5.2.0
-
+  google_fonts: ^6.2.1
+  printing:   # ← this is what provides PdfGoogleFonts
 
 
 dev_dependencies:
@@ -67,7 +68,8 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
   flutter_typeahead: ^5.2.0  # Add this line
-
+  file_picker: ^8.1.2
+  csv: ^6.0.0
 
 flutter:
   uses-material-design: true

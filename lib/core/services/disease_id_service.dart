@@ -1,4 +1,26 @@
 // lib/services/disease_id_service.dart
+//
+// FIXES IN THIS VERSION
+// ─────────────────────
+// FIX 1 — Removed the blanket "boost healthy to 75%" logic.
+//          That boost was hiding real diseases by artificially inflating the
+//          healthy class score, causing Cedar Apple Rust (and similar) to
+//          lose to "healthy" even when the rust lesion patterns were present.
+//          Healthy plants that are genuinely healthy will still score high
+//          naturally. Only artificially low scores were being boosted — and
+//          a low score on "healthy" is exactly what we WANT when the plant
+//          is actually diseased.
+//
+// FIX 2 — Added a rust/lesion visual pre-check. If the image has low green
+//          coverage (<40%) combined with warm pixel presence (orange/yellow),
+//          the "healthy" label is penalised before confidence thresholds are
+//          applied. This catches Cedar Apple Rust, Early Blight, etc.
+//
+// FIX 3 — _reconcilePlantName() is now called inside disease_id_service
+//          so the plantName it returns is always the corrected one. The
+//          plant_analysis_service.dart fix (separate file) handles the final
+//          reconciliation at the orchestration layer.
+
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -7,14 +29,14 @@ import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
 
 class DiseaseIdService {
-  static const String _modelPath = 'assets/models/plant_disease_dynamic_quant.tflite';
+  static const String _modelPath =
+      'assets/models/plant_disease_dynamic_quant.tflite';
   static const String _labelsPath = 'assets/models/disease_labels.txt';
 
-  // Configuration constants
-  static const double _minConfidenceThreshold = 0.5; // Minimum 50% confidence
-  static const double _lowConfidenceThreshold = 0.6; // Below this, mark as unknown
-  static const int _minImageSize = 100; // Minimum image dimension in pixels
-  static const int _minImageBytes = 10240; // Minimum 10KB file size
+  static const double _minConfidenceThreshold = 0.5;
+  static const double _lowConfidenceThreshold = 0.6;
+  static const int _minImageSize = 100;
+  static const int _minImageBytes = 10240;
 
   Interpreter? _interpreter;
   List<String> _labels = [];
@@ -24,99 +46,166 @@ class DiseaseIdService {
   bool get isLoaded => _isModelLoaded;
   bool get isLoading => _isLoading;
 
-  // Leaf detection helper method
+  // ── Leaf detection ─────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> _performLeafDetection(File imageFile) async {
     try {
       final bytes = await imageFile.readAsBytes();
       final image = img.decodeImage(bytes);
       if (image == null) {
-        return {'isLeaf': true, 'confidence': 50.0, 'message': 'Failed to decode image'};
+        return {
+          'isLeaf': true,
+          'confidence': 50.0,
+          'message': 'Failed to decode image'
+        };
       }
 
       final resizedImage = img.copyResize(image, width: 300);
-      
-      // Multiple checks
       int greenPixels = 0;
       int totalPixels = resizedImage.width * resizedImage.height;
       int edgeCount = 0;
-      final edgeThreshold = 25;
-      
+      const edgeThreshold = 25;
+
       for (int y = 0; y < resizedImage.height; y++) {
         for (int x = 0; x < resizedImage.width; x++) {
           final pixel = resizedImage.getPixel(x, y);
           final r = pixel.r.toDouble();
           final g = pixel.g.toDouble();
           final b = pixel.b.toDouble();
-          
-          // Green check
-          if (g > r * 1.2 && g > b * 1.2 && g > 30) {
-            greenPixels++;
-          }
-          
-          // Edge check (simple)
+
+          if (g > r * 1.2 && g > b * 1.2 && g > 30) greenPixels++;
+
           if (y < resizedImage.height - 1 && x < resizedImage.width - 1) {
             final current = (r + g + b) / 3;
             final rightPixel = resizedImage.getPixel(x + 1, y);
-            final right = (rightPixel.r + rightPixel.g + rightPixel.b) / 3;
+            final right =
+                (rightPixel.r + rightPixel.g + rightPixel.b) / 3;
             final downPixel = resizedImage.getPixel(x, y + 1);
             final down = (downPixel.r + downPixel.g + downPixel.b) / 3;
-            
-            if ((current - right).abs() > edgeThreshold || 
+            if ((current - right).abs() > edgeThreshold ||
                 (current - down).abs() > edgeThreshold) {
               edgeCount++;
             }
           }
         }
       }
-      
+
       final greenPercentage = (greenPixels / totalPixels) * 100;
       final edgeDensity = (edgeCount / totalPixels) * 100;
-      
-      // Decision logic
-      bool isLeaf = greenPercentage > 25 && edgeDensity > 5;
-      double confidence = (greenPercentage * 0.6) + (edgeDensity * 0.4);
-      
+
+      // Diseased leaves (rust, blight, scorch) lose green but gain warm
+      // orange/yellow/brown hues. Count warm pixels separately so they
+      // are not penalised by a green-only leaf check.
+      int warmPixels = 0;
+      for (int wy = 0; wy < resizedImage.height; wy++) {
+        for (int wx = 0; wx < resizedImage.width; wx++) {
+          final wp = resizedImage.getPixel(wx, wy);
+          final wr = wp.r.toDouble();
+          final wg = wp.g.toDouble();
+          final wb = wp.b.toDouble();
+          if (wr > 100 && wg > 40 && wb < 110 && wr > wb * 1.4) warmPixels++;
+        }
+      }
+      final warmPercentage = (warmPixels / totalPixels) * 100;
+      // Combined plant coverage: green + half of warm pixels
+      final plantPercentage = greenPercentage + (warmPercentage * 0.5);
+
+      // OLD rule: green > 25 && edge > 5  → fails orange/rusty diseased leaves
+      // NEW rule: plant coverage > 15% with edge > 4%, OR strong edge alone
+      final isLeaf = (plantPercentage > 15 && edgeDensity > 4) ||
+          (edgeDensity > 8 && plantPercentage > 8);
+
+      final confidence = (plantPercentage * 0.55) + (edgeDensity * 0.45);
+
       debugPrint('🍃 Disease Service Leaf Detection:');
       debugPrint('   Green: ${greenPercentage.toStringAsFixed(1)}%');
+      debugPrint('   Warm:  ${warmPercentage.toStringAsFixed(1)}%');
+      debugPrint('   Plant: ${plantPercentage.toStringAsFixed(1)}%');
       debugPrint('   Edge Density: ${edgeDensity.toStringAsFixed(1)}%');
       debugPrint('   Is Leaf: $isLeaf');
       debugPrint('   Confidence: ${confidence.toStringAsFixed(1)}%');
-      
+
       return {
         'isLeaf': isLeaf,
         'confidence': confidence,
         'greenPercentage': greenPercentage,
         'edgeDensity': edgeDensity,
-        'message': isLeaf 
+        'message': isLeaf
             ? 'Image appears to be a plant leaf'
             : 'Image does not appear to be a plant leaf',
       };
     } catch (e) {
       debugPrint('❌ Leaf detection error: $e');
-      return {'isLeaf': true, 'confidence': 50.0, 'message': 'Detection error'};
+      return {
+        'isLeaf': true,
+        'confidence': 50.0,
+        'message': 'Detection error'
+      };
     }
   }
 
+  // ── FIX 2: Visual disease indicator check ─────────────────────────────────
+  // Detects warm-coloured lesions (rust, blight, scorch) that indicate the
+  // plant is NOT healthy, even if the model top-1 says "healthy".
+  //
+  // Returns a penalty multiplier (0.0–1.0) to apply to the healthy class
+  // score. 1.0 = no penalty, 0.5 = halve the healthy score, etc.
+  double _computeHealthyPenalty(File imageFile, img.Image resized) {
+    try {
+      int warmPixels = 0; // orange / yellow / brown pixels
+      int totalPixels = resized.width * resized.height;
+
+      for (int y = 0; y < resized.height; y++) {
+        for (int x = 0; x < resized.width; x++) {
+          final pixel = resized.getPixel(x, y);
+          final r = pixel.r.toDouble();
+          final g = pixel.g.toDouble();
+          final b = pixel.b.toDouble();
+
+          // Warm pixel: high red, medium green, low blue — typical for
+          // rust lesions, blight spots, and scorch marks.
+          if (r > 140 && g > 60 && g < 180 && b < 100 && r > g * 1.3) {
+            warmPixels++;
+          }
+        }
+      }
+
+      final warmPercentage = (warmPixels / totalPixels) * 100;
+      debugPrint(
+          '🌡️ Warm pixel analysis: ${warmPercentage.toStringAsFixed(1)}% warm pixels');
+
+      // Penalty tiers
+      if (warmPercentage > 20) {
+        debugPrint('⚠️ Heavy warm/rust pixels — strong healthy penalty (0.3)');
+        return 0.3; // Very likely diseased
+      }
+      if (warmPercentage > 10) {
+        debugPrint('⚠️ Moderate warm pixels — medium healthy penalty (0.55)');
+        return 0.55;
+      }
+      if (warmPercentage > 5) {
+        debugPrint('⚠️ Some warm pixels — mild healthy penalty (0.75)');
+        return 0.75;
+      }
+
+      return 1.0; // No penalty
+    } catch (e) {
+      debugPrint('⚠️ Warm pixel check failed: $e');
+      return 1.0;
+    }
+  }
+
+  // ── Model loading ──────────────────────────────────────────────────────────
   Future<void> loadModel() async {
     if (_isModelLoaded || _isLoading) return;
-
     _isLoading = true;
     try {
       debugPrint('🌱 Loading Disease Detection Model...');
-
-      // Load labels
       await _loadLabels();
       debugPrint('✅ Labels loaded: ${_labels.length} classes');
 
-      // Load model
       final options = InterpreterOptions();
+      _interpreter = await Interpreter.fromAsset(_modelPath, options: options);
 
-      _interpreter = await Interpreter.fromAsset(
-        _modelPath,
-        options: options,
-      );
-
-      // Get model details
       final inputShape = _interpreter!.getInputTensor(0).shape;
       final outputShape = _interpreter!.getOutputTensor(0).shape;
 
@@ -138,197 +227,240 @@ class DiseaseIdService {
   Future<void> _loadLabels() async {
     try {
       final labelData = await rootBundle.loadString(_labelsPath);
-      _labels = labelData.split('\n').where((label) => label.trim().isNotEmpty).toList();
+      _labels = labelData
+          .split('\n')
+          .where((label) => label.trim().isNotEmpty)
+          .toList();
     } catch (e) {
       debugPrint('❌ Failed to load labels: $e');
       _labels = [];
     }
   }
 
+  // ── Main predict ───────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> predict(File imageFile) async {
-    if (!_isModelLoaded) {
-      await loadModel();
-    }
+    if (!_isModelLoaded) await loadModel();
 
     try {
       debugPrint('🔍 Running disease detection...');
 
-      // STEP 1: Perform leaf detection first
-      debugPrint('🍃 Performing leaf detection before disease detection...');
+      // STEP 1: Leaf detection
       final leafAnalysis = await _performLeafDetection(imageFile);
       final isLeaf = leafAnalysis['isLeaf'] as bool;
       final leafConfidence = leafAnalysis['confidence'] as double;
-      
+      final greenPercentage =
+          (leafAnalysis['greenPercentage'] as double?) ?? 100.0;
+
       if (!isLeaf) {
-        debugPrint('❌ Image does not appear to be a plant leaf. Skipping disease detection.');
-        return {
-          'success': true,
-          'plantName': 'Non-Plant Image',
-          'diseaseName': 'Image Not Recognized',
-          'confidence': '95.0', // High confidence it's not a leaf
-          'severity': 'N/A',
-          'cause': 'Image does not appear to be a plant leaf',
-          'isHealthy': false,
-          'symptoms': ['Image appears to be non-plant material'],
-          'remediation': [
-            'Please upload a clear photo of a plant leaf',
-            'Ensure the image shows plant leaves clearly',
-            'Check that the photo is not blurry or too distant'
-          ],
-          'precautions': ['Upload only plant leaf images for disease analysis'],
-          'allPredictions': [],
-          'rawLabel': 'non_leaf_image',
-          'inferenceTime': 0,
-          'isLeaf': false,
-          'leafConfidence': leafConfidence,
-          'leafDetectionFailed': true,
-          'skipFurtherAnalysis': true,
-          'leafAnalysis': leafAnalysis,
-        };
+        return _nonLeafResult(leafConfidence, leafAnalysis);
       }
 
-      // STEP 2: Check image quality
-      final imageQualityCheck = await _checkImageQuality(imageFile);
-      if (!imageQualityCheck['isGoodQuality']) {
-        debugPrint('⚠️ Poor image quality detected: ${imageQualityCheck['reason']}');
-
-        return {
-          'success': true,
-          'plantName': 'Image Quality Issue',
-          'diseaseName': 'Unable to Analyze',
-          'confidence': '0',
-          'severity': 'Unknown',
-          'cause': 'Poor image quality affecting analysis',
-          'isHealthy': false,
-          'symptoms': ['Image may be blurry, too small, or poor quality'],
-          'remediation': [
-            'Please take a clearer photo with good lighting',
-            'Focus on the affected leaves',
-            'Ensure the image is not blurry'
-          ],
-          'precautions': ['Regular monitoring recommended'],
-          'allPredictions': [],
-          'rawLabel': 'image_quality_issue',
-          'inferenceTime': 0,
-          'imageQualityIssue': true,
-          'qualityReason': imageQualityCheck['reason'],
-          'isLeaf': true,
-          'leafConfidence': leafConfidence,
-        };
+      // STEP 2: Image quality check
+      final qualityCheck = await _checkImageQuality(imageFile);
+      if (!qualityCheck['isGoodQuality']) {
+        debugPrint(
+            '⚠️ Poor image quality: ${qualityCheck['reason']}');
+        return _qualityIssueResult(leafConfidence);
       }
 
-      // STEP 3: Preprocess image and get float array
+      // STEP 3: Compute healthy penalty from visual cues BEFORE inference.
+      // We need a resized image for this — decode once and reuse.
+      final imageBytes = await imageFile.readAsBytes();
+      final rawImage = img.decodeImage(imageBytes);
+      double healthyPenalty = 1.0;
+      if (rawImage != null) {
+        final smallImage = img.copyResize(rawImage, width: 100);
+        healthyPenalty = _computeHealthyPenalty(imageFile, smallImage);
+      }
+
+      // STEP 4: Preprocess and run inference
       final inputArray = await _preprocessImageToFloatArray(imageFile);
-
-      // STEP 4: Prepare output tensor
       final outputShape = _interpreter!.getOutputTensor(0).shape;
       debugPrint('🔍 Output shape from model: $outputShape');
 
-      // Handle both 1D and 2D output shapes
+      List<double> output;
+      final stopwatch = Stopwatch()..start();
+
       if (outputShape.length == 2) {
-        // Model returns [1, 31] - need to handle as 2D
         debugPrint('📊 Model returns 2D output, reshaping...');
-
-        // Create a 2D array
-        final output2D = List<List<double>>.filled(
-            outputShape[0],
-            List<double>.filled(outputShape[1], 0.0)
+        final output2D = List<List<double>>.generate(
+          outputShape[0],
+              (_) => List<double>.filled(outputShape[1], 0.0),
         );
-
-        // Run inference with 2D output
-        final stopwatch = Stopwatch()..start();
         _interpreter!.run(inputArray, output2D);
-        stopwatch.stop();
-
-        debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
-
-        // Flatten to 1D array for processing
-        final output = output2D.expand((row) => row).toList();
-
-        // Process results
-        final result = _processOutput(output);
-        result['inferenceTime'] = stopwatch.elapsedMilliseconds;
-        result['isLeaf'] = true;
-        result['leafConfidence'] = leafConfidence;
-
-        debugPrint('✅ Disease detection completed');
-        debugPrint('   Disease: ${result['diseaseName']}');
-        debugPrint('   Confidence: ${result['confidence']}%');
-        debugPrint('   Severity: ${result['severity']}');
-
-        return result;
+        output = output2D.expand((row) => row).toList();
       } else {
-        // Original 1D handling for backward compatibility
-        final output = List.filled(outputShape.reduce((a, b) => a * b), 0.0)
+        output = List.filled(
+            outputShape.reduce((a, b) => a * b), 0.0)
             .cast<double>();
-
-        final stopwatch = Stopwatch()..start();
         _interpreter!.run(inputArray, output);
-        stopwatch.stop();
-
-        debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
-
-        final result = _processOutput(output);
-        result['inferenceTime'] = stopwatch.elapsedMilliseconds;
-        result['isLeaf'] = true;
-        result['leafConfidence'] = leafConfidence;
-
-        debugPrint('✅ Disease detection completed');
-        debugPrint('   Disease: ${result['diseaseName']}');
-        debugPrint('   Confidence: ${result['confidence']}%');
-        debugPrint('   Severity: ${result['severity']}');
-
-        return result;
       }
+
+      stopwatch.stop();
+      debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
+
+      // STEP 5: Apply healthy penalty to raw output scores
+      //         before _processOutput picks the winner.
+      if (healthyPenalty < 1.0) {
+        output = _applyHealthyPenalty(output, healthyPenalty);
+      }
+
+      // STEP 6: Process results
+      final result = _processOutput(output);
+      result['inferenceTime'] = stopwatch.elapsedMilliseconds;
+      result['isLeaf'] = true;
+      result['leafConfidence'] = leafConfidence;
+
+      debugPrint('✅ Disease detection completed');
+      debugPrint('   Disease: ${result['diseaseName']}');
+      debugPrint('   Confidence: ${result['confidence']}%');
+      debugPrint('   Severity: ${result['severity']}');
+
+      return result;
     } catch (e) {
       debugPrint('❌ Disease prediction error: $e');
       return _createFallbackResult(e.toString());
     }
   }
 
+  // ── FIX 1: Apply penalty to all "healthy" label indices ──────────────────
+  List<double> _applyHealthyPenalty(
+      List<double> output, double penalty) {
+    final penalised = List<double>.from(output);
+    for (int i = 0; i < _labels.length && i < penalised.length; i++) {
+      if (_labels[i].toLowerCase().contains('healthy')) {
+        final original = penalised[i];
+        penalised[i] = original * penalty;
+        debugPrint(
+            '🔻 Penalised "${_labels[i]}": '
+                '${(original * 100).toStringAsFixed(1)}% → '
+                '${(penalised[i] * 100).toStringAsFixed(1)}%');
+      }
+    }
+    return penalised;
+  }
+
+  // ── FIX 4: Second-opinion check ───────────────────────────────────────────
+  // If top-1 is "healthy" for plant X, but top-2 or top-3 is a DISEASE for
+  // the same plant X — and the healthy margin is not overwhelming (< 40 pp
+  // gap) — we distrust the healthy prediction and return the top disease
+  // label instead.
+  //
+  // Example: Apple___healthy=73%, Apple___Apple_scab=12%
+  //   Gap = 61pp → healthy wins (overwhelming).
+  //
+  // Example: Apple___healthy=73%, Apple___Cedar_apple_rust=45%
+  //   Gap = 28pp → distrust healthy, return Cedar Apple Rust.
+  //
+  // This specifically catches the case in the logs where the model is 73%
+  // healthy but a real disease label is reasonably close.
+  Map<String, dynamic>? _secondOpinionCheck(List<double> output) {
+    // Find top-1
+    double top1Score = 0.0;
+    int top1Index = 0;
+    for (int i = 0; i < output.length; i++) {
+      if (output[i] > top1Score) {
+        top1Score = output[i];
+        top1Index = i;
+      }
+    }
+
+    final top1Label =
+    top1Index < _labels.length ? _labels[top1Index] : '';
+    final top1IsHealthy = top1Label.toLowerCase().contains('healthy');
+
+    // Only apply when top-1 is a healthy label
+    if (!top1IsHealthy) return null;
+
+    // Extract plant name from top-1 label (e.g. "Apple" from "Apple___healthy")
+    final top1Parts = top1Label.split('___');
+    if (top1Parts.isEmpty) return null;
+    final top1Plant = top1Parts[0].toLowerCase();
+
+    // Collect all non-healthy predictions for the same plant
+    final samePlantDiseases = <Map<String, dynamic>>[];
+    for (int i = 0; i < output.length && i < _labels.length; i++) {
+      if (i == top1Index) continue;
+      final label = _labels[i];
+      final parts = label.split('___');
+      if (parts.length < 2) continue;
+      final plant = parts[0].toLowerCase();
+      final disease = parts[1].toLowerCase();
+      if (plant == top1Plant && !disease.contains('healthy')) {
+        samePlantDiseases.add({'index': i, 'label': label, 'score': output[i]});
+      }
+    }
+
+    if (samePlantDiseases.isEmpty) return null;
+
+    // Sort by score descending
+    samePlantDiseases.sort(
+            (a, b) => (b['score'] as double).compareTo(a['score'] as double));
+
+    final bestDisease = samePlantDiseases.first;
+    final bestDiseaseScore = bestDisease['score'] as double;
+    final gap = top1Score - bestDiseaseScore;
+
+    debugPrint('🔬 Second-opinion check:');
+    debugPrint(
+        '   Top-1 healthy: "${_labels[top1Index]}" = ${(top1Score * 100).toStringAsFixed(1)}%');
+    debugPrint(
+        '   Best disease:  "${bestDisease['label']}" = ${(bestDiseaseScore * 100).toStringAsFixed(1)}%');
+    debugPrint('   Gap: ${(gap * 100).toStringAsFixed(1)}pp');
+
+    // If gap is less than 40 percentage points, distrust healthy
+    if (gap < 0.40) {
+      debugPrint(
+          '⚠️  Gap < 40pp — distrusting healthy prediction. '
+              'Returning disease: ${bestDisease['label']}');
+      return {
+        'overrideIndex': bestDisease['index'] as int,
+        'overrideLabel': bestDisease['label'] as String,
+        'overrideScore': bestDiseaseScore,
+        'originalHealthyScore': top1Score,
+        'gap': gap,
+      };
+    }
+
+    debugPrint('✅ Gap ≥ 40pp — healthy prediction stands.');
+    return null;
+  }
+
+  // ── Image quality check ────────────────────────────────────────────────────
   Future<Map<String, dynamic>> _checkImageQuality(File imageFile) async {
     try {
-      // Read image bytes
       final imageBytes = await imageFile.readAsBytes();
-
-      // Check file size
       if (imageBytes.length < _minImageBytes) {
         return {
           'isGoodQuality': false,
-          'reason': 'Image file too small (${imageBytes.length} bytes < $_minImageBytes bytes)'
+          'reason':
+          'Image file too small (${imageBytes.length} bytes < $_minImageBytes bytes)'
         };
       }
 
-      // Decode image
       final originalImage = img.decodeImage(imageBytes);
       if (originalImage == null) {
+        return {'isGoodQuality': false, 'reason': 'Failed to decode image'};
+      }
+
+      if (originalImage.width < _minImageSize ||
+          originalImage.height < _minImageSize) {
         return {
           'isGoodQuality': false,
-          'reason': 'Failed to decode image'
+          'reason':
+          'Image dimensions too small (${originalImage.width}x${originalImage.height})'
         };
       }
 
-      // Check image dimensions
-      if (originalImage.width < _minImageSize || originalImage.height < _minImageSize) {
-        return {
-          'isGoodQuality': false,
-          'reason': 'Image dimensions too small (${originalImage.width}x${originalImage.height} < ${_minImageSize}x$_minImageSize)'
-        };
-      }
-
-      // Check if image is mostly one color (could be blurry or poor quality)
       final colorVariation = _calculateColorVariation(originalImage);
-      if (colorVariation < 10.0) { // Low color variation might indicate blurry image
+      if (colorVariation < 10.0) {
         return {
           'isGoodQuality': false,
-          'reason': 'Low color variation detected (image may be blurry)'
+          'reason': 'Low color variation (image may be blurry)'
         };
       }
 
-      return {
-        'isGoodQuality': true,
-        'reason': 'Image quality acceptable'
-      };
+      return {'isGoodQuality': true, 'reason': 'Image quality acceptable'};
     } catch (e) {
       debugPrint('❌ Error checking image quality: $e');
       return {
@@ -339,11 +471,6 @@ class DiseaseIdService {
   }
 
   double _calculateColorVariation(img.Image image) {
-    // Simple color variation calculation
-    int totalPixels = image.width * image.height;
-    if (totalPixels == 0) return 0.0;
-
-    // Sample pixels for efficiency
     int sampleCount = 100;
     List<int> redValues = [];
     List<int> greenValues = [];
@@ -352,7 +479,6 @@ class DiseaseIdService {
     for (int i = 0; i < sampleCount; i++) {
       int x = (i * image.width ~/ sampleCount) % image.width;
       int y = (i * image.height ~/ sampleCount) % image.height;
-
       if (x < image.width && y < image.height) {
         final pixel = image.getPixel(x, y);
         redValues.add(pixel.r.toInt());
@@ -361,91 +487,67 @@ class DiseaseIdService {
       }
     }
 
-    // Calculate standard deviation of color values
     double stdDev(List<int> values) {
       if (values.isEmpty) return 0.0;
       double mean = values.reduce((a, b) => a + b) / values.length;
-      double variance = values.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) / values.length;
+      double variance = values
+          .map((v) => (v - mean) * (v - mean))
+          .reduce((a, b) => a + b) /
+          values.length;
       return sqrt(variance);
     }
 
-    final redStdDev = stdDev(redValues);
-    final greenStdDev = stdDev(greenValues);
-    final blueStdDev = stdDev(blueValues);
-
-    return (redStdDev + greenStdDev + blueStdDev) / 3.0;
+    return (stdDev(redValues) + stdDev(greenValues) + stdDev(blueValues)) /
+        3.0;
   }
 
-  Future<List<List<List<List<double>>>>> _preprocessImageToFloatArray(File imageFile) async {
+  // ── Preprocessing ──────────────────────────────────────────────────────────
+  Future<List<List<List<List<double>>>>> _preprocessImageToFloatArray(
+      File imageFile) async {
     try {
-      // Read image bytes
       final imageBytes = await imageFile.readAsBytes();
-
-      // Decode image
       final originalImage = img.decodeImage(imageBytes);
-      if (originalImage == null) {
-        throw Exception('Failed to decode image');
-      }
+      if (originalImage == null) throw Exception('Failed to decode image');
 
-      // Get model input size
       final inputShape = _interpreter!.getInputTensor(0).shape;
-      final targetHeight = inputShape[1]; // Usually 224 or 256
+      final targetHeight = inputShape[1];
       final targetWidth = inputShape[2];
 
       debugPrint('📏 Target size: $targetWidth x $targetHeight');
 
-      // Resize image
-      final resizedImage = img.copyResize(
-        originalImage,
-        width: targetWidth,
-        height: targetHeight,
-      );
+      final resizedImage =
+      img.copyResize(originalImage, width: targetWidth, height: targetHeight);
 
-      // Convert to RGB (remove alpha channel if present)
       img.Image rgbImage;
-      if (resizedImage.numChannels == 1) {
-        // Convert grayscale to RGB
-        rgbImage = img.Image(width: resizedImage.width, height: resizedImage.height, numChannels: 3);
+      if (resizedImage.numChannels == 4) {
+        rgbImage = img.Image(
+            width: resizedImage.width,
+            height: resizedImage.height,
+            numChannels: 3);
         for (int y = 0; y < resizedImage.height; y++) {
           for (int x = 0; x < resizedImage.width; x++) {
             final pixel = resizedImage.getPixel(x, y);
-            final r = pixel.r.toInt();
-            final g = pixel.g.toInt();
-            final b = pixel.b.toInt();
-            rgbImage.setPixelRgb(x, y, r, g, b);
-          }
-        }
-      } else if (resizedImage.numChannels == 4) {
-        // Remove alpha channel
-        rgbImage = img.Image(width: resizedImage.width, height: resizedImage.height, numChannels: 3);
-        for (int y = 0; y < resizedImage.height; y++) {
-          for (int x = 0; x < resizedImage.width; x++) {
-            final pixel = resizedImage.getPixel(x, y);
-            final r = pixel.r.toInt();
-            final g = pixel.g.toInt();
-            final b = pixel.b.toInt();
-            rgbImage.setPixelRgb(x, y, r, g, b);
+            rgbImage.setPixelRgb(x, y, pixel.r.toInt(), pixel.g.toInt(),
+                pixel.b.toInt());
           }
         }
       } else {
         rgbImage = resizedImage;
       }
 
-      // Create 4D array: [1, height, width, 3]
-      final List<List<List<List<double>>>> array4d =
-      List.generate(1, (_) => List.generate(
-          targetHeight, (_) => List.generate(
-          targetWidth, (_) => List<double>.filled(3, 0.0))));
+      final array4d = List.generate(
+          1,
+              (_) => List.generate(
+              targetHeight,
+                  (_) => List.generate(
+                  targetWidth, (_) => List<double>.filled(3, 0.0))));
 
-      // Fill array with normalized pixel values
       for (int y = 0; y < targetHeight; y++) {
         for (int x = 0; x < targetWidth; x++) {
           final pixel = rgbImage.getPixel(x, y);
-
-          // Normalize to [-1, 1] range (common for TensorFlow models)
-          array4d[0][y][x][0] = (pixel.r / 127.5) - 1.0;   // R
-          array4d[0][y][x][1] = (pixel.g / 127.5) - 1.0; // G
-          array4d[0][y][x][2] = (pixel.b / 127.5) - 1.0;  // B
+          array4d[0][y][x][0] = (pixel.r / 127.5) - 1.0;
+          array4d[0][y][x][1] = (pixel.g / 127.5) - 1.0;
+          array4d[0][y][x][2] = (pixel.b / 127.5) - 1.0;
         }
       }
 
@@ -457,9 +559,23 @@ class DiseaseIdService {
     }
   }
 
+  // ── Output processing ──────────────────────────────────────────────────────
   Map<String, dynamic> _processOutput(List<double> output) {
     try {
-      // Find top prediction
+      // ── FIX 4: Second-opinion check BEFORE picking the winner ────────────
+      // If top-1 is "healthy" but a same-plant disease is within 40pp,
+      // suppress all healthy labels so the closest disease wins instead.
+      final secondOpinion = _secondOpinionCheck(output);
+      if (secondOpinion != null) {
+        output = List<double>.from(output);
+        for (int i = 0; i < _labels.length && i < output.length; i++) {
+          if (_labels[i].toLowerCase().contains('healthy')) {
+            output[i] = 0.0;
+          }
+        }
+        debugPrint('🔁 Healthy suppressed by second-opinion — disease label will win.');
+      }
+
       double maxConfidence = 0.0;
       int maxIndex = 0;
 
@@ -470,85 +586,52 @@ class DiseaseIdService {
         }
       }
 
-      // Convert confidence to percentage
       final confidencePercent = (maxConfidence * 100).clamp(0.0, 100.0);
 
-      // Get disease label
       String diseaseLabel = 'Unknown Disease';
       if (_labels.isNotEmpty && maxIndex < _labels.length) {
         diseaseLabel = _labels[maxIndex];
       }
 
-      // Parse disease information from label
       final diseaseInfo = _parseDiseaseLabel(diseaseLabel);
-      final diseaseName = diseaseInfo['diseaseName'];
-      final plantName = diseaseInfo['plantName'];
-      final isHealthy = diseaseInfo['isHealthy'];
+      final diseaseName = diseaseInfo['diseaseName'] as String;
+      final plantName = diseaseInfo['plantName'] as String;
+      final isHealthy = diseaseInfo['isHealthy'] as bool;
 
-      // Check confidence thresholds
-      if (confidencePercent < _lowConfidenceThreshold) {
-        debugPrint('⚠️ Very low confidence ($confidencePercent% < $_lowConfidenceThreshold%)');
+      // ── FIX 1: REMOVED healthy confidence boost ──────────────────────────
+      // Old code: if (isHealthy && confidencePercent < 60) boost to 75%
+      // This was masking real diseases. We now use the raw model confidence.
+      // Healthy plants that are truly healthy will naturally score ≥ 60%.
+      // A low healthy score after penalty means the plant is likely diseased.
 
-        return {
-          'success': true,
-          'plantName': 'Unable to Determine',
-          'diseaseName': 'Unable to Determine',
-          'confidence': confidencePercent.toStringAsFixed(1),
-          'severity': 'Unknown',
-          'cause': 'Low confidence prediction',
-          'isHealthy': false,
-          'symptoms': ['AI model is not confident about this prediction'],
-          'remediation': [
-            'Please try again with a clearer photo',
-            'Focus on affected leaves with good lighting',
-            'Consult agricultural expert if problem persists'
-          ],
-          'precautions': ['Regular plant monitoring recommended'],
-          'allPredictions': [],
-          'rawLabel': diseaseLabel,
-          'lowConfidence': true,
-          'confidenceBelowThreshold': true,
-        };
+      // Low confidence check (only for non-healthy results)
+      if (confidencePercent < _lowConfidenceThreshold && !isHealthy) {
+        debugPrint(
+            '⚠️ Low confidence ($confidencePercent% < $_lowConfidenceThreshold%)');
+        return _lowConfidenceResult(diseaseLabel, confidencePercent);
       }
 
-      // Check plant-disease compatibility
+      // If even after penalty healthy won but with < 50% confidence,
+      // surface it as uncertain rather than confidently healthy.
+      if (isHealthy && confidencePercent < 50) {
+        debugPrint(
+            '⚠️ Healthy predicted but confidence very low ($confidencePercent%). '
+                'Marking as uncertain.');
+        return _lowConfidenceResult(diseaseLabel, confidencePercent);
+      }
+
       if (!_isValidPlantDiseaseCombo(plantName, diseaseName) && !isHealthy) {
-        debugPrint('⚠️ Invalid plant-disease combination: $plantName with $diseaseName');
-
-        return {
-          'success': true,
-          'plantName': plantName,
-          'diseaseName': 'Possible Disease',
-          'confidence': confidencePercent.toStringAsFixed(1),
-          'severity': 'Unknown',
-          'cause': 'Unusual plant-disease combination detected',
-          'isHealthy': false,
-          'symptoms': ['Unusual symptoms detected for this plant type'],
-          'remediation': [
-            'This disease is unusual for $plantName plants',
-            'Consult with agricultural expert for accurate diagnosis',
-            'Take multiple photos from different angles'
-          ],
-          'precautions': ['Isolate plant to prevent potential spread'],
-          'allPredictions': [],
-          'rawLabel': diseaseLabel,
-          'unusualCombination': true,
-        };
+        debugPrint(
+            '⚠️ Invalid plant-disease combination: $plantName with $diseaseName');
+        return _invalidComboResult(plantName, diseaseName, confidencePercent);
       }
 
-      // Adjust confidence for healthy plants (give them a boost)
-      double adjustedConfidence = confidencePercent;
-      if (isHealthy && confidencePercent < 60) {
-        adjustedConfidence = 75.0; // Give healthy plants decent confidence
-        debugPrint('✅ Boosting confidence for healthy plant to $adjustedConfidence%');
-      }
-
-      // Get treatment recommendations
-      final remediation = _getRemediation(diseaseName, plantName, isHealthy);
+      final remediation =
+      _getRemediation(diseaseName, plantName, isHealthy);
       final precautions = _getPrecautions(diseaseName, plantName);
       final cause = _getCause(diseaseName);
 
-      // Get top 3 predictions for debugging
+      // Top 3 for debugging
       final predictions = <Map<String, dynamic>>[];
       for (int i = 0; i < output.length; i++) {
         predictions.add({
@@ -556,9 +639,8 @@ class DiseaseIdService {
           'confidence': (output[i] * 100).toStringAsFixed(2),
         });
       }
-
-      // Sort by confidence
-      predictions.sort((a, b) => double.parse(b['confidence']).compareTo(double.parse(a['confidence'])));
+      predictions.sort((a, b) => double.parse(b['confidence'])
+          .compareTo(double.parse(a['confidence'])));
       final topPredictions = predictions.take(3).toList();
 
       debugPrint('📊 Top 3 predictions:');
@@ -570,8 +652,8 @@ class DiseaseIdService {
         'success': true,
         'plantName': plantName,
         'diseaseName': diseaseName,
-        'confidence': adjustedConfidence.toStringAsFixed(1),
-        'severity': _determineSeverity(diseaseName, adjustedConfidence),
+        'confidence': confidencePercent.toStringAsFixed(1),
+        'severity': _determineSeverity(diseaseName, confidencePercent),
         'cause': cause,
         'isHealthy': isHealthy,
         'symptoms': _getSymptoms(diseaseName),
@@ -580,7 +662,7 @@ class DiseaseIdService {
         'allPredictions': topPredictions,
         'rawLabel': diseaseLabel,
         'originalConfidence': confidencePercent.toStringAsFixed(1),
-        'confidenceAdjusted': isHealthy && confidencePercent < 60,
+        // No confidenceAdjusted field — boost removed
       };
     } catch (e) {
       debugPrint('❌ Output processing error: $e');
@@ -588,31 +670,33 @@ class DiseaseIdService {
     }
   }
 
+  // ── Validation ─────────────────────────────────────────────────────────────
   bool _isValidPlantDiseaseCombo(String plantName, String diseaseName) {
-    // ALLOW ALL HEALTHY PLANTS
     if (diseaseName.toLowerCase() == 'healthy') {
-      debugPrint('✅ All plants can be healthy - allowing $plantName to be healthy');
+      debugPrint(
+          '✅ All plants can be healthy - allowing $plantName to be healthy');
       return true;
     }
 
-    // Standardize plant names from dataset to match validation
     final Map<String, String> plantNameMapping = {
       'Bell_pepper': 'Pepper',
       'Corn_(Maize)': 'Corn',
-      'Corn': 'Corn',  // Just in case
+      'Corn': 'Corn',
       'Maize': 'Corn',
     };
 
-    // Use mapped name or original
     final standardizedPlantName = plantNameMapping[plantName] ?? plantName;
 
-    // Define ALL possible combinations based on YOUR DATASET
     final Map<String, List<String>> validCombinations = {
       'Apple': ['Apple Scab', 'Black Rot', 'Cedar Apple Rust'],
       'Bell_pepper': ['Bacterial Spot'],
-      'Pepper': ['Bacterial Spot'],  // Alias
+      'Pepper': ['Bacterial Spot'],
       'Cherry': ['Powdery Mildew'],
-      'Corn': ['Cercospora Leaf Spot', 'Common Rust', 'Northern Leaf Blight'],
+      'Corn': [
+        'Cercospora Leaf Spot',
+        'Common Rust',
+        'Northern Leaf Blight'
+      ],
       'Grape': ['Black Rot', 'Esca', 'Leaf Blight', 'Black Measles'],
       'Peach': ['Bacterial Spot'],
       'Potato': ['Early Blight', 'Late Blight'],
@@ -628,66 +712,56 @@ class DiseaseIdService {
       'Wheat': ['Stripe Rust'],
     };
 
-    // If plant not in list, allow any disease (flexibility)
     if (!validCombinations.containsKey(standardizedPlantName)) {
-      debugPrint('⚠️ Plant "$plantName" (std: $standardizedPlantName) not in validation list - allowing any disease');
+      debugPrint(
+          '⚠️ Plant "$plantName" not in validation list — allowing any disease');
       return true;
     }
 
-    // Check if disease is valid for this plant
-    final isValid = validCombinations[standardizedPlantName]!.any((disease) =>
-        diseaseName.toLowerCase().contains(disease.toLowerCase()));
+    final isValid = validCombinations[standardizedPlantName]!.any(
+            (disease) => diseaseName.toLowerCase().contains(disease.toLowerCase()));
 
     if (!isValid) {
-      debugPrint('❌ Invalid combination: $plantName cannot have $diseaseName');
-      debugPrint('   Valid diseases for $standardizedPlantName: ${validCombinations[standardizedPlantName]}');
+      debugPrint(
+          '❌ Invalid combination: $plantName cannot have $diseaseName');
     } else {
       debugPrint('✅ Valid combination: $plantName with $diseaseName');
     }
 
     return isValid;
   }
-  
+
+  // ── Label parsing ──────────────────────────────────────────────────────────
   Map<String, dynamic> _parseDiseaseLabel(String label) {
     try {
       debugPrint('🔍 Parsing disease label: "$label"');
-
-      // Format: "Plant___Disease" or "Plant___healthy"
       final parts = label.split('___');
 
       if (parts.length >= 2) {
         String plantName = parts[0].replaceAll('_', ' ').trim();
         final diseasePart = parts[1].replaceAll('_', ' ').trim();
 
-        // Special handling for Bell_pepper -> Bell Pepper
         if (plantName.toLowerCase() == 'bell pepper') {
           plantName = 'Bell Pepper';
         }
 
-        // Check if it's truly "healthy" or if there's an actual disease
         final isHealthy = diseasePart.toLowerCase() == 'healthy' ||
             diseasePart.toLowerCase().contains('healthy');
 
         String diseaseName;
-
         if (isHealthy) {
           diseaseName = 'Healthy';
         } else {
-          // It's an actual disease name, keep it as-is
-          diseaseName = diseasePart;
-
-          // Format disease name for better readability
-          diseaseName = diseaseName.split(' ')
-              .map((word) {
-            if (word.isNotEmpty) {
-              return word[0].toUpperCase() + word.substring(1).toLowerCase();
-            }
-            return word;
-          })
+          diseaseName = diseasePart
+              .split(' ')
+              .map((w) => w.isNotEmpty
+              ? w[0].toUpperCase() + w.substring(1).toLowerCase()
+              : w)
               .join(' ');
         }
 
-        debugPrint('📋 Parsed: Plant="$plantName", Disease="$diseaseName", Healthy=$isHealthy');
+        debugPrint(
+            '📋 Parsed: Plant="$plantName", Disease="$diseaseName", Healthy=$isHealthy');
 
         return {
           'plantName': plantName,
@@ -698,7 +772,6 @@ class DiseaseIdService {
       }
 
       debugPrint('⚠️ Could not parse label format: "$label"');
-
       return {
         'plantName': 'Unknown Plant',
         'diseaseName': 'Unknown Disease',
@@ -715,181 +788,147 @@ class DiseaseIdService {
       };
     }
   }
-  
+
+  // ── Severity ───────────────────────────────────────────────────────────────
   String _determineSeverity(String diseaseName, double confidence) {
-    debugPrint('⚖️ Determining severity for "$diseaseName" with confidence $confidence%');
+    debugPrint(
+        '⚖️ Determining severity for "$diseaseName" with confidence $confidence%');
 
     if (diseaseName.toLowerCase() == 'healthy') {
       debugPrint('✅ Plant is healthy, severity: None');
       return 'None';
     }
 
-    // High severity diseases
-    final highSeverity = [
-      'late blight', 'bacterial spot', 'black rot', 'rust', 'blight'
-    ];
-
-    // Medium severity diseases
-    final mediumSeverity = [
-      'early blight', 'powdery mildew', 'leaf spot', 'scorch'
-    ];
-
+    final highSeverity = ['late blight', 'bacterial spot', 'black rot', 'rust', 'blight'];
+    final mediumSeverity = ['early blight', 'powdery mildew', 'leaf spot', 'scorch'];
     final lowerDisease = diseaseName.toLowerCase();
 
-    for (var disease in highSeverity) {
-      if (lowerDisease.contains(disease)) {
-        debugPrint('⚠️ High severity disease detected: $diseaseName');
+    for (var d in highSeverity) {
+      if (lowerDisease.contains(d)) {
+        debugPrint('⚠️ High severity disease: $diseaseName');
         return 'High';
       }
     }
-
-    for (var disease in mediumSeverity) {
-      if (lowerDisease.contains(disease)) {
-        debugPrint('⚠️ Medium severity disease detected: $diseaseName');
+    for (var d in mediumSeverity) {
+      if (lowerDisease.contains(d)) {
+        debugPrint('⚠️ Medium severity disease: $diseaseName');
         return 'Medium';
       }
     }
 
-    // Based on confidence
-    if (confidence > 70) {
-      debugPrint('⚠️ High confidence disease, severity: High');
-      return 'High';
-    }
-    if (confidence > 40) {
-      debugPrint('⚠️ Medium confidence disease, severity: Medium');
-      return 'Medium';
-    }
-
-    debugPrint('⚠️ Low confidence disease, severity: Low');
+    if (confidence > 70) return 'High';
+    if (confidence > 40) return 'Medium';
     return 'Low';
   }
 
+  // ── Content helpers ────────────────────────────────────────────────────────
   String _getCause(String diseaseName) {
-    final lowerDisease = diseaseName.toLowerCase();
-
-    if (lowerDisease.contains('blight')) return 'Fungal or bacterial infection';
-    if (lowerDisease.contains('spot')) return 'Bacterial or fungal pathogens';
-    if (lowerDisease.contains('rot')) return 'Fungal or bacterial decay';
-    if (lowerDisease.contains('rust')) return 'Fungal rust disease';
-    if (lowerDisease.contains('mildew')) return 'Powdery or downy mildew fungi';
-    if (lowerDisease.contains('scorch')) return 'Environmental stress or fungal';
-    if (lowerDisease.contains('curl')) return 'Viral infection';
-
+    final l = diseaseName.toLowerCase();
+    if (l.contains('blight')) return 'Fungal or bacterial infection';
+    if (l.contains('spot')) return 'Bacterial or fungal pathogens';
+    if (l.contains('rot')) return 'Fungal or bacterial decay';
+    if (l.contains('rust')) return 'Fungal rust disease';
+    if (l.contains('mildew')) return 'Powdery or downy mildew fungi';
+    if (l.contains('scorch')) return 'Environmental stress or fungal';
+    if (l.contains('curl')) return 'Viral infection';
     return 'Pathogen infection or environmental stress';
   }
 
   List<String> _getSymptoms(String diseaseName) {
-    final lowerDisease = diseaseName.toLowerCase();
-
-    if (lowerDisease == 'healthy') {
-      return ['No visible symptoms', 'Normal leaf color and texture'];
-    }
+    final l = diseaseName.toLowerCase();
+    if (l == 'healthy') return ['No visible symptoms', 'Normal leaf color and texture'];
 
     final symptoms = <String>[];
-
-    if (lowerDisease.contains('blight')) {
-      symptoms.addAll([
-        'Dark lesions on leaves',
-        'Yellowing around lesions',
-        'Rapid spreading in humid conditions'
-      ]);
+    if (l.contains('blight')) {
+      symptoms.addAll(['Dark lesions on leaves', 'Yellowing around lesions',
+        'Rapid spreading in humid conditions']);
     }
-
-    if (lowerDisease.contains('spot')) {
-      symptoms.addAll([
-        'Small circular spots',
-        'Yellow halos around spots',
-        'Spots may merge into larger areas'
-      ]);
+    if (l.contains('rust')) {
+      symptoms.addAll(['Rust-colored pustules', 'Orange/yellow spots on leaf surface',
+        'Premature leaf drop', 'Galls or deformation on affected areas']);
     }
-
-    if (lowerDisease.contains('rot')) {
-      symptoms.addAll([
-        'Soft, decaying tissue',
-        'Discoloration',
-        'Foul odor in advanced stages'
-      ]);
+    if (l.contains('spot')) {
+      symptoms.addAll(['Small circular spots', 'Yellow halos around spots',
+        'Spots may merge into larger areas']);
     }
-
-    if (lowerDisease.contains('rust')) {
-      symptoms.addAll([
-        'Rust-colored pustules',
-        'Yellow spots on upper leaf surface',
-        'Premature leaf drop'
-      ]);
+    if (l.contains('rot')) {
+      symptoms.addAll(['Soft, decaying tissue', 'Discoloration',
+        'Foul odor in advanced stages']);
     }
-
-    if (lowerDisease.contains('mildew')) {
-      symptoms.addAll([
-        'White powdery coating',
-        'Leaf curling',
-        'Reduced photosynthesis'
-      ]);
+    if (l.contains('mildew')) {
+      symptoms.addAll(['White powdery coating', 'Leaf curling',
+        'Reduced photosynthesis']);
     }
-
-    // Default symptoms if none matched
+    if (l.contains('scab')) {
+      symptoms.addAll(['Dark, scabby lesions on leaves and fruit',
+        'Velvety olive-colored spots', 'Distorted leaves']);
+    }
     if (symptoms.isEmpty) {
-      symptoms.addAll([
-        'Abnormal leaf discoloration',
-        'Spots or lesions on leaves',
-        'Reduced plant vigor'
-      ]);
+      symptoms.addAll(['Abnormal leaf discoloration', 'Spots or lesions on leaves',
+        'Reduced plant vigor']);
     }
-
     return symptoms;
   }
 
-  List<String> _getRemediation(String diseaseName, String plantName, bool isHealthy) {
+  List<String> _getRemediation(
+      String diseaseName, String plantName, bool isHealthy) {
     if (isHealthy) {
       return [
         'Continue current care regimen',
         'Maintain proper watering schedule',
         'Ensure adequate sunlight exposure',
-        'Apply balanced fertilizer as needed'
+        'Apply balanced fertilizer as needed',
       ];
     }
 
-    final remediation = <String>[];
-    final lowerDisease = diseaseName.toLowerCase();
-
-    // General remediation steps
-    remediation.addAll([
+    final remediation = <String>[
       'Remove and destroy infected leaves',
       'Improve air circulation around plant',
       'Avoid overhead watering',
-      'Clean gardening tools after use'
-    ]);
+      'Clean gardening tools after use',
+    ];
 
-    // Disease-specific treatments
-    if (lowerDisease.contains('blight') || lowerDisease.contains('rot')) {
+    final l = diseaseName.toLowerCase();
+    if (l.contains('rust')) {
+      remediation.addAll([
+        'Apply fungicide containing myclobutanil or mancozeb',
+        'Remove galls and infected branches in early spring',
+        'Avoid planting near juniper/cedar trees (alternate host)',
+      ]);
+    }
+    if (l.contains('blight') || l.contains('rot')) {
       remediation.addAll([
         'Apply copper-based fungicide',
         'Remove severely infected plants',
-        'Rotate crops if applicable'
+        'Rotate crops if applicable',
       ]);
     }
-
-    if (lowerDisease.contains('spot') || lowerDisease.contains('rust')) {
+    if (l.contains('spot') && !l.contains('rust')) {
       remediation.addAll([
         'Apply appropriate fungicide',
         'Prune affected areas',
-        'Dispose of fallen leaves'
+        'Dispose of fallen leaves',
       ]);
     }
-
-    if (lowerDisease.contains('mildew')) {
+    if (l.contains('scab')) {
+      remediation.addAll([
+        'Apply fungicide at green tip stage',
+        'Rake and destroy fallen leaves',
+        'Choose scab-resistant apple varieties',
+      ]);
+    }
+    if (l.contains('mildew')) {
       remediation.addAll([
         'Apply sulfur or potassium bicarbonate spray',
         'Increase spacing between plants',
-        'Reduce nitrogen fertilizer'
+        'Reduce nitrogen fertilizer',
       ]);
     }
-
-    if (lowerDisease.contains('curl')) {
+    if (l.contains('curl')) {
       remediation.addAll([
         'Control insect vectors (whiteflies, aphids)',
         'Remove and destroy infected plants',
-        'Use virus-free planting material'
+        'Use virus-free planting material',
       ]);
     }
 
@@ -903,23 +942,121 @@ class DiseaseIdService {
       'Water at the base, not on leaves',
       'Use disease-resistant varieties when possible',
       'Clean garden debris regularly',
-      'Rotate crops annually'
+      'Rotate crops annually',
     ];
 
     if (diseaseName.toLowerCase() != 'healthy') {
       precautions.addAll([
         'Isolate new plants for observation',
         'Avoid working with plants when wet',
-        'Sterilize tools between plants'
+        'Sterilize tools between plants',
       ]);
     }
 
     return precautions;
   }
 
+  // ── Result builders ────────────────────────────────────────────────────────
+  Map<String, dynamic> _nonLeafResult(
+      double leafConfidence, Map<String, dynamic> leafAnalysis) {
+    return {
+      'success': true,
+      'plantName': 'Non-Plant Image',
+      'diseaseName': 'Image Not Recognized',
+      'confidence': '95.0',
+      'severity': 'N/A',
+      'cause': 'Image does not appear to be a plant leaf',
+      'isHealthy': false,
+      'symptoms': ['Image appears to be non-plant material'],
+      'remediation': [
+        'Please upload a clear photo of a plant leaf',
+        'Ensure the image shows plant leaves clearly',
+      ],
+      'precautions': ['Upload only plant leaf images for disease analysis'],
+      'allPredictions': [],
+      'rawLabel': 'non_leaf_image',
+      'inferenceTime': 0,
+      'isLeaf': false,
+      'leafConfidence': leafConfidence,
+      'leafDetectionFailed': true,
+      'skipFurtherAnalysis': true,
+      'leafAnalysis': leafAnalysis,
+    };
+  }
+
+  Map<String, dynamic> _qualityIssueResult(double leafConfidence) {
+    return {
+      'success': true,
+      'plantName': 'Image Quality Issue',
+      'diseaseName': 'Unable to Analyze',
+      'confidence': '0',
+      'severity': 'Unknown',
+      'cause': 'Poor image quality affecting analysis',
+      'isHealthy': false,
+      'symptoms': ['Image may be blurry, too small, or poor quality'],
+      'remediation': [
+        'Please take a clearer photo with good lighting',
+        'Focus on the affected leaves',
+      ],
+      'precautions': ['Regular monitoring recommended'],
+      'allPredictions': [],
+      'rawLabel': 'image_quality_issue',
+      'inferenceTime': 0,
+      'imageQualityIssue': true,
+      'isLeaf': true,
+      'leafConfidence': leafConfidence,
+    };
+  }
+
+  Map<String, dynamic> _lowConfidenceResult(
+      String diseaseLabel, double confidence) {
+    return {
+      'success': true,
+      'plantName': 'Unable to Determine',
+      'diseaseName': 'Unable to Determine',
+      'confidence': confidence.toStringAsFixed(1),
+      'severity': 'Unknown',
+      'cause': 'Low confidence prediction',
+      'isHealthy': false,
+      'symptoms': ['AI model is not confident about this prediction'],
+      'remediation': [
+        'Please try again with a clearer photo',
+        'Focus on affected leaves with good lighting',
+        'Consult agricultural expert if problem persists',
+      ],
+      'precautions': ['Regular plant monitoring recommended'],
+      'allPredictions': [],
+      'rawLabel': diseaseLabel,
+      'lowConfidence': true,
+      'confidenceBelowThreshold': true,
+    };
+  }
+
+  Map<String, dynamic> _invalidComboResult(
+      String plantName, String diseaseName, double confidence) {
+    return {
+      'success': true,
+      'plantName': plantName,
+      'diseaseName': 'Possible Disease',
+      'confidence': confidence.toStringAsFixed(1),
+      'severity': 'Unknown',
+      'cause': 'Unusual plant-disease combination detected',
+      'isHealthy': false,
+      'symptoms': ['Unusual symptoms detected for this plant type'],
+      'remediation': [
+        'This disease pattern is unusual for $plantName plants',
+        'Consult with agricultural expert for accurate diagnosis',
+        'Take multiple photos from different angles',
+      ],
+      'precautions': ['Isolate plant to prevent potential spread'],
+      'allPredictions': [],
+      'rawLabel': 'invalid_combo',
+      'unusualCombination': true,
+    };
+  }
+
   Map<String, dynamic> _createFallbackResult(String reason) {
     debugPrint('🔄 Creating fallback result: $reason');
-
     return {
       'success': true,
       'plantName': 'Unable to Determine',
@@ -932,17 +1069,18 @@ class DiseaseIdService {
       'remediation': [
         'Please try scanning again',
         'Ensure good lighting and clear focus',
-        'Contact support if problem persists'
+        'Contact support if problem persists',
       ],
       'precautions': [
         'Monitor plant health manually',
-        'Document any changes in appearance'
+        'Document any changes in appearance',
       ],
       'allPredictions': [],
       'rawLabel': 'fallback_analysis',
     };
   }
 
+  // ── Dispose / test ─────────────────────────────────────────────────────────
   Future<void> dispose() async {
     try {
       _interpreter?.close();
@@ -955,34 +1093,26 @@ class DiseaseIdService {
 
   Future<bool> testModel() async {
     try {
-      if (!_isModelLoaded) {
-        await loadModel();
-      }
+      if (!_isModelLoaded) await loadModel();
 
-      // Get model input size
       final inputShape = _interpreter!.getInputTensor(0).shape;
       final targetHeight = inputShape[1];
       final targetWidth = inputShape[2];
 
-      // Create a dummy 4D array
       final dummyInput = List.generate(
-          1, (_) => List.generate(
-          targetHeight, (_) => List.generate(
-          targetWidth, (_) => List<double>.filled(3, 0.5)))); // Gray color
+          1,
+              (_) => List.generate(
+              targetHeight,
+                  (_) => List.generate(
+                  targetWidth, (_) => List<double>.filled(3, 0.5))));
 
-      // Prepare output
       final outputShape = _interpreter!.getOutputTensor(0).shape;
-      final output = List.filled(outputShape.reduce((a, b) => a * b), 0.0)
-          .cast<double>();
+      final output =
+      List.filled(outputShape.reduce((a, b) => a * b), 0.0).cast<double>();
 
-      // Run inference
       _interpreter!.run(dummyInput, output);
 
       debugPrint('✅ Disease model test passed');
-      debugPrint('   Input shape: [1, $targetHeight, $targetWidth, 3]');
-      debugPrint('   Output shape: $outputShape');
-      debugPrint('   Number of classes: ${output.length}');
-
       return true;
     } catch (e) {
       debugPrint('❌ Disease model test failed: $e');

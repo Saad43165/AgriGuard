@@ -1,6 +1,7 @@
+// lib/features/home/screens/species/species_grid_widget.dart
 import 'package:flutter/material.dart';
-import 'dart:ui';
-import '../../../../../core/constants/app_measurements.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'plant_species.dart';
 
 class SpeciesGridWidget extends StatelessWidget {
@@ -8,128 +9,153 @@ class SpeciesGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.secondary,
-                          ],
+    return Consumer<TranslationService>(
+      builder: (context, translation, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).colorScheme.primary,
+                                Theme.of(context).colorScheme.secondary,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.park_outlined,
+                            size: 18,
+                            color: Colors.white,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                translation.get('detectable_species'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                translation.get('tap_to_explore'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.6),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.2),
+                          Theme.of(context)
+                              .colorScheme
+                              .secondary
+                              .withOpacity(0.2),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.park_outlined,
-                        size: 18,
-                        color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.4),
+                        width: 1.5,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Detectable Species',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                            ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.eco,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${AppSpecies.allSpecies.length}',
+                          style:
+                          Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
                           ),
-                          Text(
-                            'Tap to explore',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                    ],
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.eco,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '${AppSpecies.allSpecies.length}',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            physics: const BouncingScrollPhysics(),
-            itemCount: AppSpecies.allSpecies.length,
-            itemBuilder: (context, index) {
-              final species = AppSpecies.allSpecies[index];
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: index < AppSpecies.allSpecies.length - 1 ? 10 : 0,
-                ),
-                child: _ModernSpeciesCard(species: species),
-              );
-            },
-          ),
-        ),
-      ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                physics: const BouncingScrollPhysics(),
+                itemCount: AppSpecies.allSpecies.length,
+                itemBuilder: (context, index) {
+                  final species = AppSpecies.allSpecies[index];
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index < AppSpecies.allSpecies.length - 1 ? 10 : 0,
+                    ),
+                    child: _ModernSpeciesCard(species: species),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -186,103 +212,108 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: () => _showSpeciesDetails(context),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          width: 80,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                widget.species.color.withOpacity(0.25),
-                widget.species.color.withOpacity(0.15),
-              ]
-                  : [
-                Colors.white,
-                widget.species.color.withOpacity(0.12),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _isPressed
-                  ? widget.species.color.withOpacity(0.6)
-                  : widget.species.color.withOpacity(0.35),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: widget.species.color.withOpacity(_isPressed ? 0.35 : 0.2),
-                blurRadius: _isPressed ? 12 : 10,
-                offset: Offset(0, _isPressed ? 4 : 3),
+    return Consumer<TranslationService>(
+      builder: (context, translation, _) {
+        return GestureDetector(
+          onTapDown: _onTapDown,
+          onTapUp: _onTapUp,
+          onTapCancel: _onTapCancel,
+          onTap: () => _showSpeciesDetails(context),
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Container(
+              width: 80,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                    widget.species.color.withOpacity(0.25),
+                    widget.species.color.withOpacity(0.15),
+                  ]
+                      : [
+                    Colors.white,
+                    widget.species.color.withOpacity(0.12),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _isPressed
+                      ? widget.species.color.withOpacity(0.6)
+                      : widget.species.color.withOpacity(0.35),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                    widget.species.color.withOpacity(_isPressed ? 0.35 : 0.2),
+                    blurRadius: _isPressed ? 12 : 10,
+                    offset: Offset(0, _isPressed ? 4 : 3),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Hero(
-                  tag: 'species_${widget.species.name}',
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          widget.species.color.withOpacity(0.25),
-                          widget.species.color.withOpacity(0.15),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: widget.species.color.withOpacity(0.35),
-                        width: 1.5,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Hero(
+                      tag: 'species_${widget.species.nameEn}',
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              widget.species.color.withOpacity(0.25),
+                              widget.species.color.withOpacity(0.15),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: widget.species.color.withOpacity(0.35),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(7),
+                          child: Image.asset(
+                            widget.species.imagePath,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.eco,
+                                color: widget.species.color,
+                                size: 24,
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(7),
-                      child: Image.asset(
-                        widget.species.imagePath,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.eco,
-                            color: widget.species.color,
-                            size: 24,
-                          );
-                        },
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.species.getName(translation.isUrdu),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                        letterSpacing: -0.2,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.species.name,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    height: 1.2,
-                    letterSpacing: -0.2,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -301,7 +332,8 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
           return Container(
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(28)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
@@ -325,197 +357,220 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
 
                 // Content
                 Expanded(
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header
-                        Row(
+                  child: Consumer<TranslationService>(
+                    builder: (context, trans, _) {
+                      return SingleChildScrollView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Hero(
-                              tag: 'species_${widget.species.name}',
-                              child: Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      widget.species.color.withOpacity(0.3),
-                                      widget.species.color.withOpacity(0.15),
+                            // Header
+                            Row(
+                              children: [
+                                Hero(
+                                  tag: 'species_${widget.species.nameEn}',
+                                  child: Container(
+                                    width: 80,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          widget.species.color.withOpacity(0.3),
+                                          widget.species.color.withOpacity(0.15),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: widget.species.color
+                                            .withOpacity(0.4),
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: widget.species.color
+                                              .withOpacity(0.25),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(14),
+                                    child: Image.asset(
+                                      widget.species.imagePath,
+                                      fit: BoxFit.contain,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Icon(
+                                          Icons.eco,
+                                          color: widget.species.color,
+                                          size: 36,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: widget.species.color
+                                              .withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: widget.species.color
+                                                .withOpacity(0.4),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          trans
+                                              .get('plant_species_label')
+                                              .toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w900,
+                                            color: widget.species.color,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        widget.species.getName(trans.isUrdu),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        widget.species.scientificName,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.6),
+                                          fontStyle: FontStyle.italic,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: widget.species.color.withOpacity(0.4),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: widget.species.color.withOpacity(0.25),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // Info Sections
+                            _buildModernInfoSection(
+                              context,
+                              icon: Icons.info_outline_rounded,
+                              title: trans.get('about_plant'),
+                              content:
+                              widget.species.getDescription(trans.isUrdu),
+                              color: Colors.blue,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _buildModernInfoSection(
+                              context,
+                              icon: Icons.wb_sunny_rounded,
+                              title: trans.get('growth_requirements'),
+                              content: widget.species.getGrowthInfo(trans.isUrdu),
+                              color: Colors.orange,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _buildModernInfoSection(
+                              context,
+                              icon: Icons.bug_report_rounded,
+                              title: trans.get('common_diseases'),
+                              content: widget.species
+                                  .getCommonDiseases(trans.isUrdu),
+                              color: Colors.red,
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Action Button
+                            Container(
+                              width: double.infinity,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    widget.species.color,
+                                    widget.species.color.withOpacity(0.8),
                                   ],
                                 ),
-                                padding: const EdgeInsets.all(14),
-                                child: Image.asset(
-                                  widget.species.imagePath,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.eco,
-                                      color: widget.species.color,
-                                      size: 36,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: widget.species.color.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: widget.species.color.withOpacity(0.4),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'PLANT SPECIES',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w900,
-                                        color: widget.species.color,
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    widget.species.name,
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 20,
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    widget.species.scientificName,
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                      fontStyle: FontStyle.italic,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                    widget.species.color.withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
                                   ),
                                 ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.pushNamed(context, '/capture');
+                                  },
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          trans.get('start_disease_detection'),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 18),
-
-                        // Info Sections
-                        _buildModernInfoSection(
-                          context,
-                          icon: Icons.info_outline_rounded,
-                          title: 'About This Plant',
-                          content: widget.species.description,
-                          color: Colors.blue,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        _buildModernInfoSection(
-                          context,
-                          icon: Icons.wb_sunny_rounded,
-                          title: 'Growth Requirements',
-                          content: widget.species.growthInfo,
-                          color: Colors.orange,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        _buildModernInfoSection(
-                          context,
-                          icon: Icons.bug_report_rounded,
-                          title: 'Common Diseases',
-                          content: widget.species.commonDiseases,
-                          color: Colors.red,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Action Button
-                        Container(
-                          width: double.infinity,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                widget.species.color,
-                                widget.species.color.withOpacity(0.8),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: widget.species.color.withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.pop(context);
-                                Navigator.pushNamed(context, '/capture');
-                              },
-                              borderRadius: BorderRadius.circular(14),
-                              child: const Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.camera_alt_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Start Disease Detection',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.3,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -583,7 +638,10 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                 Text(
                   content,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.75),
                     height: 1.4,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

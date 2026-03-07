@@ -5,11 +5,15 @@ import '../../../../core/services/translation_service.dart';
 import 'section_header.dart';
 
 class RecommendationsCard extends StatefulWidget {
-  final List<String> recommendations;
+  final dynamic recommendations; // Can be List<String> or Map with en/ur
+  final String? severity; // Optional severity level
+  final List<String>? precautions; // Optional precautions
 
   const RecommendationsCard({
     super.key,
     required this.recommendations,
+    this.severity,
+    this.precautions,
   });
 
   @override
@@ -20,6 +24,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   final Set<int> _completedSteps = {};
+  List<String> _processedRecommendations = []; // Explicitly List<String>
 
   @override
   void initState() {
@@ -29,6 +34,79 @@ class _RecommendationsCardState extends State<RecommendationsCard>
       vsync: this,
     );
     _animationController.forward();
+    _processRecommendations();
+  }
+
+  @override
+  void didUpdateWidget(RecommendationsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.recommendations != widget.recommendations) {
+      _processRecommendations();
+    }
+  }
+
+  void _processRecommendations() {
+    final translation = Provider.of<TranslationService>(context, listen: false);
+
+    if (widget.recommendations == null) {
+      _processedRecommendations = [];
+      return;
+    }
+
+    // Create a temporary list to build results
+    List<String> tempList = [];
+
+    // Handle different data formats
+    if (widget.recommendations is List) {
+      final list = widget.recommendations as List;
+
+      if (list.isEmpty) {
+        _processedRecommendations = [];
+        return;
+      }
+
+      // Check if list contains maps (bilingual format)
+      if (list.isNotEmpty && list.first is Map) {
+        // Process each map item and convert to String
+        tempList = list.map((item) {
+          if (item is Map) {
+            // Extract the appropriate language text
+            return translation.isUrdu
+                ? (item['ur'] ?? item['en'] ?? '').toString()
+                : (item['en'] ?? item['ur'] ?? '').toString();
+          }
+          // If not a map, convert to string
+          return item.toString();
+        }).where((s) => s.isNotEmpty).toList();
+      } else {
+        // Simple string list - ensure all items are strings
+        tempList = list.map((e) => e.toString()).toList();
+      }
+    } else if (widget.recommendations is Map) {
+      // Single recommendation map with en/ur
+      final map = widget.recommendations as Map;
+      final text = translation.isUrdu
+          ? (map['ur'] ?? map['en'] ?? '').toString()
+          : (map['en'] ?? map['ur'] ?? '').toString();
+      if (text.isNotEmpty) {
+        tempList = [text];
+      }
+    } else if (widget.recommendations is String) {
+      // Single string - split by common delimiters if needed
+      String text = widget.recommendations.toString();
+      if (text.contains('\n') || text.contains(';') || text.contains(',')) {
+        tempList = text
+            .split(RegExp(r'[\n;,.]'))
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty && s.length > 3)
+            .toList();
+      } else {
+        tempList = [text];
+      }
+    }
+
+    // Assign the processed list (ensuring it's List<String>)
+    _processedRecommendations = tempList;
   }
 
   @override
@@ -54,6 +132,13 @@ class _RecommendationsCardState extends State<RecommendationsCard>
     final isDark = theme.brightness == Brightness.dark;
     final translation = Provider.of<TranslationService>(context);
 
+    // Re-process recommendations when language changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _processRecommendations();
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -67,7 +152,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
                 iconColor: const Color(0xFFEF4444),
               ),
             ),
-            if (widget.recommendations.isNotEmpty)
+            if (_processedRecommendations.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -87,7 +172,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${_completedSteps.length}/${widget.recommendations.length}',
+                      '${_completedSteps.length}/${_processedRecommendations.length}',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
@@ -106,6 +191,43 @@ class _RecommendationsCardState extends State<RecommendationsCard>
           ],
         ),
         const SizedBox(height: 16),
+
+        // Severity badge if provided
+        if (widget.severity != null && widget.severity != 'None' && widget.severity != 'N/A')
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: _getSeverityColor(widget.severity!).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getSeverityColor(widget.severity!).withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.warning_rounded,
+                    size: 18,
+                    color: _getSeverityColor(widget.severity!),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    translation.isUrdu
+                        ? _getSeverityUrdu(widget.severity!)
+                        : 'Severity: ${widget.severity}',
+                    style: TextStyle(
+                      color: _getSeverityColor(widget.severity!),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -133,15 +255,15 @@ class _RecommendationsCardState extends State<RecommendationsCard>
               ),
             ],
           ),
-          child: widget.recommendations.isEmpty
+          child: _processedRecommendations.isEmpty
               ? _buildEmptyState(context, isDark, translation)
               : Column(
             children: List.generate(
-              widget.recommendations.length,
+              _processedRecommendations.length,
                   (index) => _TimelineRecommendationItem(
-                text: widget.recommendations[index],
+                text: _processedRecommendations[index],
                 index: index,
-                isLast: index == widget.recommendations.length - 1,
+                isLast: index == _processedRecommendations.length - 1,
                 isDark: isDark,
                 isCompleted: _completedSteps.contains(index),
                 onToggle: () => _toggleStep(index),
@@ -150,7 +272,91 @@ class _RecommendationsCardState extends State<RecommendationsCard>
             ),
           ),
         ),
+
+        // Precautions section if provided
+        if (widget.precautions != null && widget.precautions!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: _buildPrecautionsSection(context, isDark, translation),
+          ),
       ],
+    );
+  }
+
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'none': return const Color(0xFF4CAF50);
+      case 'low': return const Color(0xFF8BC34A);
+      case 'medium': return const Color(0xFFFFC107);
+      case 'high': return const Color(0xFFFF9800);
+      case 'critical': return const Color(0xFFF44336);
+      default: return const Color(0xFF9E9E9E);
+    }
+  }
+
+  String _getSeverityUrdu(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'none': return 'شدت: کوئی نہیں';
+      case 'low': return 'شدت: کم';
+      case 'medium': return 'شدت: درمیانی';
+      case 'high': return 'شدت: زیادہ';
+      case 'critical': return 'شدت: انتہائی';
+      default: return 'شدت: نامعلوم';
+    }
+  }
+
+  Widget _buildPrecautionsSection(BuildContext context, bool isDark, TranslationService translation) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: isDark ? const Color(0xFFF59E0B) : const Color(0xFFF59E0B),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                translation.get('precautions'),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...widget.precautions!.map((precaution) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('• ', style: TextStyle(fontSize: 16)),
+                Expanded(
+                  child: Text(
+                    precaution,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
     );
   }
 
@@ -348,7 +554,9 @@ class _TimelineRecommendationItem extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          isCompleted ? translation.get('completed') : '${translation.get('step')} ${index + 1}',
+                          isCompleted
+                              ? translation.get('completed')
+                              : '${translation.get('step')} ${index + 1}',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -369,7 +577,10 @@ class _TimelineRecommendationItem extends StatelessWidget {
                               : (isDark ? Colors.white : Colors.black87),
                           decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
                         ),
-                        child: Text(cleanText),
+                        child: Text(
+                          cleanText,
+                          textAlign: translation.isUrdu ? TextAlign.right : TextAlign.left,
+                        ),
                       ),
                     ],
                   ),

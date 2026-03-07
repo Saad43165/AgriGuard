@@ -1,3 +1,8 @@
+// lib/features/history/presentation/screens/history_screen.dart
+import 'package:agriguard_fyp/features/history/presentation/utils/history_csv_generator.dart';
+import 'package:agriguard_fyp/features/history/presentation/utils/history_pdf_generator.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/export_option_dialog.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/export_success_dialog.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar_actions.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_empty_state.dart';
@@ -110,7 +115,8 @@ class _HistoryScreenState extends State<HistoryScreen>
 
     if (!mounted) return;
 
-    final currentScans = _selectedTab == 'onDevice' ? _onDeviceScans : _advancedScans;
+    final currentScans =
+    _selectedTab == 'onDevice' ? _onDeviceScans : _advancedScans;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -135,6 +141,106 @@ class _HistoryScreenState extends State<HistoryScreen>
       ),
     );
   }
+
+  // ==================== EXPORT FUNCTIONALITY ====================
+
+  Future<void> _exportHistory() async {
+    // Check if there are any scans to export
+    if (_onDeviceScans.isEmpty && _advancedScans.isEmpty) {
+      _showErrorSnackBar('No scans to export. Scan some plants first!');
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+
+    showDialog(
+      context: context,
+      builder: (context) => ExportOptionsDialog(
+        onPdfExport: _exportAsPdf,
+        onCsvExport: _exportAsCsv,
+      ),
+    );
+  }
+
+  Future<void> _exportAsPdf() async {
+    try {
+      HapticFeedback.mediumImpact();
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _buildLoadingDialog('Generating PDF...'),
+      );
+
+      final file = await HistoryPdfGenerator.generateHistoryPdf(
+        onDeviceScans: _onDeviceScans,
+        advancedScans: _advancedScans,
+      );
+
+      if (mounted) Navigator.pop(context); // Close loading
+
+      // Show success dialog
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => ExportSuccessDialog(
+            file: file,
+            fileType: 'PDF',
+            scanCount: _onDeviceScans.length + _advancedScans.length,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('PDF generation error: $e');
+      if (mounted) Navigator.pop(context); // Close loading
+
+      if (mounted) {
+        _showErrorDialog('Failed to Generate PDF', e.toString());
+      }
+    }
+  }
+
+  Future<void> _exportAsCsv() async {
+    try {
+      HapticFeedback.mediumImpact();
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _buildLoadingDialog('Generating CSV...'),
+      );
+
+      final file = await HistoryCsvGenerator.generateHistoryCsv(
+        onDeviceScans: _onDeviceScans,
+        advancedScans: _advancedScans,
+      );
+
+      if (mounted) Navigator.pop(context); // Close loading
+
+      // Show success dialog
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => ExportSuccessDialog(
+            file: file,
+            fileType: 'CSV',
+            scanCount: _onDeviceScans.length + _advancedScans.length,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('CSV generation error: $e');
+      if (mounted) Navigator.pop(context); // Close loading
+
+      if (mounted) {
+        _showErrorDialog('Failed to Generate CSV', e.toString());
+      }
+    }
+  }
+
+  // ==================== END EXPORT FUNCTIONALITY ====================
 
   @override
   void dispose() {
@@ -177,15 +283,17 @@ class _HistoryScreenState extends State<HistoryScreen>
   void _openAdvancedScan(Map<String, dynamic> scan) {
     final analysisResult = {
       'source': scan['analysisSource']?.toString() ?? 'Gemini',
-      'data': scan['advancedData'] ?? scan['rawData']?['data'] ?? {
-        'plant': scan['plantName'] ?? 'Unknown Plant',
-        'disease': scan['diseaseName'] ?? scan['diagnosis'] ?? 'Unknown Disease',
-        'confidence': scan['confidence'] ?? '0',
-        'severity': scan['severity'] ?? 'Medium',
-        'symptoms': scan['symptoms'] ?? [],
-        'remediation': scan['treatments'] ?? scan['remediation'] ?? [],
-        'precautions': scan['precautions'] ?? [],
-      },
+      'data': scan['advancedData'] ??
+          scan['rawData']?['data'] ??
+          {
+            'plant': scan['plantName'] ?? 'Unknown Plant',
+            'disease': scan['diseaseName'] ?? scan['diagnosis'] ?? 'Unknown Disease',
+            'confidence': scan['confidence'] ?? '0',
+            'severity': scan['severity'] ?? 'Medium',
+            'symptoms': scan['symptoms'] ?? [],
+            'remediation': scan['treatments'] ?? scan['remediation'] ?? [],
+            'precautions': scan['precautions'] ?? [],
+          },
       'success': true,
       'hasDiseaseInfo': true,
       'scanId': scan['id'],
@@ -225,6 +333,14 @@ class _HistoryScreenState extends State<HistoryScreen>
         showBackButton: true,
         onBackPressed: () => Navigator.pop(context),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 5),
+            child: HistoryAppBarAction(
+              icon: Icons.file_download_rounded,
+              onPressed: _exportHistory,
+              tooltip: 'Export History',
+            ),
+          ),
           HistoryAppBarAction(
             icon: Icons.refresh_rounded,
             onPressed: _refreshScans,
@@ -430,6 +546,192 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  // ==================== DIALOG BUILDERS ====================
+
+  Widget _buildLoadingDialog(String message) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? [const Color(0xFF1E1E2E), const Color(0xFF16213E)]
+                : [Colors.white, const Color(0xFFF8F9FF)],
+          ),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 64,
+              height: 64,
+              child: CircularProgressIndicator(
+                strokeWidth: 5,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Please wait...',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [const Color(0xFF1E1E2E), const Color(0xFF16213E)]
+                  : [Colors.white, const Color(0xFFFFF8F8)],
+            ),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: Colors.red.withOpacity(0.3),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFE53935), Color(0xFFD32F2F)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.error_outline_rounded,
+                  size: 56,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    elevation: 8,
+                    shadowColor: Colors.red.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  // ==================== DELETE FUNCTIONALITY ====================
+
   Future<void> _showDeleteConfirmationDialog(int index) async {
     final scan = _currentScans[index];
     final diagnosis = scan['diagnosis']?.toString() ?? 'this scan';
@@ -611,13 +913,13 @@ class _HistoryScreenState extends State<HistoryScreen>
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
+                          children: const [
+                            Icon(
                               Icons.delete_rounded,
                               color: Colors.white,
                               size: 20,
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text(
                               'Delete',
                               style: TextStyle(
@@ -662,10 +964,10 @@ class _HistoryScreenState extends State<HistoryScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
-                children: [
-                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                  const SizedBox(width: 12),
-                  const Text(
+                children: const [
+                  Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 12),
+                  Text(
                     'Scan deleted successfully',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
@@ -686,10 +988,10 @@ class _HistoryScreenState extends State<HistoryScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
-              children: [
-                const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                const Text(
+              children: const [
+                Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 12),
+                Text(
                   'Failed to delete scan',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),

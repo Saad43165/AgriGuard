@@ -2,14 +2,17 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:agriguard_fyp/features/advance_result_screen/utils/advance_share_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_measurements.dart';
 import '../../../core/widgets/floating_orb.dart';
 import 'components/additional_info_card.dart';
 import 'components/diagnosis_card.dart';
 import 'components/image_preview_results.dart';
+import 'components/result_action_button.dart' show ResultActionButton;
 import 'components/section_card.dart';
 import 'components/source_badge.dart';
 import '../../../../core/repositories/scan_repository.dart';
@@ -38,15 +41,18 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
 
   bool _isProcessing = false;
   bool _isAlreadySaved = false;
+  bool _isGeneratingPdf = false;
   String? _generatedScanId;
+  File? _generatedPdf;
+  Uint8List? _imageBytes; // Add this to store image bytes
 
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     _scanRepository = ScanRepository();
+    _loadImageBytes(); // Load image bytes on init
 
-    // Safe auto-save after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndAutoSaveScan();
     });
@@ -68,6 +74,29 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     );
   }
 
+  // Add this method to load image bytes
+  Future<void> _loadImageBytes() async {
+    try {
+      final imagePath = widget.originalScanData['imagePath'] as String?;
+      final imageBase64 = widget.originalScanData['imageBase64'] as String?;
+
+      if (imageBase64 != null) {
+        // Decode base64 to bytes
+        _imageBytes = base64Decode(imageBase64);
+      } else if (imagePath != null) {
+        // Load from file
+        final file = File(imagePath);
+        if (await file.exists()) {
+          _imageBytes = await file.readAsBytes();
+        }
+      }
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Error loading image bytes: $e');
+    }
+  }
+
   @override
   void dispose() {
     _fadeController.dispose();
@@ -75,7 +104,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     super.dispose();
   }
 
-  // Generate unique ID (same logic as ResultsScreen)
   String _generateScanId() {
     final dataHash = jsonEncode(widget.analysisResult).hashCode.abs();
     final imagePathHash = widget.originalScanData['imagePath']?.hashCode ?? 0;
@@ -83,9 +111,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     return 'advanced_${dataHash}_${imagePathHash}_$timestamp';
   }
 
-// Update the _checkAndAutoSaveScan method in advanced_results_screen.dart
   Future<void> _checkAndAutoSaveScan() async {
-    // Check all possible flags that indicate this is from history
     final isFromHistory = widget.originalScanData['isFromHistory'] == true ||
         widget.originalScanData['skipSave'] == true ||
         widget.originalScanData['databaseId'] != null;
@@ -101,11 +127,9 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     setState(() => _isProcessing = true);
 
     try {
-      // Use original ID if provided, otherwise generate new one
       final originalId = widget.originalScanData['id'] as String?;
       final scanId = originalId ?? _generateScanId();
 
-      // Check if already exists (prevents duplicates)
       final existing = await _scanRepository.getScanById(scanId);
       if (existing != null) {
         debugPrint('✅ Advanced scan already exists → skipping save');
@@ -116,7 +140,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
         return;
       }
 
-      // Prepare image base64
       String? imageBase64 = widget.originalScanData['imageBase64'] as String?;
       final imagePath = widget.originalScanData['imagePath'] as String?;
 
@@ -126,30 +149,25 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
           if (await file.exists()) {
             final bytes = await file.readAsBytes();
             imageBase64 = base64Encode(bytes);
-            debugPrint('✅ Converted image to base64 (${bytes.length} bytes)');
           }
         } catch (e) {
           debugPrint('⚠️ Failed to convert image to base64: $e');
         }
       }
 
-      // Add image base64 to original data
       final updatedOriginalData = {
         ...widget.originalScanData,
         'imageBase64': imageBase64,
       };
 
-      // Add scan ID to analysis result
       final updatedAnalysisResult = {
         ...widget.analysisResult,
         'scanId': scanId,
       };
 
-      // Determine source
       final source = updatedAnalysisResult['source']?.toString().toLowerCase() ?? 'gemini';
       final isGemini = source.contains('gemini');
 
-      // Save using correct method
       final savedScan = isGemini
           ? await _scanRepository.saveGeminiScan(
         analysisResult: updatedAnalysisResult,
@@ -176,7 +194,50 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
         setState(() => _isProcessing = false);
       }
     }
-  }  Color _getSeverityColor(String severity) {
+  }
+
+  // Update this method to handle PDF generation through the button's internal logic
+  Future<void> _handlePdfGenerated(File pdfFile) async {
+    setState(() {
+      _generatedPdf = pdfFile;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('PDF generated successfully!'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'SHARE',
+            textColor: Colors.white,
+            onPressed: () => _handleShare(pdfFile: pdfFile),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleShare({File? pdfFile}) async {
+    HapticFeedback.lightImpact();
+
+    await AdvancedShareHandler.shareResults(
+      context: context,
+      analysisResult: widget.analysisResult,
+      originalScanData: widget.originalScanData,
+      pdfFile: pdfFile ?? _generatedPdf,
+    );
+  }
+
+  Color _getSeverityColor(String severity) {
     switch (severity.toLowerCase()) {
       case 'critical':
         return Colors.red;
@@ -216,6 +277,12 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
             fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),
           ),
         ),
+      ),
+      floatingActionButton: ResultActionButton(
+        analysisResult: widget.analysisResult,
+        originalScanData: widget.originalScanData,
+        plantImageBytes: _imageBytes, // Pass the loaded image bytes
+        // The button handles its own share and PDF generation internally now
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -263,74 +330,66 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                         result: widget.analysisResult,
                         theme: theme,
                       ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
-
                       DiagnosisCard(
                         theme: theme,
                         data: data,
                         getSeverityColor: _getSeverityColor,
                       ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
-
                       ImagePreviewResults(
                         originalScanData: widget.originalScanData,
                         theme: theme,
                       ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
-
                       SectionCard(
                         theme: theme,
                         title: 'Symptoms Detected',
                         icon: Icons.visibility_outlined,
-                        items: (data['symptoms'] as List<dynamic>?)?.cast<String>() ?? [],
+                        items: (data['symptoms'] as List<dynamic>?)
+                            ?.cast<String>() ??
+                            [],
                         color: Colors.blue,
                       ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
-
                       SectionCard(
                         theme: theme,
                         title: 'Treatment Recommendations',
                         icon: Icons.medical_services_outlined,
-                        items: (data['remediation'] as List<dynamic>?)?.cast<String>() ?? [],
+                        items: (data['remediation'] as List<dynamic>?)
+                            ?.cast<String>() ??
+                            [],
                         color: Colors.green,
                       ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
-
                       SectionCard(
                         theme: theme,
                         title: 'Preventive Measures',
                         icon: Icons.shield_outlined,
-                        items: (data['precautions'] as List<dynamic>?)?.cast<String>() ?? [],
+                        items: (data['precautions'] as List<dynamic>?)
+                            ?.cast<String>() ??
+                            [],
                         color: Colors.orange,
                       ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context),
                       ),
-
                       if (data['additionalInfo'] != null)
                         AdditionalInfoCard(
                           theme: theme,
                           info: data['additionalInfo'] as String,
                           hasDiseaseInfo: hasDiseaseInfo,
                         ),
-
-                      // Subtle saved indicator (optional - looks clean)
                       if (_isAlreadySaved)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -356,7 +415,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
                             ),
                           ),
                         ),
-
                       SizedBox(
                         height: AppMeasurements.getResponsivePadding(context) * 2.5,
                       ),

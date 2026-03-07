@@ -51,13 +51,47 @@ class TranslationService extends ChangeNotifier {
     return _severityTranslations[normalized] ?? severity;
   }
 
-  // English translations
+  // ==================== ENGLISH TRANSLATIONS ====================
   static const Map<String, String> _englishTranslations = {
     // App Basic
     'app_title': 'AGRIGUARD',
     'analysis_method': 'Analysis Method',
     'image_source': 'Image Source',
     'analyzing': 'Analyzing...',
+
+    // Plant Species (NEW)
+    'detectable_species': 'Detectable Species',
+    'tap_to_explore': 'Tap to explore',
+    'plant_species_label': 'Plant Species',
+    'about_plant': 'About This Plant',
+    'growth_requirements': 'Growth Requirements',
+    'start_disease_detection': 'Start Disease Detection',
+    'common_diseases': 'Common Diseases',
+
+    // Analysis Method Screen (NEW)
+    'select_method': 'Select Method',
+    'comparison_title': 'Analysis Comparison',
+    'comparison_subtitle': 'Choose your preferred method',
+    'comparison_ondevice': 'On-Device',
+    'comparison_cloudai': 'Cloud AI',
+    'comparison_not_required': 'Internet Not Required',
+    'comparison_required': 'Internet Required',
+    'comparison_instant': 'Instant Results',
+    'comparison_species': 'Limited Species',
+    'comparison_private': '100% Private',
+    'comparison_cloud_based': 'Cloud-Based',
+    'comparison_quick': 'Quick Analysis',
+    'comparison_deep': 'Deep Analysis',
+
+    // Info Screen (NEW)
+    'take_photo': 'Take a Photo',
+    'step1_text': 'Capture a clear image of the affected plant',
+    'choose_method': 'Choose Method',
+    'step2_text': 'Select on-device or advanced AI analysis',
+    'ai_analysis': 'AI Analysis',
+    'step3_text': 'Our AI analyzes the plant condition',
+    'get_results': 'Get Results',
+    'step4_text': 'Receive diagnosis and treatment recommendations',
 
     // Results Screen
     'analysis_results': 'Analysis Results',
@@ -265,19 +299,13 @@ class TranslationService extends ChangeNotifier {
     'disease_diagnosis': 'Disease diagnosis',
     'treatment_plans': 'Treatment plans',
 
-    // ===== HELP & SUPPORT TRANSLATIONS =====
-
-    // Help & Support Screen
+    // Help & Support
     'help_support': 'Help & Support',
     'get_in_touch': 'Get in Touch',
     'help_questions': 'We\'re here to help you with any questions',
-
-    // Contact Info
     'email': 'Email',
     'phone': 'Phone',
     'instagram': 'Instagram',
-
-    // Contact Form
     'send_message': 'Send us a Message',
     'get_back_soon': 'We\'ll get back to you soon',
     'your_name': 'Your Name',
@@ -287,16 +315,12 @@ class TranslationService extends ChangeNotifier {
     'your_message': 'Your Message',
     'type_message': 'Type your message here...',
     'send_message_btn': 'Send Message',
-
-    // Form Validation
     'name_required': 'Name is required',
     'email_required': 'Email is required',
     'valid_email': 'Enter a valid email address',
     'message_required': 'Message is required',
     'message_too_short': 'Message is too short (min 10 characters)',
     'message_sent': 'Message sent successfully!',
-
-    // FAQ Section
     'quick_answers': 'Quick Answers',
     'find_answers': 'Find answers to common questions',
     'view_all_faqs': 'View All FAQs',
@@ -305,37 +329,64 @@ class TranslationService extends ChangeNotifier {
     'no_results': 'No results found',
     'try_different': 'Try searching with different keywords',
 
-    // FAQ Questions & Answers (4 preview questions)
+    // FAQ
     'faq_scan_q': 'How do I scan a plant?',
     'faq_scan_a': 'Open the app, tap the scan button, and point your camera at the plant. Ensure good lighting for accurate results.',
-
     'faq_plants_q': 'What plants can the app identify?',
     'faq_plants_a': 'The app supports a wide range of plants, including common houseplants, garden plants, and crops. Check the plant database for specifics.',
-
     'faq_accuracy_q': 'How accurate are the results?',
     'faq_accuracy_a': 'Our AI model provides high accuracy, but results depend on image quality and plant condition. Always consult a professional for critical cases.',
-
     'faq_history_q': 'Can I save my scan history?',
     'faq_history_a': 'Yes, all scans are saved in your profile. You can view, delete, or share them from the history section.',
-
-    // Additional FAQ Questions (Add more as needed)
     'faq_what_is_agriguard_q': 'What is AgriGuard?',
     'faq_what_is_agriguard_a': 'AgriGuard is an AI-powered plant identification and disease detection app that uses TensorFlow machine learning to identify 12 plant species and detect 18 common plant diseases from photos, even without internet connection.',
-
     'faq_offline_q': 'Can I use the app without internet?',
     'faq_offline_a': 'Yes! PlantDetect works completely offline thanks to our optimized TensorFlow Lite model. All plant identification and disease detection happens on your device without needing internet connection.',
-
     'faq_best_photo_q': 'How do I take the best photo for scanning?',
     'faq_best_photo_a': 'For optimal results: 1) Use natural lighting, 2) Focus on leaves or affected areas, 3) Keep camera steady, 4) Fill frame with plant, 5) Take multiple angles if needed. Avoid shadows and blurry images.',
   };
 
-  // Urdu translations
+  // ==================== URDU TRANSLATIONS ====================
   static const Map<String, String> _urduTranslations = {
     // App Basic
     'app_title': 'ایگری گارڈ',
     'analysis_method': 'تجزیہ کا طریقہ',
     'image_source': 'تصویر کا ذریعہ',
     'analyzing': 'تجزیہ جاری ہے...',
+
+    // Plant Species (NEW)
+    'detectable_species': 'قابل شناخت اقسام',
+    'tap_to_explore': 'دریافت کرنے کے لیے ٹیپ کریں',
+    'plant_species_label': 'پودے کی قسم',
+    'about_plant': 'اس پودے کے بارے میں',
+    'growth_requirements': 'نمو کی ضروریات',
+    'start_disease_detection': 'بیماری کی تشخیص شروع کریں',
+    'common_diseases': 'عام بیماریاں',
+
+    // Analysis Method Screen (NEW)
+    'select_method': 'طریقہ منتخب کریں',
+    'comparison_title': 'تجزیہ کا موازنہ',
+    'comparison_subtitle': 'اپنا پسندیدہ طریقہ منتخب کریں',
+    'comparison_ondevice': 'آن ڈیوائس',
+    'comparison_cloudai': 'کلاؤڈ AI',
+    'comparison_not_required': 'انٹرنیٹ کی ضرورت نہیں',
+    'comparison_required': 'انٹرنیٹ درکار ہے',
+    'comparison_instant': 'فوری نتائج',
+    'comparison_species': 'محدود پرجاتیاں',
+    'comparison_private': '100% نجی',
+    'comparison_cloud_based': 'کلاؤڈ پر مبنی',
+    'comparison_quick': 'فوری تجزیہ',
+    'comparison_deep': 'گہرا تجزیہ',
+
+    // Info Screen (NEW)
+    'take_photo': 'تصویر لیں',
+    'step1_text': 'متاثرہ پودے کی واضح تصویر لیں',
+    'choose_method': 'طریقہ منتخب کریں',
+    'step2_text': 'آن ڈیوائس یا ایڈوانسڈ AI تجزیہ منتخب کریں',
+    'ai_analysis': 'AI تجزیہ',
+    'step3_text': 'ہماری AI پودے کی حالت کا تجزیہ کرتی ہے',
+    'get_results': 'نتائج حاصل کریں',
+    'step4_text': 'تشخیص اور علاج کی سفارشات حاصل کریں',
 
     // Results Screen
     'analysis_results': 'تجزیہ کے نتائج',
@@ -401,7 +452,7 @@ class TranslationService extends ChangeNotifier {
     'details_copied': 'تجزیہ کی تفصیلات کاپی ہو گئیں',
 
     // Messages
-    'no_image_available': 'کوئی تصویر دس��یاب نہیں',
+    'no_image_available': 'کوئی تصویر دستیاب نہیں',
     'analysis_failed': 'تجزیہ مکمل نہیں ہو سکا',
     'please_try_again': 'براہ کرم دوبارہ کوشش کریں',
     'loading': 'لوڈ ہو رہا ہے...',
@@ -433,7 +484,7 @@ class TranslationService extends ChangeNotifier {
     'analyzing_image': 'تصویر کا تجزیہ ہو رہا ہے...',
     'checking_leaf': 'چیک ہو رہا ہے کہ تصویر پودے کا پتہ ہے',
     'getting_severity': 'شدت اور سفارشات حاصل کی جا رہی ہیں...',
-    'analyzing_severity': 'بیماری کی شدت اور علاج کے اخ��یارات کا تجزیہ',
+    'analyzing_severity': 'بیماری کی شدت اور علاج کے اختیارات کا تجزیہ',
 
     // Welcome & Onboarding
     'welcome_title': 'پودوں کی بیماریوں کی تشخیص',
@@ -543,19 +594,13 @@ class TranslationService extends ChangeNotifier {
     'disease_diagnosis': 'بیماری کی تشخیص',
     'treatment_plans': 'علاج کے منصوبے',
 
-    // ===== HELP & SUPPORT TRANSLATIONS (URDU) =====
-
-    // Help & Support Screen
+    // Help & Support
     'help_support': 'مدد اور سپورٹ',
     'get_in_touch': 'رابطے میں رہیں',
     'help_questions': 'ہم آپ کی کسی بھی سوال میں مدد کے لیے حاضر ہیں',
-
-    // Contact Info
     'email': 'ای میل',
     'phone': 'فون',
     'instagram': 'انسٹاگرام',
-
-    // Contact Form
     'send_message': 'ہمیں پیغام بھیجیں',
     'get_back_soon': 'ہم جلد آپ سے رابطہ کریں گے',
     'your_name': 'آپ کا نام',
@@ -565,16 +610,12 @@ class TranslationService extends ChangeNotifier {
     'your_message': 'آپ کا پیغام',
     'type_message': 'اپنا پیغام یہاں لکھیں...',
     'send_message_btn': 'پیغام بھیجیں',
-
-    // Form Validation
     'name_required': 'نام ضروری ہے',
     'email_required': 'ای میل ضروری ہے',
     'valid_email': 'درست ای میل ایڈریس درج کریں',
     'message_required': 'پیغام ضروری ہے',
     'message_too_short': 'پیغام بہت مختصر ہے (کم از کم 10 حروف)',
     'message_sent': 'پیغام کامیابی سے بھیج دیا گیا!',
-
-    // FAQ Section
     'quick_answers': 'فوری جوابات',
     'find_answers': 'عام سوالات کے جوابات تلاش کریں',
     'view_all_faqs': 'تمام سوالات دیکھیں',
@@ -583,26 +624,19 @@ class TranslationService extends ChangeNotifier {
     'no_results': 'کوئی نتیجہ نہیں ملا',
     'try_different': 'مختلف مطلوبہ الفاظ سے تلاش کریں',
 
-    // FAQ Questions & Answers (4 preview questions)
+    // FAQ
     'faq_scan_q': 'میں پودے کو کیسے اسکین کروں؟',
-    'faq_scan_a': 'ایپ کھولیں، اسکین بٹن دب��ئیں، اور اپنا کیمرہ پودے کی طرف کریں۔ درست نتائج کے لیے اچھی روشنی کو یقینی بنائیں۔',
-
+    'faq_scan_a': 'ایپ کھولیں، اسکین بٹن دبائیں، اور اپنا کیمرہ پودے کی طرف کریں۔ درست نتائج کے لیے اچھی روشنی کو یقینی بنائیں۔',
     'faq_plants_q': 'ایپ کون سے پودوں کی شناخت کر سکتی ہے؟',
     'faq_plants_a': 'ایپ پودوں کی وسیع رینج کو سپورٹ کرتی ہے، بشمول عام گھریلو پودے، باغ کے پودے اور فصلیں۔ تفصیلات کے لیے پودوں کا ڈیٹا بیس چیک کریں۔',
-
     'faq_accuracy_q': 'نتائج کتنے درست ہیں؟',
     'faq_accuracy_a': 'ہمارا AI ماڈل اعلیٰ درستگی فراہم کرتا ہے، لیکن نتائج تصویر کے معیار اور پودے کی حالت پر منحصر ہیں۔ نازک معاملات کے لیے ہمیشہ پیشہ ور سے مشورہ کریں۔',
-
     'faq_history_q': 'کیا میں اپنی اسکین ہسٹری محفوظ کر سکتا ہوں؟',
     'faq_history_a': 'جی ہاں، تمام اسکینز آپ کی پروفائل میں محفوظ ہیں۔ آپ انہیں ہسٹری سیکشن سے دیکھ، حذف یا شیئر کر سکتے ہیں۔',
-
-    // Additional FAQ Questions
     'faq_what_is_agriguard_q': 'AgriGuard کیا ہے؟',
     'faq_what_is_agriguard_a': 'AgriGuard ایک AI سے چلنے والی پودوں کی شناخت اور بیماری کا پتہ لگانے والی ایپ ہے جو TensorFlow مشین لرننگ استعمال کرتی ہے تاکہ 12 پودوں کی اقسام کی شناخت اور تصاویر سے 18 عام پودوں کی بیماریوں کا پتہ لگایا جا سکے، انٹرنیٹ کنکشن کے بغیر بھی۔',
-
     'faq_offline_q': 'کیا میں ایپ کو انٹرنیٹ کے بغیر استعمال کر سکتا ہوں؟',
     'faq_offline_a': 'جی ہاں! PlantDetect ہمارے بہتر شدہ TensorFlow Lite ماڈل کی بدولت مکمل طور پر آف لائن کام کرتا ہے۔ تمام پودوں کی شناخت اور بیماری کی تشخیص آپ کے ڈیوائس پر انٹرنیٹ کنکشن کی ضرورت کے بغیر ہوتی ہے۔',
-
     'faq_best_photo_q': 'اسکیننگ کے لیے بہترین تصویر کیسے لی جائے؟',
     'faq_best_photo_a': 'بہترین نتائج کے لیے: 1) قدرتی روشنی استعمال کریں، 2) پتوں یا متاثرہ علاقوں پر توجہ دیں، 3) کیمرہ کو مستحکم رکھیں، 4) فریم کو پودے سے بھریں، 5) ضرورت پڑنے پر مختلف زاویوں سے لیں۔ سائے اور دھندلی تصاویر سے بچیں۔',
   };
