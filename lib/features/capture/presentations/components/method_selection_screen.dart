@@ -12,6 +12,8 @@ class MethodSelectionScreen extends StatefulWidget {
   final VoidCallback onSelectAPI;
   final ScrollController scrollController;
   final Map<String, bool> modelDetails;
+  final bool isAdvancedAllowed;
+  final String? advancedUnavailableReason;
 
   const MethodSelectionScreen({
     super.key,
@@ -21,6 +23,8 @@ class MethodSelectionScreen extends StatefulWidget {
     required this.onSelectAPI,
     required this.scrollController,
     required this.modelDetails,
+    this.isAdvancedAllowed = true,
+    this.advancedUnavailableReason,
   });
 
   @override
@@ -28,8 +32,6 @@ class MethodSelectionScreen extends StatefulWidget {
 }
 
 class _MethodSelectionScreenState extends State<MethodSelectionScreen> {
-  String? _selectedMethod;
-
   @override
   Widget build(BuildContext context) {
     final translation = TranslationService();
@@ -74,7 +76,6 @@ class _MethodSelectionScreenState extends State<MethodSelectionScreen> {
                 isReady: widget.isTFLiteReady,
                 loadingText: widget.loadingText ?? translation.get('model_loading'),
                 onSelect: () {
-                  setState(() => _selectedMethod = 'tflite');
                   widget.onSelectTFLite();
                 },
               ),
@@ -99,11 +100,12 @@ class _MethodSelectionScreenState extends State<MethodSelectionScreen> {
                   Color(0xFF6A11CB),
                   Color(0xFF2575FC),
                 ],
-                isReady: true,
-                onSelect: () {
-                  setState(() => _selectedMethod = 'api');
-                  widget.onSelectAPI();
-                },
+                isReady: widget.isAdvancedAllowed,
+                loadingText: widget.isAdvancedAllowed
+                    ? null
+                    : (widget.advancedUnavailableReason ??
+                        translation.get('unavailable')),
+                onSelect: widget.isAdvancedAllowed ? widget.onSelectAPI : null,
               ),
 
               const SizedBox(height: 24),

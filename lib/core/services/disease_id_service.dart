@@ -33,7 +33,6 @@ class DiseaseIdService {
       'assets/models/plant_disease_dynamic_quant.tflite';
   static const String _labelsPath = 'assets/models/disease_labels.txt';
 
-  static const double _minConfidenceThreshold = 0.5;
   static const double _lowConfidenceThreshold = 0.6;
   static const int _minImageSize = 100;
   static const int _minImageBytes = 10240;
@@ -248,8 +247,6 @@ class DiseaseIdService {
       final leafAnalysis = await _performLeafDetection(imageFile);
       final isLeaf = leafAnalysis['isLeaf'] as bool;
       final leafConfidence = leafAnalysis['confidence'] as double;
-      final greenPercentage =
-          (leafAnalysis['greenPercentage'] as double?) ?? 100.0;
 
       if (!isLeaf) {
         return _nonLeafResult(leafConfidence, leafAnalysis);

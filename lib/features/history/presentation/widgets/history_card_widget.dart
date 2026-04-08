@@ -22,19 +22,10 @@ class HistoryCardWidget extends StatelessWidget {
   bool _isAdvancedScan() {
     return scan['isAdvanced'] as bool? ??
         scan['scanType']?.toString() == 'advanced' ||
-            scan['analysisSource']?.toString() == 'gemini' ||
+            scan['analysisSource']?.toString() == 'groq' ||
+            scan['analysisSource']?.toString() == 'huggingface' ||
             scan['analysisSource']?.toString() == 'plantid' ||
             scan['analysisSource']?.toString() == 'plantId';
-  }
-
-  // Convert treatment to list
-  List<String> _convertTreatmentToList(dynamic treatment) {
-    if (treatment == null) return [];
-    if (treatment is List) return List<String>.from(treatment);
-    if (treatment is String) {
-      return treatment.split('. ').where((s) => s.isNotEmpty).toList();
-    }
-    return [];
   }
 
   // Format date
@@ -72,18 +63,6 @@ class HistoryCardWidget extends StatelessWidget {
       default:
         return Colors.grey;
     }
-  }
-
-  // Get advanced data
-  Map<String, dynamic>? _getAdvancedData() {
-    if (_isAdvancedScan()) {
-      return scan['advancedData'] is Map
-          ? Map<String, dynamic>.from(scan['advancedData'])
-          : scan['rawData'] is Map
-          ? Map<String, dynamic>.from(scan['rawData'])
-          : null;
-    }
-    return null;
   }
 
   // Navigation handlers - FIXED: Use the onTap callback instead of local navigation

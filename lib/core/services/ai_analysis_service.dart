@@ -23,9 +23,36 @@ import 'disease_id_service.dart';
 import 'severity_id_service.dart';
 
 class PlantAnalysisService {
-  final PlantIdService _speciesService = PlantIdService();
-  final DiseaseIdService _diseaseService = DiseaseIdService();
-  final SeverityIdService _severityService = SeverityIdService();
+  final PlantIdService _speciesService;
+  final DiseaseIdService _diseaseService;
+  final SeverityIdService _severityService;
+  bool _modelsLoaded = false;
+
+  PlantAnalysisService({
+    PlantIdService? speciesService,
+    DiseaseIdService? diseaseService,
+    SeverityIdService? severityService,
+  })  : _speciesService = speciesService ?? PlantIdService(),
+        _diseaseService = diseaseService ?? DiseaseIdService(),
+        _severityService = severityService ?? SeverityIdService();
+
+  Future<void> _ensureModelsLoaded() async {
+    if (_modelsLoaded) return;
+    try {
+      if (!_speciesService.isLoaded) {
+        await _speciesService.loadModel();
+      }
+      if (!_diseaseService.isLoaded) {
+        await _diseaseService.loadModel();
+      }
+      await _severityService.initialize();
+      _modelsLoaded = true;
+    } catch (e) {
+      // Don't permanently block retries if a load failed.
+      _modelsLoaded = false;
+      rethrow;
+    }
+  }
 
   // ── Leaf detection ─────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> _performLeafDetection(File imageFile) async {
@@ -83,10 +110,17 @@ class PlantAnalysisService {
       final warmPct = (warmPx / totalPixels) * 100;
       final plantPct = greenPercentage + (warmPct * 0.5);
 
-      // NEW: plant coverage > 15% + edge > 4%, OR strong edge alone
-      final isLeaf = (plantPct > 15 && edgeDensity > 4) ||
-          (edgeDensity > 8 && plantPct > 8);
-      final confidence = (plantPct * 0.55) + (edgeDensity * 0.45);
+      // Leaf decision:
+      // - Most leaves: decent plant coverage + moderate edges
+      // - Some valid close-up photos: very high plant coverage but low edges (blur/lighting)
+      // - Avoid obvious non-plant: require at least some plant coverage
+      final isLeaf =
+          (plantPct > 15 && edgeDensity > 4) ||
+          (edgeDensity > 8 && plantPct > 8) ||
+          (plantPct >= 55 && edgeDensity >= 2.5);
+
+      // Confidence: prioritize plant coverage; edges are secondary.
+      final confidence = (plantPct * 0.7) + (edgeDensity * 0.3);
 
       print('🍃 Leaf Detection: green=${greenPercentage.toStringAsFixed(1)}% '
           'warm=${warmPct.toStringAsFixed(1)}% '
@@ -306,20 +340,23 @@ class PlantAnalysisService {
         return _nonLeafResult(leafConfidence, leafAnalysis);
       }
 
+      // Ensure models are loaded before any inference.
+      await _ensureModelsLoaded();
+
       // STEP 1: Plant species identification
       print('🌱 Running species identification...');
       final speciesResult = await _speciesService.predict(imageFile);
 
-      final speciesSuccess = speciesResult['success'] ?? false;
       final isSpeciesUnknown = speciesResult['isUnknown'] ?? true;
       final speciesName = (speciesResult['label'] ?? 'Unknown Plant') as String;
       final speciesConfidence = (speciesResult['confidence'] ?? 0.0) as double;
       final isLeafFromSpecies = speciesResult['isLeaf'] ?? true;
 
       if (!isLeafFromSpecies) {
-        return _nonLeafResult(
-            speciesResult['leafConfidence'] ?? leafConfidence, leafAnalysis,
-            multiCheck: true);
+        // Species model leaf heuristics are stricter and can false-reject valid leaves
+        // (e.g., close-up blur / low edges). We already passed the global leaf check,
+        // and the disease model has its own leaf check. So we do NOT stop here.
+        print('⚠️ Species service marked non-leaf; continuing with disease detection.');
       }
 
       // STEP 2: Disease detection
@@ -327,17 +364,14 @@ class PlantAnalysisService {
       // own leaf detection and can identify the plant from the disease label.
       // Previously gated on speciesConfidence >= 0.6 which caused the
       // entire analysis to fail when plant ID service rejected a leaf.
-      Map<String, dynamic>? diseaseResult;
-      {
-        print('🩺 Running disease detection...');
-        diseaseResult = await _diseaseService.predict(imageFile);
+      print('🩺 Running disease detection...');
+      final diseaseResult = await _diseaseService.predict(imageFile);
 
-        if (diseaseResult['isLeaf'] == false) {
-          // Both plant ID and disease service rejected this as non-leaf
-          return _nonLeafResult(
-              diseaseResult['leafConfidence'] ?? leafConfidence, leafAnalysis,
-              allChecks: true);
-        }
+      if (diseaseResult['isLeaf'] == false) {
+        // Both plant ID and disease service rejected this as non-leaf
+        return _nonLeafResult(
+            diseaseResult['leafConfidence'] ?? leafConfidence, leafAnalysis,
+            allChecks: true);
       }
 
       // ── STEP 2b: Cross-model plant consistency check + name reconciliation
@@ -352,10 +386,10 @@ class PlantAnalysisService {
       bool diseaseModelPlantTrusted = false;
 
       final diseasePlantName =
-      (diseaseResult?['plantName'] ?? 'Unknown Plant') as String;
-      final diseaseIsHealthy = (diseaseResult?['isHealthy'] ?? true) as bool;
-      final diseaseConfidenceRaw = diseaseResult?['confidence'] != null
-          ? double.tryParse(diseaseResult!['confidence'].toString()) ?? 0.0
+      (diseaseResult['plantName'] ?? 'Unknown Plant') as String;
+      final diseaseIsHealthy = (diseaseResult['isHealthy'] ?? true) as bool;
+      final diseaseConfidenceRaw = diseaseResult['confidence'] != null
+          ? double.tryParse(diseaseResult['confidence'].toString()) ?? 0.0
           : 0.0;
 
       if (isSpeciesUnknown || speciesConfidence < 0.50) {
@@ -395,10 +429,38 @@ class PlantAnalysisService {
       // Use disease result values but with suspect flag for UI/severity
       final rawDiseaseName = diseaseResultSuspect
           ? 'Unable to Determine'  // Don't claim healthy when we're unsure
-          : (diseaseResult?['diseaseName'] ?? diseaseResult?['diagnosis']) as String?;
+          : (diseaseResult['diseaseName'] ?? diseaseResult['diagnosis'] ?? 'Unknown Disease')
+              .toString();
       final isHealthyPlant = diseaseResultSuspect ? false
-          : (diseaseResult?['isHealthy'] ?? true) as bool;
+          : (diseaseResult['isHealthy'] ?? true) as bool;
       final diseaseConfidence = diseaseResultSuspect ? 0.0 : diseaseConfidenceRaw;
+
+      // Low-confidence guard: don't claim a specific disease when the model is unsure.
+      // This prevents wrong labels like "Apple Black Rot" at ~20% from being treated as real.
+      const double minDiseaseConfidenceToClaim = 35.0; // percentage
+      final bool diseaseTooUncertain =
+          !isHealthyPlant && diseaseConfidence > 0 && diseaseConfidence < minDiseaseConfidenceToClaim;
+
+      // Cross-plant mismatch guard:
+      // If the disease model thinks the plant is a different species than the (high-confidence)
+      // species model, and the disease confidence isn't strong, treat as uncertain.
+      final bool plantMismatch =
+          diseasePlantName.trim().isNotEmpty &&
+          speciesName.trim().isNotEmpty &&
+          diseasePlantName.trim().toLowerCase() != speciesName.trim().toLowerCase();
+      const double minDiseaseConfidenceWhenPlantMismatch = 55.0; // percentage
+      final bool mismatchTooWeak =
+          !isHealthyPlant &&
+          plantMismatch &&
+          speciesConfidence >= 0.70 &&
+          diseaseConfidence > 0 &&
+          diseaseConfidence < minDiseaseConfidenceWhenPlantMismatch;
+
+      final bool shouldGuardDisease = diseaseTooUncertain || mismatchTooWeak;
+      final String guardedDiseaseName =
+          shouldGuardDisease ? 'Unable to Determine' : rawDiseaseName;
+      final double guardedDiseaseConfidence =
+          shouldGuardDisease ? 0.0 : diseaseConfidence;
 
 
       // STEP 3: Severity & remediation
@@ -407,13 +469,13 @@ class PlantAnalysisService {
       String finalSeverity = 'Unknown';
 
 
-      if (diseaseResult != null && !isHealthyPlant) {
-        print('⚡ Running severity analysis for $rawDiseaseName...');
+      if (!isHealthyPlant && !diseaseTooUncertain) {
+        print('⚡ Running severity analysis for $guardedDiseaseName...');
         severityResult = await _getSeverityAndRemediation(
           imageFile: imageFile,
-          diseaseName: rawDiseaseName ?? 'Unknown Disease',
+          diseaseName: guardedDiseaseName,
           plantName: finalPlantName,
-          confidence: diseaseConfidence,
+          confidence: guardedDiseaseConfidence,
           isHealthy: false,
         );
 
@@ -434,7 +496,7 @@ class PlantAnalysisService {
             ];
           }
         }
-      } else if (diseaseResult != null && isHealthyPlant) {
+      } else if (isHealthyPlant) {
         severityResult = await _getSeverityAndRemediation(
           imageFile: imageFile,
           diseaseName: 'Healthy',
@@ -447,6 +509,14 @@ class PlantAnalysisService {
           'Continue regular plant care',
           'Monitor for any changes',
           'Maintain optimal growing conditions',
+        ];
+      } else {
+        // Not healthy but too uncertain to claim a disease.
+        finalSeverity = 'Unknown';
+        combinedRemediation = const [
+          'Take a clearer close-up photo of the affected leaf',
+          'Ensure good lighting and focus',
+          'Try Advanced Scan for better accuracy',
         ];
       }
 
@@ -470,7 +540,7 @@ class PlantAnalysisService {
       }
 
       // STEP 5: Build result
-      final bool hasDiseaseData = diseaseResult != null;
+      const bool hasDiseaseData = true;
 
       Map<String, dynamic> result = {
         'success': true,
@@ -480,14 +550,22 @@ class PlantAnalysisService {
 
         // ▶ Use reconciled name everywhere
         'species': finalPlantName,
+        // Canonical keys for UI/storage
+        'plantName': finalPlantName,
         'speciesConfidence': speciesConfidence,
         'isUnknown': isSpeciesUnknown,
         'analysisStatus': analysisStatus,
         'speciesMessage': displayMessage,
 
         'disease': rawDiseaseName,
+        // Canonical keys for UI/storage
+        'diseaseName': rawDiseaseName,
         'healthStatus': isHealthyPlant ? 'Healthy' : 'Diseased',
         'diseaseConfidence': diseaseConfidence,
+        // Canonical key used by ResultsScreen/DiagnosisResult
+        // Keep as a percentage-like value (same scale as diseaseConfidence).
+        'confidence': diseaseConfidence,
+        'isHealthy': isHealthyPlant,
 
         'hasDiseaseData': hasDiseaseData,
         'shouldShowDisease':
@@ -504,9 +582,12 @@ class PlantAnalysisService {
         '_rawDisease': diseaseResult,
         '_leafAnalysis': leafAnalysis,
 
+        // Convenience top-level fields for downstream components
+        'rawLabel': diseaseResult['rawLabel'],
+
         // Debug fields — helpful for diagnosing future mismatches
         '_plantIdName': speciesName,
-        '_diseasePlantName': diseaseResult?['plantName'],
+        '_diseasePlantName': diseaseResult['plantName'],
         '_reconciledName': finalPlantName,
         'shouldSaveToHistory': true,
       };
@@ -537,8 +618,8 @@ class PlantAnalysisService {
         });
       }
 
-      if (diseaseResult?['remediation'] != null) {
-        final orig = _parseRemediation(diseaseResult!['remediation']);
+      if (diseaseResult['remediation'] != null) {
+        final orig = _parseRemediation(diseaseResult['remediation']);
         if (orig.isNotEmpty) result['originalRemediation'] = orig;
       }
 

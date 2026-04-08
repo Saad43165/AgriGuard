@@ -2,19 +2,33 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class PlantIdService {
-  static const String _plantIdApiKey = 'w5Ofy2sXPfaORHMM6P9Ky9o0pi58ElkbwyezKuy9dOm3DLqcdF';
   static const String _plantIdBaseUrl = 'https://api.plant.id/v3';
+
+  bool hasApiKey() {
+    final key = dotenv.env['PLANTID_API_KEY']?.trim();
+    return key != null && key.isNotEmpty;
+  }
+
+  String _requireApiKey() {
+    final key = dotenv.env['PLANTID_API_KEY']?.trim();
+    if (key == null || key.isEmpty) {
+      throw Exception('Missing PLANTID_API_KEY. Add it to your .env file.');
+    }
+    return key;
+  }
 
   /// Test if Plant.id API is working
   Future<bool> testPlantIdApi() async {
     try {
       debugPrint('🌿 Testing Plant.id v3 API connectivity...');
+      final apiKey = _requireApiKey();
       final response = await http.get(
         Uri.parse('$_plantIdBaseUrl/usage_info'),
-        headers: {'Api-Key': _plantIdApiKey},
+        headers: {'Api-Key': apiKey},
       );
       debugPrint('🌿 Plant.id v3 Connectivity Test: ${response.statusCode}');
       if (response.statusCode == 200) {
@@ -71,6 +85,7 @@ class PlantIdService {
 
   /// Send Plant.id request WITH HEALTH ASSESSMENT
   Future<Map<String, dynamic>> _sendPlantIdRequestWithHealth(String base64Image) async {
+    final apiKey = _requireApiKey();
     final requestBody = {
       'images': [base64Image],
       'health': 'all',
@@ -83,7 +98,7 @@ class PlantIdService {
       Uri.parse('$_plantIdBaseUrl/identification'),
       headers: {
         'Content-Type': 'application/json',
-        'Api-Key': _plantIdApiKey,
+        'Api-Key': apiKey,
       },
       body: jsonEncode(requestBody),
     );
@@ -129,6 +144,7 @@ class PlantIdService {
   Future<Map<String, dynamic>> _pollForResult(String accessToken, {required bool healthRequested}) async {
     const maxAttempts = 20; // Increased from 15
     int delaySeconds = 1; // Start with shorter delay
+    final apiKey = _requireApiKey();
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       debugPrint('🔄 Polling attempt $attempt/$maxAttempts (wait: ${delaySeconds}s)...');
@@ -143,7 +159,7 @@ class PlantIdService {
 
         final response = await http.get(
           uri,
-          headers: {'Api-Key': _plantIdApiKey},
+          headers: {'Api-Key': apiKey},
         ).timeout(
           const Duration(seconds: 10),
           onTimeout: () {
@@ -246,11 +262,12 @@ class PlantIdService {
       }
     }
 
-    throw Exception('Identification timeout after $maxAttempts attempts. The Plant.id service is taking too long to process. Try:\n1. Use a different image\n2. Ensure good lighting\n3. Try Gemini AI instead');
+    throw Exception('Identification timeout after $maxAttempts attempts. The Plant.id service is taking too long to process. Try:\n1. Use a different image\n2. Ensure good lighting\n3. Try Cloud AI instead');
   }
 
   /// Send minimal Plant.id request (fallback)
   Future<Map<String, dynamic>> _sendMinimalPlantIdRequest(String base64Image) async {
+    final apiKey = _requireApiKey();
     final minimalRequestBody = {
       'images': [base64Image],
     };
@@ -261,7 +278,7 @@ class PlantIdService {
       Uri.parse('$_plantIdBaseUrl/identification'),
       headers: {
         'Content-Type': 'application/json',
-        'Api-Key': _plantIdApiKey,
+        'Api-Key': apiKey,
       },
       body: jsonEncode(minimalRequestBody),
     );
@@ -464,7 +481,7 @@ class PlantIdService {
           final topSuggestion = suggestions.first as Map<String, dynamic>;
           final plantName = topSuggestion['name'] as String? ?? 'Unknown Plant';
 
-          return {
+      return {
             'success': true,
             'source': 'Plant.id AI',
             'data': {
@@ -475,9 +492,9 @@ class PlantIdService {
               'confidence': 0,
               'diseaseConfidence': 0,
               'symptoms': ['Analysis completed but details could not be parsed'],
-              'remediation': ['Please try with a different image or use Gemini analysis'],
+              'remediation': ['Please try with a different image or use Cloud AI analysis'],
               'precautions': ['Follow general plant care guidelines'],
-              'additionalInfo': '✅ ANALYSIS COMPLETE\n\nPlant identified: $plantName\n\n⚠️ Note: Some details could not be parsed due to format differences.\n\nTry:\n• Different image angle\n• Better lighting\n• Using Gemini AI for more detailed analysis',
+              'additionalInfo': '✅ ANALYSIS COMPLETE\n\nPlant identified: $plantName\n\n⚠️ Note: Some details could not be parsed due to format differences.\n\nTry:\n• Different image angle\n• Better lighting\n• Using Cloud AI for more detailed analysis',
             },
             'isRealData': true,
             'hasDiseaseInfo': false,
@@ -725,9 +742,10 @@ class PlantIdService {
   /// Get API status and credit info
   Future<Map<String, dynamic>> getApiStatus() async {
     try {
+      final apiKey = _requireApiKey();
       final response = await http.get(
         Uri.parse('$_plantIdBaseUrl/usage_info'),
-        headers: {'Api-Key': _plantIdApiKey},
+        headers: {'Api-Key': apiKey},
       );
 
       if (response.statusCode == 200) {
@@ -737,7 +755,7 @@ class PlantIdService {
           'status': 'API is working',
           'version': 'v3',
           'endpoint': _plantIdBaseUrl,
-          'key': '${_plantIdApiKey.substring(0, 8)}...',
+          'key': '${apiKey.substring(0, 8)}...',
           'details': data,
         };
       } else {

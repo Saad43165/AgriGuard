@@ -140,7 +140,7 @@ class _FaqPageState extends State<FaqPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${_filteredFaqs.length} ${_filteredFaqs.length == 1 ? translation.get('result') ?? 'result' : translation.get('results') ?? 'results'}',
+                      '${_filteredFaqs.length} ${_filteredFaqs.length == 1 ? translation.get('result') : translation.get('results')}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .colorScheme
@@ -155,7 +155,7 @@ class _FaqPageState extends State<FaqPage> {
                         onPressed: _clearFilters,
                         icon: const Icon(Icons.clear_all_rounded, size: 16),
                         label: Text(
-                          translation.get('clear_filters') ?? 'Clear Filters',
+                          translation.get('clear_filters'),
                           style: const TextStyle(fontSize: 12),
                         ),
                         style: TextButton.styleFrom(

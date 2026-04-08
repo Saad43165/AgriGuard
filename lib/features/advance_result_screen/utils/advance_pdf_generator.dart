@@ -33,7 +33,6 @@ class AdvancedPdfGenerator {
   static const _grey100   = PdfColor(0.98, 0.98, 0.98);   // Near white
   static const _grey300   = PdfColor(0.9, 0.9, 0.9);      // Light grey
   static const _grey600   = PdfColor(0.5, 0.5, 0.5);      // Medium grey
-  static const _grey900   = PdfColor(0.2, 0.2, 0.2);      // Dark grey
   static const _textDark  = PdfColor(0.1, 0.1, 0.1);      // Almost black
 
   // Status colors
@@ -44,7 +43,6 @@ class AdvancedPdfGenerator {
   static const _amber700  = PdfColor(0.9, 0.5, 0.0);      // Dark amber
   static const _amber100  = PdfColor(1.0, 0.95, 0.8);     // Light amber
   static const _amberAcc  = PdfColor(1.0, 0.8, 0.0);      // Bright amber
-  static const _purple700 = PdfColor(0.4, 0.1, 0.6);      // Dark purple
   static const _purple400 = PdfColor(0.6, 0.3, 0.8);      // Medium purple
   static const _purple100 = PdfColor(0.95, 0.9, 1.0);     // Light purple
   static const _purpleBdr = PdfColor(0.8, 0.6, 0.9);      // Purple border

@@ -7,7 +7,7 @@ class LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Animated Icon
+        // Animated Logo
         TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 600),
           tween: Tween(begin: 0.0, end: 1.0),
@@ -15,7 +15,7 @@ class LoginHeader extends StatelessWidget {
             return Transform.scale(
               scale: value,
               child: Container(
-                padding: const EdgeInsets.all(32),
+                padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -27,17 +27,13 @@ class LoginHeader extends StatelessWidget {
                     ],
                   ),
                 ),
-                child: ShaderMask(
-                  blendMode: BlendMode.srcIn,
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                  ).createShader(bounds),
-                  child: const Icon(
-                    Icons.agriculture_rounded,
-                    size: 80,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),

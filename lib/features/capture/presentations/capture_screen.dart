@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/app_routes.dart';
+import '../../../../core/services/ai_analysis_service.dart';
 import '../../../../core/services/translation_service.dart';
+import '../../../../core/widgets/app_dialog.dart';
 import '../../../core/services/disease_id_service.dart';
 import '../../../core/services/plant_id_service.dart';
 import '../../../core/widgets/floating_orb.dart';
@@ -18,7 +20,14 @@ import 'components/source_selection_screen.dart';
 import 'components/welcome_screen.dart';
 
 class CaptureScreen extends StatefulWidget {
-  const CaptureScreen({super.key});
+  final bool startOnDevice;
+  final bool startAdvanced;
+
+  const CaptureScreen({
+    super.key,
+    this.startOnDevice = false,
+    this.startAdvanced = false,
+  });
 
   @override
   State<CaptureScreen> createState() => _CaptureScreenState();
@@ -45,6 +54,7 @@ class _CaptureScreenState extends State<CaptureScreen>
   // Services
   final PlantIdService _plantService = PlantIdService();
   final DiseaseIdService _diseaseService = DiseaseIdService();
+  late final PlantAnalysisService _analysisService;
   final GuestService _guestService = GuestService();
   final TranslationService _translation = TranslationService();
 
@@ -52,9 +62,37 @@ class _CaptureScreenState extends State<CaptureScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
+    _analysisService = PlantAnalysisService(
+      speciesService: _plantService,
+      diseaseService: _diseaseService,
+    );
     _initializeServices();
     _translation.loadLanguage();
+
+    // Apply startup mode passed in via constructor props.
+    // This is the ONLY place startup flags are consumed — we never read
+    // them from route arguments because CaptureScreen lives inside a PageView
+    // and ModalRoute.of(context) would return the parent route, which may
+    // carry stale arguments from a previous Home quick-scan navigation.
+    if (widget.startOnDevice) {
+      _selectedMethod = 'tflite';
+      _currentStep = 2;
+    } else if (widget.startAdvanced) {
+      _selectedMethod = 'api';
+      _currentStep = 2;
+    }
   }
+
+  // didChangeDependencies intentionally does NOT read route arguments.
+  // Reason: CaptureScreen is embedded in a PageView inside MainNavigationScreen.
+  // ModalRoute.of(context) resolves to the *parent* named route, which retains
+  // its arguments across the lifetime of MainNavigationScreen. If HomeScreen
+  // previously pushed AppRoutes.scan with startOnDevice/startAdvanced, those
+  // arguments stay on the stack and would incorrectly skip the Welcome screen
+  // every time the user taps the navbar scan tab.
+  //
+  // Startup flags are injected exclusively via widget constructor props
+  // (see openScanTab in MainNavigationScreen / mainNavKey).
 
   Future<void> _initializeServices() async {
     await _guestService.initialize();
@@ -215,108 +253,8 @@ class _CaptureScreenState extends State<CaptureScreen>
         throw Exception(_translation.get('error_file_not_found'));
       }
 
-      Map<String, dynamic> plantResult;
-      Map<String, dynamic> diseaseResult;
-
-      debugPrint('🤖 Starting dual AI analysis...');
-
-      try {
-        final results = await Future.wait([
-          _plantService.predict(imageFile),
-          _diseaseService.predict(imageFile),
-        ]);
-
-        plantResult = results[0];
-        diseaseResult = results[1];
-
-        debugPrint('📊 Plant ID Result:');
-        debugPrint('   Plant: ${plantResult['label']}');
-        debugPrint('   Confidence: ${plantResult['confidence']}');
-
-        debugPrint('📊 Disease Detection Result:');
-        debugPrint('   Disease: ${diseaseResult['diseaseName']}');
-        debugPrint('   Confidence: ${diseaseResult['confidence']}%');
-        debugPrint('   Severity: ${diseaseResult['severity']}');
-        debugPrint('   Healthy: ${diseaseResult['isHealthy']}');
-        debugPrint('   Raw Label: ${diseaseResult['rawLabel']}');
-
-        final plantConfidence = plantResult['confidence'] as double;
-        final diseaseConfidence =
-        double.parse(diseaseResult['confidence'] as String);
-        final predictedPlant = plantResult['label'] as String;
-        final isPlantUnknown = plantResult['isUnknown'] as bool? ?? false;
-
-        String correctPlantFromDisease = 'Unknown Plant';
-        if (diseaseResult.containsKey('rawLabel')) {
-          final rawLabel = diseaseResult['rawLabel'] as String;
-          if (rawLabel.contains('___')) {
-            final parts = rawLabel.split('___');
-            if (parts[0].isNotEmpty) {
-              correctPlantFromDisease = parts[0].replaceAll('_', ' ');
-              debugPrint(
-                  '✅ Extracted plant from disease model: $correctPlantFromDisease');
-            }
-          }
-        }
-
-        if (isPlantUnknown || plantConfidence < 0.5) {
-          debugPrint(
-              '⚠️ Plant ID uncertain (confidence: ${(plantConfidence * 100).toStringAsFixed(1)}%)');
-          debugPrint(
-              '   Using plant from disease model: $correctPlantFromDisease');
-
-          plantResult['label'] = correctPlantFromDisease;
-          plantResult['correctedFromDisease'] = true;
-          plantResult['originalPrediction'] = predictedPlant;
-          plantResult['correctionReason'] = 'Low plant ID confidence';
-        } else if (diseaseConfidence > 70.0 &&
-            diseaseResult['isHealthy'] == true) {
-          debugPrint(
-              '✅ High confidence healthy plant detected in disease model');
-          debugPrint(
-              '   Disease model plant: $correctPlantFromDisease vs Plant ID: $predictedPlant');
-
-          if (!_plantsMatch(predictedPlant, correctPlantFromDisease)) {
-            debugPrint(
-                '⚠️ Mismatch detected! Trusting disease model for healthy plant');
-            plantResult['label'] = correctPlantFromDisease;
-            plantResult['correctedFromDisease'] = true;
-            plantResult['originalPrediction'] = predictedPlant;
-            plantResult['correctionReason'] =
-            'Healthy plant mismatch correction';
-          }
-        }
-
-        final plantTime = plantResult['inferenceTime'] ?? 0;
-        final diseaseTime = diseaseResult['inferenceTime'] ?? 0;
-        debugPrint('⏱️ Total inference time: ${plantTime + diseaseTime}ms');
-      } catch (e) {
-        debugPrint('❌ AI prediction error: $e');
-
-        plantResult = {
-          'label': 'Unknown Plant',
-          'confidence': 0.3,
-          'isUnknown': true,
-          'allPredictions': [],
-          'inferenceTime': 0,
-          'correctedFromDisease': false,
-        };
-
-        diseaseResult = {
-          'success': true,
-          'plantName': 'Plant',
-          'diseaseName': 'Analysis Required',
-          'confidence': '50.0',
-          'severity': 'Unknown',
-          'cause': 'AI analysis incomplete',
-          'isHealthy': false,
-          'symptoms': ['Analysis could not be completed'],
-          'remediation': ['Please try again or use advanced analysis'],
-          'precautions': ['Regular monitoring recommended'],
-          'allPredictions': [],
-          'rawLabel': 'Fallback Analysis',
-        };
-      }
+      debugPrint('🤖 Starting unified on-device analysis...');
+      final analysisResult = await _analysisService.analyzePlant(imageFile);
 
       if (!mounted) return;
 
@@ -329,11 +267,11 @@ class _CaptureScreenState extends State<CaptureScreen>
         }
       }
 
-      final result = _prepareScanData(plantResult, diseaseResult, user);
+      final scanData = _prepareScanDataFromAnalysis(analysisResult, user);
       if (!mounted) return;
 
       await Navigator.pushNamed(context, AppRoutes.results,
-          arguments: {'scanData': result});
+          arguments: {'scanData': scanData});
 
       _resetState();
     } catch (e) {
@@ -346,54 +284,45 @@ class _CaptureScreenState extends State<CaptureScreen>
     }
   }
 
-  bool _plantsMatch(String plant1, String plant2) {
-    final p1 = plant1.toLowerCase();
-    final p2 = plant2.toLowerCase();
-
-    if (p1 == p2) return true;
-
-    final aliases = {
-      'bell pepper': ['bell pepper', 'pepper'],
-      'corn (maize)': ['corn', 'maize', 'corn (maize)'],
-      'corn': ['corn', 'maize', 'corn (maize)'],
-      'maize': ['corn', 'maize', 'corn (maize)'],
-    };
-
-    for (final group in aliases.values) {
-      if (group.contains(p1) && group.contains(p2)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  Map<String, dynamic> _prepareScanData(
-      Map<String, dynamic> plantPrediction,
-      Map<String, dynamic> diseasePrediction,
+  Map<String, dynamic> _prepareScanDataFromAnalysis(
+      Map<String, dynamic> analysis,
       User? user,
       ) {
-    final plantName = plantPrediction['label'] as String;
-    final plantConfidence = plantPrediction['confidence'] as double;
-    final isUnknown = plantPrediction['isUnknown'] as bool? ?? false;
-    final isLikelyPlant = plantPrediction['isLikelyPlant'] as bool? ?? true;
+    final plantName = analysis['plantName']?.toString() ??
+        analysis['species']?.toString() ??
+        'Unknown Plant';
 
-    final diseaseName =
-        diseasePrediction['diseaseName'] as String? ?? 'Health Analysis';
-    final severity = diseasePrediction['severity'] as String? ?? 'Unknown';
-    final cause =
-        diseasePrediction['cause'] as String? ?? 'Requires analysis';
-    final diseaseConfidence = diseasePrediction['confidence'] as String? ?? '0.0';
-    final isHealthy = diseasePrediction['isHealthy'] as bool? ?? false;
+    final diseaseName = analysis['diseaseName']?.toString() ??
+        analysis['disease']?.toString() ??
+        'Healthy';
 
-    final plantConfidencePercent = (plantConfidence * 100).toStringAsFixed(1);
-    final diseaseConfidencePercent = diseaseConfidence;
+    final isHealthy = analysis['isHealthy'] as bool? ??
+        diseaseName.toLowerCase() == 'healthy';
+
+    final isLeaf = analysis['isLeaf'] as bool? ?? true;
+    final guestMode = _guestService.isGuestMode;
+    final shouldSaveToHistory =
+    guestMode ? false : (analysis['shouldSaveToHistory'] as bool? ?? true);
+
+    final rawConfidence =
+        analysis['confidence'] ?? analysis['diseaseConfidence'] ?? 0.0;
+    final confidence = (rawConfidence is num)
+        ? rawConfidence.toStringAsFixed(1)
+        : rawConfidence.toString();
+
+    final speciesConf = analysis['speciesConfidence'];
+    final plantConfidence = (speciesConf is num)
+        ? (speciesConf * 100).toStringAsFixed(1)
+        : (analysis['plantConfidence']?.toString() ?? '0');
+
+    final remediation = analysis['remediation'];
+    final remediationList =
+    remediation is List ? List<String>.from(remediation) : <String>[];
 
     String diagnosis;
-    if (!isLikelyPlant) {
-      diagnosis =
-      '⚠️ Plant identification uncertain. The identified "$plantName" appears to be a disease, not a plant species.';
-    } else if (isUnknown || plantConfidence < 0.3) {
+    if (!isLeaf) {
+      diagnosis = '❌ Non-leaf image detected';
+    } else if (analysis['isUnknown'] == true) {
       diagnosis = 'Unable to identify plant with confidence';
     } else if (isHealthy) {
       diagnosis = '✅ Healthy $plantName plant identified';
@@ -402,19 +331,10 @@ class _CaptureScreenState extends State<CaptureScreen>
     }
 
     String treatment;
-    final remediationList = diseasePrediction['remediation'] as List<String>?;
-
-    if (!isLikelyPlant && isHealthy) {
-      treatment =
-      '• Plant identification uncertain\n• Plant appears healthy\n• Verify plant type for accurate care';
-    } else if (remediationList != null && remediationList.isNotEmpty) {
-      treatment = remediationList.join('\n• ');
-      treatment = '• $treatment';
-
-      if (!isLikelyPlant) {
-        treatment =
-        '⚠️ NOTE: Plant identification may be incorrect. "$plantName" appears to be a disease name.\n$treatment';
-      }
+    if (!isLeaf) {
+      treatment = '• Please upload a clear photo of a plant leaf';
+    } else if (remediationList.isNotEmpty) {
+      treatment = '• ${remediationList.join('\n• ')}';
     } else if (isHealthy) {
       treatment =
       '• Continue regular care routine\n• Monitor for any signs of disease or pests\n• Apply balanced fertilizer as needed';
@@ -423,28 +343,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       '• Consult agricultural expert for specific treatment\n• Isolate affected plant to prevent spread\n• Apply appropriate fungicide based on diagnosis';
     }
 
-    String warningNote = '';
-    if (!isLikelyPlant) {
-      warningNote = '''
-    
-⚠️ IMPORTANT NOTE:
-The plant identification model predicted "$plantName", which appears to be a disease name.
-This may indicate:
-1. The plant ID model is confused
-2. The image shows disease symptoms
-3. A different plant type
-
-For accurate results, please:
-• Take a clear photo of the whole plant
-• Ensure good lighting
-• Include leaves, stem, and if possible, flowers/fruits
-''';
-    }
-
-    final symptomsList = diseasePrediction['symptoms'] as List<String>? ?? [];
-    final precautionsList =
-        diseasePrediction['precautions'] as List<String>? ?? [];
-
     return {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'status': 'identified',
@@ -452,37 +350,44 @@ For accurate results, please:
       'plantName': plantName,
       'diseaseName': diseaseName,
       'diagnosis': diagnosis,
-      'confidence': diseaseConfidencePercent,
-      'plantConfidence': plantConfidencePercent,
-      'treatment': treatment + warningNote,
-      'severity': severity,
-      'cause': cause,
-      'symptoms': symptomsList,
-      'symptomsText': symptomsList.isNotEmpty
-          ? symptomsList.join('\n• ')
+      'confidence': confidence,
+      'plantConfidence': plantConfidence,
+      'treatment': treatment,
+      'severity': analysis['severity']?.toString() ??
+          (isHealthy ? 'None' : 'Unknown'),
+      'cause': analysis['cause']?.toString() ??
+          analysis['primaryMessage']?.toString() ??
+          'Requires analysis',
+      'symptoms': analysis['symptoms'] ?? const <String>[],
+      'symptomsText':
+      (analysis['symptoms'] is List &&
+          (analysis['symptoms'] as List).isNotEmpty)
+          ? (analysis['symptoms'] as List).join('\n• ')
           : 'No specific symptoms identified',
-      'precautions': precautionsList,
-      'precautionsText': precautionsList.isNotEmpty
-          ? precautionsList.join('\n• ')
+      'precautions': analysis['precautions'] ?? const <String>[],
+      'precautionsText':
+      (analysis['precautions'] is List &&
+          (analysis['precautions'] as List).isNotEmpty)
+          ? (analysis['precautions'] as List).join('\n• ')
           : '• Maintain proper plant care\n• Regular monitoring\n• Adequate watering',
+      'remediation': remediationList,
       'imagePath': _imageFile!.path,
       'timestamp': DateTime.now().toIso8601String(),
       'userId': user?.uid ?? 'guest',
       'fromCapture': true,
       'previousRoute': AppRoutes.scan,
-      'isUnknown': isUnknown,
+      'isUnknown': analysis['isUnknown'] as bool? ?? false,
       'isHealthy': isHealthy,
-      'isLikelyPlant': isLikelyPlant,
-      'allPredictions': plantPrediction['allPredictions'] ?? [],
-      'diseasePredictions': diseasePrediction['allPredictions'] ?? [],
-      'plantInferenceTime': plantPrediction['inferenceTime'] ?? 0,
-      'diseaseInferenceTime': diseasePrediction['inferenceTime'] ?? 0,
+      'isLeaf': isLeaf,
+      'leafConfidence': analysis['leafConfidence'],
+      'leafAnalysis': analysis['_leafAnalysis'] ?? analysis['leafAnalysis'],
+      'shouldSaveToHistory': shouldSaveToHistory,
+      'skipSave': shouldSaveToHistory ? false : true,
+      'rawLabel': analysis['rawLabel'],
+      'analysisMethod': 'tflite_orchestrated',
+      'hasDiseaseAnalysis': analysis['hasDiseaseData'] as bool? ?? true,
       'isGuestScan': _guestService.isGuestMode,
-      'rawPlantData': plantPrediction,
-      'rawDiseaseData': diseasePrediction,
-      'analysisMethod': 'tflite_dual',
-      'hasDiseaseAnalysis': true,
-      'plantIdWarning': !isLikelyPlant,
+      'rawAnalysis': analysis,
     };
   }
 
@@ -503,102 +408,35 @@ For accurate results, please:
       builder: (context) => AnimatedBuilder(
         animation: _translation,
         builder: (context, child) {
-          return AlertDialog(
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.block_rounded,
-                    color: Theme.of(context).colorScheme.error,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _translation.get('limit_reached'),
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ],
+          return AppDialog(
+            icon: Icon(
+              Icons.block_rounded,
+              color: Theme.of(context).colorScheme.error,
             ),
+            title: _translation.get('limit_reached'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _translation.get('limit_message'),
-                  style: const TextStyle(fontSize: 15),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.amber.withOpacity(0.15),
-                        Colors.orange.withOpacity(0.15),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.amber.withOpacity(0.3),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star_rounded,
-                          color: Colors.amber, size: 24),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _translation.get('limit_benefit'),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                Text(_translation.get('limit_message')),
+                const SizedBox(height: 12),
+                Text(_translation.get('limit_benefit')),
               ],
             ),
             actions: [
-              TextButton(
+              AppDialogActions.secondary(
+                context,
+                label: _translation.get('cancel'),
                 onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                ),
-                child: Text(
-                  _translation.get('cancel'),
-                  style: const TextStyle(fontSize: 15),
-                ),
               ),
-              ElevatedButton(
+              AppDialogActions.primary(
+                context,
+                label: _translation.get('sign_in_now'),
+                icon: Icons.login_rounded,
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(
                   context,
                   AppRoutes.login,
                       (route) => false,
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                ),
-                child: Text(
-                  _translation.get('sign_in_now'),
-                  style:
-                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -634,7 +472,8 @@ For accurate results, please:
         ),
         backgroundColor: Theme.of(context).colorScheme.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: _translation.get('dismiss'),
@@ -766,7 +605,6 @@ For accurate results, please:
             ],
           ),
         ),
-
       ),
     );
   }
@@ -786,8 +624,10 @@ For accurate results, please:
         );
       case 1:
         return MethodSelectionScreen(
-          isTFLiteReady: _plantService.isLoaded && _diseaseService.isLoaded,
-          loadingText: !_plantService.isLoaded || !_diseaseService.isLoaded
+          isTFLiteReady:
+          _plantService.isLoaded && _diseaseService.isLoaded,
+          loadingText:
+          !_plantService.isLoaded || !_diseaseService.isLoaded
               ? _translation.get('model_loading')
               : null,
           onSelectTFLite: () => _selectMethod('tflite'),
@@ -797,6 +637,10 @@ For accurate results, please:
             'Plant Identification': _plantService.isLoaded,
             'Disease Detection': _diseaseService.isLoaded,
           },
+          isAdvancedAllowed: !_guestService.isGuestMode,
+          advancedUnavailableReason: _guestService.isGuestMode
+              ? _guestService.getRestrictionMessage('access_advanced')
+              : null,
         );
       case 2:
         return SourceSelectionScreen(

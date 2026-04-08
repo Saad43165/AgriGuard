@@ -31,7 +31,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   late Animation<double> _scaleAnimation;
 
   bool _isAnalyzing = false;
-  int _selectedAnalysisType = 0; // 0 = Cloud, 1 = Plant.id
+  int _selectedAnalysisType = 0; // 0 = Cloud Vision (HF), 1 = Plant.id, 2 = Groq advice
+  Map<String, dynamic>? _apiStatus;
 
   final AdvancedSearchService _searchService = AdvancedSearchService();
   final TranslationService _translation = TranslationService();
@@ -48,11 +49,19 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     },
     {
       'titleKey': 'plantid',
-      'descKey': 'plantiddesc',
+      'descKey': 'plantid_desc',
       'icon': Icons.local_florist_rounded,
       'duration': '3-5',
       'type': 'PlantId',
       'color': const Color(0xFF4CAF50),
+    },
+    {
+      'titleKey': 'groq_ai',
+      'descKey': 'groq_desc',
+      'icon': Icons.auto_awesome_rounded,
+      'duration': '2-4',
+      'type': 'Advice',
+      'color': const Color(0xFF3B82F6),
     },
   ];
 
@@ -61,6 +70,44 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     super.initState();
     _initializeAnimations();
     _translation.loadLanguage();
+    _checkApiAvailability();
+  }
+
+  Future<void> _checkApiAvailability() async {
+    try {
+      final status = await _searchService.testAllApis();
+      if (mounted) setState(() => _apiStatus = status);
+    } catch (_) {
+      if (mounted) setState(() => _apiStatus = {'success': false});
+    }
+  }
+
+  bool _isOptionAvailable(int index) {
+    final status = _apiStatus;
+    if (status == null) return true; // don't block while loading
+
+    if (index == 0) {
+      final hf = status['huggingface'];
+      return hf is Map ? (hf['available'] == true) : false;
+    }
+    if (index == 1) {
+      final plantId = status['plantId'];
+      return plantId is Map ? (plantId['available'] == true) : false;
+    }
+    if (index == 2) {
+      final groq = status['groq'];
+      return groq is Map ? (groq['available'] == true) : false;
+    }
+    return true;
+  }
+
+  String? _unavailableReason(int index) {
+    final status = _apiStatus;
+    if (status == null) return null;
+    if (index == 0) return (status['huggingface'] as Map?)?['message']?.toString();
+    if (index == 1) return (status['plantId'] as Map?)?['message']?.toString();
+    if (index == 2) return (status['groq'] as Map?)?['message']?.toString();
+    return null;
   }
 
   void _initializeAnimations() {
@@ -97,6 +144,11 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
 
   Future<void> _startAdvancedAnalysis() async {
     if (_isAnalyzing) return;
+    if (!_isOptionAvailable(_selectedAnalysisType)) {
+      _showError(_unavailableReason(_selectedAnalysisType) ??
+          _translation.get('error_selected_method_unavailable'));
+      return;
+    }
 
     final imagePath = widget.originalScanData['imagePath'] as String?;
     if (imagePath == null) {
@@ -112,11 +164,15 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
 
     final fileSize = await imageFile.length();
     if (fileSize > 5 * 1024 * 1024) {
-      _showError('Image is too large (max 5MB)');
+      _showError(_translation.get('error_image_too_large_5mb'));
       return;
     }
 
-    final selectedType = _selectedAnalysisType == 0 ? 'Gemini' : 'Plant.id';
+    final selectedType = _selectedAnalysisType == 0
+        ? 'HuggingFace'
+        : _selectedAnalysisType == 1
+            ? 'Plant.id'
+            : 'Groq';
 
     HapticFeedback.mediumImpact();
     setState(() => _isAnalyzing = true);
@@ -124,12 +180,15 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     try {
       Map<String, dynamic> result;
 
-      if (selectedType == 'Gemini') {
-        debugPrint('🎯 Selected: Cloud AI Analysis');
-        result = await _searchService.analyzePlant(imageFile);
-      } else {
+      if (selectedType == 'HuggingFace') {
+        debugPrint('🎯 Selected: Cloud Vision (Hugging Face)');
+        result = await _searchService.analyzeWithHuggingFace(imageFile);
+      } else if (selectedType == 'Plant.id') {
         debugPrint('🎯 Selected: Plant.id Professional');
         result = await _searchService.analyzeWithPlantId(imageFile);
+      } else {
+        debugPrint('🎯 Selected: Groq Advice');
+        result = await _searchService.analyzePlant(imageFile);
       }
 
       if (!mounted) return;
@@ -159,7 +218,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       if (mounted) {
         setState(() => _isAnalyzing = false);
         debugPrint('❌ Unexpected error: $e');
-        _showError('Unexpected error: ${e.toString()}');
+        _showError('${_translation.get('error_unexpected')}: ${e.toString()}');
       }
     }
   }
@@ -449,16 +508,23 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           ...List.generate(_analysisOptions.length, (index) {
             final option = _analysisOptions[index];
             final isSelected = _selectedAnalysisType == index;
+            final isAvailable = _isOptionAvailable(index);
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: AnalysisOptionCard(
                 option: option,
                 isSelected: isSelected,
-                isAvailable: true,
+                isAvailable: isAvailable,
+                unavailableReason: _unavailableReason(index),
                 onTap: () {
                   if (!_isAnalyzing) {
-                    setState(() => _selectedAnalysisType = index);
+                    if (isAvailable) {
+                      setState(() => _selectedAnalysisType = index);
+                    } else {
+                      _showError(_unavailableReason(index) ??
+                          _translation.get('error_option_unavailable'));
+                    }
                   }
                 },
               ),
@@ -471,7 +537,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           AnalysisStartButton(
             isAnalyzing: _isAnalyzing,
             selectedOption: _analysisOptions[_selectedAnalysisType],
-            isAvailable: true,
+            isAvailable: _isOptionAvailable(_selectedAnalysisType),
             onPressed: _startAdvancedAnalysis,
           ),
 

@@ -11,43 +11,38 @@ class SignUpLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        onPressed();
-      },
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'New to AgriGuard? ',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-            ).createShader(bounds),
-            child: Text(
-              'Create Account',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 46,                       // reduced from 52
+      child: OutlinedButton(
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.12)),
+          backgroundColor: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.85),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          padding: EdgeInsets.zero,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.person_add_alt_1_rounded, size: 17, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Create a new account',
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
-                fontSize: 14,
-                letterSpacing: 0.3,
+                fontSize: 13,
+                letterSpacing: 0.2,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

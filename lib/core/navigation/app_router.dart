@@ -13,6 +13,7 @@ import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 import '../navigation/main_navigation_screen.dart';
+import '../../features/auth/Login_Screen/services/guest_service.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -37,6 +38,7 @@ class AppRouter {
     // AUTH GUARD
     final user = FirebaseAuth.instance.currentUser;
     final isLoggedIn = user != null;
+    final isGuest = GuestService().isGuestMode;
 
     switch (settings.name) {
       case AppRoutes.splash:
@@ -90,6 +92,9 @@ class AppRouter {
 
     // SEPARATE SCREENS (Not part of bottom navigation)
       case AppRoutes.history:
+        if (isGuest) {
+          return buildLightRoute(const HelpAndSupportScreen());
+        }
         return buildLightRoute(const HistoryScreen());
 
       case AppRoutes.results:

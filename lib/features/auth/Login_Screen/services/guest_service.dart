@@ -108,7 +108,7 @@ class GuestService extends ChangeNotifier {
       'save_results',
       'view_statistics',
       'edit_profile',
-      'access_settings',
+      'access_advanced',
     ];
 
     return !restrictedActions.contains(action);
@@ -125,6 +125,8 @@ class GuestService extends ChangeNotifier {
         return 'Sharing is not available in guest mode. Please sign in to share your results.';
       case 'save_results':
         return 'Saving results is not available in guest mode. Please sign in to save your scans.';
+      case 'access_advanced':
+        return 'Advanced scan is not available in guest mode. Please sign in to use advanced AI features.';
       case 'scan_limit':
         return 'You have reached the maximum of $maxGuestScans scans in guest mode. Please sign in to continue scanning.';
       default:

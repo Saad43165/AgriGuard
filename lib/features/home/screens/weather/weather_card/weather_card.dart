@@ -67,14 +67,14 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
       isDark,
     );
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth * 0.05;
+    final horizontalPadding = (screenWidth * 0.025).clamp(8.0, 12.0);
     final weatherType = WeatherCardHelpers.getWeatherType(
       weatherData.conditionText,
       weatherData.isDay,
     );
 
     return Container(
-      height: 175,
+      height: 168,
       margin: EdgeInsets.symmetric(horizontal: horizontalPadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -101,19 +101,21 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
-            // Animated weather background
+            // Lightweight on-device painter background (fast; no network).
             Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: WeatherCardPainter(
-                      weatherType: weatherType,
-                      animationValue: _animationController.value,
-                      isDark: isDark,
-                    ),
-                  );
-                },
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      painter: WeatherCardPainter(
+                        weatherType: weatherType,
+                        animationValue: _animationController.value,
+                        isDark: isDark,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
@@ -164,14 +166,14 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                         provider,
                         weatherColor,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Expanded(
                         child: WeatherCardWidgets.buildMainContent(
                           context,
                           weatherData,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       WeatherCardWidgets.buildBottomMetrics(weatherData),
                     ],
                   ),

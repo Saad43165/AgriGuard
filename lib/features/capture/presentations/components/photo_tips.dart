@@ -7,7 +7,6 @@ class PhotoTips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final translation = TranslationService();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedBuilder(
       animation: translation,

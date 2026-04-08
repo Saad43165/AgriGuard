@@ -34,9 +34,7 @@ class AnalysisInfoNote extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  translation.isUrdu
-                      ? 'دونوں طریقے AI سے چلتے ہیں اور درست نتائج فراہم کرتے ہیں'
-                      : 'Both methods use AI for accurate results',
+                  translation.get('advanced_note'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

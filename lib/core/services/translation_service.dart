@@ -1,5 +1,7 @@
 // lib/core/services/translation_service.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TranslationService extends ChangeNotifier {
@@ -13,9 +15,14 @@ class TranslationService extends ChangeNotifier {
 
   static const String _languageKey = 'app_language';
 
+  Map<String, dynamic> _enAsset = const {};
+  Map<String, dynamic> _urAsset = const {};
+  bool _assetsLoaded = false;
+
   Future<void> loadLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     _isUrdu = prefs.getBool(_languageKey) ?? false;
+    await _loadAssetTranslationsOnce();
     notifyListeners();
   }
 
@@ -27,7 +34,44 @@ class TranslationService extends ChangeNotifier {
   }
 
   String get(String key) {
+    // 1) Try asset-based translations (supports dotted keys like "results.title")
+    final assetValue = _getFromAsset(key);
+    if (assetValue != null) return assetValue;
+
+    // 2) Fall back to legacy in-code maps (flat keys)
     return _isUrdu ? _urduTranslations[key] ?? key : _englishTranslations[key] ?? key;
+  }
+
+  Future<void> _loadAssetTranslationsOnce() async {
+    if (_assetsLoaded) return;
+    try {
+      final enStr = await rootBundle.loadString('assets/translations/en.json');
+      final urStr = await rootBundle.loadString('assets/translations/ur.json');
+      final en = jsonDecode(enStr);
+      final ur = jsonDecode(urStr);
+      if (en is Map<String, dynamic>) _enAsset = en;
+      if (ur is Map<String, dynamic>) _urAsset = ur;
+      _assetsLoaded = true;
+    } catch (_) {
+      // Safe fallback: app will still work using legacy maps.
+      _assetsLoaded = true;
+    }
+  }
+
+  String? _getFromAsset(String key) {
+    if (!_assetsLoaded) return null;
+    final root = _isUrdu ? _urAsset : _enAsset;
+    if (root.isEmpty) return null;
+
+    dynamic cur = root;
+    for (final part in key.split('.')) {
+      if (cur is Map<String, dynamic> && cur.containsKey(part)) {
+        cur = cur[part];
+      } else {
+        return null;
+      }
+    }
+    return cur is String ? cur : null;
   }
 
   // Translate plant names
@@ -242,6 +286,10 @@ class TranslationService extends ChangeNotifier {
     'error_load_models': 'Failed to load AI models. Please restart the app.',
     'error_sign_in': 'Please sign in to continue',
     'error_file_not_found': 'Image file not found',
+    'error_selected_method_unavailable': 'Selected method is unavailable',
+    'error_option_unavailable': 'This option is not available',
+    'error_image_too_large_5mb': 'Image is too large (max 5MB)',
+    'error_unexpected': 'Unexpected error',
     'limit_reached': 'Scan Limit Reached',
     'limit_message': 'You have reached your free scan limit',
     'limit_benefit': 'Sign up for unlimited scans and advanced features!',
@@ -263,6 +311,12 @@ class TranslationService extends ChangeNotifier {
     'got_it': 'Got It',
     'how_it_works': 'How It Works',
 
+    // Advanced analysis UI
+    'step_choose': 'Choose a method',
+    'step_choose_subtitle': 'Pick the one that best matches your need',
+    'unavailable': 'Unavailable',
+    'advanced_note': 'Better results with clear, well-lit leaf photos',
+
     // Features
     'features_title': 'Key Features',
     'feature_identify': 'Identify Plants',
@@ -276,21 +330,18 @@ class TranslationService extends ChangeNotifier {
 
     // Analysis Methods
     'analysis_methods': 'Analysis Methods',
-    'gemini_ai': 'Gemini AI',
-    'gemini_desc': 'Fast AI-powered disease detection',
-    'gemini_best': 'Best for field conditions',
+    'groq_ai': 'Groq AI',
+    'groq_desc': 'AI assistant built on on-device detection',
+    'groq_best': 'Best for explanations and treatment guidance',
     'plantid_ai': 'Plant.id',
     'plantid_desc': 'Professional plant identification',
     'plantid_best': 'Best for detailed analysis',
-    'cloud_ai': 'Cloud AI',
-    'cloud_ai_desc': 'Fast AI-powered disease detection',
+    'cloud_ai': 'Cloud Vision (Free)',
+    'cloud_ai_desc': 'Free image-based disease detection (Hugging Face)',
     'plantid': 'Plant.id',
-    'plantiddesc': 'Professional plant identification',
     'duration': 'Duration',
     'seconds': 'seconds',
-    'Seconds': 'seconds',
     'start_analysis': 'Start Analysis',
-    'Analyzing': 'Analyzing',
     'selected': 'Selected',
     'advanced_detection': 'Advanced detection',
     'detailed_reports': 'Detailed reports',
@@ -537,6 +588,10 @@ class TranslationService extends ChangeNotifier {
     'error_load_models': 'AI ماڈل لوڈ کرنے میں ناکامی۔ براہ کرم ایپ دوبارہ شروع کریں۔',
     'error_sign_in': 'جاری رکھنے کے لیے براہ کرم سائن ان کریں',
     'error_file_not_found': 'تصویر کی فائل نہیں ملی',
+    'error_selected_method_unavailable': 'منتخب کردہ طریقہ دستیاب نہیں ہے',
+    'error_option_unavailable': 'یہ آپشن دستیاب نہیں ہے',
+    'error_image_too_large_5mb': 'تصویر بہت بڑی ہے (زیادہ سے زیادہ 5MB)',
+    'error_unexpected': 'غیر متوقع خرابی',
     'limit_reached': 'اسکین کی حد پوری ہو گئی',
     'limit_message': 'آپ اپنی مفت اسکین کی حد تک پہنچ گئے ہیں',
     'limit_benefit': 'لامحدود اسکینز اور جدید خصوصیات کے لیے سائن اپ کریں!',
@@ -558,6 +613,12 @@ class TranslationService extends ChangeNotifier {
     'got_it': 'سمجھ گیا',
     'how_it_works': 'یہ کیسے کام کرتا ہے',
 
+    // Advanced analysis UI
+    'step_choose': 'طریقہ منتخب کریں',
+    'step_choose_subtitle': 'اپنی ضرورت کے مطابق بہترین آپشن منتخب کریں',
+    'unavailable': 'دستیاب نہیں',
+    'advanced_note': 'بہترین نتائج کے لیے صاف اور روشن پتے کی تصویر استعمال کریں',
+
     // Features
     'features_title': 'اہم خصوصیات',
     'feature_identify': 'پودوں کی شناخت',
@@ -571,21 +632,18 @@ class TranslationService extends ChangeNotifier {
 
     // Analysis Methods
     'analysis_methods': 'تجزیہ کے طریقے',
-    'gemini_ai': 'Gemini AI',
-    'gemini_desc': 'تیز AI سے بیماری کی تشخیص',
-    'gemini_best': 'میدانی حالات کے لیے بہترین',
+    'groq_ai': 'گروک AI',
+    'groq_desc': 'آن ڈیوائس ڈیٹیکشن کے ساتھ AI اسسٹنٹ',
+    'groq_best': 'وضاحت اور علاج کی رہنمائی کے لیے بہترین',
     'plantid_ai': 'Plant.id',
     'plantid_desc': 'پیشہ ورانہ پودوں کی شناخت',
     'plantid_best': 'تفصیلی تجزیہ کے لیے بہترین',
-    'cloud_ai': 'Cloud AI',
-    'cloud_ai_desc': 'تیز AI سے بیماری کی تشخیص',
+    'cloud_ai': 'کلاؤڈ ویژن (فری)',
+    'cloud_ai_desc': 'فری امیج بیسڈ بیماری کی تشخیص (Hugging Face)',
     'plantid': 'Plant.id',
-    'plantiddesc': 'پیشہ ورانہ پودوں کی شناخت',
     'duration': 'دورانیہ',
     'seconds': 'سیکنڈ',
-    'Seconds': 'سیکنڈ',
     'start_analysis': 'تجزیہ شروع کریں',
-    'Analyzing': 'تجزیہ جاری ہے',
     'selected': 'منتخب',
     'advanced_detection': 'جدید تشخیص',
     'detailed_reports': 'تفصیلی رپورٹیں',

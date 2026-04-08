@@ -287,7 +287,7 @@ class HistoryScanCard extends StatelessWidget {
                               Text(
                                 _isAdvanced
                                     ? (scan['analysisSource']?.toString() ??
-                                    'Gemini AI')
+                                    'Groq AI')
                                     : 'On-Device',
                                 style: TextStyle(
                                   fontSize: 12,

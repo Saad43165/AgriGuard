@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Global notifier – keep if used elsewhere
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
@@ -212,6 +213,61 @@ class AuthService {
   // -----------------------------------------------------------------
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  // -----------------------------------------------------------------
+  //  SOCIAL SIGN-IN (GOOGLE)
+  // -----------------------------------------------------------------
+  Future<User?> signInWithGoogle() async {
+    try {
+      // Force account picker instead of silently reusing the last account.
+      // This prevents "auto login" after a user signs out and taps Google again.
+      final googleSignIn = GoogleSignIn();
+      try {
+        await googleSignIn.disconnect();
+      } catch (_) {
+        // If not previously signed in / disconnect fails, ignore.
+        try {
+          await googleSignIn.signOut();
+        } catch (_) {}
+      }
+
+      final account = await googleSignIn.signIn();
+      if (account == null) return null; // user cancelled
+
+      final auth = await account.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: auth.accessToken,
+        idToken: auth.idToken,
+      );
+
+      final result = await _auth.signInWithCredential(credential);
+      final user = result.user;
+      if (user == null) return null;
+
+      await _upsertUserProfileFromAuth(user, provider: 'google');
+      return user;
+    } on FirebaseAuthException catch (e) {
+      throw _mapAuthError(e);
+    } catch (e) {
+      throw AuthException('Google sign-in failed. Please try again.');
+    }
+  }
+
+  Future<void> _upsertUserProfileFromAuth(User user, {required String provider}) async {
+    final displayName = user.displayName ?? '';
+    final email = user.email ?? '';
+    await _firestore.collection('users').doc(user.uid).set({
+      'fullName': displayName,
+      'email': email,
+      'profileImageUrl': user.photoURL ?? '',
+      'lastUpdated': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'emailVerified': user.emailVerified,
+      'authProvider': provider,
+      'scanCount': FieldValue.increment(0),
+      'crops': <String>[],
+    }, SetOptions(merge: true));
   }
 
   // -----------------------------------------------------------------

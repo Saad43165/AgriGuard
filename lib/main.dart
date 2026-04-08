@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/navigation/app_router.dart';
 import 'core/widgets/app_themes.dart';
 import 'core/services/notification_service.dart';
@@ -14,6 +15,12 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables (API keys, models, etc.)
+  // Safe to call even if .env is missing in release builds.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -53,26 +60,37 @@ Future<void> clearImagePickerCache() async {
 }
 
 class AgriGuardApp extends StatelessWidget {
-  const AgriGuardApp({super.key});
+  final ThemeData? themeOverride;
+  final Widget? homeOverride;
+  final Stream<User?>? authStateChangesOverride;
+
+  const AgriGuardApp({
+    super.key,
+    this.themeOverride,
+    this.homeOverride,
+    this.authStateChangesOverride,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: AppRouter.navigatorKey,
       title: 'AgriGuard',
-      theme: Provider.of<ThemeProvider>(context).currentTheme,
+      theme: themeOverride ?? Provider.of<ThemeProvider>(context).currentTheme,
       debugShowCheckedModeBanner: false,
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return SplashScreen(isLoggedIn: snapshot.hasData);
-        },
-      ),
+      home: homeOverride ??
+          StreamBuilder<User?>(
+            stream: authStateChangesOverride ??
+                FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              return SplashScreen(isLoggedIn: snapshot.hasData);
+            },
+          ),
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

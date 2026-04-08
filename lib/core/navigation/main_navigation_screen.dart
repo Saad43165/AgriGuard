@@ -5,6 +5,7 @@ import '../../features/Navbar/presentation/nav_bar.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/Profile/presentation/profile_screen.dart';
+import '../widgets/app_dialog.dart';
 
 
 class MainNavigationScreen extends StatefulWidget {
@@ -25,22 +26,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late int _currentIndex;
   late PageController _pageController;
   bool _isAnimating = false;
+  late bool _pendingStartOnDevice;
+  late bool _pendingStartAdvanced;
 
   // CRITICAL: Store the body widgets to prevent rebuilding
-  late final List<Widget> _screens;
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: _currentIndex);
+    _pendingStartOnDevice = widget.userData?['startOnDevice'] == true;
+    _pendingStartAdvanced = widget.userData?['startAdvanced'] == true;
 
     // Initialize screens ONCE
     _screens = [
       HomeScreen(userData: widget.userData),
-      const CaptureScreen(),
+      CaptureScreen(
+        startOnDevice: _pendingStartOnDevice,
+        startAdvanced: _pendingStartAdvanced,
+      ),
       ProfileScreen(userData: widget.userData),
     ];
+    // Consume startup flags once; future tab opens should start at Welcome.
+    _pendingStartOnDevice = false;
+    _pendingStartAdvanced = false;
   }
 
   @override
@@ -53,6 +64,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (_currentIndex == index || _isAnimating) return;
 
     HapticFeedback.lightImpact();
+
+    // Recreate Capture screen whenever user opens scan tab from navbar,
+    // so it always starts from welcome flow.
+    if (index == 1) {
+      _screens[1] = CaptureScreen(key: UniqueKey());
+    }
 
     setState(() {
       _isAnimating = true;
@@ -104,17 +121,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _showExitDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Exit App'),
+      builder: (ctx) => AppDialog(
+        icon: const Icon(Icons.exit_to_app_rounded),
+        title: 'Exit App',
         content: const Text('Are you sure you want to exit?'),
         actions: [
-          TextButton(
+          AppDialogActions.secondary(
+            ctx,
+            label: 'Cancel',
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
           ),
-          TextButton(
+          AppDialogActions.primary(
+            ctx,
+            label: 'Exit',
+            icon: Icons.exit_to_app_rounded,
             onPressed: () => SystemNavigator.pop(),
-            child: const Text('Exit'),
           ),
         ],
       ),

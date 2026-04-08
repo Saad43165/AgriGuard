@@ -91,7 +91,8 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
   bool _isAdvancedScan() {
     return widget.scan['isAdvanced'] as bool? ??
         widget.scan['scanType']?.toString() == 'advanced' ||
-            widget.scan['analysisSource']?.toString() == 'gemini' ||
+            widget.scan['analysisSource']?.toString() == 'groq' ||
+            widget.scan['analysisSource']?.toString() == 'huggingface' ||
             widget.scan['analysisSource']?.toString() == 'plantid' ||
             widget.scan['analysisSource']?.toString() == 'plantId';
   }
@@ -110,7 +111,7 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
   Map<String, dynamic> _getSourceColorScheme(String? source, bool isDark) {
     final lowerSource = (source ?? '').toLowerCase();
 
-    if (lowerSource.contains('gemini')) {
+    if (lowerSource.contains('groq')) {
       return {
         'primary': isDark ? const Color(0xFF5E97F6) : const Color(0xFF4285F4),
         'gradient': isDark
@@ -122,7 +123,21 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
             ? const Color(0xFF5E97F6).withOpacity(0.4)
             : const Color(0xFF4285F4).withOpacity(0.25),
         'icon': Icons.stars_rounded,
-        'name': 'Gemini AI',
+        'name': 'Groq AI',
+      };
+    } else if (lowerSource.contains('hugging') || lowerSource.contains('hf')) {
+      return {
+        'primary': isDark ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6),
+        'gradient': isDark
+            ? [const Color(0xFFA78BFA), const Color(0xFF9333EA)]
+            : [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
+        'light': isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF),
+        'cardBg': isDark ? const Color(0xFF1F1F1F) : Colors.white,
+        'borderColor': isDark
+            ? const Color(0xFFA78BFA).withOpacity(0.4)
+            : const Color(0xFF8B5CF6).withOpacity(0.25),
+        'icon': Icons.psychology_rounded,
+        'name': 'Hugging Face',
       };
     } else if (lowerSource.contains('plantid') || lowerSource.contains('plant.id')) {
       return {
@@ -182,7 +197,7 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
 
     if (_isAdvancedScan()) {
       final analysisResult = {
-        'source': widget.scan['analysisSource']?.toString() ?? 'Gemini',
+        'source': widget.scan['analysisSource']?.toString() ?? 'Groq',
         'data': {
           'plant': _getPlantName(),
           'disease': _getDiseaseName(),

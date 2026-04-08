@@ -162,7 +162,7 @@ class ScanService {
       final localPath = '${scansDir.path}/$fileName';
 
       // Compress & copy
-      final compressed = await imageFile.copy(localPath);
+      await imageFile.copy(localPath);
       debugPrint('Image saved locally: $localPath');
       return localPath;
     } catch (e) {

@@ -48,7 +48,7 @@
   },
   "source": {
     "analyzed_by": "Analyzed by",
-    "gemini": "Gemini AI",
+    "groq": "Groq AI",
     "plantid": "Plant.id",
     "ondevice": "On-Device AI"
   },

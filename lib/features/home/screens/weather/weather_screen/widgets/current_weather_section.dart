@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/weather_model.dart';
+import '../../widgets/remote_lottie.dart';
+import '../../widgets/weather_icon_animation_urls.dart';
+import '../../weather_card/utils/weather_card_helpers.dart';
 
 class CurrentWeatherSection extends StatelessWidget {
   final WeatherModel weatherData;
@@ -106,6 +109,11 @@ class CurrentWeatherSection extends StatelessWidget {
   }
 
   Widget _buildTemperatureDisplay() {
+    final weatherType = WeatherCardHelpers.getWeatherType(
+      weatherData.conditionText,
+      weatherData.isDay,
+    );
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
       decoration: BoxDecoration(
@@ -123,10 +131,18 @@ class CurrentWeatherSection extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0x4DFFFFFF), width: 2),
             ),
-            child: Icon(
-              _iconForCondition(weatherData.conditionText, weatherData.isDay),
-              size: 80,
-              color: Colors.white,
+            child: SizedBox(
+              width: 92,
+              height: 92,
+              child: RemoteLottie(
+                url: WeatherIconAnimationUrls.forWeatherType(weatherType),
+                fit: BoxFit.contain,
+                fallback: Icon(
+                  _iconForCondition(weatherData.conditionText, weatherData.isDay),
+                  size: 80,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 20),

@@ -9,153 +9,23 @@ class SpeciesGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TranslationService>(
-      builder: (context, translation, _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context).colorScheme.primary,
-                                Theme.of(context).colorScheme.secondary,
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.park_outlined,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                translation.get('detectable_species'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Text(
-                                translation.get('tap_to_explore'),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.6),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.2),
-                          Theme.of(context)
-                              .colorScheme
-                              .secondary
-                              .withOpacity(0.2),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.4),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.eco,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${AppSpecies.allSpecies.length}',
-                          style:
-                          Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+    return SizedBox(
+      height: 78,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        physics: const BouncingScrollPhysics(),
+        itemCount: AppSpecies.allSpecies.length,
+        itemBuilder: (context, index) {
+          final species = AppSpecies.allSpecies[index];
+          return Padding(
+            padding: EdgeInsets.only(
+              right: index < AppSpecies.allSpecies.length - 1 ? 8 : 0,
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                physics: const BouncingScrollPhysics(),
-                itemCount: AppSpecies.allSpecies.length,
-                itemBuilder: (context, index) {
-                  final species = AppSpecies.allSpecies[index];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      right: index < AppSpecies.allSpecies.length - 1 ? 10 : 0,
-                    ),
-                    child: _ModernSpeciesCard(species: species),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
+            child: _ModernSpeciesCard(species: species),
+          );
+        },
+      ),
     );
   }
 }
@@ -222,7 +92,7 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
           child: ScaleTransition(
             scale: _scaleAnimation,
             child: Container(
-              width: 80,
+              width: 72,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -254,15 +124,15 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Hero(
                       tag: 'species_${widget.species.nameEn}',
                       child: Container(
-                        width: 48,
-                        height: 48,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
@@ -279,7 +149,7 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                           ),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(7),
+                          padding: const EdgeInsets.all(5),
                           child: Image.asset(
                             widget.species.imagePath,
                             fit: BoxFit.contain,
@@ -287,19 +157,19 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                               return Icon(
                                 Icons.eco,
                                 color: widget.species.color,
-                                size: 24,
+                                size: 18,
                               );
                             },
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       widget.species.getName(translation.isUrdu),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontSize: 10.5,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                         letterSpacing: -0.2,

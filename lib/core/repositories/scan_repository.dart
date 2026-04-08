@@ -44,7 +44,11 @@ class ScanRepository {
     final hash = jsonString.hashCode.abs();
 
     // Include source in ID to differentiate between on-device and advanced scans
-    if (source.contains('gemini') || source.contains('plantid') || source.contains('advanced')) {
+    if (source.contains('groq') ||
+        source.contains('plantid') ||
+        source.contains('hugging') ||
+        source.contains('hf') ||
+        source.contains('advanced')) {
       return 'advanced_${hash}_${DateTime.now().millisecondsSinceEpoch}';
     } else {
       return 'ondevice_${hash}_${DateTime.now().millisecondsSinceEpoch}';
@@ -142,7 +146,7 @@ class ScanRepository {
       debugPrint('❌ Error cleaning duplicates: $e');
     }
   }
-  Future<ScanModel> saveGeminiScan({
+  Future<ScanModel> saveGroqScan({
     required Map<String, dynamic> analysisResult,
     String? imagePath,
   }) async {
@@ -158,7 +162,7 @@ class ScanRepository {
       // Check if scan already exists
       final existingScan = await _database.getScanById(scanId);
       if (existingScan != null) {
-        debugPrint('✅ Gemini scan already exists, returning existing: $scanId');
+        debugPrint('✅ Groq scan already exists, returning existing: $scanId');
         return existingScan;
       }
 
@@ -177,7 +181,7 @@ class ScanRepository {
       }
 
       // Create scan model
-      final scan = ScanModel.fromGeminiScan(
+      final scan = ScanModel.fromGroqScan(
         userId: user.uid,
         analysisResult: analysisResult,
         imagePath: imagePath,
@@ -193,19 +197,19 @@ class ScanRepository {
       // Sync to Firebase in background
       _syncAdvancedScanToFirebase(savedScan);
 
-      debugPrint('✅ Gemini scan saved: $savedScanId');
+      debugPrint('✅ Groq scan saved: $savedScanId');
       return savedScan;
     } catch (e) {
       if (e.toString().contains('UNIQUE constraint failed') ||
           e.toString().contains('Duplicate')) {
-        debugPrint('⚠️ Duplicate Gemini scan detected');
+        debugPrint('⚠️ Duplicate Groq scan detected');
         final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
         final scanId = analysisResult['scanId'] as String? ??
             _generateContentHash(data, imagePath);
         final existing = await _database.getScanById(scanId);
         if (existing != null) return existing;
       }
-      debugPrint('❌ Error saving Gemini scan: $e');
+      debugPrint('❌ Error saving Groq scan: $e');
       rethrow;
     }
   }
@@ -274,6 +278,68 @@ class ScanRepository {
         if (existing != null) return existing;
       }
       debugPrint('❌ Error saving Plant.id scan: $e');
+      rethrow;
+    }
+  }
+
+  Future<ScanModel> saveHuggingFaceScan({
+    required Map<String, dynamic> analysisResult,
+    String? imagePath,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
+
+      final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
+      final scanId = analysisResult['scanId'] as String? ??
+          _generateContentHash(data, imagePath);
+
+      final existingScan = await _database.getScanById(scanId);
+      if (existingScan != null) {
+        debugPrint('✅ Hugging Face scan already exists, returning existing: $scanId');
+        return existingScan;
+      }
+
+      String? imageBase64;
+      if (imagePath != null) {
+        try {
+          final file = File(imagePath);
+          if (await file.exists()) {
+            final bytes = await file.readAsBytes();
+            imageBase64 = base64Encode(bytes);
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to convert image to base64: $e');
+        }
+      }
+
+      final scan = ScanModel.fromHuggingFaceScan(
+        userId: user.uid,
+        analysisResult: analysisResult,
+        imagePath: imagePath,
+      ).copyWith(
+        imageBase64: imageBase64,
+        id: scanId,
+      );
+
+      final savedScanId = await _database.createScan(scan);
+      final savedScan = scan.copyWith(id: savedScanId);
+
+      _syncAdvancedScanToFirebase(savedScan);
+
+      debugPrint('✅ Hugging Face scan saved: $savedScanId');
+      return savedScan;
+    } catch (e) {
+      if (e.toString().contains('UNIQUE constraint failed') ||
+          e.toString().contains('Duplicate')) {
+        debugPrint('⚠️ Duplicate Hugging Face scan detected');
+        final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
+        final scanId = analysisResult['scanId'] as String? ??
+            _generateContentHash(data, imagePath);
+        final existing = await _database.getScanById(scanId);
+        if (existing != null) return existing;
+      }
+      debugPrint('❌ Error saving Hugging Face scan: $e');
       rethrow;
     }
   }

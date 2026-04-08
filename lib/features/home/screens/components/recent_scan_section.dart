@@ -28,7 +28,7 @@ class RecentScansSection extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final horizontalPadding = screenWidth * 0.05;
+    final horizontalPadding = (screenWidth * 0.025).clamp(8.0, 12.0);
 
     if (recentScans.isEmpty) {
       return const SizedBox.shrink();

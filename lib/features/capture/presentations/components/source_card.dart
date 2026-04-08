@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/services/translation_service.dart';
 
 class SourceCard extends StatelessWidget {

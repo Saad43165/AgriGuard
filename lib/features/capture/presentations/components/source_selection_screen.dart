@@ -25,8 +25,6 @@ class SourceSelectionScreen extends StatefulWidget {
 }
 
 class _SourceSelectionScreenState extends State<SourceSelectionScreen> {
-  String? _selectedSource;
-
   @override
   Widget build(BuildContext context) {
     final translation = TranslationService();
@@ -65,7 +63,6 @@ class _SourceSelectionScreenState extends State<SourceSelectionScreen> {
                 ],
                 isLoading: widget.isLoading,
                 onTap: () {
-                  setState(() => _selectedSource = 'camera');
                   widget.onCameraSelect();
                 },
               ),
@@ -89,7 +86,6 @@ class _SourceSelectionScreenState extends State<SourceSelectionScreen> {
                 ],
                 isLoading: widget.isLoading,
                 onTap: () {
-                  setState(() => _selectedSource = 'gallery');
                   widget.onGallerySelect();
                 },
               ),

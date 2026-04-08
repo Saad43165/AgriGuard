@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/widgets/floating_orb.dart';
 import '../../auth/Login_Screen/services/guest_service.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 
 class GuestRestrictionView extends StatelessWidget {
   final double maxWidth;
@@ -20,6 +22,7 @@ class GuestRestrictionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final t = Provider.of<TranslationService>(context);
 
     return Stack(
       children: [
@@ -104,7 +107,7 @@ class GuestRestrictionView extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.login_rounded),
-                    label: const Text('Sign In / Sign Up'),
+                    label: Text(t.get('sign_in_now')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -117,6 +120,31 @@ class GuestRestrictionView extends StatelessWidget {
                       ),
                       elevation: 4,
                     ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.pushNamed(context, AppRoutes.settings),
+                        icon: const Icon(Icons.settings_rounded),
+                        label: const Text('Settings'),
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.pushNamed(context, AppRoutes.help),
+                        icon: const Icon(Icons.support_agent_rounded),
+                        label: const Text('Help'),
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

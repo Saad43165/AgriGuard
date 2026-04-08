@@ -3,11 +3,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:agriguard_fyp/features/advance_result_screen/utils/advance_share_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_measurements.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../core/widgets/floating_orb.dart';
 import 'components/additional_info_card.dart';
 import 'components/diagnosis_card.dart';
@@ -16,6 +17,7 @@ import 'components/result_action_button.dart' show ResultActionButton;
 import 'components/section_card.dart';
 import 'components/source_badge.dart';
 import '../../../../core/repositories/scan_repository.dart';
+import '../auth/Login_Screen/services/guest_service.dart';
 
 class AdvancedResultsScreen extends StatefulWidget {
   final Map<String, dynamic> analysisResult;
@@ -38,12 +40,11 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
   late Animation<double> _scaleAnimation;
 
   late final ScanRepository _scanRepository;
+  final GuestService _guestService = GuestService();
+  bool _isGuestMode = false;
 
   bool _isProcessing = false;
   bool _isAlreadySaved = false;
-  bool _isGeneratingPdf = false;
-  String? _generatedScanId;
-  File? _generatedPdf;
   Uint8List? _imageBytes; // Add this to store image bytes
 
   @override
@@ -52,10 +53,16 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     _initializeAnimations();
     _scanRepository = ScanRepository();
     _loadImageBytes(); // Load image bytes on init
+    _initializeGuestMode();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndAutoSaveScan();
     });
+  }
+
+  Future<void> _initializeGuestMode() async {
+    await _guestService.initialize();
+    if (mounted) setState(() => _isGuestMode = _guestService.isGuestMode);
   }
 
   void _initializeAnimations() {
@@ -123,6 +130,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     }
 
     if (_isAlreadySaved || _isProcessing) return;
+    if (_isGuestMode) return;
 
     setState(() => _isProcessing = true);
 
@@ -155,28 +163,29 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
         }
       }
 
-      final updatedOriginalData = {
-        ...widget.originalScanData,
-        'imageBase64': imageBase64,
-      };
-
       final updatedAnalysisResult = {
         ...widget.analysisResult,
         'scanId': scanId,
       };
 
-      final source = updatedAnalysisResult['source']?.toString().toLowerCase() ?? 'gemini';
-      final isGemini = source.contains('gemini');
+      final source = updatedAnalysisResult['source']?.toString().toLowerCase() ?? 'groq';
+      final isGroq = source.contains('groq');
+      final isHuggingFace = source.contains('hugging') || source.contains('hf');
 
-      final savedScan = isGemini
-          ? await _scanRepository.saveGeminiScan(
-        analysisResult: updatedAnalysisResult,
-        imagePath: imagePath,
-      )
-          : await _scanRepository.savePlantIdScan(
-        analysisResult: updatedAnalysisResult,
-        imagePath: imagePath,
-      );
+      final savedScan = isGroq
+          ? await _scanRepository.saveGroqScan(
+              analysisResult: updatedAnalysisResult,
+              imagePath: imagePath,
+            )
+          : isHuggingFace
+              ? await _scanRepository.saveHuggingFaceScan(
+                  analysisResult: updatedAnalysisResult,
+                  imagePath: imagePath,
+                )
+              : await _scanRepository.savePlantIdScan(
+                  analysisResult: updatedAnalysisResult,
+                  imagePath: imagePath,
+                );
 
       debugPrint('✅ Advanced scan auto-saved → ID: ${savedScan.id}');
 
@@ -194,47 +203,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
         setState(() => _isProcessing = false);
       }
     }
-  }
-
-  // Update this method to handle PDF generation through the button's internal logic
-  Future<void> _handlePdfGenerated(File pdfFile) async {
-    setState(() {
-      _generatedPdf = pdfFile;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text('PDF generated successfully!'),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'SHARE',
-            textColor: Colors.white,
-            onPressed: () => _handleShare(pdfFile: pdfFile),
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleShare({File? pdfFile}) async {
-    HapticFeedback.lightImpact();
-
-    await AdvancedShareHandler.shareResults(
-      context: context,
-      analysisResult: widget.analysisResult,
-      originalScanData: widget.originalScanData,
-      pdfFile: pdfFile ?? _generatedPdf,
-    );
   }
 
   Color _getSeverityColor(String severity) {
@@ -258,6 +226,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = Provider.of<TranslationService>(context);
     final data = widget.analysisResult['data'] as Map<String, dynamic>;
     final hasDiseaseInfo = widget.analysisResult['hasDiseaseInfo'] as bool? ?? false;
 
@@ -271,7 +240,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         title: Text(
-          'Advanced Results',
+          t.get('results.advanced_title'),
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 18),

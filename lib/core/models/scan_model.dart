@@ -8,8 +8,9 @@ enum ScanType {
 
 enum AnalysisSource {
   onDeviceML('On-Device ML'),
-  gemini('Gemini AI'),
-  plantId('Plant.id');
+  groq('Groq AI'),
+  plantId('Plant.id'),
+  huggingface('Hugging Face');
 
   final String displayName;
   const AnalysisSource(this.displayName);
@@ -183,7 +184,7 @@ class ScanModel {
     );
   }
 
-  factory ScanModel.fromGeminiScan({
+  factory ScanModel.fromGroqScan({
     required String userId,
     required Map<String, dynamic> analysisResult,
     String? imagePath,
@@ -239,7 +240,7 @@ class ScanModel {
     return ScanModel(
       userId: userId,
       scanType: ScanType.advanced,
-      analysisSource: AnalysisSource.gemini,
+      analysisSource: AnalysisSource.groq,
       plantName: data['plant']?.toString() ??
           data['plantName']?.toString() ?? 'Unknown Plant',
       scientificName: data['scientificName']?.toString() ?? '',
@@ -383,6 +384,79 @@ class ScanModel {
     );
   }
 
+  factory ScanModel.fromHuggingFaceScan({
+    required String userId,
+    required Map<String, dynamic> analysisResult,
+    String? imagePath,
+    String? imageUrl,
+  }) {
+    // Same schema shape as other advanced scans: analysisResult['data']
+    final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
+
+    int confidence = 0;
+    final confidenceValue = data['confidence'];
+    if (confidenceValue != null) {
+      if (confidenceValue is num) {
+        confidence = confidenceValue.toInt();
+      } else if (confidenceValue is String) {
+        final parsed = double.tryParse(confidenceValue);
+        confidence = parsed?.toInt() ?? 0;
+      }
+    }
+
+    List<String> symptomsList = [];
+    final symptomsValue = data['symptoms'];
+    if (symptomsValue != null) {
+      if (symptomsValue is List) {
+        symptomsList = List<String>.from(symptomsValue.map((item) => item.toString()));
+      } else if (symptomsValue is String) {
+        symptomsList = symptomsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      }
+    }
+
+    List<String> treatmentsList = [];
+    final treatmentsValue = data['remediation'];
+    if (treatmentsValue != null) {
+      if (treatmentsValue is List) {
+        treatmentsList = List<String>.from(treatmentsValue.map((item) => item.toString()));
+      } else if (treatmentsValue is String) {
+        treatmentsList = treatmentsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      }
+    }
+
+    List<String> precautionsList = [];
+    final precautionsValue = data['precautions'];
+    if (precautionsValue != null) {
+      if (precautionsValue is List) {
+        precautionsList = List<String>.from(precautionsValue.map((item) => item.toString()));
+      } else if (precautionsValue is String) {
+        precautionsList = precautionsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      }
+    }
+
+    return ScanModel(
+      userId: userId,
+      scanType: ScanType.advanced,
+      analysisSource: AnalysisSource.huggingface,
+      plantName: data['plant']?.toString() ??
+          data['plantName']?.toString() ?? 'Unknown Plant',
+      scientificName: data['scientificName']?.toString() ?? '',
+      diseaseName: data['disease']?.toString() ??
+          data['diseaseName']?.toString() ?? 'Healthy',
+      severity: data['severity']?.toString() ?? 'Medium',
+      confidence: confidence,
+      symptoms: symptomsList,
+      treatments: treatmentsList,
+      precautions: precautionsList,
+      imagePath: imagePath,
+      imageUrl: imageUrl,
+      scanDate: DateTime.now(),
+      createdAt: DateTime.now(),
+      rawData: analysisResult,
+      advancedData: data,
+    );
+  }
+
   ScanModel copyWith({
     String? id,
     String? userId,
@@ -468,7 +542,15 @@ class ScanModel {
       ),
       analysisSource: AnalysisSource.values.firstWhere(
             (e) => e.name == data['analysisSource'],
-        orElse: () => AnalysisSource.onDeviceML,
+        // Legacy support: old saved scans may contain prior source strings
+        orElse: () {
+          final src = data['analysisSource']?.toString().toLowerCase();
+          if (src == 'gemini') return AnalysisSource.groq;
+          if (src == 'huggingface' || src == 'hugging face' || src == 'hf') {
+            return AnalysisSource.huggingface;
+          }
+          return AnalysisSource.onDeviceML;
+        },
       ),
       plantName: data['plantName'] ?? '',
       scientificName: data['scientificName'] ?? '',
@@ -546,7 +628,15 @@ class ScanModel {
       ),
       analysisSource: AnalysisSource.values.firstWhere(
             (e) => e.name == map['analysisSource'],
-        orElse: () => AnalysisSource.onDeviceML,
+        // Legacy support: old saved scans may contain prior source strings
+        orElse: () {
+          final src = map['analysisSource']?.toString().toLowerCase();
+          if (src == 'gemini') return AnalysisSource.groq;
+          if (src == 'huggingface' || src == 'hugging face' || src == 'hf') {
+            return AnalysisSource.huggingface;
+          }
+          return AnalysisSource.onDeviceML;
+        },
       ),
       plantName: map['plantName'] ?? '',
       scientificName: map['scientificName'] ?? '',

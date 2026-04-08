@@ -6,7 +6,6 @@ import 'package:agriguard_fyp/features/ResultScreen/presentation/components/load
 import 'package:agriguard_fyp/features/ResultScreen/presentation/components/next_steps_card.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/components/pdf_floating_button.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/components/result_appbar.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/service/leaf_detection_service.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/service/pdf_generation_service.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/service/scan_save_service.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/constants.dart';
@@ -14,6 +13,7 @@ import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/data_pars
 import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/disease_cause_extractor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../auth/Login_Screen/services/guest_service.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/repositories/scan_repository.dart';
 import '../../../../core/services/severity_id_service.dart';
@@ -56,7 +56,8 @@ class _ResultsScreenState extends State<ResultsScreen>
 
   // Analysis Results
   LeafAnalysisResult? _leafAnalysis;
-  bool get _isLeafImage => _leafAnalysis?.isLeaf ?? true;
+  bool get _isLeafImage =>
+      _leafAnalysis?.isLeaf ?? (widget.scanData['isLeaf'] as bool? ?? true);
 
   // Data Variables
   final Map<String, dynamic> _diseaseCauses = {};
@@ -75,15 +76,23 @@ class _ResultsScreenState extends State<ResultsScreen>
   late final SeverityIdService _severityIdService;
   late final ScanSaveService _scanSaveService;
   final PdfGenerationService _pdfService = PdfGenerationService();
+  final GuestService _guestService = GuestService();
+  bool _isGuestMode = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeGuestMode();
     _initializeServices();
     _initializeAnimations();
     _loadJsonData();
     _scheduleAdvancedSearchBanner();
     _analyzeImageAndSave();
+  }
+
+  Future<void> _initializeGuestMode() async {
+    await _guestService.initialize();
+    if (mounted) setState(() => _isGuestMode = _guestService.isGuestMode);
   }
 
   @override
@@ -128,20 +137,36 @@ class _ResultsScreenState extends State<ResultsScreen>
     setState(() => _isLoadingSeverityRemediation = true);
 
     try {
-      // Perform leaf detection
-      _leafAnalysis = await LeafDetectionService.analyzeImage(
-        widget.scanData['imagePath'] as String?,
-        widget.scanData['imageBase64'] as String?,
-      );
+      // Leaf decision is made upstream (capture/orchestrator). Do NOT rerun
+      // another heuristic leaf detector here, or it can contradict the scan.
+      final leafFromScan = widget.scanData['leafAnalysis'];
+      if (leafFromScan is Map<String, dynamic>) {
+        _leafAnalysis = LeafAnalysisResult.fromJson(leafFromScan);
+      } else {
+        final isLeaf = widget.scanData['isLeaf'] as bool? ?? true;
+        final leafConfidence = (widget.scanData['leafConfidence'] as num?)?.toDouble() ?? 50.0;
+        _leafAnalysis = LeafAnalysisResult(
+          isLeaf: isLeaf,
+          confidence: leafConfidence,
+          reasons: isLeaf
+              ? const ['Upstream analysis marked this as a leaf image']
+              : const ['Upstream analysis marked this as a non-leaf image'],
+          details: widget.scanData['leafDetectionDetails'] as Map<String, dynamic>?,
+        );
+      }
 
-      debugPrint('🍃 Enhanced Leaf Detection:');
+      debugPrint('🍃 Leaf status from scanData:');
       debugPrint('   Is Leaf: ${_leafAnalysis!.isLeaf}');
       debugPrint('   Confidence: ${_leafAnalysis!.confidence.toStringAsFixed(1)}%');
 
-      if (!_leafAnalysis!.isLeaf) {
-        _handleNonLeafImage();
-      } else {
+      if (_leafAnalysis!.isLeaf) {
         await _getSeverityAndRemediation();
+      } else {
+        // Non-leaf scans should already contain correct messaging + flags.
+        _severity = 'N/A';
+        _remediation = DataParsers.parseStringToList(
+          widget.scanData['remediation'] ?? widget.scanData['treatment'],
+        );
       }
 
       // FIX 2: Check shouldSaveToHistory flag set by plant_analysis_service.
@@ -169,27 +194,6 @@ class _ResultsScreenState extends State<ResultsScreen>
         setState(() => _isLoadingSeverityRemediation = false);
       }
     }
-  }
-
-  void _handleNonLeafImage() {
-    widget.scanData['diseaseName'] = 'Image Not Recognized';
-    widget.scanData['plantName'] = 'Non-Plant Image';
-    widget.scanData['confidence'] =
-        _leafAnalysis!.confidence.toStringAsFixed(1);
-    widget.scanData['isHealthy'] = false;
-    widget.scanData['severity'] = 'N/A';
-    widget.scanData['description'] =
-    'The uploaded image does not appear to be a plant leaf. '
-        'Our analysis detected this as non-plant material with '
-        '${_leafAnalysis!.confidence.toStringAsFixed(1)}% confidence.';
-    // FIX 3: Explicitly block saving via both flags for defence-in-depth.
-    widget.scanData['skipSave'] = true;
-    widget.scanData['shouldSaveToHistory'] = false;
-    widget.scanData['remediation'] = _leafAnalysis!.reasons;
-    widget.scanData['leafDetectionDetails'] = _leafAnalysis!.details;
-
-    _severity = 'N/A';
-    _remediation = _leafAnalysis!.reasons;
   }
 
   Future<void> _getSeverityAndRemediation() async {
@@ -594,7 +598,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                         const NextStepsCard(),
                         const SizedBox(height: 20),
                       ],
-                      if (_isLeafImage)
+                      if (_isLeafImage && !_isGuestMode)
                         AdvancedSearchButton(
                           onTap: _navigateToAdvancedSearch,
                         ),
@@ -604,7 +608,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                   ),
                 ),
               ),
-              if (_showAdvancedSearchBanner && _isLeafImage)
+              if (_showAdvancedSearchBanner && _isLeafImage && !_isGuestMode)
                 Positioned(
                   left: 0,
                   right: 0,

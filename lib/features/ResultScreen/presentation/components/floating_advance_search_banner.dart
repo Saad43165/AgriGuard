@@ -174,7 +174,7 @@ class _FloatingAdvancedSearchBannerState
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Get deeper insights with Gemini AI & Plant.id',
+                            'Get deeper insights with Groq AI & Plant.id',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 13,

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/widgets/app_themes.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/translation_service.dart';
 import 'Tiles/app_version_tile.dart';
 import 'Tiles/clear_history_tile.dart';
 import 'Tiles/delete_acount_tile.dart';
 import 'components/floating_orb.dart';
 import 'components/settings_header.dart';
+import 'diagnostics/diagnostics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,6 +30,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
 
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
+  bool _hapticsEnabled = true;
+  bool _isClearingCache = false;
 
   @override
   void initState() {
@@ -72,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       setState(() {
         _isDarkMode = prefs.getBool('isDarkMode') ?? false;
         _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
+        _hapticsEnabled = prefs.getBool('hapticsEnabled') ?? true;
       });
     }
   }
@@ -80,6 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', _isDarkMode);
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
+    await prefs.setBool('hapticsEnabled', _hapticsEnabled);
   }
 
   @override
@@ -160,6 +167,16 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                             _buildPreferencesSection(),
                             SizedBox(height: padding * 2),
 
+                            // Data & Storage
+                            _buildSectionHeader(
+                              context,
+                              'Data & Storage',
+                              Icons.storage_rounded,
+                            ),
+                            SizedBox(height: padding * 0.8),
+                            _buildStorageSection(),
+                            SizedBox(height: padding * 2),
+
                             // Account Section
                             _buildSectionHeader(
                               context,
@@ -168,6 +185,16 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                             ),
                             SizedBox(height: padding * 0.8),
                             _buildAccountSection(),
+                            SizedBox(height: padding * 2),
+
+                            // Developer / Diagnostics
+                            _buildSectionHeader(
+                              context,
+                              'Diagnostics',
+                              Icons.monitor_heart_rounded,
+                            ),
+                            SizedBox(height: padding * 0.8),
+                            _buildUtilitiesSection(),
                             SizedBox(height: padding * 2),
 
                             // About Section
@@ -307,6 +334,20 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                 },
               ),
               _buildDivider(),
+              _buildLanguageTile(),
+              _buildDivider(),
+              _buildModernToggleTile(
+                icon: Icons.vibration_rounded,
+                title: 'Haptics',
+                subtitle: 'Small vibrations for taps and actions',
+                value: _hapticsEnabled,
+                onChanged: (value) async {
+                  setState(() => _hapticsEnabled = value);
+                  await _saveSettings();
+                  if (value) HapticFeedback.mediumImpact();
+                },
+              ),
+              _buildDivider(),
 
               // FCM TOKEN VIEWER
               _buildFCMTokenTile(),
@@ -318,6 +359,163 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildUtilitiesSection() {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            children: [
+              _buildNavTile(
+                icon: Icons.monitor_heart_rounded,
+                title: 'Diagnostics',
+                subtitle: 'Check API keys and test connectivity',
+                gradient: [const Color(0xFF06B6D4), const Color(0xFF3B82F6)],
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DiagnosticsScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStorageSection() {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+            width: 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            children: [
+              _buildNavTile(
+                icon: Icons.delete_sweep_rounded,
+                title: 'Clear temporary cache',
+                subtitle: _isClearingCache ? 'Clearing…' : 'Frees space and fixes stale images',
+                gradient: [const Color(0xFFF59E0B), const Color(0xFFEF4444)],
+                onTap: _isClearingCache
+                    ? () {}
+                    : () async {
+                        HapticFeedback.mediumImpact();
+                        setState(() => _isClearingCache = true);
+                        try {
+                          imageCache.clear();
+                          imageCache.clearLiveImages();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Cache cleared'),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) setState(() => _isClearingCache = false);
+                        }
+                      },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageTile() {
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final isUrdu = t.isUrdu;
+    return _buildNavTile(
+      icon: Icons.language_rounded,
+      title: 'Language',
+      subtitle: isUrdu ? 'اردو' : 'English',
+      gradient: [const Color(0xFF8B5CF6), const Color(0xFFEC4899)],
+      onTap: () async {
+        if (_hapticsEnabled) HapticFeedback.selectionClick();
+        await t.toggleLanguage();
+        if (mounted) setState(() {});
+      },
+    );
+  }
+
+  Widget _buildNavTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Color> gradient,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [
+                gradient[0].withOpacity(0.15),
+                gradient[1].withOpacity(0.15),
+              ],
+            ),
+          ),
+          child: Icon(icon, color: gradient[0], size: 24),
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 12,
+            ),
+          ),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+        onTap: onTap,
       ),
     );
   }

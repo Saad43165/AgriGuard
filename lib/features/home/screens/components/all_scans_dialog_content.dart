@@ -695,7 +695,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                               border: Border.all(color: Colors.blue.withOpacity(0.3)),
                             ),
                             child: Text(
-                              scan['analysisSource']?.toString() ?? 'Gemini',
+                              scan['analysisSource']?.toString() ?? 'Groq',
                               style: const TextStyle(
                                   color: Colors.blue, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
@@ -731,7 +731,6 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
   }
 
   Widget _buildScanImageWithBase64(Map<String, dynamic> scan, BuildContext context) {
-    final theme = Theme.of(context);
     final imageBase64 = scan['imageBase64'] as String?;
 
     if (imageBase64 != null && imageBase64.isNotEmpty) {
@@ -808,7 +807,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
 
     if (isAdvanced) {
       final analysisResult = {
-        'source': scan['analysisSource']?.toString() ?? 'Gemini',
+        'source': scan['analysisSource']?.toString() ?? 'Groq',
         'data': _getAdvancedData(scan),
         'hasDiseaseInfo': scan['advancedData'] != null,
         'success': true,

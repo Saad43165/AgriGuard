@@ -171,7 +171,7 @@ class WeatherCardWidgets {
 
   static Widget buildBottomMetrics(WeatherModel weatherData) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(10),
@@ -196,7 +196,7 @@ class WeatherCardWidgets {
   static Widget buildLoadingCard(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth * 0.05;
+    final horizontalPadding = (screenWidth * 0.025).clamp(8.0, 12.0);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
@@ -247,7 +247,7 @@ class WeatherCardWidgets {
         ? Theme.of(context).colorScheme.error
         : (isDark ? Colors.orange.shade400 : Colors.orange.shade700);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = screenWidth * 0.05;
+    final horizontalPadding = (screenWidth * 0.025).clamp(8.0, 12.0);
 
     return Container(
       height: 175,

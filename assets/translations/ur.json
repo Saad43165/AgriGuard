@@ -48,7 +48,7 @@
   },
   "source": {
     "analyzed_by": "تجزیہ کار",
-    "gemini": "جیمنی AI",
+    "groq": "گروک AI",
     "plantid": "Plant.id",
     "ondevice": "آن ڈیوائس AI"
   },

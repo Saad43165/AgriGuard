@@ -80,9 +80,6 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
     IconData icon = Icons.verified_rounded;
     Color color = const Color(0xFF10B981);
 
-    String? diseaseFromModel = widget.scanData['originalDiseaseName']?.toString() ??
-        widget.scanData['rawLabel']?.toString();
-
     String? processedDisease = widget.scanData['diseaseName']?.toString() ??
         widget.scanData['diagnosis']?.toString() ??
         widget.scanData['disease']?.toString();

@@ -322,7 +322,7 @@ class WeatherProvider with ChangeNotifier {
       // ✅ Reset permission state to force re-check
       _permissionState = LocationPermissionState.unknown;
 
-      LocationPermission permission = await Geolocator.requestPermission();
+      await Geolocator.requestPermission();
 
       await _checkLocationPermission();
 

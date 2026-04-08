@@ -7,6 +7,7 @@ class AnalysisOptionCard extends StatelessWidget {
   final bool isSelected;
   final bool isAvailable;
   final VoidCallback onTap;
+  final String? unavailableReason;
 
   const AnalysisOptionCard({
     super.key,
@@ -14,6 +15,7 @@ class AnalysisOptionCard extends StatelessWidget {
     required this.isSelected,
     required this.isAvailable,
     required this.onTap,
+    this.unavailableReason,
   });
 
   @override
@@ -32,7 +34,7 @@ class AnalysisOptionCard extends StatelessWidget {
         return GestureDetector(
           onTap: () {
             HapticFeedback.selectionClick();
-            onTap();
+            if (isAvailable) onTap();
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -92,6 +94,25 @@ class AnalysisOptionCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (!isAvailable)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                translation.get('unavailable'),
+                                style: TextStyle(
+                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
                           if (isSelected)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -126,6 +147,23 @@ class AnalysisOptionCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (!isAvailable &&
+                          unavailableReason != null &&
+                          unavailableReason!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          unavailableReason!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? Colors.orange.withOpacity(0.9)
+                                : Colors.orange.shade800,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Row(
                         children: [

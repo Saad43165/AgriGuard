@@ -22,7 +22,6 @@ class PdfShareService {
     // Extract scan data
     final plantName = scan['plantName']?.toString() ?? scan['cropType']?.toString() ?? 'Unknown Plant';
     final diagnosis = scan['diagnosis']?.toString() ?? scan['diseaseName']?.toString() ?? 'Unknown';
-    final confidence = _parseConfidence(scan['confidence']);
     final severity = scan['severity']?.toString() ?? 'Unknown';
     final treatment = scan['treatment']?.toString() ?? scan['remediation']?.toString() ?? 'No treatment information available';
     final symptoms = _parseList(scan['symptoms']);
@@ -637,14 +636,6 @@ class PdfShareService {
     }
   }
 
-  static String _getConfidenceLabel(double confidence) {
-    if (confidence >= 90) return 'Excellent';
-    if (confidence >= 75) return 'Very Good';
-    if (confidence >= 60) return 'Good';
-    if (confidence >= 40) return 'Fair';
-    return 'Low';
-  }
-
   static Future<Uint8List?> _loadScanImage(Map<String, dynamic> scan) async {
     if (scan['imageBase64'] != null && scan['imageBase64'].toString().isNotEmpty) {
       try {
@@ -666,16 +657,6 @@ class PdfShareService {
     }
 
     return null;
-  }
-
-  static double _parseConfidence(dynamic confidence) {
-    if (confidence == null) return 0.0;
-    if (confidence is double) return confidence;
-    if (confidence is int) return confidence.toDouble();
-    if (confidence is String) {
-      return double.tryParse(confidence) ?? 0.0;
-    }
-    return 0.0;
   }
 
   static List<String> _parseList(dynamic data) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 
 class AdvancedSearchButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -48,6 +49,7 @@ class _AdvancedSearchButtonContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = Provider.of<TranslationService>(context);
 
     return Row(
       children: [
@@ -69,7 +71,7 @@ class _AdvancedSearchButtonContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Want deeper analysis?',
+                t.get('results.advanced_search'),
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
@@ -77,7 +79,7 @@ class _AdvancedSearchButtonContent extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Try Advanced AI Search with AI & Plant.id',
+                t.get('results.try_advanced'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.6),
                 ),

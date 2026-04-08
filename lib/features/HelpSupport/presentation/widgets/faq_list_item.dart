@@ -275,8 +275,10 @@ class _FaqListItemState extends State<FaqListItem>
         return const Color(0xFFEF4444);
       case FaqCategory.sharing:
         return const Color(0xFFEC4899);
-      default:
-        return Theme.of(context).colorScheme.primary;
     }
+    // unreachable, but keeps function total if enum changes
+    // (switch is exhaustive today, analyzer warns about default)
+    // ignore: dead_code
+    return Theme.of(context).colorScheme.primary;
   }
 }

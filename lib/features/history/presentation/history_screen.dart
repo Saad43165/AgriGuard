@@ -282,7 +282,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   void _openAdvancedScan(Map<String, dynamic> scan) {
     final analysisResult = {
-      'source': scan['analysisSource']?.toString() ?? 'Gemini',
+      'source': scan['analysisSource']?.toString() ?? 'Groq',
       'data': scan['advancedData'] ??
           scan['rawData']?['data'] ??
           {

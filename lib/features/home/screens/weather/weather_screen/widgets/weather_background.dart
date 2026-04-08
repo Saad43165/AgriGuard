@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../models/weather_types.dart';
+import '../../widgets/remote_lottie.dart';
+import '../../widgets/weather_animation_urls.dart';
 
 class WeatherBackground extends StatelessWidget {
   final Color weatherColor;
@@ -36,7 +38,20 @@ class WeatherBackground extends StatelessWidget {
           ),
         ),
 
-        // Animated effects
+        // Remote background animation (cached); falls back to painter.
+        Positioned.fill(
+          child: Opacity(
+            opacity: isDark ? 0.50 : 0.60,
+            child: RemoteLottie(
+              url: WeatherAnimationUrls.forWeatherType(weatherType),
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              fallback: const SizedBox.shrink(),
+            ),
+          ),
+        ),
+
+        // Animated effects (lightweight overlay)
         Positioned.fill(
           child: RepaintBoundary(
             child: AnimatedBuilder(
@@ -225,7 +240,6 @@ class WeatherPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     // 30 raindrops
-    final random = math.Random(42);
     for (int i = 0; i < 30; i++) {
       final x = size.width * (i / 30.0) + math.sin(animationValue * math.pi + i) * 10;
       final y = (size.height * ((animationValue * 1.5 + i * 0.1) % 1.0));
@@ -310,7 +324,6 @@ class WeatherPainter extends CustomPainter {
     _paint.style = PaintingStyle.fill;
 
     // 50 stars with twinkling
-    final random = math.Random(123);
     for (int i = 0; i < 50; i++) {
       final x = size.width * (i * 7 % 100 / 100);
       final y = size.height * (i * 13 % 100 / 100);

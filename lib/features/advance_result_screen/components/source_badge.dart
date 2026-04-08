@@ -14,7 +14,6 @@ class SourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final source = result['source'] as String;
     final isRealData = result['isRealData'] as bool? ?? true;
 
     return Container(

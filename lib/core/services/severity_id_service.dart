@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
-import 'package:collection/collection.dart';
 import 'package:path_provider/path_provider.dart'; // Added for temporary files
 
 class SeverityResult {
@@ -206,14 +205,34 @@ class SeverityIdService {
     return _preprocessImage(bytes);
   }
 
+  List<List<List<List<double>>>> _to4dFloatInput(Float32List input) {
+    const h = 224, w = 224, c = 3;
+    var idx = 0;
+    return List.generate(
+      1,
+      (_) => List.generate(
+        h,
+        (_) => List.generate(
+          w,
+          (_) => List.generate(c, (_) => input[idx++]),
+        ),
+      ),
+    );
+  }
+
   // Run inference on image
   Future<List<double>> _runInference(Float32List input) async {
     try {
+      // The model expects a 4D tensor: [1, 224, 224, 3]
+      // Note: the reshape helper used here only supports 2D reshaping,
+      // so we build a nested 4D structure.
+      final inputTensor = _to4dFloatInput(input);
+
       // Prepare output tensor
       final output = List.filled(1 * 5, 0.0).reshape([1, 5]);
       
       // Run inference
-      _interpreter.run(input, output);
+      _interpreter.run(inputTensor, output);
       
       // Apply softmax to get probabilities
       final probabilities = _softmax(output[0]);
@@ -248,11 +267,16 @@ class SeverityIdService {
   // Get remediation info based on disease and severity
   Map<String, dynamic> _getRemediationInfo(String diseaseKey, String severityLevel) {
     try {
-      final remediations = _remediationData['remediations'] as Map<String, dynamic>;
+      final remediationsRaw = _remediationData['remediations'];
+      final remediations = remediationsRaw is Map<String, dynamic>
+          ? remediationsRaw
+          : <String, dynamic>{};
       
       if (!remediations.containsKey(diseaseKey)) {
         // Fallback: use general guidelines
-        final generalGuidelines = _remediationData['general_guidelines'] as Map<String, dynamic>;
+        final ggRaw = _remediationData['general_guidelines'];
+        final generalGuidelines =
+            ggRaw is Map<String, dynamic> ? ggRaw : <String, dynamic>{};
         final guidelineKey = 'severity_${severityLevel.toLowerCase()}';
         
         return {
@@ -261,12 +285,15 @@ class SeverityIdService {
         };
       }
       
-      final diseaseData = remediations[diseaseKey] as Map<String, dynamic>;
+      final diseaseRaw = remediations[diseaseKey];
+      final diseaseData = diseaseRaw is Map<String, dynamic>
+          ? diseaseRaw
+          : <String, dynamic>{};
       
       if (!diseaseData.containsKey(severityLevel)) {
         // Fallback to Medium severity if specific level not found
         final fallbackSeverity = diseaseData['Medium'] ?? diseaseData['medium'];
-        if (fallbackSeverity != null) {
+        if (fallbackSeverity is Map) {
           return {
             'remediation': fallbackSeverity['remediation'] ?? 'Apply standard treatment for this disease.',
             'effect': fallbackSeverity['effect'] ?? 'Treatment effect varies based on application.'
@@ -274,7 +301,9 @@ class SeverityIdService {
         }
         
         // Final fallback to general guidelines
-        final generalGuidelines = _remediationData['general_guidelines'] as Map<String, dynamic>;
+        final ggRaw = _remediationData['general_guidelines'];
+        final generalGuidelines =
+            ggRaw is Map<String, dynamic> ? ggRaw : <String, dynamic>{};
         final guidelineKey = 'severity_${severityLevel.toLowerCase()}';
         
         return {
@@ -283,7 +312,10 @@ class SeverityIdService {
         };
       }
       
-      final severityData = diseaseData[severityLevel] as Map<String, dynamic>;
+      final sevRaw = diseaseData[severityLevel];
+      final severityData = sevRaw is Map<String, dynamic>
+          ? sevRaw
+          : <String, dynamic>{};
       return {
         'remediation': severityData['remediation'] ?? 'Treatment information not available.',
         'effect': severityData['effect'] ?? 'Effect information not available.'

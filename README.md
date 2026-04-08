@@ -12,3 +12,41 @@ Current Features
 **Localization:** Support multiple languages for broader accessibility.
 **Enhanced UI/UX:** Add animations, glassmorphism effects, and consistent theming across all screens.
 **Offline Support:** Enable scanning and data storage without an internet connection.
+
+## On-device (TFLite) plant analysis models
+The on-device scanning flow depends on three TensorFlow Lite model files that must be present in `assets/models/` and listed in `pubspec.yaml`.
+
+### Required files
+- `assets/models/plant_species_final_quantized.tflite`
+- `assets/models/plant_disease_dynamic_quant.tflite`
+- `assets/models/severity_dynamic_quant.tflite`
+
+### Label/metadata files (committed)
+- `assets/models/labels.txt`
+- `assets/models/disease_labels.txt`
+- `assets/models/severity_labels.txt`
+- `assets/models/model_info.json`
+
+### Notes
+- If the app shows “model loading” failures on first launch, verify the `.tflite` files exist at the paths above and run `flutter pub get` so assets are bundled correctly.
+- If you keep models out of git (size/licensing), ensure your team has a consistent way to obtain them and place them into `assets/models/` before running the app.
+
+## Advanced Scan (Groq + Plant.id) setup
+This project uses environment variables for API keys via a local `.env` file (not committed).
+
+Create a `.env` file in the project root:
+
+```env
+# Hugging Face (free-tier vision detection)
+HF_API_TOKEN=your_token_here
+# Pick a plant-disease image classification model on HF
+HF_MODEL=dima806/plant-disease-classification
+
+# Groq (Cloud AI text assistant)
+GROQ_API_KEY=your_key_here
+# optional
+GROQ_MODEL=llama-3.1-70b-versatile
+
+# Plant.id (optional alternative)
+PLANTID_API_KEY=your_key_here
+```

@@ -29,6 +29,8 @@ dependencies:
   image: ^4.1.4
   flutter_image_filters: ^0.0.28
   cached_network_image: ^3.3.1
+  flutter_cache_manager: ^3.4.1
+  lottie: ^3.3.1
 
   # Storage & Files
   path_provider: ^2.1.1
@@ -50,6 +52,9 @@ dependencies:
   http: ^1.2.2
   url_launcher: ^6.3.2
 
+  # Social login
+  google_sign_in: ^6.2.1
+
   # ML & AI
   tflite_flutter: ^0.12.1
 
@@ -67,7 +72,6 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
-  flutter_typeahead: ^5.2.0  # Add this line
   file_picker: ^8.1.2
   csv: ^6.0.0
 
@@ -75,10 +79,12 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/logo.png
     - assets/models/plant_species_final_quantized.tflite
     - assets/models/labels.txt
     - assets/images/
+    - assets/images/help/
     - assets/models/plant_disease_dynamic_quant.tflite 
     - assets/models/disease_labels.txt
     - assets/models/severity_dynamic_quant.tflite

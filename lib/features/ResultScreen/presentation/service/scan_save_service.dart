@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import '../../../../core/repositories/scan_repository.dart';
 import '../models/leaf_analysis_result.dart';
 import '../utils/data_parsers.dart';

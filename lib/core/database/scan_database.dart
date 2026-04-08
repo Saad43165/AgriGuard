@@ -288,7 +288,7 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get scans by analysis source (onDeviceML, gemini, plantid)
+  /// Get scans by analysis source (onDeviceML, groq, plantid)
   Future<List<ScanModel>> getScansBySource(String userId, String source) async {
     final db = await database;
     final results = await db.query(

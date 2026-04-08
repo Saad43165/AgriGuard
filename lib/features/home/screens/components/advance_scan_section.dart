@@ -17,20 +17,11 @@ class AdvanceScanSection extends StatelessWidget {
     required this.scaleAnimation,
   });
 
-  bool _isAdvancedScan(Map<String, dynamic> scan) {
-    return scan['isAdvanced'] as bool? ??
-        scan['scanType']?.toString() == 'advanced' ||
-            scan['analysisSource']?.toString() == 'gemini' ||
-            scan['analysisSource']?.toString() == 'plantid' ||
-            scan['analysisSource']?.toString() == 'plantId' ||
-            scan['advancedData'] != null;
-  }
-
   // Get color scheme based on analysis source AND theme mode
   Map<String, dynamic> _getSourceColorScheme(String source, bool isDark) {
     final lowerSource = source.toLowerCase();
 
-    if (lowerSource.contains('gemini')) {
+    if (lowerSource.contains('groq')) {
       return {
         'primary': isDark ? const Color(0xFF5E97F6) : const Color(0xFF4285F4),
         'secondary': isDark ? const Color(0xFF5BB974) : const Color(0xFF34A853),
@@ -41,7 +32,22 @@ class AdvanceScanSection extends StatelessWidget {
         'cardBg': isDark ? const Color(0xFF1A1A1A) : Colors.white,
         'borderColor': isDark ? const Color(0xFF5E97F6).withOpacity(0.4) : const Color(0xFF4285F4).withOpacity(0.25),
         'icon': Icons.stars_rounded,
-        'name': 'Gemini AI',
+        'name': 'Groq AI',
+      };
+    } else if (lowerSource.contains('hugging') || lowerSource.contains('hf')) {
+      return {
+        'primary': isDark ? const Color(0xFFA78BFA) : const Color(0xFF8B5CF6),
+        'secondary': isDark ? const Color(0xFF9333EA) : const Color(0xFF7C3AED),
+        'gradient': isDark
+            ? [const Color(0xFFA78BFA), const Color(0xFF9333EA)]
+            : [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
+        'light': isDark ? const Color(0xFF2D1B4E) : const Color(0xFFF3E8FF),
+        'cardBg': isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        'borderColor': isDark
+            ? const Color(0xFFA78BFA).withOpacity(0.4)
+            : const Color(0xFF8B5CF6).withOpacity(0.25),
+        'icon': Icons.psychology_rounded,
+        'name': 'Hugging Face',
       };
     } else if (lowerSource.contains('plantid') || lowerSource.contains('plant.id')) {
       return {
@@ -76,7 +82,7 @@ class AdvanceScanSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final horizontalPadding = screenWidth * 0.05;
+    final horizontalPadding = (screenWidth * 0.025).clamp(8.0, 12.0);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -214,7 +220,7 @@ class AdvanceScanSection extends StatelessWidget {
     final plantName = scan['plantName']?.toString() ?? 'Unknown Plant';
     final diseaseName = scan['diagnosis']?.toString() ?? scan['diseaseName']?.toString() ?? 'Healthy';
     final confidence = double.tryParse(scan['confidence']?.toString() ?? '0') ?? 0;
-    final analysisSource = scan['analysisSource']?.toString() ?? 'Gemini';
+    final analysisSource = scan['analysisSource']?.toString() ?? 'Groq';
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = (screenWidth * 0.37).clamp(130.0, 155.0);
 
@@ -610,7 +616,7 @@ class AdvanceScanSection extends StatelessWidget {
       }
 
       final analysisResult = {
-        'source': scan['analysisSource']?.toString() ?? 'Gemini',
+        'source': scan['analysisSource']?.toString() ?? 'Groq',
         'data': {
           'plant': plantName,
           'disease': diseaseName,
