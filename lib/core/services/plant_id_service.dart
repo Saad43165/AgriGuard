@@ -2,10 +2,12 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img_lib;
 import 'image_preprocessor.dart';
+import 'leaf_detector.dart';
 
 class PlantIdService {
   Interpreter? _interpreter;
@@ -45,124 +47,35 @@ class PlantIdService {
   bool get isLoaded => _isLoaded;
 
   // ── Leaf detection ─────────────────────────────────────────────────────────
-  // FIXED: Old rule (green > 25%) rejected diseased leaves (rust, scab,
-  // blight, scorch) whose green drops to ~22% while warm orange/brown pixels
-  // increase. New rule adds warm pixel counting so diseased leaves pass.
-  Future<Map<String, dynamic>> _performLeafDetection(File imageFile) async {
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final image = img_lib.decodeImage(bytes);
-      if (image == null) {
-        return {'isLeaf': true, 'confidence': 50.0, 'message': 'Failed to decode image'};
-      }
-
-      final resizedImage = img_lib.copyResize(image, width: 300);
-
-      int greenPixels = 0;
-      int warmPixels  = 0;   // orange / yellow / brown — diseased leaf colours
-      int totalPixels = resizedImage.width * resizedImage.height;
-      int edgeCount   = 0;
-      const edgeThreshold = 25;
-
-      for (int y = 0; y < resizedImage.height; y++) {
-        for (int x = 0; x < resizedImage.width; x++) {
-          final pixel = resizedImage.getPixel(x, y);
-          final r = pixel.r.toDouble();
-          final g = pixel.g.toDouble();
-          final b = pixel.b.toDouble();
-
-          // Green pixel (healthy leaf)
-          if (g > r * 1.2 && g > b * 1.2 && g > 30) greenPixels++;
-
-          // Warm pixel: rust / blight / scorch / scab colours
-          // High red, some green, low blue
-          if (r > 100 && g > 40 && b < 110 && r > b * 1.4) warmPixels++;
-
-          // Edge check
-          if (y < resizedImage.height - 1 && x < resizedImage.width - 1) {
-            final current = (r + g + b) / 3;
-            final rightPixel = resizedImage.getPixel(x + 1, y);
-            final right = (rightPixel.r + rightPixel.g + rightPixel.b) / 3;
-            final downPixel = resizedImage.getPixel(x, y + 1);
-            final down = (downPixel.r + downPixel.g + downPixel.b) / 3;
-            if ((current - right).abs() > edgeThreshold ||
-                (current - down).abs() > edgeThreshold) {
-              edgeCount++;
-            }
-          }
-        }
-      }
-
-      final greenPct = (greenPixels / totalPixels) * 100;
-      final warmPct  = (warmPixels  / totalPixels) * 100;
-      final edgeDensity = (edgeCount / totalPixels) * 100;
-
-      // Combined plant coverage: green + discounted warm pixels
-      // Warm pixels are discounted (×0.5) to avoid false positives on
-      // wooden tables, soil, etc. that are warm but not leaves.
-      final plantPct = greenPct + (warmPct * 0.5);
-
-      // OLD rule (broken): greenPct > 25 && edgeDensity > 5
-      //   → Apple Scab image: green=22.3% → REJECTED ✗
-      //
-      // NEW rule: plant coverage > 15% with edges, OR strong edge alone
-      //   → Apple Scab image: green=22.3% + warm≈50% → plantPct≈47% → PASS ✓
-      final isLeaf = (plantPct > 15 && edgeDensity > 4) ||
-          (edgeDensity > 8 && plantPct > 8);
-
-      final confidence = (plantPct * 0.55) + (edgeDensity * 0.45);
-
-      print('🍃 Plant ID Service Leaf Detection:');
-      print('   Green: ${greenPct.toStringAsFixed(1)}%');
-      print('   Warm:  ${warmPct.toStringAsFixed(1)}%');
-      print('   Plant: ${plantPct.toStringAsFixed(1)}%');
-      print('   Edge Density: ${edgeDensity.toStringAsFixed(1)}%');
-      print('   Is Leaf: $isLeaf');
-      print('   Confidence: ${confidence.toStringAsFixed(1)}%');
-
-      return {
-        'isLeaf': isLeaf,
-        'confidence': confidence,
-        'greenPercentage': greenPct,
-        'warmPercentage': warmPct,
-        'plantPercentage': plantPct,
-        'edgeDensity': edgeDensity,
-        'message': isLeaf
-            ? 'Image appears to be a plant leaf'
-            : 'Image does not appear to be a plant leaf',
-      };
-    } catch (e) {
-      print('❌ Leaf detection error: $e');
-      return {'isLeaf': true, 'confidence': 50.0, 'message': 'Detection error'};
-    }
-  }
+  Future<Map<String, dynamic>> _performLeafDetection(File imageFile) =>
+      LeafDetector.detect(imageFile);
 
   // ── Model loading ──────────────────────────────────────────────────────────
   Future<void> loadModel() async {
     try {
-      print('🌱 Loading Plant Species Identification Model...');
-      print('   Model Accuracy: 93.1% | Classes: 11');
-      print('   Using adaptive confidence thresholds');
+      debugPrint('🌱 Loading Plant Species Identification Model...');
+      debugPrint('   Model Accuracy: 93.1% | Classes: 11');
+      debugPrint('   Using adaptive confidence thresholds');
 
       _interpreter = await Interpreter.fromAsset(_modelPath);
       await _discoverTensorSpecs();
       await _loadLabels();
 
       if (_labels.length != _numClasses) {
-        print('⚠️ Warning: Labels (${_labels.length}) don\'t match model output ($_numClasses)');
+        debugPrint('⚠️ Warning: Labels (${_labels.length}) don\'t match model output ($_numClasses)');
         _adjustLabelsToMatchModel();
       }
 
-      print('✅ Using [-1, 1] normalization (as per training)');
-      await _runQuickTest();
+      debugPrint('✅ Using [-1, 1] normalization (as per training)');
+      if (kDebugMode) await _runQuickTest();
 
       _isLoaded = true;
-      print('✅ Plant Species Model loaded successfully!');
-      print('   Input: $_inputShape ${_tensorTypeToString(_inputType)}');
-      print('   Output: $_outputShape ${_tensorTypeToString(_outputType)}');
-      print('   Classes: $_numClasses plant species');
+      debugPrint('✅ Plant Species Model loaded successfully!');
+      debugPrint('   Input: $_inputShape ${_tensorTypeToString(_inputType)}');
+      debugPrint('   Output: $_outputShape ${_tensorTypeToString(_outputType)}');
+      debugPrint('   Classes: $_numClasses plant species');
     } catch (e) {
-      print('❌ Failed to load plant species model: $e');
+      debugPrint('❌ Failed to load plant species model: $e');
       _isLoaded = false;
       rethrow;
     }
@@ -191,15 +104,15 @@ class PlantIdService {
     try {
       final txt = await rootBundle.loadString(_labelsPath);
       _labels = txt.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
-      print('✅ Loaded ${_labels.length} plant species labels');
-      print('📋 Plant Species in model (with thresholds):');
+      debugPrint('✅ Loaded ${_labels.length} plant species labels');
+      debugPrint('📋 Plant Species in model (with thresholds):');
       for (int i = 0; i < _labels.length; i++) {
         final label = _labels[i];
         final threshold = _getClassThreshold(label);
-        print('   ${i + 1}. $label: ${(threshold * 100).toStringAsFixed(0)}% threshold');
+        debugPrint('   ${i + 1}. $label: ${(threshold * 100).toStringAsFixed(0)}% threshold');
       }
     } catch (e) {
-      print('⚠️ Failed to load labels, using default: $e');
+      debugPrint('⚠️ Failed to load labels, using default: $e');
       _labels = [
         'Apple', 'Bell pepper', 'Cherry', 'Corn (Maize)',
         'Grape', 'Peach', 'Potato', 'Soybean',
@@ -211,18 +124,18 @@ class PlantIdService {
   void _adjustLabelsToMatchModel() {
     if (_labels.length > _numClasses) {
       _labels = _labels.sublist(0, _numClasses);
-      print('✅ Trimmed labels to $_numClasses to match model');
+      debugPrint('✅ Trimmed labels to $_numClasses to match model');
     } else if (_labels.length < _numClasses) {
       final needed = _numClasses - _labels.length;
       for (int i = 0; i < needed; i++) {
         _labels.add('Unknown_Plant_${_labels.length + 1}');
       }
-      print('✅ Added $needed placeholder labels to match model');
+      debugPrint('✅ Added $needed placeholder labels to match model');
     }
   }
 
   Future<void> _runQuickTest() async {
-    print('\n🧪 Running quick model test...');
+    debugPrint('\n🧪 Running quick model test...');
     final testImage = _createSolidImage(50, 150, 50);
     try {
       final input = _prepareInput(testImage);
@@ -230,11 +143,11 @@ class PlantIdService {
       final maxIndex = _getMaxIndex(probabilities);
       final maxConfidence = probabilities[maxIndex];
       final predictedLabel = maxIndex < _labels.length ? _labels[maxIndex] : 'Unknown';
-      print('   Test inference successful');
-      print('   Top prediction: $predictedLabel (${(maxConfidence * 100).toStringAsFixed(1)}%)');
-      if (maxConfidence < 0.1) print('   ⚠️ Very low confidence - check normalization');
+      debugPrint('   Test inference successful');
+      debugPrint('   Top prediction: $predictedLabel (${(maxConfidence * 100).toStringAsFixed(1)}%)');
+      if (maxConfidence < 0.1) debugPrint('   ⚠️ Very low confidence - check normalization');
     } catch (e) {
-      print('   ❌ Test failed: $e');
+      debugPrint('   ❌ Test failed: $e');
     }
   }
 
@@ -334,16 +247,16 @@ class PlantIdService {
     }
 
     try {
-      print('\n🌿 Identifying plant species...');
+      debugPrint('\n🌿 Identifying plant species...');
 
       // STEP 1: Leaf detection (with warm pixel fix)
-      print('🍃 Performing leaf detection...');
+      debugPrint('🍃 Performing leaf detection...');
       final leafAnalysis = await _performLeafDetection(imageFile);
       final isLeaf        = leafAnalysis['isLeaf'] as bool;
       final leafConfidence = leafAnalysis['confidence'] as double;
 
       if (!isLeaf) {
-        print('❌ Image does not appear to be a plant leaf. Skipping species identification.');
+        debugPrint('❌ Image does not appear to be a plant leaf. Skipping species identification.');
         return {
           'success': false,
           'error': 'Image does not appear to be a plant leaf',
@@ -371,7 +284,7 @@ class PlantIdService {
       final stopwatch = Stopwatch()..start();
       final probabilities = _runInference(input);
       stopwatch.stop();
-      print('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
 
       // STEP 4: All predictions sorted by confidence
       final allPredictions = _getAllPredictions(probabilities);
@@ -400,26 +313,26 @@ class PlantIdService {
       final reasoning = analysis['reasoning'] as String;
 
       // Log results
-      print('\n📊 Plant Species Identification Results:');
-      print('   ┌─────────────────────────────────────┐');
-      print('   │ ★ $topLabel');
-      print('   │ Confidence: ${(topConfidence * 100).toStringAsFixed(1)}%');
-      print('   │ Threshold: ${((analysis["thresholdUsed"] as double) * 100).toStringAsFixed(1)}%');
-      print('   │ Leaf Check: ✅ Passed (${leafConfidence.toStringAsFixed(1)}%)');
+      debugPrint('\n📊 Plant Species Identification Results:');
+      debugPrint('   ┌─────────────────────────────────────┐');
+      debugPrint('   │ ★ $topLabel');
+      debugPrint('   │ Confidence: ${(topConfidence * 100).toStringAsFixed(1)}%');
+      debugPrint('   │ Threshold: ${((analysis["thresholdUsed"] as double) * 100).toStringAsFixed(1)}%');
+      debugPrint('   │ Leaf Check: ✅ Passed (${leafConfidence.toStringAsFixed(1)}%)');
       if (confidenceGap > 0) {
-        print('   │ Gap to 2nd: ${(confidenceGap * 100).toStringAsFixed(1)}%');
+        debugPrint('   │ Gap to 2nd: ${(confidenceGap * 100).toStringAsFixed(1)}%');
       }
-      print('   │ Status: ${isUnknown ? "⚠️ Low Confidence" : "✅ Confident Identification"}');
-      print('   └─────────────────────────────────────┘');
+      debugPrint('   │ Status: ${isUnknown ? "⚠️ Low Confidence" : "✅ Confident Identification"}');
+      debugPrint('   └─────────────────────────────────────┘');
 
       if (allPredictions.length > 1 && topConfidence < 0.8) {
-        print('\n   Alternatives:');
+        debugPrint('\n   Alternatives:');
         for (int i = 1; i < min(3, allPredictions.length); i++) {
           final conf = ((allPredictions[i]['confidence'] as double) * 100).toStringAsFixed(1);
-          print('   $i. ${allPredictions[i]['label']}: $conf%');
+          debugPrint('   $i. ${allPredictions[i]['label']}: $conf%');
         }
       }
-      if (isUnknown) print('\n   Reason: $reasoning');
+      if (isUnknown) debugPrint('\n   Reason: $reasoning');
 
       String confidenceLevel = 'Low';
       if (topConfidence >= _highConfidenceThreshold)  confidenceLevel = 'High';
@@ -445,7 +358,7 @@ class PlantIdService {
             : 'Identified as $topLabel (${confidenceLevel.toLowerCase()} confidence)',
       };
     } catch (e) {
-      print('❌ Plant species identification failed: $e');
+      debugPrint('❌ Plant species identification failed: $e');
       return {
         'success': false,
         'error': e.toString(),
@@ -555,6 +468,6 @@ class PlantIdService {
   void dispose() {
     _interpreter?.close();
     _isLoaded = false;
-    print('♻️ Plant Species Model disposed');
+    debugPrint('♻️ Plant Species Model disposed');
   }
 }

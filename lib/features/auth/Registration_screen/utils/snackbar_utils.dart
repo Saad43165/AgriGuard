@@ -88,8 +88,8 @@ class SnackbarUtils {
               message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: isSuccess
-                    ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.9)
-                    : Theme.of(context).colorScheme.onError.withOpacity(0.9),
+                    ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9)
+                    : Theme.of(context).colorScheme.onError.withValues(alpha: 0.9),
                 fontSize: AppMeasurements.getResponsiveFontSize(
                   context,
                   baseSize: 12,

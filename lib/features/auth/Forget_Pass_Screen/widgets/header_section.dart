@@ -22,8 +22,8 @@ class ForgotPasswordHeader extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
                     ],
                   ),
                 ),
@@ -71,7 +71,7 @@ class ForgotPasswordHeader extends StatelessWidget {
           child: Text(
             'Don\'t worry! Enter your email address and we\'ll send you a link to reset your password.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 15,
               height: 1.6,
               fontWeight: FontWeight.w400,

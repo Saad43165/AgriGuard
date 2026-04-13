@@ -14,12 +14,12 @@ class ComparisonTable extends StatelessWidget {
       builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.06),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.06),
               width: 1.5,
             ),
           ),
@@ -79,8 +79,8 @@ class ComparisonTable extends StatelessWidget {
                 translation.get('comparison_subtitle'),
                 style: TextStyle(
                   color: isDark
-                      ? Colors.white.withOpacity(0.5)
-                      : Colors.black.withOpacity(0.5),
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.black.withValues(alpha: 0.5),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -230,8 +230,8 @@ class ComparisonTable extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.03)
-            : Colors.black.withOpacity(0.02),
+            ? Colors.white.withValues(alpha: 0.03)
+            : Colors.black.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -294,14 +294,14 @@ class ComparisonTable extends StatelessWidget {
     IconData? icon;
 
     if (isPositive == null) {
-      bgColor = baseColor.withOpacity(isDark ? 0.2 : 0.12);
+      bgColor = baseColor.withValues(alpha: isDark ? 0.2 : 0.12);
       textColor = baseColor;
     } else if (isPositive) {
-      bgColor = const Color(0xFF10B981).withOpacity(isDark ? 0.25 : 0.15);
+      bgColor = const Color(0xFF10B981).withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = const Color(0xFF10B981);
       icon = Icons.check_circle_rounded;
     } else {
-      bgColor = const Color(0xFFFF9800).withOpacity(isDark ? 0.25 : 0.15);
+      bgColor = const Color(0xFFFF9800).withValues(alpha: isDark ? 0.25 : 0.15);
       textColor = const Color(0xFFFF9800);
       icon = Icons.info_rounded;
     }
@@ -312,7 +312,7 @@ class ComparisonTable extends StatelessWidget {
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: textColor.withOpacity(0.3),
+          color: textColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

@@ -53,27 +53,27 @@ class SourceCard extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: isDark
                       ? [
-                    effectiveColor.withOpacity(0.2),
-                    gradient[1].withOpacity(0.15),
+                    effectiveColor.withValues(alpha: 0.2),
+                    gradient[1].withValues(alpha: 0.15),
                   ]
                       : [
                     Colors.white,
-                    effectiveColor.withOpacity(0.08),
+                    effectiveColor.withValues(alpha: 0.08),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isDark
-                      ? effectiveColor.withOpacity(0.5)
-                      : effectiveColor.withOpacity(0.6),
+                      ? effectiveColor.withValues(alpha: 0.5)
+                      : effectiveColor.withValues(alpha: 0.6),
                   width: 2,
                 ),
                 // Stronger shadow for light mode
                 boxShadow: [
                   BoxShadow(
                     color: isDark
-                        ? effectiveColor.withOpacity(0.25)
-                        : effectiveColor.withOpacity(0.3),
+                        ? effectiveColor.withValues(alpha: 0.25)
+                        : effectiveColor.withValues(alpha: 0.3),
                     blurRadius: isDark ? 12 : 15,
                     offset: const Offset(0, 4),
                   ),
@@ -107,7 +107,7 @@ class SourceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: effectiveColor.withOpacity(0.4),
+                color: effectiveColor.withValues(alpha: 0.4),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -133,8 +133,8 @@ class SourceCard extends StatelessWidget {
                 translation.get(descKey),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isDark
-                      ? Colors.white.withOpacity(0.7)
-                      : Colors.black.withOpacity(0.65),
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : Colors.black.withValues(alpha: 0.65),
                   height: 1.2,
                   fontWeight: FontWeight.w700,
                   fontSize: 10,
@@ -162,13 +162,13 @@ class SourceCard extends StatelessWidget {
       decoration: BoxDecoration(
         // Better visibility in light mode
         color: isDark
-            ? effectiveColor.withOpacity(0.15)
-            : effectiveColor.withOpacity(0.12),
+            ? effectiveColor.withValues(alpha: 0.15)
+            : effectiveColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isDark
-              ? effectiveColor.withOpacity(0.3)
-              : effectiveColor.withOpacity(0.35),
+              ? effectiveColor.withValues(alpha: 0.3)
+              : effectiveColor.withValues(alpha: 0.35),
           width: 1,
         ),
       ),
@@ -183,7 +183,7 @@ class SourceCard extends StatelessWidget {
                 translation.get('source_tips'),
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
-                  color: isDark ? effectiveColor : effectiveColor.withOpacity(0.9),
+                  color: isDark ? effectiveColor : effectiveColor.withValues(alpha: 0.9),
                   fontSize: 10,
                 ),
               ),
@@ -201,8 +201,8 @@ class SourceCard extends StatelessWidget {
                     Icons.circle,
                     size: 4,
                     color: isDark
-                        ? effectiveColor.withOpacity(0.7)
-                        : effectiveColor.withOpacity(0.8),
+                        ? effectiveColor.withValues(alpha: 0.7)
+                        : effectiveColor.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -211,8 +211,8 @@ class SourceCard extends StatelessWidget {
                     tip,
                     style: TextStyle(
                       color: isDark
-                          ? Colors.white.withOpacity(0.75)
-                          : Colors.black.withOpacity(0.75),
+                          ? Colors.white.withValues(alpha: 0.75)
+                          : Colors.black.withValues(alpha: 0.75),
                       fontSize: 9,
                       fontWeight: FontWeight.w600,
                       height: 1.3,

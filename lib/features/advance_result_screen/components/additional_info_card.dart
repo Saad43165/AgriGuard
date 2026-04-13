@@ -21,7 +21,7 @@ class AdditionalInfoCard extends StatelessWidget {
         AppMeasurements.getResponsivePadding(context),
       ),
       decoration: BoxDecoration(
-        color: hasDiseaseInfo ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        color: hasDiseaseInfo ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(
           AppMeasurements.getResponsiveBorderRadius(context),
         ),
@@ -65,7 +65,7 @@ class AdditionalInfoCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.2),
+                color: Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

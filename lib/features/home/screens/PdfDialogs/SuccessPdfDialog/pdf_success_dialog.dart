@@ -29,7 +29,7 @@ class PdfSuccessDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -46,8 +46,8 @@ class PdfSuccessDialog extends StatelessWidget {
               height: 1,
               thickness: 1,
               color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.black.withOpacity(0.05),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.05),
             ),
 
             // Content
@@ -133,7 +133,7 @@ class PdfSuccessDialog extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFF059669).withOpacity(0.1),
+              color: const Color(0xFF059669).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -174,8 +174,8 @@ class PdfSuccessDialog extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: isDark
-                ? Colors.white.withOpacity(0.5)
-                : Colors.black.withOpacity(0.5),
+                ? Colors.white.withValues(alpha: 0.5)
+                : Colors.black.withValues(alpha: 0.5),
           ),
         ),
       ),

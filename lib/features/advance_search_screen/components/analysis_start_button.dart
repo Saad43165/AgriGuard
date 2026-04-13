@@ -37,7 +37,7 @@ class AnalysisStartButton extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               gradient: isActive
-                  ? LinearGradient(colors: [color, color.withOpacity(0.8)])
+                  ? LinearGradient(colors: [color, color.withValues(alpha: 0.8)])
                   : LinearGradient(
                   colors: [Colors.grey.shade400, Colors.grey.shade500]),
               borderRadius: BorderRadius.circular(16),

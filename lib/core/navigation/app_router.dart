@@ -14,6 +14,11 @@ import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 import '../navigation/main_navigation_screen.dart';
 import '../../features/auth/Login_Screen/services/guest_service.dart';
+import '../../features/chatbot/chatbot_screen.dart';
+import '../../features/HelpSupport/bug_report_screen.dart';
+import '../../features/analytics/analytics_screen.dart';
+import '../../features/farm_diary/farm_diary_screen.dart';
+import '../../features/crop_calendar/crop_calendar_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -106,6 +111,21 @@ class AppRouter {
 
       case AppRoutes.help:
         return buildLightRoute(const HelpAndSupportScreen());
+
+      case AppRoutes.chatbot:
+        return buildLightRoute(const ChatbotScreen());
+
+      case AppRoutes.bugReport:
+        return buildLightRoute(const BugReportScreen());
+
+      case AppRoutes.analytics:
+        return buildLightRoute(const AnalyticsScreen());
+
+      case AppRoutes.farmDiary:
+        return buildLightRoute(const FarmDiaryScreen());
+
+      case AppRoutes.cropCalendar:
+        return buildLightRoute(const CropCalendarScreen());
 
       default:
         return buildLightRoute(

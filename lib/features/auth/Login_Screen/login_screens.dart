@@ -167,18 +167,18 @@ class _LoginScreenState extends State<LoginScreen>
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Expanded(child: Divider(color: theme.colorScheme.onSurface.withOpacity(0.15))),
+          Expanded(child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.15))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
               'or continue with',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.55),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          Expanded(child: Divider(color: theme.colorScheme.onSurface.withOpacity(0.15))),
+          Expanded(child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.15))),
         ],
       ),
     );
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen>
             child: OutlinedButton(
               onPressed: _isLoading ? null : _handleGuestLogin,
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.18)),
+                side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.18)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 padding: EdgeInsets.zero,
               ),
@@ -283,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange.shade300, width: 1),
               ),
@@ -310,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen>
         TextButton(
           onPressed: () => Navigator.pop(context, false),
           child: Text('Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, true),
@@ -336,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen>
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ),
@@ -407,7 +407,7 @@ class _LoginScreenState extends State<LoginScreen>
             const SizedBox(height: 4),
             Text(message,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onError.withOpacity(0.9),
+                  color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.9),
                 )),
           ],
         ),
@@ -458,8 +458,8 @@ class _LoginScreenState extends State<LoginScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: isDark ? AppColors.darkGradient : AppColors.lightGradient,
-            stops: AppColors.gradientStops,
+            colors: isDark ? AuthAppColors.darkGradient : AuthAppColors.lightGradient,
+            stops: AuthAppColors.gradientStops,
           ),
         ),
         child: SafeArea(

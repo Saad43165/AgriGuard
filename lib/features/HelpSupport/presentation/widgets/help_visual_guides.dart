@@ -123,11 +123,11 @@ class _GuideCard extends StatelessWidget {
           child: Ink(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              color: theme.colorScheme.surface.withOpacity(isDark ? 0.62 : 0.90),
-              border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+              color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.62 : 0.90),
+              border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.18 : 0.06),
+                  color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
                   blurRadius: 18,
                   offset: const Offset(0, 10),
                 ),
@@ -156,7 +156,7 @@ class _GuideCard extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                data.accent.withOpacity(0.35),
+                                data.accent.withValues(alpha: 0.35),
                                 Colors.transparent,
                               ],
                             ),
@@ -169,9 +169,9 @@ class _GuideCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.35),
+                            color: Colors.black.withValues(alpha: 0.35),
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: Colors.white.withOpacity(0.25)),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                           ),
                           child: Row(
                             children: [
@@ -213,7 +213,7 @@ class _GuideCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.70),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -300,12 +300,12 @@ class _GuideCard extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withOpacity(isDark ? 0.92 : 0.98),
+                color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.92 : 0.98),
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.12)),
+                border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.12)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.35 : 0.18),
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.18),
                     blurRadius: 28,
                     offset: const Offset(0, 14),
                   ),
@@ -330,8 +330,8 @@ class _GuideCard extends StatelessWidget {
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    Colors.black.withOpacity(0.15),
-                                    Colors.black.withOpacity(0.55),
+                                    Colors.black.withValues(alpha: 0.15),
+                                    Colors.black.withValues(alpha: 0.55),
                                   ],
                                 ),
                               ),
@@ -345,9 +345,9 @@ class _GuideCard extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: data.accent.withOpacity(0.22),
+                                      color: data.accent.withValues(alpha: 0.22),
                                       borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: Colors.white.withOpacity(0.22)),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
                                     ),
                                     child: Text(
                                       'Guide',
@@ -383,7 +383,7 @@ class _GuideCard extends StatelessWidget {
                         child: Text(
                           data.subtitle,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.75),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
                             fontWeight: FontWeight.w600,
                             height: 1.35,
                           ),
@@ -435,7 +435,7 @@ class _GuideCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   side: BorderSide(
-                                    color: theme.colorScheme.onSurface.withOpacity(0.14),
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.14),
                                   ),
                                 ),
                                 child: const Text('Close'),

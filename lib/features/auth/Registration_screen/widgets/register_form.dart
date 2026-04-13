@@ -161,7 +161,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isFocused
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -175,8 +175,8 @@ class _RegisterFormState extends State<RegisterForm> {
                   height: 40,
                   width: 1,
                   color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.08),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08),
                 ),
 
                 const SizedBox(width: 16),
@@ -247,7 +247,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isFocused
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -261,8 +261,8 @@ class _RegisterFormState extends State<RegisterForm> {
                   height: 40,
                   width: 1,
                   color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.08),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08),
                 ),
 
                 const SizedBox(width: 16),
@@ -300,7 +300,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     child: Icon(
                       obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                       size: 20,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -337,7 +337,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
             ],
@@ -362,8 +362,8 @@ class _RegisterFormState extends State<RegisterForm> {
           color: isFocused
               ? Theme.of(context).colorScheme.primary
               : isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.08),
           width: isFocused ? 2 : 1.5,
         ),
       ),
@@ -381,8 +381,8 @@ class _RegisterFormState extends State<RegisterForm> {
           Theme.of(context).colorScheme.secondary,
         ]
             : [
-          Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-          Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
         ],
       ).createShader(bounds),
       child: Icon(icon, size: 22),
@@ -395,13 +395,13 @@ class _RegisterFormState extends State<RegisterForm> {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.close_rounded,
           size: 16,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
         ),
       ),
     );
@@ -419,7 +419,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
   TextStyle _hintStyle(BuildContext context) {
     return TextStyle(
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
       fontWeight: FontWeight.w400,
       fontSize: 15,
       letterSpacing: 0.2,

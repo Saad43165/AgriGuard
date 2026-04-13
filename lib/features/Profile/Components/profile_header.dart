@@ -41,12 +41,12 @@ class CompactProfileHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -72,7 +72,7 @@ class CompactProfileHeader extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -115,7 +115,7 @@ class CompactProfileHeader extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.6),
+                        .withValues(alpha: 0.6),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -158,6 +158,18 @@ class CompactProfileHeader extends StatelessWidget {
     }
 
     if (profileImageBase64 != null && profileImageBase64!.isNotEmpty) {
+      // HTTP URL (Google profile photo or Firebase Storage URL)
+      if (profileImageBase64!.startsWith('http')) {
+        return Image.network(
+          profileImageBase64!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          loadingBuilder: (_, child, progress) => progress == null ? child : _buildDefaultAvatar(context),
+          errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
+        );
+      }
+      // Base64 encoded image
       try {
         final bytes = base64Decode(profileImageBase64!);
         return Image.memory(
@@ -182,8 +194,8 @@ class CompactProfileHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.05),
           ],
         ),
       ),
@@ -191,7 +203,7 @@ class CompactProfileHeader extends StatelessWidget {
         child: Icon(
           Icons.person_rounded,
           size: 40,
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
         ),
       ),
     );

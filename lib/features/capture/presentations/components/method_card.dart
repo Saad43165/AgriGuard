@@ -50,26 +50,24 @@ class MethodCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isReady
-                      ? [
-                    effectiveColor.withOpacity(isDark ? 0.2 : 0.12),
-                    gradient[1].withOpacity(isDark ? 0.15 : 0.06)
-                  ]
-                      : [
-                    Colors.grey.withOpacity(0.15),
-                    Colors.grey.withOpacity(0.08)
-                  ],
-                ),
+                color: isDark
+                    ? effectiveColor.withValues(alpha: 0.12)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isReady
-                      ? effectiveColor.withOpacity(isDark ? 0.5 : 0.4)
-                      : Colors.grey.withOpacity(0.3),
-                  width: 2,
+                      ? effectiveColor.withValues(alpha: isDark ? 0.5 : 0.5)
+                      : Colors.grey.withValues(alpha: 0.3),
+                  width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isReady
+                        ? effectiveColor.withValues(alpha: isDark ? 0.2 : 0.15)
+                        : Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10, offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,8 +143,8 @@ class MethodCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
         color: isReady
-            ? Colors.green.withOpacity(isDark ? 0.25 : 0.15)
-            : Colors.orange.withOpacity(isDark ? 0.25 : 0.15),
+            ? Colors.green.withValues(alpha: isDark ? 0.25 : 0.15)
+            : Colors.orange.withValues(alpha: isDark ? 0.25 : 0.15),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isReady ? Colors.green : Colors.orange,
@@ -180,9 +178,7 @@ class MethodCard extends StatelessWidget {
       description,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: isReady
-            ? (isDark
-            ? Colors.white.withOpacity(0.8)
-            : Colors.black.withOpacity(0.75))
+            ? (isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF4A5568))
             : Colors.grey,
         height: 1.3,
         fontWeight: FontWeight.w600,
@@ -202,13 +198,13 @@ class MethodCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
           decoration: BoxDecoration(
             color: isReady
-                ? effectiveColor.withOpacity(isDark ? 0.2 : 0.12)
-                : Colors.grey.withOpacity(0.1),
+                ? effectiveColor.withValues(alpha: isDark ? 0.2 : 0.12)
+                : Colors.grey.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: isReady
-                  ? effectiveColor.withOpacity(isDark ? 0.4 : 0.3)
-                  : Colors.grey.withOpacity(0.3),
+                  ? effectiveColor.withValues(alpha: isDark ? 0.4 : 0.3)
+                  : Colors.grey.withValues(alpha: 0.3),
               width: 0.8,
             ),
           ),

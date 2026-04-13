@@ -163,7 +163,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
+            color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.2),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -190,8 +190,8 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isAdvanced
-              ? [Colors.blue.shade600.withOpacity(0.15), Colors.blue.shade400.withOpacity(0.1)]
-              : [theme.colorScheme.primary.withOpacity(0.15), theme.colorScheme.secondary.withOpacity(0.1)],
+              ? [Colors.blue.shade600.withValues(alpha: 0.15), Colors.blue.shade400.withValues(alpha: 0.1)]
+              : [theme.colorScheme.primary.withValues(alpha: 0.15), theme.colorScheme.secondary.withValues(alpha: 0.1)],
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(28),
@@ -199,7 +199,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
         ),
         border: Border(
           bottom: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.1),
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -217,7 +217,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: (isAdvanced ? Colors.blue : theme.colorScheme.primary).withOpacity(0.3),
+                  color: (isAdvanced ? Colors.blue : theme.colorScheme.primary).withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -246,7 +246,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                 Text(
                   '${widget.recentScans.length} ${widget.recentScans.length == 1 ? 'scan' : 'scans'} total',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                 ),
@@ -259,7 +259,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -268,7 +268,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
             child: IconButton(
               icon: const Icon(Icons.close_rounded),
               onPressed: () => Navigator.of(context).pop(),
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               iconSize: 24,
             ),
           ),
@@ -285,10 +285,10 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
           // Search Bar
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.2),
+                color: theme.colorScheme.outline.withValues(alpha: 0.2),
               ),
             ),
             child: TextField(
@@ -340,12 +340,12 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
             colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           )
               : null,
-          color: isSelected ? null : theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          color: isSelected ? null : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? theme.colorScheme.primary.withOpacity(0.5)
-                : theme.colorScheme.outline.withOpacity(0.2),
+                ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                : theme.colorScheme.outline.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -382,20 +382,20 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primaryContainer.withOpacity(0.3),
-            theme.colorScheme.secondaryContainer.withOpacity(0.3),
+            theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+            theme.colorScheme.secondaryContainer.withValues(alpha: 0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem(Icons.check_circle, healthy.toString(), 'Healthy', Colors.green, theme),
-          Container(width: 1, height: 40, color: theme.colorScheme.outline.withOpacity(0.2)),
+          Container(width: 1, height: 40, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
           _buildStatItem(Icons.warning_amber_rounded, diseased.toString(), 'Diseased', Colors.orange, theme),
-          Container(width: 1, height: 40, color: theme.colorScheme.outline.withOpacity(0.2)),
+          Container(width: 1, height: 40, color: theme.colorScheme.outline.withValues(alpha: 0.2)),
           _buildStatItem(
               Icons.analytics_outlined, '${avgConfidence.toInt()}%', 'Avg Conf.', theme.colorScheme.primary, theme),
         ],
@@ -420,7 +420,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
           label,
           style: theme.textTheme.bodySmall?.copyWith(
             fontSize: 11,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -479,8 +479,8 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.error.withOpacity(0.2),
-            theme.colorScheme.error.withOpacity(0.4),
+            theme.colorScheme.error.withValues(alpha: 0.2),
+            theme.colorScheme.error.withValues(alpha: 0.4),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
@@ -548,22 +548,22 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-              theme.colorScheme.surface.withOpacity(0.6),
-              theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+              theme.colorScheme.surface.withValues(alpha: 0.6),
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             ]
                 : [
               Colors.white,
-              isAdvanced ? Colors.blue.shade50.withOpacity(0.5) : theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
+              isAdvanced ? Colors.blue.shade50.withValues(alpha: 0.5) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isAdvanced ? Colors.blue.withOpacity(0.4) : theme.colorScheme.outline.withOpacity(0.2),
+            color: isAdvanced ? Colors.blue.withValues(alpha: 0.4) : theme.colorScheme.outline.withValues(alpha: 0.2),
             width: isAdvanced ? 2 : 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: (isAdvanced ? Colors.blue : theme.colorScheme.primary).withOpacity(isDark ? 0.2 : 0.1),
+              color: (isAdvanced ? Colors.blue : theme.colorScheme.primary).withValues(alpha: isDark ? 0.2 : 0.1),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -594,7 +594,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                         gradient: LinearGradient(colors: [Colors.blue.shade600, Colors.blue.shade400]),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))
                         ],
                       ),
                       child: const Text(
@@ -618,7 +618,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                             plantName,
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontSize: 11,
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -644,13 +644,13 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                     Row(
                       children: [
                         Icon(Icons.access_time_rounded,
-                            size: 12, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                            size: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             timestamp,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                               fontSize: 11,
                             ),
                             maxLines: 1,
@@ -665,9 +665,9 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getConfidenceColor(confidence).withOpacity(0.15),
+                            color: _getConfidenceColor(confidence).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: _getConfidenceColor(confidence).withOpacity(0.3)),
+                            border: Border.all(color: _getConfidenceColor(confidence).withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -690,9 +690,9 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: Colors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                             ),
                             child: Text(
                               scan['analysisSource']?.toString() ?? 'Groq',
@@ -719,7 +719,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                   child: Icon(
                     Icons.more_vert_rounded,
                     size: 22,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -795,7 +795,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
       child: Center(
         child: Icon(
           Icons.local_florist_rounded,
-          color: theme.colorScheme.primary.withOpacity(0.4),
+          color: theme.colorScheme.primary.withValues(alpha: 0.4),
           size: 36,
         ),
       ),
@@ -900,8 +900,8 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.15),
-                      theme.colorScheme.secondary.withOpacity(0.1),
+                      theme.colorScheme.primary.withValues(alpha: 0.15),
+                      theme.colorScheme.secondary.withValues(alpha: 0.1),
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -909,7 +909,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                 child: Icon(
                   Icons.search_off_rounded,
                   size: 72,
-                  color: theme.colorScheme.primary.withOpacity(0.5),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 24),
@@ -926,7 +926,7 @@ class _AllScansDialogContentState extends State<AllScansDialogContent>
                     ? 'Try adjusting your search or filters'
                     : 'Your plant scan history will appear here.\nStart by capturing your first plant!',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   fontSize: 14,
                   height: 1.5,
                 ),

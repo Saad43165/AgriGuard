@@ -10,11 +10,11 @@ class HistoryThemeConfig {
     return {
       'backgroundColor': isDark
           ? PlantNameColors.darkBackground
-          .withOpacity(PlantNameColors.darkBackgroundOpacity)
+          .withValues(alpha: PlantNameColors.darkBackgroundOpacity)
           : PlantNameColors.lightBackground,
       'borderColor': isDark
           ? PlantNameColors.darkBorder
-          .withOpacity(PlantNameColors.darkBorderOpacity)
+          .withValues(alpha: PlantNameColors.darkBorderOpacity)
           : PlantNameColors.lightBorder,
       'textColor': isDark ? PlantNameColors.darkText : PlantNameColors.lightText,
       'iconColor': isDark ? PlantNameColors.darkIcon : PlantNameColors.lightIcon,
@@ -28,11 +28,11 @@ class HistoryThemeConfig {
       ) {
     return {
       'backgroundColor': isDark
-          ? colorScheme.primaryContainer.withOpacity(0.6)
+          ? colorScheme.primaryContainer.withValues(alpha: 0.6)
           : CropTypeColors.lightBackground,
       'borderColor': isDark
-          ? colorScheme.primary.withOpacity(0.3)
-          : CropTypeColors.lightBorder.withOpacity(CropTypeColors.lightBorderOpacity),
+          ? colorScheme.primary.withValues(alpha: 0.3)
+          : CropTypeColors.lightBorder.withValues(alpha: CropTypeColors.lightBorderOpacity),
       'textColor':
       isDark ? colorScheme.onPrimaryContainer : CropTypeColors.lightText,
     };
@@ -43,13 +43,13 @@ class HistoryThemeConfig {
     return {
       'backgroundColor': isDark
           ? ConfidenceColors.darkBackground
-          .withOpacity(ConfidenceColors.darkBackgroundOpacity)
+          .withValues(alpha: ConfidenceColors.darkBackgroundOpacity)
           : ConfidenceColors.lightBackground,
       'borderColor': isDark
           ? ConfidenceColors.darkBorder
-          .withOpacity(ConfidenceColors.darkBorderOpacity)
+          .withValues(alpha: ConfidenceColors.darkBorderOpacity)
           : ConfidenceColors.lightBorder
-          .withOpacity(ConfidenceColors.lightBorderOpacity),
+          .withValues(alpha: ConfidenceColors.lightBorderOpacity),
       'textColor':
       isDark ? ConfidenceColors.darkText : ConfidenceColors.lightText,
       'iconColor':
@@ -62,19 +62,19 @@ class HistoryThemeConfig {
     return {
       'backgroundColors': isDark
           ? [
-        colorScheme.surface.withOpacity(0.8),
-        colorScheme.surface.withOpacity(0.6),
+        colorScheme.surface.withValues(alpha: 0.8),
+        colorScheme.surface.withValues(alpha: 0.6),
       ]
           : [
         CardColors.lightBackground,
-        CardColors.lightBackground.withOpacity(0.95),
+        CardColors.lightBackground.withValues(alpha: 0.95),
       ],
       'borderColor': isDark
-          ? colorScheme.outline.withOpacity(0.1)
-          : CardColors.lightBorder.withOpacity(CardColors.lightBorderOpacity),
+          ? colorScheme.outline.withValues(alpha: 0.1)
+          : CardColors.lightBorder.withValues(alpha: CardColors.lightBorderOpacity),
       'shadowColor': isDark
-          ? colorScheme.primary.withOpacity(0.1)
-          : Colors.black.withOpacity(0.08),
+          ? colorScheme.primary.withValues(alpha: 0.1)
+          : Colors.black.withValues(alpha: 0.08),
     };
   }
 

@@ -230,4 +230,76 @@ class NotificationService {
       debugPrint('❌ Toggle error: $e');
     }
   }
+
+  // ── Weekly scan reminder ─────────────────────────────────────────────────
+
+  static const int _reminderNotificationId = 9001;
+
+  Future<void> scheduleWeeklyScanReminder(int weekday, TimeOfDay time) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('reminderWeekday', weekday);
+      await prefs.setInt('reminderHour', time.hour);
+      await prefs.setInt('reminderMinute', time.minute);
+      await prefs.setBool('reminderSet', true);
+
+      // Cancel any existing reminder first
+      await _localNotifications.cancel(_reminderNotificationId);
+
+      // Calculate next occurrence
+      final now = DateTime.now();
+      var scheduledDate = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+      // Find next matching weekday (1=Mon, 7=Sun in Dart)
+      int daysUntil = (weekday - now.weekday + 7) % 7;
+      if (daysUntil == 0 && scheduledDate.isBefore(now)) daysUntil = 7;
+      scheduledDate = scheduledDate.add(Duration(days: daysUntil));
+
+      await _localNotifications.show(
+        _reminderNotificationId,
+        '🌿 Time to scan your plants!',
+        'Check your crops for diseases with AgriGuard.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'agriguard_reminders',
+            'Scan Reminders',
+            channelDescription: 'Weekly plant scan reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF00C896),
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+
+      debugPrint('✅ Weekly scan reminder set for weekday $weekday at ${time.hour}:${time.minute}');
+    } catch (e) {
+      debugPrint('❌ Error scheduling reminder: $e');
+    }
+  }
+
+  Future<void> cancelScanReminder() async {
+    try {
+      await _localNotifications.cancel(_reminderNotificationId);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('reminderSet', false);
+      debugPrint('✅ Scan reminder cancelled');
+    } catch (e) {
+      debugPrint('❌ Error cancelling reminder: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getScanReminderStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'isSet': prefs.getBool('reminderSet') ?? false,
+      'weekday': prefs.getInt('reminderWeekday') ?? 1,
+      'hour': prefs.getInt('reminderHour') ?? 9,
+      'minute': prefs.getInt('reminderMinute') ?? 0,
+    };
+  }
 }

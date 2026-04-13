@@ -59,8 +59,8 @@ class _EmailInputState extends State<EmailInput> {
                   color: _isFocused
                       ? Theme.of(context).colorScheme.primary
                       : isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.08),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.08),
                   width: _isFocused ? 2 : 1.5,
                 ),
 
@@ -75,7 +75,7 @@ class _EmailInputState extends State<EmailInput> {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: _isFocused
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -88,8 +88,8 @@ class _EmailInputState extends State<EmailInput> {
                             Theme.of(context).colorScheme.secondary,
                           ]
                               : [
-                            Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                            Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                            Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                           ],
                         ).createShader(bounds),
                         child: Icon(
@@ -106,8 +106,8 @@ class _EmailInputState extends State<EmailInput> {
                       height: 40,
                       width: 1,
                       color: isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.08),
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.08),
                     ),
 
                     const SizedBox(width: 16),
@@ -128,7 +128,7 @@ class _EmailInputState extends State<EmailInput> {
                         decoration: InputDecoration(
                           hintText: 'yourname@example.com',
                           hintStyle: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
                             fontWeight: FontWeight.w400,
                             fontSize: 15,
                             letterSpacing: 0.2,
@@ -160,13 +160,13 @@ class _EmailInputState extends State<EmailInput> {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.close_rounded,
                             size: 16,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
@@ -187,14 +187,14 @@ class _EmailInputState extends State<EmailInput> {
                   Icon(
                     Icons.info_outline_rounded,
                     size: 14,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     'We\'ll send a password reset link to this email',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

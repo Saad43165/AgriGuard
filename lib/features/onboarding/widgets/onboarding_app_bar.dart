@@ -29,8 +29,8 @@ class ModernAppBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      theme.colorScheme.primary.withOpacity(0.2),
-                      theme.colorScheme.secondary.withOpacity(0.2),
+                      theme.colorScheme.primary.withValues(alpha: 0.2),
+                      theme.colorScheme.secondary.withValues(alpha: 0.2),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -68,7 +68,7 @@ class ModernAppBar extends StatelessWidget {
               onPressed: onSkip,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

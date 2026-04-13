@@ -11,7 +11,7 @@ void showLogoutConfirmationDialog({
   showDialog(
     context: context,
     barrierDismissible: true,
-    barrierColor: Colors.black.withOpacity(0.6),
+    barrierColor: Colors.black.withValues(alpha: 0.6),
     builder: (context) => Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -37,8 +37,8 @@ void showLogoutConfirmationDialog({
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.black.withOpacity(0.05),
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
             width: 1.5,
           ),
         ),
@@ -92,7 +92,7 @@ void showLogoutConfirmationDialog({
               'Are you sure you want to logout from your account?',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
                 height: 1.5,
@@ -115,11 +115,11 @@ void showLogoutConfirmationDialog({
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.05),
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: colorScheme.primary.withOpacity(0.3),
+                          color: colorScheme.primary.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),

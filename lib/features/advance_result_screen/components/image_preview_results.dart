@@ -31,7 +31,7 @@ class ImagePreviewResults extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -142,7 +142,7 @@ class ImagePreviewResults extends StatelessWidget {
 
   Widget _buildNoImagePlaceholder() {
     return Container(
-      color: theme.colorScheme.surface.withOpacity(0.3),
+      color: theme.colorScheme.surface.withValues(alpha: 0.3),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -150,13 +150,13 @@ class ImagePreviewResults extends StatelessWidget {
             Icon(
               Icons.image_outlined,
               size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 8),
             Text(
               'No image available',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ],

@@ -23,13 +23,13 @@ class FaqCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
               width: 1.5,
             ),
           ),
@@ -41,13 +41,13 @@ class FaqCard extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -77,7 +77,7 @@ class FaqCard extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.6),
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -147,13 +147,13 @@ class FaqCard extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -274,15 +274,15 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: _isExpanded
-                    ? widget.color.withOpacity(0.5)
-                    : widget.color.withOpacity(0.2),
+                    ? widget.color.withValues(alpha: 0.5)
+                    : widget.color.withValues(alpha: 0.2),
                 width: _isExpanded ? 2 : 1.5,
               ),
               boxShadow: [
                 BoxShadow(
                   color: _isExpanded
-                      ? widget.color.withOpacity(0.2)
-                      : widget.color.withOpacity(0.08),
+                      ? widget.color.withValues(alpha: 0.2)
+                      : widget.color.withValues(alpha: 0.08),
                   blurRadius: _isExpanded ? 12 : 8,
                   offset: Offset(0, _isExpanded ? 4 : 2),
                 ),
@@ -297,12 +297,12 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [widget.color, widget.color.withOpacity(0.7)],
+                          colors: [widget.color, widget.color.withValues(alpha: 0.7)],
                         ),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: widget.color.withOpacity(0.3),
+                            color: widget.color.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -326,7 +326,7 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: widget.color.withOpacity(0.1),
+                          color: widget.color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -340,7 +340,7 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
                 ),
                 if (_isExpanded) ...[
                   const SizedBox(height: 12),
-                  Divider(color: widget.color.withOpacity(0.2), thickness: 1),
+                  Divider(color: widget.color.withValues(alpha: 0.2), thickness: 1),
                   const SizedBox(height: 12),
                   FadeTransition(
                     opacity: _fadeAnimation,
@@ -350,7 +350,7 @@ class _ExpandableFaqItemState extends State<_ExpandableFaqItem>
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.8),
+                            .withValues(alpha: 0.8),
                         fontSize: 13,
                         height: 1.6,
                       ),

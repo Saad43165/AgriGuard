@@ -213,7 +213,7 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(Icons.warning_rounded, color: Colors.orange.shade700, size: 28),
@@ -297,7 +297,7 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
                           ? _currentStep
                           : 'Remove all scan data',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -308,7 +308,7 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
             ],
           ),

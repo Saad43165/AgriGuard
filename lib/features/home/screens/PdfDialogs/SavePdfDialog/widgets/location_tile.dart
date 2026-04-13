@@ -34,8 +34,8 @@ class LocationTile extends StatelessWidget {
             gradient: isSelected
                 ? LinearGradient(
               colors: [
-                color.withOpacity(0.15),
-                color.withOpacity(0.08),
+                color.withValues(alpha: 0.15),
+                color.withValues(alpha: 0.08),
               ],
             )
                 : null,
@@ -50,7 +50,7 @@ class LocationTile extends StatelessWidget {
             boxShadow: isSelected
                 ? [
               BoxShadow(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -65,14 +65,14 @@ class LocationTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? LinearGradient(
-                    colors: [color, color.withOpacity(0.7)],
+                    colors: [color, color.withValues(alpha: 0.7)],
                   )
                       : null,
                   color: isSelected
                       ? null
                       : (isDark
-                      ? Colors.white.withOpacity(0.05)
-                      : Colors.black.withOpacity(0.05)),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.05)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -80,8 +80,8 @@ class LocationTile extends StatelessWidget {
                   color: isSelected
                       ? Colors.white
                       : (isDark
-                      ? Colors.white.withOpacity(0.5)
-                      : Colors.black.withOpacity(0.5)),
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.black.withValues(alpha: 0.5)),
                   size: 18,
                 ),
               ),
@@ -108,8 +108,8 @@ class LocationTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark
-                            ? Colors.white.withOpacity(0.4)
-                            : Colors.black.withOpacity(0.4),
+                            ? Colors.white.withValues(alpha: 0.4)
+                            : Colors.black.withValues(alpha: 0.4),
                         fontFamily: 'monospace',
                       ),
                     ),

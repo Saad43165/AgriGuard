@@ -130,7 +130,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           const SizedBox(height: 4),
           Text(msg,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onError.withOpacity(0.9),
+                color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.9),
               )),
         ],
       ),
@@ -185,8 +185,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: isDark ? AppColors.darkGradient : AppColors.lightGradient,
-            stops: AppColors.gradientStops,
+            colors: isDark ? AuthAppColors.darkGradient : AuthAppColors.lightGradient,
+            stops: AuthAppColors.gradientStops,
           ),
         ),
         child: SafeArea(

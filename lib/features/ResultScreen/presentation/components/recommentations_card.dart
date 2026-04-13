@@ -158,13 +158,13 @@ class _RecommendationsCardState extends State<RecommendationsCard>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFFEF4444).withOpacity(0.2),
-                      const Color(0xFFEF4444).withOpacity(0.1),
+                      const Color(0xFFEF4444).withValues(alpha: 0.2),
+                      const Color(0xFFEF4444).withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFEF4444).withOpacity(0.3),
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
@@ -199,10 +199,10 @@ class _RecommendationsCardState extends State<RecommendationsCard>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: _getSeverityColor(widget.severity!).withOpacity(0.1),
+                color: _getSeverityColor(widget.severity!).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _getSeverityColor(widget.severity!).withOpacity(0.3),
+                  color: _getSeverityColor(widget.severity!).withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -239,17 +239,17 @@ class _RecommendationsCardState extends State<RecommendationsCard>
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFEF4444).withOpacity(0.1),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -312,7 +312,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
         color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.3),
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF59E0B).withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -348,7 +348,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
                     precaution,
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                      color: isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
                     ),
                   ),
                 ),
@@ -370,13 +370,13 @@ class _RecommendationsCardState extends State<RecommendationsCard>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFEF4444).withOpacity(0.1),
-                  const Color(0xFFEF4444).withOpacity(0.05),
+                  const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  const Color(0xFFEF4444).withValues(alpha: 0.05),
                 ],
               ),
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFFEF4444).withOpacity(0.3),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.3),
                 width: 2,
               ),
             ),
@@ -400,7 +400,7 @@ class _RecommendationsCardState extends State<RecommendationsCard>
             translation.get('consult_expert_guidance'),
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
+              color: isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -473,7 +473,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
                 ? null
                 : Border(
               bottom: BorderSide(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
                 width: 1.5,
               ),
             ),
@@ -495,12 +495,12 @@ class _TimelineRecommendationItem extends StatelessWidget {
                         decoration: BoxDecoration(
                           gradient: isCompleted
                               ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
-                              : LinearGradient(colors: [stepColor, stepColor.withOpacity(0.8)]),
+                              : LinearGradient(colors: [stepColor, stepColor.withValues(alpha: 0.8)]),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: (isCompleted ? const Color(0xFF10B981) : stepColor).withOpacity(0.4),
+                              color: (isCompleted ? const Color(0xFF10B981) : stepColor).withValues(alpha: 0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -529,7 +529,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [stepColor.withOpacity(0.5), stepColor.withOpacity(0.2)],
+                              colors: [stepColor.withValues(alpha: 0.5), stepColor.withValues(alpha: 0.2)],
                             ),
                           ),
                         ),
@@ -546,10 +546,10 @@ class _TimelineRecommendationItem extends StatelessWidget {
                         duration: const Duration(milliseconds: 300),
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (isCompleted ? const Color(0xFF10B981) : stepColor).withOpacity(0.1),
+                          color: (isCompleted ? const Color(0xFF10B981) : stepColor).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: (isCompleted ? const Color(0xFF10B981) : stepColor).withOpacity(0.3),
+                            color: (isCompleted ? const Color(0xFF10B981) : stepColor).withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -573,7 +573,7 @@ class _TimelineRecommendationItem extends StatelessWidget {
                           height: 1.6,
                           fontWeight: FontWeight.w600,
                           color: isCompleted
-                              ? (isDark ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.4))
+                              ? (isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black.withValues(alpha: 0.4))
                               : (isDark ? Colors.white : Colors.black87),
                           decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
                         ),

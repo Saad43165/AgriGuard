@@ -13,10 +13,12 @@ import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/data_pars
 import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/disease_cause_extractor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../auth/Login_Screen/services/guest_service.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/repositories/scan_repository.dart';
 import '../../../../core/services/severity_id_service.dart';
+import '../../../../core/widgets/app_themes.dart';
 import '../../../core/widgets/floating_orb.dart';
 import 'components/diagnosis_card.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
@@ -469,6 +471,36 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
+  Future<void> _shareScanResult() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(children: [
+          Icon(Icons.share_rounded, color: Colors.white, size: 16),
+          SizedBox(width: 8),
+          Text('Sharing...'),
+        ]),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+    final plantName = widget.scanData['plantName']?.toString() ?? 'Unknown Plant';
+    final diseaseName = _getDiseaseName();
+    final confidence = widget.scanData['confidence']?.toString() ?? '0';
+    final treatment = _remediation.isNotEmpty ? _remediation.first : 'See app for details';
+    final shareText = '''🌱 AgriGuard Scan Result
+Plant: $plantName
+Disease: $diseaseName
+Severity: $_severity
+Confidence: $confidence%
+Treatment: $treatment
+
+Scanned with AgriGuard App''';
+    await Share.share(shareText);
+  }
+
   void _showSaveError() {
     if (!mounted) return;
 
@@ -521,8 +553,8 @@ class _ResultsScreenState extends State<ResultsScreen>
   Widget build(BuildContext context) {
     if (_isLoadingSeverityRemediation) {
       return LoadingIndicator(
-        message: 'Analyzing image...',
-        subtitle: 'Checking if image is a plant leaf',
+        message: 'Getting recommendations...',
+        subtitle: 'Fetching severity and treatment data',
       );
     }
 
@@ -540,24 +572,31 @@ class _ResultsScreenState extends State<ResultsScreen>
           title: 'Analysis Results',
           showBackButton: !_isSaving,
           onBackPressed: _handleBackNavigation,
+          actions: [
+            GestureDetector(
+              onTap: _shareScanResult,
+              child: Container(
+                width: 38, height: 38,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.darkCard : AppColors.lightBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.darkBorder : AppColors.lightBorder,
+                    width: 1,
+                  ),
+                ),
+                child: const Icon(Icons.share_rounded, size: 18, color: AppColors.primary),
+              ),
+            ),
+          ],
         ),
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: theme.brightness == Brightness.dark
-                  ? ResultScreenConstants.darkGradient
-                  : [
-                theme.colorScheme.surface,
-                // FIX 5: withOpacity() deprecated → withValues(alpha:)
-                theme.colorScheme.surface.withValues(alpha: 0.9),
-                theme.colorScheme.surface.withValues(alpha: 0.8),
-                theme.colorScheme.surface,
-              ],
-              stops: ResultScreenConstants.gradientStops,
-            ),
-          ),
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF0D1117)
+              : const Color(0xFFF0F7FF),
           child: Stack(
             children: [
               ...List.generate(
@@ -602,6 +641,31 @@ class _ResultsScreenState extends State<ResultsScreen>
                         AdvancedSearchButton(
                           onTap: _navigateToAdvancedSearch,
                         ),
+                      // Scan Again button
+                      if (_isLeafImage && !_isSaving) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              HapticFeedback.mediumImpact();
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                AppRoutes.scan,
+                                (route) => route.settings.name == AppRoutes.home,
+                              );
+                            },
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: const Text('Scan Again'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.primary, width: 1.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height:
                       ResultScreenConstants.bottomButtonPadding),
                     ],

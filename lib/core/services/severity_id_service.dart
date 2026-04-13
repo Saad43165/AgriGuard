@@ -2,10 +2,10 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart'; // Added for temporary files
 
 class SeverityResult {
   final String severity;
@@ -59,9 +59,9 @@ class SeverityIdService {
       await _loadRemediationData();
       await _loadModel();
       _isInitialized = true;
-      print('✅ SeverityIdService initialized successfully');
+      debugPrint('✅ SeverityIdService initialized successfully');
     } catch (e) {
-      print('❌ Error initializing SeverityIdService: $e');
+      debugPrint('❌ Error initializing SeverityIdService: $e');
       rethrow;
     }
   }
@@ -71,9 +71,9 @@ class SeverityIdService {
     try {
       final String modelInfoString = await rootBundle.loadString('assets/models/model_info.json');
       _modelInfo = json.decode(modelInfoString);
-      print('✅ Model info loaded');
+      debugPrint('✅ Model info loaded');
     } catch (e) {
-      print('❌ Error loading model info: $e');
+      debugPrint('❌ Error loading model info: $e');
       _modelInfo = {
         'severity_levels': {
           '0_None': {'name': 'None', 'color_code': '#4CAF50', 'description': 'No disease detected', 'action': 'Continue regular care'},
@@ -91,9 +91,9 @@ class SeverityIdService {
     try {
       final String remediationString = await rootBundle.loadString('assets/data/remediation.json');
       _remediationData = json.decode(remediationString);
-      print('✅ Remediation data loaded');
+      debugPrint('✅ Remediation data loaded');
     } catch (e) {
-      print('❌ Error loading remediation data: $e');
+      debugPrint('❌ Error loading remediation data: $e');
       _remediationData = {
         'remediations': {},
         'general_guidelines': {
@@ -123,11 +123,11 @@ class SeverityIdService {
       final inputTensors = _interpreter.getInputTensors();
       final outputTensors = _interpreter.getOutputTensors();
       
-      print('✅ Model loaded successfully');
-      print('📊 Input shape: ${inputTensors[0].shape}');
-      print('📊 Output shape: ${outputTensors[0].shape}');
+      debugPrint('✅ Model loaded successfully');
+      debugPrint('📊 Input shape: ${inputTensors[0].shape}');
+      debugPrint('📊 Output shape: ${outputTensors[0].shape}');
     } catch (e) {
-      print('❌ Error loading model: $e');
+      debugPrint('❌ Error loading model: $e');
       throw Exception('Failed to load severity model: $e');
     }
   }
@@ -143,21 +143,8 @@ class SeverityIdService {
       
       return base64Decode(cleanBase64);
     } catch (e) {
-      print('❌ Error decoding base64: $e');
+      debugPrint('❌ Error decoding base64: $e');
       throw Exception('Invalid base64 image data');
-    }
-  }
-
-  // Create temporary file from bytes
-  Future<File> _createTempFile(Uint8List bytes) async {
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/severity_temp_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await tempFile.writeAsBytes(bytes);
-      return tempFile;
-    } catch (e) {
-      print('❌ Error creating temp file: $e');
-      throw Exception('Failed to create temporary file');
     }
   }
 
@@ -194,7 +181,7 @@ class SeverityIdService {
       
       return input;
     } catch (e) {
-      print('❌ Error preprocessing image: $e');
+      debugPrint('❌ Error preprocessing image: $e');
       throw Exception('Image preprocessing failed: $e');
     }
   }
@@ -237,10 +224,10 @@ class SeverityIdService {
       // Apply softmax to get probabilities
       final probabilities = _softmax(output[0]);
       
-      print('📈 Inference probabilities: ${probabilities.map((p) => p.toStringAsFixed(4)).toList()}');
+      debugPrint('📈 Inference probabilities: ${probabilities.map((p) => p.toStringAsFixed(4)).toList()}');
       return probabilities;
     } catch (e) {
-      print('❌ Error running inference: $e');
+      debugPrint('❌ Error running inference: $e');
       throw Exception('Inference failed: $e');
     }
   }
@@ -249,20 +236,17 @@ class SeverityIdService {
   List<double> _softmax(List<double> logits) {
     try {
       final maxLogit = logits.reduce((a, b) => a > b ? a : b);
-      final exps = logits.map((e) => exp(e - maxLogit)).toList();
+      final exps = logits.map((e) => math.exp(e - maxLogit)).toList();
       final sumExps = exps.reduce((a, b) => a + b);
       return exps.map((e) => e / sumExps).toList();
     } catch (e) {
-      print('❌ Error in softmax: $e');
+      debugPrint('❌ Error in softmax: $e');
       // Return uniform distribution as fallback
       return List.filled(logits.length, 1.0 / logits.length);
     }
   }
 
-  // Exponential function
-  double exp(double x) {
-    return math.pow(math.e, x).toDouble();
-  }
+  // Exponential function removed — use math.exp directly
 
   // Get remediation info based on disease and severity
   Map<String, dynamic> _getRemediationInfo(String diseaseKey, String severityLevel) {
@@ -321,7 +305,7 @@ class SeverityIdService {
         'effect': severityData['effect'] ?? 'Effect information not available.'
       };
     } catch (e) {
-      print('❌ Error getting remediation info: $e');
+      debugPrint('❌ Error getting remediation info: $e');
       return {
         'remediation': 'Consult with an agricultural expert for appropriate treatment.',
         'effect': 'Expert consultation recommended for accurate treatment planning.'
@@ -356,7 +340,7 @@ class SeverityIdService {
         'action': severityInfo['action'] ?? ''
       };
     } catch (e) {
-      print('❌ Error getting severity metadata: $e');
+      debugPrint('❌ Error getting severity metadata: $e');
       return {
         'name': _severityLevels[severityIndex],
         'colorCode': '#FFC107',
@@ -376,7 +360,7 @@ class SeverityIdService {
         await initialize();
       }
       
-      print('🔍 Assessing severity for disease: $diseaseKey');
+      debugPrint('🔍 Assessing severity for disease: $diseaseKey');
       
       // Preprocess image
       final input = await _preprocessImageFile(imageFile);
@@ -397,7 +381,7 @@ class SeverityIdService {
       // Get severity metadata
       final severityMetadata = _getSeverityMetadata(maxIndex);
       
-      print('✅ Severity assessment complete: $severityLevel (${(confidence * 100).toStringAsFixed(1)}%)');
+      debugPrint('✅ Severity assessment complete: $severityLevel (${(confidence * 100).toStringAsFixed(1)}%)');
       
       return SeverityResult(
         severity: severityMetadata['name'],
@@ -410,7 +394,7 @@ class SeverityIdService {
         action: severityMetadata['action'],
       );
     } catch (e) {
-      print('❌ Error in severity assessment: $e');
+      debugPrint('❌ Error in severity assessment: $e');
       // Return a default result with fallback values
       return SeverityResult(
         severity: 'Medium',
@@ -438,11 +422,11 @@ class SeverityIdService {
         await initialize();
       }
       
-      print('🎯 Getting severity and remediation for: $plantName - $diseaseName');
+      debugPrint('🎯 Getting severity and remediation for: $plantName - $diseaseName');
       
       // Validate inputs
       if (diseaseName.isEmpty || diseaseName.toLowerCase() == 'healthy') {
-        print('⚠️ Plant is healthy, no severity assessment needed');
+        debugPrint('⚠️ Plant is healthy, no severity assessment needed');
         return {
           'severity': 'None',
           'remediation': ['Continue regular plant care', 'Monitor for any changes'],
@@ -464,7 +448,7 @@ class SeverityIdService {
         try {
           imageBytes = _base64ToBytes(imageBase64);
         } catch (e) {
-          print('⚠️ Failed to decode base64: $e');
+          debugPrint('⚠️ Failed to decode base64: $e');
         }
       }
       
@@ -475,70 +459,59 @@ class SeverityIdService {
             imageBytes = await file.readAsBytes();
           }
         } catch (e) {
-          print('⚠️ Failed to read image file: $e');
+          debugPrint('⚠️ Failed to read image file: $e');
         }
       }
       
       // If no image available, use confidence-based fallback
       if (imageBytes == null) {
-        print('⚠️ No image available for severity analysis, using confidence-based estimation');
+        debugPrint('⚠️ No image available for severity analysis, using confidence-based estimation');
         return _getFallbackSeverity(diseaseName, plantName, confidence);
       }
       
-      // Create temporary file for analysis
-      File tempFile;
-      try {
-        tempFile = await _createTempFile(imageBytes);
-      } catch (e) {
-        print('⚠️ Failed to create temp file, using fallback: $e');
-        return _getFallbackSeverity(diseaseName, plantName, confidence);
-      }
-      
+      // Run inference directly on imageBytes — no temp file needed.
+      final input = await _preprocessImage(imageBytes);
+      final probabilities = await _runInference(input);
+
+      final maxIndex = probabilities.indexOf(
+          probabilities.reduce((a, b) => a > b ? a : b));
+      final inferredConfidence = probabilities[maxIndex];
+      final severityLevel = _severityLevels[maxIndex];
+
       // Construct disease key
-      String diseaseKey = '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
-      
-      // Assess severity
-      final severityResult = await assessSeverity(tempFile, diseaseKey);
-      
-      // Clean up temp file
-      try {
-        if (await tempFile.exists()) {
-          await tempFile.delete();
-        }
-      } catch (e) {
-        print('⚠️ Failed to delete temp file: $e');
-      }
-      
-      // Convert remediation string to list for results screen
+      final diseaseKey =
+          '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
+
+      final remediationInfo = _getRemediationInfo(diseaseKey, severityLevel);
+      final severityMetadata = _getSeverityMetadata(maxIndex);
+
       List<String> remediationList = [];
-      if (severityResult.remediation.isNotEmpty) {
-        remediationList = severityResult.remediation
+      final remStr = remediationInfo['remediation'] as String? ?? '';
+      if (remStr.isNotEmpty) {
+        remediationList = remStr
             .split(RegExp(r'[.,;]'))
             .map((s) => s.trim())
             .where((s) => s.isNotEmpty)
             .toList();
       }
-      
-      // Fallback if remediation is empty
       if (remediationList.isEmpty) {
-        remediationList = _getGeneralRemediations(severityResult.severityLevel);
+        remediationList = _getGeneralRemediations(severityLevel);
       }
-      
-      // Return the required data structure for results screen
+
       return {
-        'severity': severityResult.severity,
-        'severityLevel': severityResult.severityLevel,
-        'confidence': severityResult.confidence,
+        'severity': severityMetadata['name'],
+        'severityLevel': severityLevel,
+        'confidence': inferredConfidence,
         'remediation': remediationList,
-        'effect': severityResult.effect,
-        'colorCode': severityResult.colorCode,
-        'description': severityResult.description,
-        'action': severityResult.action,
+        'effect': remediationInfo['effect'],
+        'colorCode': severityMetadata['colorCode'],
+        'description': severityMetadata['description'],
+        'action': severityMetadata['action'],
       };
       
     } catch (e, stackTrace) {
-      print('❌ Error in getSeverityAndRemediation: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('❌ Error in getSeverityAndRemediation: $e');
+      debugPrint('Stack trace: $stackTrace');
       
       // Return fallback result
       return _getFallbackSeverity(diseaseName, plantName, confidence);
@@ -662,9 +635,9 @@ class SeverityIdService {
     try {
       _interpreter.close();
       _isInitialized = false;
-      print('✅ SeverityIdService disposed');
+      debugPrint('✅ SeverityIdService disposed');
     } catch (e) {
-      print('⚠️ Error disposing interpreter: $e');
+      debugPrint('⚠️ Error disposing interpreter: $e');
     }
   }
 }

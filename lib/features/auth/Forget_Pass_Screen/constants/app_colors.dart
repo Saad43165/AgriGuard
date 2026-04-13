@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 
-/// Constants for colors and gradients used in the app, aligned with AppTheme.
-class AppColors {
+/// Auth screen gradient constants.
+class AuthAppColors {
   static const darkGradient = [
-    Color(0xFF0F0F23),
-    Color(0xFF16213E),
-    Color(0xFF1A1A2E),
-    Color(0xFF0F0F23),
+    Color(0xFF0D1117),
+    Color(0xFF161B22),
+    Color(0xFF1C2333),
+    Color(0xFF0D1117),
   ];
 
   static const lightGradient = [
-    Color(0xFFF9FBFD),
-    Color(0xFFF9FBFD),
-    Color(0xFFF9FBFD),
-    Color(0xFFF9FBFD),
+    Color(0xFFFFFFFF),
+    Color(0xFFF4F9FF),
+    Color(0xFFEEF6FF),
+    Color(0xFFFFFFFF),
   ];
 
   static const gradientStops = [0.0, 0.3, 0.7, 1.0];

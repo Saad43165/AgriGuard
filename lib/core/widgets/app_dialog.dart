@@ -29,11 +29,11 @@ class AppDialog extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          color: theme.colorScheme.surface.withOpacity(isDark ? 0.92 : 1.0),
-          border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+          color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.92 : 1.0),
+          border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.30 : 0.12),
+              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.12),
               blurRadius: 26,
               offset: const Offset(0, 14),
             ),
@@ -58,7 +58,7 @@ class AppDialog extends StatelessWidget {
                           height: 40,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            color: theme.colorScheme.primary.withOpacity(0.12),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.12),
                           ),
                           child: Center(child: icon),
                         ),
@@ -87,7 +87,7 @@ class AppDialog extends StatelessWidget {
                     DefaultTextStyle(
                       style: theme.textTheme.bodyMedium!.copyWith(
                         height: 1.35,
-                        color: theme.colorScheme.onSurface.withOpacity(0.85),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
                         fontWeight: FontWeight.w600,
                       ),
                       child: content!,

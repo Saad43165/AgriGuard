@@ -61,8 +61,8 @@ class _ActionTileState extends State<ActionTile> with SingleTickerProviderStateM
           child: InkWell(
             onTap: _handleTap,
             borderRadius: BorderRadius.circular(16),
-            splashColor: widget.color.withOpacity(0.1),
-            highlightColor: widget.color.withOpacity(0.05),
+            splashColor: widget.color.withValues(alpha: 0.1),
+            highlightColor: widget.color.withValues(alpha: 0.05),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Row(
@@ -71,9 +71,9 @@ class _ActionTileState extends State<ActionTile> with SingleTickerProviderStateM
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: widget.color.withOpacity(0.1),
+                      color: widget.color.withValues(alpha: 0.1),
                       border: Border.all(
-                        color: widget.color.withOpacity(0.2),
+                        color: widget.color.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -101,7 +101,7 @@ class _ActionTileState extends State<ActionTile> with SingleTickerProviderStateM
                           Text(
                             widget.subtitle!,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                               fontSize: 12,
                             ),
                           ),
@@ -111,7 +111,7 @@ class _ActionTileState extends State<ActionTile> with SingleTickerProviderStateM
                   ),
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: widget.color.withOpacity(0.4),
+                    color: widget.color.withValues(alpha: 0.4),
                     size: 16,
                   ),
                 ],

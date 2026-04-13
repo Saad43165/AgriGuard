@@ -33,7 +33,7 @@ class CompletionOverlay extends StatelessWidget {
         return Positioned.fill(
           child: IgnorePointer(
             child: Container(
-              color: Colors.black.withOpacity(0.6 * opacity),
+              color: Colors.black.withValues(alpha: 0.6 * opacity),
               child: Stack(
                 children: [
                   // Expanding ripple effect
@@ -88,7 +88,7 @@ class CompletionOverlay extends StatelessWidget {
                                       center: Alignment.topLeft,
                                       radius: 1.5,
                                       colors: [
-                                        Colors.white.withOpacity(0.5),
+                                        Colors.white.withValues(alpha: 0.5),
                                         Colors.transparent,
                                       ],
                                     ),

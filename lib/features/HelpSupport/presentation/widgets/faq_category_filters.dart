@@ -83,7 +83,7 @@ class FaqCategoryFilters extends StatelessWidget {
                           Theme.of(context).colorScheme.primary,
                           Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.8),
+                          ).colorScheme.primary.withValues(alpha: 0.8),
                         ],
                       )
                       : null,
@@ -98,7 +98,7 @@ class FaqCategoryFilters extends StatelessWidget {
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.2),
+                        ).colorScheme.outline.withValues(alpha: 0.2),
                 width: 2,
               ),
               boxShadow:
@@ -107,7 +107,7 @@ class FaqCategoryFilters extends StatelessWidget {
                         BoxShadow(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.3),
+                          ).colorScheme.primary.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),

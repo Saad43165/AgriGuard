@@ -29,15 +29,15 @@ class PdfActionButton extends StatelessWidget {
             color: isPrimary
                 ? const Color(0xFF059669)
                 : (isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.black.withOpacity(0.03)),
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.03)),
             borderRadius: BorderRadius.circular(8),
             border: isPrimary
                 ? null
                 : Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.1),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
               width: 1,
             ),
           ),

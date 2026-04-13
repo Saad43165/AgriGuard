@@ -85,7 +85,7 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
                     _versionInfo,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -125,8 +125,8 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
                     borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(
                       colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                        Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
                       ],
                     ),
                   ),
@@ -152,7 +152,7 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
                       Text(
                         _versionInfo,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -163,7 +163,7 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

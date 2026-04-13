@@ -22,7 +22,7 @@ class SourceBadge extends StatelessWidget {
         vertical: AppMeasurements.getResponsiveSmallPadding(context) * 0.5,
       ),
       decoration: BoxDecoration(
-        color: isRealData ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        color: isRealData ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isRealData ? Colors.green : Colors.orange,

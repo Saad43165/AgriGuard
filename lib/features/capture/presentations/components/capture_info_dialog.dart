@@ -34,8 +34,8 @@ class CaptureInfoDialog extends StatelessWidget {
               ),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.05),
                 width: 1.5,
               ),
             ),
@@ -118,13 +118,13 @@ class CaptureInfoDialog extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.amber.withOpacity(0.15),
-                          Colors.orange.withOpacity(0.15),
+                          Colors.amber.withValues(alpha: 0.15),
+                          Colors.orange.withValues(alpha: 0.15),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.amber.withOpacity(0.3),
+                        color: Colors.amber.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -205,10 +205,10 @@ class CaptureInfoDialog extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),

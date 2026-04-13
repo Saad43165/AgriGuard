@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/ai_analysis_service.dart';
 import '../../../../core/services/translation_service.dart';
@@ -56,7 +57,6 @@ class _CaptureScreenState extends State<CaptureScreen>
   final DiseaseIdService _diseaseService = DiseaseIdService();
   late final PlantAnalysisService _analysisService;
   final GuestService _guestService = GuestService();
-  final TranslationService _translation = TranslationService();
 
   @override
   void initState() {
@@ -67,7 +67,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       diseaseService: _diseaseService,
     );
     _initializeServices();
-    _translation.loadLanguage();
 
     // Apply startup mode passed in via constructor props.
     // This is the ONLY place startup flags are consumed — we never read
@@ -234,6 +233,7 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   Future<void> _processWithTFLite() async {
     if (!mounted || _imageFile == null || _isProcessing) return;
+    final t = Provider.of<TranslationService>(context, listen: false);
 
     HapticFeedback.mediumImpact();
     setState(() {
@@ -245,12 +245,12 @@ class _CaptureScreenState extends State<CaptureScreen>
       User? user;
       if (!_guestService.isGuestMode) {
         user = FirebaseAuth.instance.currentUser;
-        if (user == null) throw Exception(_translation.get('error_sign_in'));
+        if (user == null) throw Exception(t.get('error_sign_in'));
       }
 
       final imageFile = File(_imageFile!.path);
       if (!await imageFile.exists()) {
-        throw Exception(_translation.get('error_file_not_found'));
+        throw Exception(t.get('error_file_not_found'));
       }
 
       debugPrint('🤖 Starting unified on-device analysis...');
@@ -403,53 +403,49 @@ class _CaptureScreenState extends State<CaptureScreen>
   }
 
   void _showGuestLimitDialog() {
+    final t = Provider.of<TranslationService>(context, listen: false);
     showDialog(
       context: context,
-      builder: (context) => AnimatedBuilder(
-        animation: _translation,
-        builder: (context, child) {
-          return AppDialog(
-            icon: Icon(
-              Icons.block_rounded,
-              color: Theme.of(context).colorScheme.error,
+      builder: (context) => AppDialog(
+        icon: Icon(
+          Icons.block_rounded,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        title: t.get('limit_reached'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.get('limit_message')),
+            const SizedBox(height: 12),
+            Text(t.get('limit_benefit')),
+          ],
+        ),
+        actions: [
+          AppDialogActions.secondary(
+            context,
+            label: t.get('cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          AppDialogActions.primary(
+            context,
+            label: t.get('sign_in_now'),
+            icon: Icons.login_rounded,
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.login,
+                  (route) => false,
             ),
-            title: _translation.get('limit_reached'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_translation.get('limit_message')),
-                const SizedBox(height: 12),
-                Text(_translation.get('limit_benefit')),
-              ],
-            ),
-            actions: [
-              AppDialogActions.secondary(
-                context,
-                label: _translation.get('cancel'),
-                onPressed: () => Navigator.pop(context),
-              ),
-              AppDialogActions.primary(
-                context,
-                label: _translation.get('sign_in_now'),
-                icon: Icons.login_rounded,
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.login,
-                      (route) => false,
-                ),
-              ),
-            ],
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
   void _showErrorSnackBar(String messageKey) {
     if (!mounted) return;
-
-    final message = _translation.get(messageKey);
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final message = t.get(messageKey);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -476,7 +472,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
-          label: _translation.get('dismiss'),
+          label: t.get('dismiss'),
           textColor: Colors.white,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -500,25 +496,27 @@ class _CaptureScreenState extends State<CaptureScreen>
   }
 
   String _getAppBarTitle() {
+    final t = Provider.of<TranslationService>(context, listen: false);
     switch (_currentStep) {
       case 0:
-        return _translation.get('app_title');
+        return t.get('app_title');
       case 1:
-        return _translation.get('analysis_method');
+        return t.get('analysis_method');
       case 2:
-        return _translation.get('image_source');
+        return t.get('image_source');
       case 3:
-        return _translation.get('analyzing');
+        return t.get('analyzing');
       default:
-        return _translation.get('app_title');
+        return t.get('app_title');
     }
   }
 
   String _getProcessingMessage() {
+    final t = Provider.of<TranslationService>(context, listen: false);
     if (_selectedMethod == 'tflite') {
-      return '${_translation.get('processing_ai')}\n${_translation.get('processing_plant')}\n${_translation.get('processing_disease')}';
+      return '${t.get('processing_ai')}\n${t.get('processing_plant')}\n${t.get('processing_disease')}';
     }
-    return _translation.get('processing_text');
+    return t.get('processing_text');
   }
 
   @override
@@ -546,23 +544,7 @@ class _CaptureScreenState extends State<CaptureScreen>
               : null,
         ),
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: isDark
-                  ? const [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-              ]
-                  : [
-                theme.colorScheme.surface,
-                theme.colorScheme.surface.withOpacity(0.9),
-                theme.colorScheme.surface.withOpacity(0.8),
-              ],
-            ),
-          ),
+          color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
           child: Stack(
             children: [
               ...List.generate(
@@ -597,7 +579,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                       HapticFeedback.mediumImpact();
                       setState(() {
                         _isProcessing = false;
-                        _currentStep = 1;
+                        _currentStep = 2; // Return to source selection, not method selection
                       });
                     }
                   },
@@ -612,6 +594,7 @@ class _CaptureScreenState extends State<CaptureScreen>
   Widget _buildCurrentStep() {
     switch (_currentStep) {
       case 0:
+        // Single unified screen — method + source selection in one place
         return WelcomeScreen(
           scaleAnimation: _scaleAnimation,
           isGuestMode: _guestService.isGuestMode,
@@ -621,33 +604,15 @@ class _CaptureScreenState extends State<CaptureScreen>
             'Disease Model': _diseaseService.isLoaded,
           },
           onStartScan: _startScanning,
-        );
-      case 1:
-        return MethodSelectionScreen(
-          isTFLiteReady:
-          _plantService.isLoaded && _diseaseService.isLoaded,
-          loadingText:
-          !_plantService.isLoaded || !_diseaseService.isLoaded
-              ? _translation.get('model_loading')
-              : null,
-          onSelectTFLite: () => _selectMethod('tflite'),
-          onSelectAPI: () => _selectMethod('api'),
-          scrollController: _scrollController,
-          modelDetails: {
-            'Plant Identification': _plantService.isLoaded,
-            'Disease Detection': _diseaseService.isLoaded,
-          },
+          isTFLiteReady: _plantService.isLoaded && _diseaseService.isLoaded,
           isAdvancedAllowed: !_guestService.isGuestMode,
           advancedUnavailableReason: _guestService.isGuestMode
               ? _guestService.getRestrictionMessage('access_advanced')
               : null,
-        );
-      case 2:
-        return SourceSelectionScreen(
-          isLoading: _isLoading,
-          selectedMethod: _selectedMethod,
-          onCameraSelect: () => _pickImage(ImageSource.camera),
-          onGallerySelect: () => _pickImage(ImageSource.gallery),
+          onLaunch: (method, source) {
+            _selectedMethod = method;
+            _pickImage(source);
+          },
         );
       default:
         return Container();

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,8 +11,8 @@ import 'Tiles/app_version_tile.dart';
 import 'Tiles/clear_history_tile.dart';
 import 'Tiles/delete_acount_tile.dart';
 import 'components/floating_orb.dart';
+import 'components/notification_schedule_sheet.dart';
 import 'components/settings_header.dart';
-import 'diagnostics/diagnostics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -105,37 +106,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-              const Color(0xFF0F0F23),
-            ]
-                : [
-              const Color(0xFFF5F7FA),
-              const Color(0xFFE8EDF2),
-              const Color(0xFFF0F4F8),
-              const Color(0xFFF5F7FA),
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF0D1117)
+            : const Color(0xFFF0F7FF),
         child: Stack(
           children: [
-            ...List.generate(
-              6,
-                  (index) => FloatingOrb(
-                index: index,
-                maxWidth: MediaQuery.of(context).size.width,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              ),
-            ),
             SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnimation,
@@ -187,15 +162,17 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                             _buildAccountSection(),
                             SizedBox(height: padding * 2),
 
-                            // Developer / Diagnostics
-                            _buildSectionHeader(
-                              context,
-                              'Diagnostics',
-                              Icons.monitor_heart_rounded,
-                            ),
-                            SizedBox(height: padding * 0.8),
-                            _buildUtilitiesSection(),
-                            SizedBox(height: padding * 2),
+                            // Developer / Diagnostics — debug only
+                            if (kDebugMode) ...[
+                              _buildSectionHeader(
+                                context,
+                                'Diagnostics',
+                                Icons.monitor_heart_rounded,
+                              ),
+                              SizedBox(height: padding * 0.8),
+                              _buildUtilitiesSection(),
+                              SizedBox(height: padding * 2),
+                            ],
 
                             // About Section
                             _buildSectionHeader(
@@ -231,8 +208,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               borderRadius: BorderRadius.circular(8),
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
                 ],
               ),
             ),
@@ -261,15 +238,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       scale: _scaleAnimation,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C2333) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -279,20 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           borderRadius: BorderRadius.circular(20),
           child: Column(
             children: [
-              _buildModernToggleTile(
-                icon: Icons.dark_mode_rounded,
-                title: 'Dark Mode',
-                subtitle: 'Switch between light and dark theme',
-                value: _isDarkMode,
-                onChanged: (value) {
-                  setState(() {
-                    _isDarkMode = value;
-                    _saveSettings();
-                    ThemeProvider.of(context).toggleTheme(value);
-                  });
-                  HapticFeedback.mediumImpact();
-                },
-              ),
+              _buildThemeSegmentedControl(),
               _buildDivider(),
               _buildModernToggleTile(
                 icon: Icons.notifications_rounded,
@@ -348,14 +312,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                 },
               ),
               _buildDivider(),
-
-              // FCM TOKEN VIEWER
-              _buildFCMTokenTile(),
-
-              _buildDivider(),
-
-              // TEST NOTIFICATION
-              _buildTestNotificationTile(),
+              _buildScanReminderTile(),
+              // FCM TOKEN VIEWER — debug only
+              if (kDebugMode) ...[
+                _buildDivider(),
+                _buildFCMTokenTile(),
+                _buildDivider(),
+                // TEST NOTIFICATION — debug only
+                _buildTestNotificationTile(),
+              ],
             ],
           ),
         ),
@@ -363,47 +328,26 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildUtilitiesSection() {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Column(
-            children: [
-              _buildNavTile(
-                icon: Icons.monitor_heart_rounded,
-                title: 'Diagnostics',
-                subtitle: 'Check API keys and test connectivity',
-                gradient: [const Color(0xFF06B6D4), const Color(0xFF3B82F6)],
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DiagnosticsScreen()),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+  Widget _buildScanReminderTile() {
+    return _buildNavTile(
+      icon: Icons.alarm_rounded,
+      title: 'Scan Reminder',
+      subtitle: 'Schedule weekly plant scan reminders',
+      gradient: [AppColors.primary, AppColors.secondary],
+      onTap: () {
+        if (_hapticsEnabled) HapticFeedback.lightImpact();
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const NotificationScheduleSheet(),
+        );
+      },
     );
+  }
+
+  Widget _buildUtilitiesSection() {
+    return const SizedBox.shrink();
   }
 
   Widget _buildStorageSection() {
@@ -411,10 +355,10 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       scale: _scaleAnimation,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C2333) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
             width: 1,
           ),
         ),
@@ -490,8 +434,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
               colors: [
-                gradient[0].withOpacity(0.15),
-                gradient[1].withOpacity(0.15),
+                gradient[0].withValues(alpha: 0.15),
+                gradient[1].withValues(alpha: 0.15),
               ],
             ),
           ),
@@ -509,7 +453,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Text(
             subtitle,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),
@@ -531,8 +475,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
               colors: [
-                Colors.purple.withOpacity(0.15),
-                Colors.deepPurple.withOpacity(0.15),
+                Colors.purple.withValues(alpha: 0.15),
+                Colors.deepPurple.withValues(alpha: 0.15),
               ],
             ),
           ),
@@ -554,7 +498,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Text(
             'Copy device token for testing',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),
@@ -579,7 +523,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.1),
+                          color: Colors.purple.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -602,7 +546,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.purple.withOpacity(0.3),
+                            color: Colors.purple.withValues(alpha: 0.3),
                           ),
                         ),
                         child: SelectableText(
@@ -617,7 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Row(
@@ -688,8 +632,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
               colors: [
-                Colors.orange.withOpacity(0.15),
-                Colors.deepOrange.withOpacity(0.15),
+                Colors.orange.withValues(alpha: 0.15),
+                Colors.deepOrange.withValues(alpha: 0.15),
               ],
             ),
           ),
@@ -711,7 +655,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Text(
             'Send a local test notification',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),
@@ -751,15 +695,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       scale: _scaleAnimation,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C2333) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -784,15 +728,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       scale: _scaleAnimation,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+          color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1C2333) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -802,6 +746,96 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           borderRadius: BorderRadius.circular(20),
           child: const AppVersionTile(padding: EdgeInsets.all(0)),
         ),
+      ),
+    );
+  }
+
+  Widget _buildThemeSegmentedControl() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final currentMode = themeProvider.themeMode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final options = [
+      ('light', Icons.light_mode_rounded, 'Light'),
+      ('system', Icons.brightness_auto_rounded, 'System'),
+      ('dark', Icons.dark_mode_rounded, 'Dark'),
+    ];
+
+    return Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
+                ],
+              ),
+            ),
+            child: Icon(Icons.brightness_6_rounded,
+                color: Theme.of(context).colorScheme.primary, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Theme', style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600, letterSpacing: 0.2)),
+                const SizedBox(height: 8),
+                Container(
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  ),
+                  child: Row(
+                    children: options.map((opt) {
+                      final isSelected = currentMode == opt.$1;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _isDarkMode = opt.$1 == 'dark');
+                            ThemeProvider.of(context).setThemeMode(opt.$1);
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(opt.$2, size: 13,
+                                    color: isSelected ? Colors.white
+                                        : (isDark ? AppColors.darkCaption : AppColors.lightCaption)),
+                                const SizedBox(width: 3),
+                                Text(opt.$3, style: TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w700,
+                                  color: isSelected ? Colors.white
+                                      : (isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                                )),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -823,8 +857,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             borderRadius: BorderRadius.circular(12),
             gradient: LinearGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
               ],
             ),
           ),
@@ -846,7 +880,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           child: Text(
             subtitle,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 12,
             ),
           ),
@@ -857,7 +891,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             value: value,
             onChanged: onChanged,
             activeColor: Theme.of(context).colorScheme.primary,
-            activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            activeTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           ),
         ),
       ),
@@ -870,7 +904,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       thickness: 1,
       indent: 16,
       endIndent: 16,
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
     );
   }
 }

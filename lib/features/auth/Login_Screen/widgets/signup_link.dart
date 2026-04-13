@@ -23,8 +23,8 @@ class SignUpLink extends StatelessWidget {
           onPressed();
         },
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: theme.colorScheme.onSurface.withOpacity(0.12)),
-          backgroundColor: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.85),
+          side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.12)),
+          backgroundColor: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.85),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           padding: EdgeInsets.zero,
         ),

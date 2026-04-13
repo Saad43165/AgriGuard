@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../core/services/translation_service.dart';
 import '../../../core/widgets/floating_orb.dart';
 import 'components/analysis_info_note.dart';
@@ -31,11 +32,11 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   late Animation<double> _scaleAnimation;
 
   bool _isAnalyzing = false;
+  bool _isCheckingApis = true; // show loading while checking API availability
   int _selectedAnalysisType = 0; // 0 = Cloud Vision (HF), 1 = Plant.id, 2 = Groq advice
   Map<String, dynamic>? _apiStatus;
 
   final AdvancedSearchService _searchService = AdvancedSearchService();
-  final TranslationService _translation = TranslationService();
 
   // Using translation keys instead of hardcoded text
   List<Map<String, dynamic>> get _analysisOptions => [
@@ -69,16 +70,15 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _translation.loadLanguage();
     _checkApiAvailability();
   }
 
   Future<void> _checkApiAvailability() async {
     try {
       final status = await _searchService.testAllApis();
-      if (mounted) setState(() => _apiStatus = status);
+      if (mounted) setState(() { _apiStatus = status; _isCheckingApis = false; });
     } catch (_) {
-      if (mounted) setState(() => _apiStatus = {'success': false});
+      if (mounted) setState(() { _apiStatus = {'success': false}; _isCheckingApis = false; });
     }
   }
 
@@ -143,28 +143,29 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   }
 
   Future<void> _startAdvancedAnalysis() async {
+    final t = Provider.of<TranslationService>(context, listen: false);
     if (_isAnalyzing) return;
     if (!_isOptionAvailable(_selectedAnalysisType)) {
       _showError(_unavailableReason(_selectedAnalysisType) ??
-          _translation.get('error_selected_method_unavailable'));
+          t.get('error_selected_method_unavailable'));
       return;
     }
 
     final imagePath = widget.originalScanData['imagePath'] as String?;
     if (imagePath == null) {
-      _showError(_translation.get('error_file_not_found'));
+      _showError(t.get('error_file_not_found'));
       return;
     }
 
     final imageFile = File(imagePath);
     if (!await imageFile.exists()) {
-      _showError(_translation.get('error_file_not_found'));
+      _showError(t.get('error_file_not_found'));
       return;
     }
 
     final fileSize = await imageFile.length();
     if (fileSize > 5 * 1024 * 1024) {
-      _showError(_translation.get('error_image_too_large_5mb'));
+      _showError(t.get('error_image_too_large_5mb'));
       return;
     }
 
@@ -181,13 +182,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       Map<String, dynamic> result;
 
       if (selectedType == 'HuggingFace') {
-        debugPrint('🎯 Selected: Cloud Vision (Hugging Face)');
         result = await _searchService.analyzeWithHuggingFace(imageFile);
       } else if (selectedType == 'Plant.id') {
-        debugPrint('🎯 Selected: Plant.id Professional');
         result = await _searchService.analyzeWithPlantId(imageFile);
       } else {
-        debugPrint('🎯 Selected: Groq Advice');
         result = await _searchService.analyzePlant(imageFile);
       }
 
@@ -196,9 +194,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       setState(() => _isAnalyzing = false);
 
       if (result['success'] == true) {
-        debugPrint('✅ Analysis successful with ${result['source']}');
         HapticFeedback.lightImpact();
-
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -211,19 +207,18 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       } else {
         final errorMessage =
             result['message'] ?? result['error'] ?? 'Analysis failed';
-        debugPrint('❌ Analysis failed: $errorMessage');
         _showError('$selectedType Error: $errorMessage');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isAnalyzing = false);
-        debugPrint('❌ Unexpected error: $e');
-        _showError('${_translation.get('error_unexpected')}: ${e.toString()}');
+        _showError('${t.get('error_unexpected')}: ${e.toString()}');
       }
     }
   }
 
   void _showError(String message) {
+    final t = Provider.of<TranslationService>(context, listen: false);
     HapticFeedback.heavyImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -246,7 +241,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         action: SnackBarAction(
-          label: _translation.get('dismiss'),
+          label: t.get('dismiss'),
           textColor: Colors.white,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -268,23 +263,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         extendBodyBehindAppBar: true,
         appBar: _buildAppBar(context, isDark),
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: isDark
-                  ? const [
-                Color(0xFF0F0F23),
-                Color(0xFF16213E),
-                Color(0xFF1A1A2E),
-              ]
-                  : [
-                theme.colorScheme.surface,
-                theme.colorScheme.surface.withOpacity(0.9),
-                theme.colorScheme.surface.withOpacity(0.8),
-              ],
-            ),
-          ),
+          color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
           child: Stack(
             children: [
               // Background orbs
@@ -298,13 +277,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 ),
               ),
 
-              // Main content - wrapped with AnimatedBuilder
+      // Main content - wrapped with AnimatedBuilder
               SafeArea(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
-                  child: AnimatedBuilder(
-                    animation: _translation,
-                    builder: (context, child) => _buildContent(),
+                  child: Consumer<TranslationService>(
+                    builder: (context, t, child) => _buildContent(t),
                   ),
                 ),
               ),
@@ -325,17 +303,17 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.15) : Colors.white,
+            color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.25)
-                  : Colors.black.withOpacity(0.08),
+                  ? Colors.white.withValues(alpha: 0.25)
+                  : Colors.black.withValues(alpha: 0.08),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -364,21 +342,23 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           ),
         ),
       ),
-      title: ShaderMask(
-        blendMode: BlendMode.srcIn,
-        shaderCallback: (bounds) => LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-          ],
-        ).createShader(bounds),
-        child: Text(
-          _translation.get('advanced_analysis'),
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            letterSpacing: 0.5,
-            color: Colors.white,
+      title: Consumer<TranslationService>(
+        builder: (context, t, _) => ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
+          ).createShader(bounds),
+          child: Text(
+            t.get('advanced_analysis'),
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              letterSpacing: 0.5,
+              color: Colors.white,
+            ),
           ),
         ),
       ),
@@ -387,22 +367,21 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         // Language Toggle
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 8, right: 12),
-          child: AnimatedBuilder(
-            animation: _translation,
-            builder: (context, child) {
+          child: Consumer<TranslationService>(
+            builder: (context, t, child) {
               return Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.15) : Colors.white,
+                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withOpacity(0.25)
-                        : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                        ? Colors.white.withValues(alpha: 0.25)
+                        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.06),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -411,7 +390,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => _translation.toggleLanguage(),
+                    onTap: () => t.toggleLanguage(),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -430,7 +409,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            _translation.isUrdu ? 'EN' : 'اردو',
+                            t.isUrdu ? 'EN' : 'اردو',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -453,7 +432,20 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(TranslationService t) {
+    if (_isCheckingApis) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Checking available services...'),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(24),
@@ -490,7 +482,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               ),
               const SizedBox(width: 10),
               Text(
-                _translation.get('analysis_methods'),
+                t.get('analysis_methods'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -523,7 +515,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                       setState(() => _selectedAnalysisType = index);
                     } else {
                       _showError(_unavailableReason(index) ??
-                          _translation.get('error_option_unavailable'));
+                          t.get('error_option_unavailable'));
                     }
                   }
                 },

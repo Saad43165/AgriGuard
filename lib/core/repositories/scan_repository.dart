@@ -49,9 +49,9 @@ class ScanRepository {
         source.contains('hugging') ||
         source.contains('hf') ||
         source.contains('advanced')) {
-      return 'advanced_${hash}_${DateTime.now().millisecondsSinceEpoch}';
+      return 'advanced_$hash';
     } else {
-      return 'ondevice_${hash}_${DateTime.now().millisecondsSinceEpoch}';
+      return 'ondevice_$hash';
     }
   }
   Future<ScanModel> saveOnDeviceScan({

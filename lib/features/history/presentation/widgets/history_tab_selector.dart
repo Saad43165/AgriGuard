@@ -25,15 +25,15 @@ class HistoryTabSelector extends StatelessWidget {
       padding: EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: isDark
-            ? Color(0xFF1E293B).withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
+            ? Color(0xFF1E293B).withValues(alpha: 0.5)
+            : Colors.white.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -90,15 +90,15 @@ class HistoryTabSelector extends StatelessWidget {
             gradient: isSelected
                 ? LinearGradient(
               colors: [
-                color.withOpacity(0.2),
-                color.withOpacity(0.1),
+                color.withValues(alpha: 0.2),
+                color.withValues(alpha: 0.1),
               ],
             )
                 : null,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? color.withOpacity(0.3)
+                  ? color.withValues(alpha: 0.3)
                   : Colors.transparent,
               width: 1.5,
             ),
@@ -111,7 +111,7 @@ class HistoryTabSelector extends StatelessWidget {
                 size: 20,
                 color: isSelected
                     ? color
-                    : theme.colorScheme.onSurface.withOpacity(0.5),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               SizedBox(width: 8),
               Flexible(
@@ -125,7 +125,7 @@ class HistoryTabSelector extends StatelessWidget {
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         color: isSelected
                             ? color
-                            : theme.colorScheme.onSurface.withOpacity(0.6),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

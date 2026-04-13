@@ -30,22 +30,22 @@ class SectionHeader extends StatelessWidget {
           end: Alignment.bottomRight,
           colors:
               isDark
-                  ? [color.withOpacity(0.15), color.withOpacity(0.05)]
-                  : [color.withOpacity(0.08), color.withOpacity(0.03)],
+                  ? [color.withValues(alpha: 0.15), color.withValues(alpha: 0.05)]
+                  : [color.withValues(alpha: 0.08), color.withValues(alpha: 0.03)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
+              gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -75,7 +75,7 @@ class SectionHeader extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.6),
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),

@@ -160,7 +160,7 @@ class _InteractivePageContentState extends State<InteractivePageContent>
                               begin: Alignment.topLeft,
                               end: Alignment.center,
                               colors: [
-                                Colors.white.withOpacity(0.3),
+                                Colors.white.withValues(alpha: 0.3),
                                 Colors.transparent,
                               ],
                             ),
@@ -282,13 +282,13 @@ class _InteractivePageContentState extends State<InteractivePageContent>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.primary.withOpacity(0.15),
-              Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -323,7 +323,7 @@ class _InteractivePageContentState extends State<InteractivePageContent>
         widget.data.description,
         style: TextStyle(
           fontSize: 15,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           height: 1.5,
           letterSpacing: 0.2,
           fontWeight: FontWeight.w400,
@@ -351,11 +351,11 @@ class _InteractivePageContentState extends State<InteractivePageContent>
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.white.withOpacity(0.9),
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),

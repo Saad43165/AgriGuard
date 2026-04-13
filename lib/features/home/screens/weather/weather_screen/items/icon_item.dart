@@ -20,7 +20,7 @@ class InfoItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(icon, color: Colors.white, size: 28),
@@ -40,7 +40,7 @@ class InfoItem extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 13,
-            color: Colors.white.withOpacity(0.85),
+            color: Colors.white.withValues(alpha: 0.85),
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -62,7 +62,7 @@ class IconItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, color: Colors.white, size: size),

@@ -44,7 +44,7 @@ class WeatherCardPainter extends CustomPainter {
 
   void _drawRain(Canvas canvas, Size size) {
     _paint
-      ..color = Colors.white.withOpacity(isDark ? 0.28 : 0.35)
+      ..color = Colors.white.withValues(alpha: isDark ? 0.28 : 0.35)
       ..strokeWidth = 1.8
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -61,7 +61,7 @@ class WeatherCardPainter extends CustomPainter {
 
   void _drawSnow(Canvas canvas, Size size) {
     _paint
-      ..color = Colors.white.withOpacity(isDark ? 0.55 : 0.70)
+      ..color = Colors.white.withValues(alpha: isDark ? 0.55 : 0.70)
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 26; i++) {
@@ -83,7 +83,7 @@ class WeatherCardPainter extends CustomPainter {
       final twinkle = (math.sin(animationValue * math.pi * 2 + i * 0.6) + 1) / 2;
       final opacity = (isDark ? 0.18 : 0.14) + twinkle * (isDark ? 0.35 : 0.28);
       final r = 0.7 + twinkle * 1.3;
-      _paint.color = Colors.white.withOpacity(opacity);
+      _paint.color = Colors.white.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), r, _paint);
     }
   }
@@ -96,7 +96,7 @@ class WeatherCardPainter extends CustomPainter {
     if (flash > 0.92) {
       _paint
         ..style = PaintingStyle.fill
-        ..color = Colors.white.withOpacity((flash - 0.92) * 0.8);
+        ..color = Colors.white.withValues(alpha: (flash - 0.92) * 0.8);
       canvas.drawRect(Offset.zero & size, _paint);
     }
   }
@@ -107,7 +107,7 @@ class WeatherCardPainter extends CustomPainter {
     for (int i = 0; i < 4; i++) {
       final y = size.height * (0.22 + i * 0.16);
       final x = size.width * ((animationValue + i * 0.22) % 1.0);
-      _paint.color = Colors.white.withOpacity(baseOpacity + i * 0.03);
+      _paint.color = Colors.white.withValues(alpha: baseOpacity + i * 0.03);
       _cloud(canvas, Offset(x, y), 18 + i * 6);
     }
   }

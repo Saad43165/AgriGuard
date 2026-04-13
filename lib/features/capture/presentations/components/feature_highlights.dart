@@ -102,12 +102,12 @@ class FeatureHighlights extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A2E).withOpacity(0.6) : Colors.white,
+        color: isDark ? const Color(0xFF1A1A2E).withValues(alpha: 0.6) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1.5,
         ),
 
@@ -117,10 +117,10 @@ class FeatureHighlights extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: color.withOpacity(0.3),
+                color: color.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
@@ -144,7 +144,7 @@ class FeatureHighlights extends StatelessWidget {
                 Text(
                   translation.get(descKey),
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),

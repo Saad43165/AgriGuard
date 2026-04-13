@@ -75,15 +75,15 @@ class _FaqListItemState extends State<FaqListItem>
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _isExpanded
-                ? categoryColor.withOpacity(0.5)
-                : Theme.of(context).colorScheme.outline.withOpacity(0.15),
+                ? categoryColor.withValues(alpha: 0.5)
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
               color: _isExpanded
-                  ? categoryColor.withOpacity(0.15)
-                  : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                  ? categoryColor.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
               blurRadius: _isExpanded ? 16 : 8,
               offset: Offset(0, _isExpanded ? 6 : 2),
             ),
@@ -106,13 +106,13 @@ class _FaqListItemState extends State<FaqListItem>
                           gradient: LinearGradient(
                             colors: [
                               categoryColor,
-                              categoryColor.withOpacity(0.7),
+                              categoryColor.withValues(alpha: 0.7),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: categoryColor.withOpacity(0.3),
+                              color: categoryColor.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -146,7 +146,7 @@ class _FaqListItemState extends State<FaqListItem>
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: categoryColor.withOpacity(0.15),
+                                color: categoryColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -167,7 +167,7 @@ class _FaqListItemState extends State<FaqListItem>
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: categoryColor.withOpacity(0.1),
+                            color: categoryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -193,7 +193,7 @@ class _FaqListItemState extends State<FaqListItem>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Divider(
-                        color: categoryColor.withOpacity(0.2),
+                        color: categoryColor.withValues(alpha: 0.2),
                         thickness: 1,
                       ),
                       const SizedBox(height: 12),
@@ -203,7 +203,7 @@ class _FaqListItemState extends State<FaqListItem>
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
-                              .withOpacity(0.8),
+                              .withValues(alpha: 0.8),
                           fontSize: 14,
                           height: 1.6,
                         ),
@@ -221,10 +221,10 @@ class _FaqListItemState extends State<FaqListItem>
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: categoryColor.withOpacity(0.1),
+                                color: categoryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: categoryColor.withOpacity(0.3),
+                                  color: categoryColor.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(

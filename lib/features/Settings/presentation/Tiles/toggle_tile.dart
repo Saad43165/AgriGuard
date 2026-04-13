@@ -66,12 +66,12 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                   gradient: LinearGradient(
                     colors: widget.value
                         ? [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
                     ]
                         : [
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                     ],
                   ),
                 ),
@@ -79,7 +79,7 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                   widget.icon,
                   color: widget.value
                       ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                   size: 22,
                 ),
               ),
@@ -96,7 +96,7 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                       letterSpacing: 0.2,
                       color: widget.value
                           ? Theme.of(context).colorScheme.onSurface
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   if (widget.subtitle != null) ...[
@@ -104,7 +104,7 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                     Text(
                       widget.subtitle!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -119,15 +119,15 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                 value: widget.value,
                 onChanged: _handleToggle,
                 activeColor: Theme.of(context).colorScheme.primary,
-                activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                inactiveThumbColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                activeTrackColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                inactiveThumbColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 trackOutlineColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
                     return Colors.transparent;
                   }
-                  return Theme.of(context).colorScheme.onSurface.withOpacity(0.2);
+                  return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2);
                 }),
               ),
             ),

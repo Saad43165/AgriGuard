@@ -112,33 +112,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     final isDark = ThemeProvider.of(context).isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F23) : const Color(0xFFF9FBFD),
+      backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
       body: Stack(
         children: [
-          // Animated gradient background
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 600),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [
-                  const Color(0xFF0F0F23),
-                  const Color(0xFF16213E),
-                  const Color(0xFF1A1A2E),
-                  const Color(0xFF0F0F23),
-                ]
-                    : [
-                  const Color(0xFFF9FBFD),
-                  const Color(0xFFF9FBFD),
-                  const Color(0xFFF9FBFD),
-                  const Color(0xFFF9FBFD),
-                ],
-                stops: const [0.0, 0.3, 0.7, 1.0],
-              ),
-            ),
-          ),
+          // Solid background
+          Container(color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF)),
 
           SafeArea(
             child: Column(

@@ -170,7 +170,7 @@ class _StatusTile extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: theme.colorScheme.surface,
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
       ),
       child: Row(
         children: [
@@ -180,7 +180,7 @@ class _StatusTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: (isOk ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                  .withOpacity(0.12),
+                  .withValues(alpha: 0.12),
             ),
             child: Icon(
               isOk ? Icons.check_circle_rounded : Icons.cancel_rounded,
@@ -200,7 +200,7 @@ class _StatusTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.70),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -260,7 +260,7 @@ class _InfoBox extends StatelessWidget {
                 const SizedBox(height: 6),
                 SelectableText(
                   body,
-                  style: TextStyle(color: textColor.withOpacity(0.90), height: 1.35),
+                  style: TextStyle(color: textColor.withValues(alpha: 0.90), height: 1.35),
                 ),
               ],
             ),

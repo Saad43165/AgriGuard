@@ -80,7 +80,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -97,8 +97,8 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
               height: 4,
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.1),
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -117,7 +117,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                           Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.7),
+                              .withValues(alpha: 0.7),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -152,7 +152,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withOpacity(0.5),
+                                  .withValues(alpha: 0.5),
                               fontSize: 12,
                             ),
                             maxLines: 1,
@@ -171,8 +171,8 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
               height: 1,
               thickness: 1,
               color: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.black.withOpacity(0.05),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.05),
             ),
 
             // Options
@@ -254,7 +254,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -267,7 +267,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: isLoading
@@ -298,7 +298,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 12,
                         ),
                       ),
@@ -307,7 +307,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                 ),
                 Icon(
                   Icons.arrow_forward_rounded,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   size: 18,
                 ),
               ],
@@ -336,10 +336,10 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),
@@ -349,7 +349,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [color, color.withOpacity(0.7)],
+                    colors: [color, color.withValues(alpha: 0.7)],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -373,8 +373,8 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                       subtitle,
                       style: TextStyle(
                         color: isDark
-                            ? Colors.white.withOpacity(0.5)
-                            : Colors.black.withOpacity(0.5),
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : Colors.black.withValues(alpha: 0.5),
                         fontSize: 12,
                       ),
                     ),
@@ -383,7 +383,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
               ),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: color.withOpacity(0.5),
+                color: color.withValues(alpha: 0.5),
                 size: 14,
               ),
             ],
@@ -413,11 +413,11 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark
-                ? color.withOpacity(0.1)
-                : color.withOpacity(0.05),
+                ? color.withValues(alpha: 0.1)
+                : color.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: color.withOpacity(isDark ? 0.3 : 0.2),
+              color: color.withValues(alpha: isDark ? 0.3 : 0.2),
               width: 1.5,
               style: BorderStyle.solid,
             ),
@@ -427,10 +427,10 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -454,8 +454,8 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
                       subtitle,
                       style: TextStyle(
                         color: isDark
-                            ? Colors.white.withOpacity(0.5)
-                            : Colors.black.withOpacity(0.5),
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : Colors.black.withValues(alpha: 0.5),
                         fontSize: 12,
                       ),
                     ),
@@ -464,7 +464,7 @@ class _ScanOptionsBottomSheetState extends State<ScanOptionsBottomSheet> {
               ),
               Icon(
                 Icons.warning_rounded,
-                color: color.withOpacity(0.6),
+                color: color.withValues(alpha: 0.6),
                 size: 18,
               ),
             ],

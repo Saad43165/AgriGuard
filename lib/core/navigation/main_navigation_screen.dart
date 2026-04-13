@@ -6,6 +6,7 @@ import '../../features/home/screens/home_screen.dart';
 import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/Profile/presentation/profile_screen.dart';
 import '../widgets/app_dialog.dart';
+import '../widgets/connectivity_banner.dart';
 
 
 class MainNavigationScreen extends StatefulWidget {
@@ -100,15 +101,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,
-        body: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) {
-            if (mounted) {
-              setState(() => _currentIndex = index);
-            }
-          },
-          children: _screens, // Use pre-built screens
+        body: ConnectivityBanner(
+          child: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              if (mounted) {
+                setState(() => _currentIndex = index);
+              }
+            },
+            children: _screens, // Use pre-built screens
+          ),
         ),
         bottomNavigationBar: BottomNavBar(
           selectedIndex: _currentIndex,

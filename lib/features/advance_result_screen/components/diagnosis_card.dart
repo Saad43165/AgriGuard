@@ -48,15 +48,15 @@ class DiagnosisCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            getSeverityColor(severity).withOpacity(0.15),
-            getSeverityColor(severity).withOpacity(0.05),
+            getSeverityColor(severity).withValues(alpha: 0.15),
+            getSeverityColor(severity).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(
           AppMeasurements.getResponsiveBorderRadius(context),
         ),
         border: Border.all(
-          color: getSeverityColor(severity).withOpacity(0.3),
+          color: getSeverityColor(severity).withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -70,7 +70,7 @@ class DiagnosisCard extends StatelessWidget {
                   AppMeasurements.getResponsiveSmallPadding(context) * 0.8,
                 ),
                 decoration: BoxDecoration(
-                  color: getSeverityColor(severity).withOpacity(0.2),
+                  color: getSeverityColor(severity).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -90,7 +90,7 @@ class DiagnosisCard extends StatelessWidget {
                       plantName,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     Text(

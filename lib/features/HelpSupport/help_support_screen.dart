@@ -1,4 +1,5 @@
 // lib/features/support/screens/help_and_support_screen.dart
+import 'package:agriguard_fyp/features/HelpSupport/bug_report_screen.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_form_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/contact_info_card.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/faq_card.dart';
@@ -6,11 +7,13 @@ import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/faq_page
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/help_quick_action_grid.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/help_visual_guides.dart';
 import 'package:agriguard_fyp/features/HelpSupport/presentation/widgets/support_app_bar.dart';
+import 'package:agriguard_fyp/features/chatbot/chatbot_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/services/translation_service.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/widgets/app_themes.dart';
 
 class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});
@@ -64,34 +67,14 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
     final translation = Provider.of<TranslationService>(context);
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: isDark ? const Color(0xFF0F0F23) : const Color(0xFFF5F7FA),
+      backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
       appBar: CustomAppBar(
         title: translation.get('help_support'),
         topPadding: 20.0,
         onBackPressed: _handleBackPressed,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-              const Color(0xFF0F0F23),
-            ]
-                : [
-              const Color(0xFFF5F7FA),
-              const Color(0xFFE8EDF2),
-              const Color(0xFFF0F4F8),
-              const Color(0xFFF5F7FA),
-            ],
-            stops: const [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
+        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -105,6 +88,38 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
                   children: [
                     const SizedBox(height: 20),
                     _HeroCard(isDark: isDark),
+                    const SizedBox(height: 16),
+
+                    // AI Chat + Bug Report prominent buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionCard(
+                            icon: Icons.smart_toy_rounded,
+                            title: 'AI Assistant',
+                            subtitle: 'Ask about diseases',
+                            gradient: const [AppColors.primary, AppColors.secondary],
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionCard(
+                            icon: Icons.bug_report_rounded,
+                            title: 'Report Bug',
+                            subtitle: 'Help us improve',
+                            gradient: [AppColors.error, const Color(0xFFDC2626)],
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const BugReportScreen()));
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
                     LayoutBuilder(
                       builder: (context, constraints) {
@@ -191,6 +206,57 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
   }
 }
 
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<Color> gradient;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.icon, required this.title, required this.subtitle,
+    required this.gradient, required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: gradient[0].withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(height: 10),
+              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HeroCard extends StatelessWidget {
   final bool isDark;
   const _HeroCard({required this.isDark});
@@ -203,11 +269,11 @@ class _HeroCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
-        color: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.90),
+        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+        color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.90),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.18 : 0.06),
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
             blurRadius: 22,
             offset: const Offset(0, 12),
           ),
@@ -233,8 +299,8 @@ class _HeroCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      theme.colorScheme.primary.withOpacity(isDark ? 0.28 : 0.16),
-                      theme.colorScheme.secondary.withOpacity(isDark ? 0.18 : 0.10),
+                      theme.colorScheme.primary.withValues(alpha: isDark ? 0.28 : 0.16),
+                      theme.colorScheme.secondary.withValues(alpha: isDark ? 0.18 : 0.10),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.55, 1.0],
@@ -279,7 +345,7 @@ class _HeroCard extends StatelessWidget {
                           style: theme.textTheme.bodyMedium?.copyWith(
                             height: 1.35,
                             fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurface.withOpacity(0.80),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -327,8 +393,8 @@ class _Pill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: theme.colorScheme.surface.withOpacity(isDark ? 0.65 : 0.90),
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+        color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.65 : 0.90),
+        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -339,7 +405,7 @@ class _Pill extends StatelessWidget {
             label,
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface.withOpacity(0.80),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
             ),
           ),
         ],
@@ -375,8 +441,8 @@ class _QuickActionTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            color: theme.colorScheme.surface.withOpacity(isDark ? 0.65 : 0.90),
-            border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+            color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.65 : 0.90),
+            border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
           ),
           child: Row(
             children: [
@@ -385,7 +451,7 @@ class _QuickActionTile extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 ),
                 child: Icon(icon, color: theme.colorScheme.primary),
               ),
@@ -406,14 +472,14 @@ class _QuickActionTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.70),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.35)),
+              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: theme.colorScheme.onSurface.withValues(alpha: 0.35)),
             ],
           ),
         ),

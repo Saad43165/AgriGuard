@@ -23,7 +23,7 @@ class DayDetailScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [weatherColor, weatherColor.withOpacity(0.8)],
+            colors: [weatherColor, weatherColor.withValues(alpha: 0.8)],
           ),
         ),
         child: SafeArea(
@@ -162,7 +162,7 @@ class DayDetailScreen extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [accentColor.withOpacity(0.4), accentColor.withOpacity(0.3)],
+              colors: [accentColor.withValues(alpha: 0.4), accentColor.withValues(alpha: 0.3)],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0x59FFFFFF), width: 2),

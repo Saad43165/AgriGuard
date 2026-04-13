@@ -187,13 +187,13 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF8B5CF6).withOpacity(0.2),
-                        const Color(0xFF8B5CF6).withOpacity(0.1),
+                        const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                        const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -211,13 +211,13 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF8B5CF6).withOpacity(0.2),
-                        const Color(0xFF8B5CF6).withOpacity(0.1),
+                        const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                        const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -254,17 +254,17 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                   ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -278,8 +278,8 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            (displayInfo['color'] as Color).withOpacity(isDark ? 0.15 : 0.08),
-                            (displayInfo['color'] as Color).withOpacity(isDark ? 0.08 : 0.03),
+                            (displayInfo['color'] as Color).withValues(alpha: isDark ? 0.15 : 0.08),
+                            (displayInfo['color'] as Color).withValues(alpha: isDark ? 0.08 : 0.03),
                           ],
                         ),
                         borderRadius: const BorderRadius.only(
@@ -288,7 +288,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                         ),
                         border: Border(
                           bottom: BorderSide(
-                            color: (displayInfo['color'] as Color).withOpacity(0.2),
+                            color: (displayInfo['color'] as Color).withValues(alpha: 0.2),
                             width: 2,
                           ),
                         ),
@@ -388,13 +388,13 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      const Color(0xFF10B981).withOpacity(0.1),
-                                      const Color(0xFF10B981).withOpacity(0.05),
+                                      const Color(0xFF10B981).withValues(alpha: 0.1),
+                                      const Color(0xFF10B981).withValues(alpha: 0.05),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: const Color(0xFF10B981).withOpacity(0.3),
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
                                     width: 2,
                                   ),
                                 ),
@@ -442,7 +442,7 @@ class _AnalysisDetailsCardState extends State<AnalysisDetailsCard>
         gradient: LinearGradient(
           colors: [
             Colors.transparent,
-            isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+            isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
             Colors.transparent,
           ],
         ),

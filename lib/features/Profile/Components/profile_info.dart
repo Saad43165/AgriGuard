@@ -80,7 +80,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.1)
+              ? Colors.white.withValues(alpha: 0.1)
               : const Color(0xFFE0E0E0),
           width: 1.5,
         ),
@@ -105,7 +105,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
                       gradient: LinearGradient(
                         colors: [
                           Colors.transparent,
-                          colorScheme.primary.withOpacity(0.3),
+                          colorScheme.primary.withValues(alpha: 0.3),
                           Colors.transparent,
                         ],
                       ),
@@ -135,19 +135,19 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
               end: Alignment.bottomRight,
               colors: isDark
                   ? [
-                colorScheme.primary.withOpacity(0.15),
-                colorScheme.secondary.withOpacity(0.15),
+                colorScheme.primary.withValues(alpha: 0.15),
+                colorScheme.secondary.withValues(alpha: 0.15),
               ]
                   : [
-                colorScheme.primary.withOpacity(0.08),
-                colorScheme.secondary.withOpacity(0.08),
+                colorScheme.primary.withValues(alpha: 0.08),
+                colorScheme.secondary.withValues(alpha: 0.08),
               ],
             ),
             border: Border(
               bottom: BorderSide(
                 color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.05),
                 width: 1,
               ),
             ),
@@ -189,8 +189,8 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
                       _isExpanded ? 'Tap to collapse' : 'Tap to view details',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isDark
-                            ? Colors.white.withOpacity(0.6)
-                            : Colors.black.withOpacity(0.6),
+                            ? Colors.white.withValues(alpha: 0.6)
+                            : Colors.black.withValues(alpha: 0.6),
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -205,13 +205,13 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        colorScheme.primary.withOpacity(0.15),
-                        colorScheme.secondary.withOpacity(0.15),
+                        colorScheme.primary.withValues(alpha: 0.15),
+                        colorScheme.secondary.withValues(alpha: 0.15),
                       ],
                     ),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: colorScheme.primary.withOpacity(0.3),
+                      color: colorScheme.primary.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),
@@ -241,7 +241,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
             icon: Icons.person_rounded,
             iconColor: const Color(0xFF4CAF50),
             iconBgColor: isDark
-                ? const Color(0xFF4CAF50).withOpacity(0.15)
+                ? const Color(0xFF4CAF50).withValues(alpha: 0.15)
                 : const Color(0xFFE8F5E9),
             label: 'Full Name',
             value: widget.userProfile['name'] ?? 'Not provided',
@@ -253,7 +253,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
             icon: Icons.email_rounded,
             iconColor: const Color(0xFF2196F3),
             iconBgColor: isDark
-                ? const Color(0xFF2196F3).withOpacity(0.15)
+                ? const Color(0xFF2196F3).withValues(alpha: 0.15)
                 : const Color(0xFFE3F2FD),
             label: 'Email Address',
             value: widget.userProfile['email'] ?? 'Not provided',
@@ -265,7 +265,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
             icon: Icons.phone_rounded,
             iconColor: const Color(0xFF9C27B0),
             iconBgColor: isDark
-                ? const Color(0xFF9C27B0).withOpacity(0.15)
+                ? const Color(0xFF9C27B0).withValues(alpha: 0.15)
                 : const Color(0xFFF3E5F5),
             label: 'Phone Number',
             value: widget.userProfile['phone']?.isEmpty ?? true
@@ -279,7 +279,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
             icon: Icons.location_on_rounded,
             iconColor: const Color(0xFFFF9800),
             iconBgColor: isDark
-                ? const Color(0xFFFF9800).withOpacity(0.15)
+                ? const Color(0xFFFF9800).withValues(alpha: 0.15)
                 : const Color(0xFFFFF3E0),
             label: 'Location',
             value: widget.userProfile['location']?.isEmpty ?? true
@@ -293,7 +293,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
             icon: Icons.agriculture_rounded,
             iconColor: const Color(0xFF795548),
             iconBgColor: isDark
-                ? const Color(0xFF795548).withOpacity(0.15)
+                ? const Color(0xFF795548).withValues(alpha: 0.15)
                 : const Color(0xFFEFEBE9),
             label: 'Farm Size',
             value: widget.userProfile['farmSize']?.toString().isEmpty ?? true
@@ -318,13 +318,13 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
+            ? Colors.white.withValues(alpha: 0.05)
             : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1.5,
         ),
       ),
@@ -336,7 +336,7 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
               color: iconBgColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: iconColor.withOpacity(0.3),
+                color: iconColor.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
@@ -351,8 +351,8 @@ class _ProfileInfoState extends State<ProfileInfo> with SingleTickerProviderStat
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : Colors.black.withOpacity(0.6),
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.6),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,

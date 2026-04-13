@@ -25,25 +25,25 @@ class HistoryAppBarAction extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? [
-            colorScheme.primary.withOpacity(0.2),
-            colorScheme.secondary.withOpacity(0.2),
+            colorScheme.primary.withValues(alpha: 0.2),
+            colorScheme.secondary.withValues(alpha: 0.2),
           ]
               : [
-            colorScheme.primary.withOpacity(0.12),
-            colorScheme.secondary.withOpacity(0.12),
+            colorScheme.primary.withValues(alpha: 0.12),
+            colorScheme.secondary.withValues(alpha: 0.12),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? colorScheme.primary.withOpacity(0.3)
-              : colorScheme.primary.withOpacity(0.4),
+              ? colorScheme.primary.withValues(alpha: 0.3)
+              : colorScheme.primary.withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
           if (!isDark)
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.15),
+              color: colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

@@ -55,7 +55,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 30,
               offset: const Offset(0, 10),
             ),
@@ -115,7 +115,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF059669).withOpacity(0.3),
+                color: const Color(0xFF059669).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -143,7 +143,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF059669).withOpacity(0.8),
+                color: const Color(0xFF059669).withValues(alpha: 0.8),
                 letterSpacing: 0.5,
               ),
             ),
@@ -151,7 +151,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF059669).withOpacity(0.1),
+                color: const Color(0xFF059669).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
@@ -172,8 +172,8 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
             gradient: _isFocused
                 ? LinearGradient(
               colors: [
-                const Color(0xFF059669).withOpacity(0.1),
-                const Color(0xFF059669).withOpacity(0.05),
+                const Color(0xFF059669).withValues(alpha: 0.1),
+                const Color(0xFF059669).withValues(alpha: 0.05),
               ],
             )
                 : null,
@@ -185,14 +185,14 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
               color: _isFocused
                   ? const Color(0xFF059669)
                   : (isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.1)),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1)),
               width: _isFocused ? 2 : 1.5,
             ),
             boxShadow: _isFocused
                 ? [
               BoxShadow(
-                color: const Color(0xFF059669).withOpacity(0.2),
+                color: const Color(0xFF059669).withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -212,14 +212,14 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
               hintStyle: TextStyle(
                 fontSize: 13,
                 color: isDark
-                    ? Colors.white.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.3),
+                    ? Colors.white.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.3),
               ),
               suffixText: '.pdf',
               suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF059669).withOpacity(0.7),
+                color: const Color(0xFF059669).withValues(alpha: 0.7),
               ),
               prefixIcon: Icon(
                 Icons.description_rounded,
@@ -227,8 +227,8 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
                 color: _isFocused
                     ? const Color(0xFF059669)
                     : (isDark
-                    ? Colors.white.withOpacity(0.4)
-                    : Colors.black.withOpacity(0.4)),
+                    ? Colors.white.withValues(alpha: 0.4)
+                    : Colors.black.withValues(alpha: 0.4)),
               ),
               border: InputBorder.none,
               contentPadding:
@@ -250,7 +250,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF059669).withOpacity(0.8),
+            color: const Color(0xFF059669).withValues(alpha: 0.8),
             letterSpacing: 0.5,
           ),
         ),
@@ -298,8 +298,8 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               side: BorderSide(
                 color: isDark
-                    ? Colors.white.withOpacity(0.2)
-                    : Colors.black.withOpacity(0.2),
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.2),
                 width: 1.5,
               ),
               shape: RoundedRectangleBorder(

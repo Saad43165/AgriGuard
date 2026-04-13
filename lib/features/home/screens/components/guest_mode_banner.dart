@@ -116,7 +116,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
             end: Alignment.bottomRight,
             colors: [
               baseColor,
-              baseColor.withOpacity(0.8),
+              baseColor.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(
@@ -124,7 +124,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
           ),
           boxShadow: [
             BoxShadow(
-              color: baseColor.withOpacity(0.3),
+              color: baseColor.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -143,7 +143,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -190,7 +190,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
                             '$remaining ${remaining == 1 ? 'اسکین باقی' : 'اسکینز باقی'}',
                           ),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withOpacity(0.95),
+                            color: Colors.white.withValues(alpha: 0.95),
                             fontSize: AppMeasurements.getResponsiveFontSize(
                               context,
                               baseSize: 12,
@@ -209,7 +209,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
                                   : '💡 لامحدود اسکینز کے لیے سائن ان کریں',
                             ),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: AppMeasurements.getResponsiveFontSize(
                                 context,
                                 baseSize: 10,
@@ -245,10 +245,10 @@ class _GuestModeBannerState extends State<GuestModeBanner>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -295,7 +295,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -329,7 +329,7 @@ class _GuestModeBannerState extends State<GuestModeBanner>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),
@@ -359,13 +359,13 @@ class _GuestModeBannerState extends State<GuestModeBanner>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: Colors.white.withOpacity(0.9)),
+        Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.9)),
         const SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 10,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -451,8 +451,8 @@ class _GuestScanCounterState extends State<GuestScanCounter>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.15),
-              color.withOpacity(0.08),
+              color.withValues(alpha: 0.15),
+              color.withValues(alpha: 0.08),
             ],
           ),
           border: Border.all(
@@ -462,7 +462,7 @@ class _GuestScanCounterState extends State<GuestScanCounter>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -475,7 +475,7 @@ class _GuestScanCounterState extends State<GuestScanCounter>
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -526,9 +526,9 @@ class _GuestScanCounterState extends State<GuestScanCounter>
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: color.withOpacity(0.3), width: 1),
+                  border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
                 ),
                 child: Text(
                   _isUrdu ? 'EN' : 'اردو',

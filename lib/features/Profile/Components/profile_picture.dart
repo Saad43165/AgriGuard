@@ -41,7 +41,7 @@ class ProfilePicture extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -82,7 +82,7 @@ class ProfilePicture extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -157,10 +157,10 @@ class ProfilePicture extends StatelessWidget {
           color: Theme.of(context)
               .colorScheme
               .surfaceContainerHighest
-              .withOpacity(0.5),
+              .withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
         child: Row(
@@ -191,7 +191,7 @@ class ProfilePicture extends StatelessWidget {
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface
-                          .withOpacity(0.6),
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -200,7 +200,7 @@ class ProfilePicture extends StatelessWidget {
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -222,30 +222,24 @@ class ProfilePicture extends StatelessWidget {
 
   Widget _buildImageContent(BuildContext context) {
     if (profileImageFile != null) {
-      return Image.file(
-        profileImageFile!,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
-      );
+      return Image.file(profileImageFile!, fit: BoxFit.cover,
+        width: double.infinity, height: double.infinity,
+        errorBuilder: (_, __, ___) => _buildDefaultAvatar(context));
     }
-
     if (profileImageBase64 != null && profileImageBase64!.isNotEmpty) {
+      if (profileImageBase64!.startsWith('http')) {
+        return Image.network(profileImageBase64!, fit: BoxFit.cover,
+          width: double.infinity, height: double.infinity,
+          loadingBuilder: (_, child, p) => p == null ? child : _buildDefaultAvatar(context),
+          errorBuilder: (_, __, ___) => _buildDefaultAvatar(context));
+      }
       try {
         final bytes = base64Decode(profileImageBase64!);
-        return Image.memory(
-          bytes,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (_, __, ___) => _buildDefaultAvatar(context),
-        );
-      } catch (e) {
-        return _buildDefaultAvatar(context);
-      }
+        return Image.memory(bytes, fit: BoxFit.cover,
+          width: double.infinity, height: double.infinity,
+          errorBuilder: (_, __, ___) => _buildDefaultAvatar(context));
+      } catch (e) { return _buildDefaultAvatar(context); }
     }
-
     return _buildDefaultAvatar(context);
   }
 
@@ -256,8 +250,8 @@ class ProfilePicture extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.05),
           ],
         ),
       ),
@@ -268,7 +262,7 @@ class ProfilePicture extends StatelessWidget {
           color: Theme.of(context)
               .colorScheme
               .onSurfaceVariant
-              .withOpacity(0.6),
+              .withValues(alpha: 0.6),
         ),
       ),
     );
@@ -315,7 +309,7 @@ class FullscreenProfilePicture extends StatelessWidget {
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withOpacity(0.5),
+                      backgroundColor: Colors.black.withValues(alpha: 0.5),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.all(12),
                     ),
@@ -323,7 +317,7 @@ class FullscreenProfilePicture extends StatelessWidget {
                   Text(
                     'Pinch to zoom',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),

@@ -55,7 +55,7 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
     final theme = Theme.of(context);
     final enabled = widget.onTap != null;
     final effectiveIconColor = widget.iconColor ?? theme.colorScheme.primary;
-    final effectiveBgColor = widget.backgroundColor ?? effectiveIconColor.withOpacity(0.15);
+    final effectiveBgColor = widget.backgroundColor ?? effectiveIconColor.withValues(alpha: 0.15);
 
     return Semantics(
       button: true,
@@ -92,7 +92,7 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.1),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
                     width: 0.5,
                   ),
                 ),
@@ -108,18 +108,18 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
                           colors: enabled
                               ? [
                             effectiveBgColor,
-                            effectiveBgColor.withOpacity(0.7),
+                            effectiveBgColor.withValues(alpha: 0.7),
                           ]
                               : [
-                            theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                            theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
+                            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: enabled
-                              ? effectiveIconColor.withOpacity(0.3)
-                              : theme.colorScheme.outline.withOpacity(0.2),
+                              ? effectiveIconColor.withValues(alpha: 0.3)
+                              : theme.colorScheme.outline.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -127,7 +127,7 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
                         widget.icon,
                         color: enabled
                             ? effectiveIconColor
-                            : theme.colorScheme.onSurface.withOpacity(0.4),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                         size: AppMeasurements.getResponsiveIconSizeSmall(context),
                       ),
                     ),
@@ -143,7 +143,7 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: enabled
                                   ? theme.colorScheme.onSurface
-                                  : theme.colorScheme.onSurface.withOpacity(0.6),
+                                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w600,
                               fontSize: AppMeasurements.getResponsiveFontSize(
                                 context,
@@ -156,8 +156,8 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
                             widget.subtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: enabled
-                                  ? theme.colorScheme.onSurface.withOpacity(0.7)
-                                  : theme.colorScheme.onSurface.withOpacity(0.4),
+                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
+                                  : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                               fontSize: AppMeasurements.getResponsiveFontSize(
                                 context,
                                 baseSize: 13,
@@ -174,7 +174,7 @@ class _ActionItemState extends State<ActionItem> with SingleTickerProviderStateM
                       const SizedBox(width: 8),
                       Icon(
                         Icons.chevron_right_rounded,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                         size: 20,
                       ),
                     ],

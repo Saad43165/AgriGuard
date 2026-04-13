@@ -119,7 +119,7 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
                 : RefreshIndicator(
               onRefresh: _refreshWeather,
               color: Colors.white,
-              backgroundColor: weatherColor.withOpacity(0.9),
+              backgroundColor: weatherColor.withValues(alpha: 0.9),
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
@@ -196,13 +196,13 @@ class _WeatherDetailsScreenState extends State<WeatherDetailsScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.black.withOpacity(0.4),
-              Colors.black.withOpacity(0.3),
+              Colors.black.withValues(alpha: 0.4),
+              Colors.black.withValues(alpha: 0.3),
             ],
           ),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: Colors.white.withOpacity(0.35),
+            color: Colors.white.withValues(alpha: 0.35),
             width: 2,
           ),
         ),

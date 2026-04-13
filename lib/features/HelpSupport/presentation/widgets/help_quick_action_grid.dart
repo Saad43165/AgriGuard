@@ -125,14 +125,14 @@ class _QuickActionCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            color: theme.colorScheme.surface.withOpacity(isDark ? 0.65 : 0.85),
+            color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.65 : 0.85),
             border: Border.all(
-              color: theme.colorScheme.onSurface.withOpacity(0.10),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.10),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.18 : 0.06),
+                color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
@@ -170,7 +170,7 @@ class _QuickActionCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       height: 1.35,
-                      color: theme.colorScheme.onSurface.withOpacity(0.70),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                       fontWeight: FontWeight.w600,
                     ),
                   ),

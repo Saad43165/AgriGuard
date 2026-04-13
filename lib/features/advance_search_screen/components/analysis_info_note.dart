@@ -16,11 +16,11 @@ class AnalysisInfoNote extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.blue.shade900.withOpacity(0.2)
+                ? Colors.blue.shade900.withValues(alpha: 0.2)
                 : Colors.blue.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.blue.withOpacity(0.3),
+              color: Colors.blue.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),

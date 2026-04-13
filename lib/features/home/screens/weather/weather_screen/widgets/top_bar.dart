@@ -102,13 +102,13 @@ class TopBar extends StatelessWidget {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Colors.black.withOpacity(0.3),
-        Colors.black.withOpacity(0.2),
+        Colors.black.withValues(alpha: 0.3),
+        Colors.black.withValues(alpha: 0.2),
       ],
     ),
     borderRadius: BorderRadius.circular(16),
     border: Border.all(
-      color: Colors.white.withOpacity(0.35),
+      color: Colors.white.withValues(alpha: 0.35),
       width: 2,
     ),
   );

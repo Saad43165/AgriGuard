@@ -109,16 +109,16 @@ class _GuideStepCompactState extends State<GuideStepCompact>
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF1A1A2E).withOpacity(0.6)
+                    ? const Color(0xFF1A1A2E).withValues(alpha: 0.6)
                     : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   width: 1.5,
-                  color: isDark ? Colors.white.withOpacity(0.12) : const Color(0xFFE0E0E0),
+                  color: isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE0E0E0),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.03 : 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.03 : 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -159,13 +159,13 @@ class _GuideStepCompactState extends State<GuideStepCompact>
           colors: widget.isCompleted
               ? [primaryColor, secondaryColor]
               : [
-            primaryColor.withOpacity(0.2),
-            secondaryColor.withOpacity(0.2),
+            primaryColor.withValues(alpha: 0.2),
+            secondaryColor.withValues(alpha: 0.2),
           ],
         ),
         shape: BoxShape.circle,
         border: Border.all(
-          color: primaryColor.withOpacity(0.4),
+          color: primaryColor.withValues(alpha: 0.4),
           width: 1.5,
         ),
       ),
@@ -194,13 +194,13 @@ class _GuideStepCompactState extends State<GuideStepCompact>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    primaryColor.withOpacity(0.2),
-                    secondaryColor.withOpacity(0.2),
+                    primaryColor.withValues(alpha: 0.2),
+                    secondaryColor.withValues(alpha: 0.2),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(5),
                 border: Border.all(
-                  color: primaryColor.withOpacity(0.3),
+                  color: primaryColor.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -254,8 +254,8 @@ class _GuideStepCompactState extends State<GuideStepCompact>
           style: TextStyle(
             fontSize: 11,
             color: isDark
-                ? Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
-                : Colors.black.withOpacity(0.6),
+                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)
+                : Colors.black.withValues(alpha: 0.6),
             fontWeight: FontWeight.w600,
           ),
           maxLines: 1,
@@ -277,13 +277,13 @@ class _GuideStepCompactState extends State<GuideStepCompact>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  primaryColor.withOpacity(0.15),
-                  secondaryColor.withOpacity(0.15),
+                  primaryColor.withValues(alpha: 0.15),
+                  secondaryColor.withValues(alpha: 0.15),
                 ],
               ),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: primaryColor.withOpacity(0.3),
+                color: primaryColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -335,13 +335,13 @@ class _GuideStepCompactState extends State<GuideStepCompact>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            primaryColor.withOpacity(0.08),
-            secondaryColor.withOpacity(0.08),
+            primaryColor.withValues(alpha: 0.08),
+            secondaryColor.withValues(alpha: 0.08),
           ],
         ),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: primaryColor.withOpacity(0.2),
+          color: primaryColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -391,8 +391,8 @@ class _GuideStepCompactState extends State<GuideStepCompact>
                       style: TextStyle(
                         fontSize: 10,
                         color: isDark
-                            ? Theme.of(context).colorScheme.onSurface.withOpacity(0.8)
-                            : Colors.black.withOpacity(0.7),
+                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)
+                            : Colors.black.withValues(alpha: 0.7),
                         height: 1.3,
                         fontWeight: FontWeight.w600,
                       ),
@@ -417,10 +417,10 @@ class _GuideStepCompactState extends State<GuideStepCompact>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: widget.isCompleted
-              ? [primaryColor, secondaryColor.withOpacity(0.3)]
+              ? [primaryColor, secondaryColor.withValues(alpha: 0.3)]
               : [
-            (isDark ? Colors.white : Colors.black).withOpacity(0.15),
-            (isDark ? Colors.white : Colors.black).withOpacity(0.05),
+            (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+            (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
           ],
         ),
       ),

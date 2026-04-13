@@ -31,13 +31,13 @@ class HourlyForecastSection extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.black.withOpacity(0.3),
-                    Colors.black.withOpacity(0.2),
+                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black.withValues(alpha: 0.2),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.35),
+                  color: Colors.white.withValues(alpha: 0.35),
                   width: 2,
                 ),
               ),
@@ -86,7 +86,7 @@ class HourlyForecastSection extends StatelessWidget {
               child: Text(
                 'No hourly data available',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -122,14 +122,14 @@ class HourlyForecastSection extends StatelessWidget {
           decoration: BoxDecoration(
             // Darker tint (black opacity) makes white text visible
             color: isNow
-                ? const Color(0xFF764BA2).withOpacity(0.6)
-                : Colors.black.withOpacity(0.25),
+                ? const Color(0xFF764BA2).withValues(alpha: 0.6)
+                : Colors.black.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
               // Outer layer border
               color: isNow
-                  ? Colors.white.withOpacity(0.6)
-                  : Colors.white.withOpacity(0.2),
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.2),
               width: 1.5,
             ),
           ),
@@ -162,7 +162,7 @@ class HourlyForecastSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

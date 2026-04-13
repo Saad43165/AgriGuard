@@ -79,9 +79,9 @@ class WeatherBackground extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.25),
+                    Colors.black.withValues(alpha: 0.25),
                     Colors.transparent,
-                    Colors.black.withOpacity(0.2),
+                    Colors.black.withValues(alpha: 0.2),
                   ],
                 ),
               ),
@@ -180,7 +180,7 @@ class WeatherPainter extends CustomPainter {
 
   void _drawSunRays(Canvas canvas, Size size) {
     _paint
-      ..color = Colors.white.withOpacity(0.1)
+      ..color = Colors.white.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
 
     final center = Offset(size.width * 0.8, size.height * 0.15);
@@ -212,7 +212,7 @@ class WeatherPainter extends CustomPainter {
 
   void _drawClouds(Canvas canvas, Size size) {
     _paint
-      ..color = Colors.white.withOpacity(0.15)
+      ..color = Colors.white.withValues(alpha: 0.15)
       ..style = PaintingStyle.fill;
 
     // 3 clouds moving slowly
@@ -234,7 +234,7 @@ class WeatherPainter extends CustomPainter {
 
   void _drawRain(Canvas canvas, Size size) {
     _paint
-      ..color = Colors.white.withOpacity(0.4)
+      ..color = Colors.white.withValues(alpha: 0.4)
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -255,7 +255,7 @@ class WeatherPainter extends CustomPainter {
   void _drawStorm(Canvas canvas, Size size) {
     // Draw heavy rain
     _paint
-      ..color = Colors.white.withOpacity(0.5)
+      ..color = Colors.white.withValues(alpha: 0.5)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -274,13 +274,13 @@ class WeatherPainter extends CustomPainter {
     // Lightning flash
     if (animationValue > 0.85 && animationValue < 0.88) {
       _paint
-        ..color = Colors.white.withOpacity(0.3)
+        ..color = Colors.white.withValues(alpha: 0.3)
         ..style = PaintingStyle.fill;
       canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _paint);
 
       // Lightning bolt
       _paint
-        ..color = Colors.white.withOpacity(0.8)
+        ..color = Colors.white.withValues(alpha: 0.8)
         ..strokeWidth = 3
         ..style = PaintingStyle.stroke;
 
@@ -296,7 +296,7 @@ class WeatherPainter extends CustomPainter {
 
   void _drawSnow(Canvas canvas, Size size) {
     _paint
-      ..color = Colors.white.withOpacity(0.7)
+      ..color = Colors.white.withValues(alpha: 0.7)
       ..style = PaintingStyle.fill;
 
     // 40 snowflakes with gentle drift
@@ -333,7 +333,7 @@ class WeatherPainter extends CustomPainter {
       final opacity = 0.3 + twinkle * 0.5;
       final starSize = 1.0 + twinkle * 1.5;
 
-      _paint.color = Colors.white.withOpacity(opacity);
+      _paint.color = Colors.white.withValues(alpha: opacity);
 
       // Draw star
       canvas.drawCircle(Offset(x, y), starSize, _paint);
@@ -351,7 +351,7 @@ class WeatherPainter extends CustomPainter {
     // Shooting star occasionally
     if (animationValue > 0.3 && animationValue < 0.35) {
       _paint
-        ..color = Colors.white.withOpacity(0.8)
+        ..color = Colors.white.withValues(alpha: 0.8)
         ..strokeWidth = 2
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;

@@ -77,7 +77,7 @@ class StepThreeState extends State<StepThree> {
             Text(
               'Create a strong password',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -145,10 +145,10 @@ class StepThreeState extends State<StepThree> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
                   width: 1.5,
                 ),
               ),
@@ -160,7 +160,7 @@ class StepThreeState extends State<StepThree> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -231,8 +231,8 @@ class StepThreeState extends State<StepThree> {
           color: isMet
               ? Colors.green
               : isOptional
-              ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-              : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -241,7 +241,7 @@ class StepThreeState extends State<StepThree> {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: isMet
                   ? Colors.green
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: 14,
               fontWeight: isMet ? FontWeight.w600 : FontWeight.w500,
             ),
@@ -293,8 +293,8 @@ class StepThreeState extends State<StepThree> {
                 color: isFocused
                     ? Theme.of(context).colorScheme.primary
                     : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.08),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
                 width: isFocused ? 2 : 1.5,
               ),
             ),
@@ -305,7 +305,7 @@ class StepThreeState extends State<StepThree> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isFocused
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -318,8 +318,8 @@ class StepThreeState extends State<StepThree> {
                         Theme.of(context).colorScheme.secondary,
                       ]
                           : [
-                        Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                        Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       ],
                     ).createShader(bounds),
                     child: const Icon(Icons.lock_rounded, size: 22),
@@ -329,7 +329,7 @@ class StepThreeState extends State<StepThree> {
                 Container(
                   height: 40,
                   width: 1,
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -346,7 +346,7 @@ class StepThreeState extends State<StepThree> {
                     decoration: InputDecoration(
                       hintText: 'Enter ${label.toLowerCase()}',
                       hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
                         fontWeight: FontWeight.w400,
                         fontSize: 16,
                         letterSpacing: 0.3,
@@ -382,7 +382,7 @@ class StepThreeState extends State<StepThree> {
                     child: Icon(
                       obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                       size: 20,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),

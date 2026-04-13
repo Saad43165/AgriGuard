@@ -39,8 +39,8 @@ class _ActionButtonState extends State<ActionButton> {
           gradient: LinearGradient(
             colors: widget.isLoading
                 ? [
-              Theme.of(context).colorScheme.primary.withOpacity(0.6),
-              Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+              Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
             ]
                 : [
               Theme.of(context).colorScheme.primary,

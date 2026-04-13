@@ -242,6 +242,4 @@ class ScanService {
       debugPrint('Error decrementing scan count: $e');
     }
   }
-
-  Future getSavedScans() async {}
 }

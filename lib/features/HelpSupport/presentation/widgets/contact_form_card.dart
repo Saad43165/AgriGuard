@@ -49,12 +49,12 @@ class _ContactFormCardState extends State<ContactFormCard> {
           color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -74,7 +74,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
                       gradient: LinearGradient(
                         colors: [
                           Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
@@ -83,7 +83,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.3),
+                              .withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -113,7 +113,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
                             color: Theme.of(context)
                                 .colorScheme
                                 .onSurface
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -177,7 +177,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 0,
-                    disabledBackgroundColor: Colors.grey.withOpacity(0.3),
+                    disabledBackgroundColor: Colors.grey.withValues(alpha: 0.3),
                   ),
                   child: Ink(
                     decoration: BoxDecoration(
@@ -189,10 +189,10 @@ class _ContactFormCardState extends State<ContactFormCard> {
                           Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.8),
+                              .withValues(alpha: 0.8),
                         ],
                       ),
-                      color: _isSubmitting ? Colors.grey.withOpacity(0.3) : null,
+                      color: _isSubmitting ? Colors.grey.withValues(alpha: 0.3) : null,
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: _isSubmitting
                           ? null
@@ -201,7 +201,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.3),
+                              .withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -284,7 +284,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
           decoration: InputDecoration(
             hintText: translation.get(hintKey),
             hintStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               fontSize: 14,
             ),
             filled: true,
@@ -298,7 +298,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
                 width: 1.5,
               ),
             ),

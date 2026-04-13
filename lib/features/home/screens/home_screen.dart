@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/scan_model.dart';
 import '../../../core/repositories/scan_repository.dart';
 import '../../../core/widgets/floating_orb.dart';
+import '../../../core/widgets/app_themes.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../auth/Login_Screen/services/guest_service.dart';
 import 'PdfDialogs/scan_options_bottomsheet.dart';
@@ -72,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args == true) {
+    if (args is Map<String, dynamic> && args['refreshScans'] == true) {
       _loadRecentScans();
     }
   }
@@ -376,8 +377,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: Theme.of(context).brightness == Brightness.dark
-                  ? [const Color(0xFF0A0E27), const Color(0xFF1A1F3A), const Color(0xFF0F1419)]
-                  : [const Color(0xFFF8FAFB), const Color(0xFFE8F5E9), const Color(0xFFF1F8F4)],
+                  ? [const Color(0xFF0D1117), const Color(0xFF161B22), const Color(0xFF0D1117)]
+                  : [const Color(0xFFF0F7FF), const Color(0xFFFFFFFF), const Color(0xFFF0F7FF)],
             ),
           ),
           child: Stack(
@@ -399,23 +400,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         controller: _scrollController,
                         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                         slivers: [
+                          // Guest mode banner
                           SliverPadding(
                             padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
                             sliver: SliverToBoxAdapter(
                               child: FadeTransition(
                                 opacity: _fadeController,
-                                child: SlideTransition(
-                                  position: _slideAnimation,
-                                  child: ListenableBuilder(
-                                    listenable: _guestService,
-                                    builder: (context, _) => GuestModeBanner(guestService: _guestService),
-                                  ),
+                                child: ListenableBuilder(
+                                  listenable: _guestService,
+                                  builder: (context, _) => GuestModeBanner(guestService: _guestService),
                                 ),
                               ),
                             ),
                           ),
+                          // Weather card — TOP
                           SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
+                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                            sliver: SliverToBoxAdapter(
+                              child: FadeTransition(
+                                opacity: _fadeController,
+                                child: const WeatherCard(),
+                              ),
+                            ),
+                          ),
+                          // Quick actions — below weather
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
                             sliver: SliverToBoxAdapter(
                               child: FadeTransition(
                                 opacity: _fadeController,
@@ -426,10 +436,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     HapticFeedback.lightImpact();
                                     Navigator.pushNamed(context, AppRoutes.history);
                                   },
-                                  onOpenAdvanced: () {
-                                    HapticFeedback.lightImpact();
-                                    _openScanFlow(startAdvanced: true);
-                                  },
                                   onOpenHelp: () {
                                     HapticFeedback.lightImpact();
                                     Navigator.pushNamed(context, AppRoutes.help);
@@ -438,15 +444,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                            sliver: SliverToBoxAdapter(
-                              child: FadeTransition(
-                                opacity: _fadeController,
-                                child: const WeatherCard(),
-                              ),
-                            ),
-                          ),
+                          // Species grid
                           SliverPadding(
                             padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
                             sliver: SliverToBoxAdapter(
@@ -575,19 +573,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            Theme.of(context).colorScheme.surface.withOpacity(0.3),
+            Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.history_rounded, size: 40, color: Theme.of(context).colorScheme.primary),
@@ -597,7 +595,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const SizedBox(height: 8),
           Text(
             'Scan history is only available for registered users.\nSign in to save and view your scans.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -612,19 +610,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-            Theme.of(context).colorScheme.surface.withOpacity(0.5),
+            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+            Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.scanner_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
@@ -634,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           const SizedBox(height: 12),
           Text(
             'Start scanning your plants to build your history.\nOn-device and advanced scans are shown separately.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -669,7 +667,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.1)),
+                border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -735,18 +733,18 @@ class _OnDeviceScanCta extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                primary.withOpacity(isDark ? 0.85 : 0.92),
-                secondary.withOpacity(isDark ? 0.55 : 0.75),
+                primary.withValues(alpha: isDark ? 0.85 : 0.92),
+                secondary.withValues(alpha: isDark ? 0.55 : 0.75),
               ],
             ),
             boxShadow: [
               BoxShadow(
-                color: primary.withOpacity(isDark ? 0.28 : 0.18),
+                color: primary.withValues(alpha: isDark ? 0.28 : 0.18),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
             ],
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.16 : 0.22)),
+            border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.22)),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -756,9 +754,9 @@ class _OnDeviceScanCta extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(isDark ? 0.16 : 0.20),
+                    color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.20),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.22)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
                   ),
                   child: const Icon(
                     Icons.qr_code_scanner_rounded,
@@ -788,7 +786,7 @@ class _OnDeviceScanCta extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withOpacity(0.88),
+                          color: Colors.white.withValues(alpha: 0.88),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -800,9 +798,9 @@ class _OnDeviceScanCta extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.22)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
                   ),
                   child: const Icon(Icons.arrow_forward_rounded, color: Colors.white),
                 ),
@@ -819,74 +817,109 @@ class _QuickActionsCard extends StatelessWidget {
   final bool isGuest;
   final VoidCallback onQuickScan;
   final VoidCallback onOpenHistory;
-  final VoidCallback onOpenAdvanced;
   final VoidCallback onOpenHelp;
 
   const _QuickActionsCard({
     required this.isGuest,
     required this.onQuickScan,
     required this.onOpenHistory,
-    required this.onOpenAdvanced,
     required this.onOpenHelp,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = theme.colorScheme.primary;
-    final secondary = theme.colorScheme.secondary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Big scan CTA
+        _PrimaryScanCta(onTap: onQuickScan),
+        const SizedBox(height: 12),
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.90),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.18 : 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _PrimaryScanCta(
-            onTap: onQuickScan,
-            title: 'Quick Scan',
-            subtitle: 'Choose On-device or Advanced',
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _QuickActionMini(
-                  icon: Icons.history_rounded,
-                  label: 'History',
-                  onTap: onOpenHistory,
-                ),
+        // Feature grid — 4 prominent tiles
+        GridView.count(
+          crossAxisCount: 4,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 0.9,
+          children: [
+            _FeatureTile(
+              icon: Icons.history_rounded,
+              label: 'History',
+              color: AppColors.info,
+              onTap: onOpenHistory,
+            ),
+            _FeatureTile(
+              icon: Icons.agriculture_rounded,
+              label: 'Farm\nDiary',
+              color: AppColors.success,
+              onTap: () => Navigator.pushNamed(context, '/farm-diary'),
+            ),
+            _FeatureTile(
+              icon: Icons.calendar_month_rounded,
+              label: 'Crop\nCalendar',
+              color: AppColors.warning,
+              onTap: () => Navigator.pushNamed(context, '/crop-calendar'),
+            ),
+            _FeatureTile(
+              icon: Icons.help_rounded,
+              label: 'Help',
+              color: AppColors.secondary,
+              onTap: onOpenHelp,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _FeatureTile({
+    required this.icon, required this.label,
+    required this.color, required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () { HapticFeedback.lightImpact(); onTap(); },
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: isDark ? 0.18 : 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: isDark ? 0.4 : 0.35), width: 1.5),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 6, offset: const Offset(0, 2))],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: isDark ? 0.25 : 0.18),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _QuickActionMini(
-                  icon: Icons.auto_awesome_rounded,
-                  label: 'Advanced Scan',
-                  onTap: isGuest ? null : onOpenAdvanced,
-                  badge: isGuest ? 'Locked' : null,
-                ),
+              child: Icon(icon, size: 20, color: color),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.5, fontWeight: FontWeight.w800,
+                color: color, height: 1.2,
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _QuickActionMini(
-            icon: Icons.help_outline_rounded,
-            label: 'Support & Help',
-            onTap: onOpenHelp,
-            fullWidth: true,
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -894,65 +927,33 @@ class _QuickActionsCard extends StatelessWidget {
 
 class _PrimaryScanCta extends StatelessWidget {
   final VoidCallback onTap;
-  final String title;
-  final String subtitle;
-
-  const _PrimaryScanCta({
-    required this.onTap,
-    required this.title,
-    required this.subtitle,
-  });
+  const _PrimaryScanCta({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = theme.colorScheme.primary;
-    final secondary = theme.colorScheme.secondary;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Ink(
-          height: 78,
+          height: 76,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                primary.withOpacity(isDark ? 0.85 : 0.92),
-                secondary.withOpacity(isDark ? 0.55 : 0.75),
-              ],
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, AppColors.secondary],
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: primary.withOpacity(isDark ? 0.28 : 0.18),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.16 : 0.22)),
+            boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 14, offset: const Offset(0, 5))],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(isDark ? 0.16 : 0.20),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.22)),
-                  ),
-                  child: const Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  width: 46, height: 46,
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), borderRadius: BorderRadius.circular(14)),
+                  child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -960,39 +961,16 @@ class _PrimaryScanCta extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withOpacity(0.88),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      const Text('Scan a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: -0.3)),
+                      const SizedBox(height: 2),
+                      Text('On-device or Advanced AI', style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 12, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
                 Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.22)),
-                  ),
-                  child: const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                  width: 34, height: 34,
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), shape: BoxShape.circle),
+                  child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
                 ),
               ],
             ),
@@ -1006,78 +984,42 @@ class _PrimaryScanCta extends StatelessWidget {
 class _QuickActionMini extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback? onTap;
-  final String? badge;
-  final bool fullWidth;
 
-  const _QuickActionMini({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.badge,
-    this.fullWidth = false,
-  });
+  const _QuickActionMini({required this.icon, required this.label, required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final disabled = onTap == null;
-
-    final card = Material(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            color: theme.colorScheme.surfaceContainerHighest.withOpacity(isDark ? 0.22 : 0.50),
-            border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+            borderRadius: BorderRadius.circular(14),
+            // Solid prominent color — not pale
+            color: color.withValues(alpha: isDark ? 0.22 : 0.15),
+            border: Border.all(color: color.withValues(alpha: isDark ? 0.5 : 0.45), width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2))],
           ),
           child: Row(
             children: [
-              Icon(icon, size: 18, color: disabled ? theme.disabledColor : theme.colorScheme.primary),
+              Icon(icon, size: 20, color: color),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: disabled ? theme.disabledColor : null,
-                  ),
-                ),
+                child: Text(label,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
               ),
-              if (badge != null) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: theme.colorScheme.error.withOpacity(0.12),
-                    border: Border.all(color: theme.colorScheme.error.withOpacity(0.20)),
-                  ),
-                  child: Text(
-                    badge!,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
       ),
     );
-    if (fullWidth) {
-      return SizedBox(width: double.infinity, child: card);
-    }
-    return card;
   }
 }
 
@@ -1112,10 +1054,10 @@ class _ScanModeButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: disabled
-                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.45)
-                : primary.withOpacity(0.10),
+                ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45)
+                : primary.withValues(alpha: 0.10),
             border: Border.all(
-              color: disabled ? theme.disabledColor.withOpacity(0.3) : primary.withOpacity(0.35),
+              color: disabled ? theme.disabledColor.withValues(alpha: 0.3) : primary.withValues(alpha: 0.35),
             ),
           ),
           child: Row(
@@ -1124,7 +1066,7 @@ class _ScanModeButton extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: disabled ? theme.disabledColor.withOpacity(0.16) : primary.withOpacity(0.18),
+                  color: disabled ? theme.disabledColor.withValues(alpha: 0.16) : primary.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: disabled ? theme.disabledColor : primary),
@@ -1150,7 +1092,7 @@ class _ScanModeButton extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(999),
-                              color: theme.colorScheme.error.withOpacity(0.12),
+                              color: theme.colorScheme.error.withValues(alpha: 0.12),
                             ),
                             child: Text(
                               'Locked',
@@ -1168,7 +1110,7 @@ class _ScanModeButton extends StatelessWidget {
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: disabled
                             ? theme.disabledColor
-                            : theme.colorScheme.onSurface.withOpacity(0.72),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.72),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1211,11 +1153,11 @@ class _SectionShell extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          color: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.90),
-          border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+          color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.90),
+          border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.16 : 0.06),
+              color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.06),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -1243,7 +1185,7 @@ class _SectionShell extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.70),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1302,34 +1244,31 @@ class _ScanFeedToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.90),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _SegmentButton(
-              selected: selectedIndex == 0,
-              label: 'On-device ($onDeviceCount)',
-              icon: Icons.qr_code_scanner_rounded,
-              onTap: () => onChanged(0),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _SegmentButton(
-              selected: selectedIndex == 1,
-              label: 'Advanced ($advancedCount)',
-              icon: Icons.auto_awesome_rounded,
-              onTap: () => onChanged(1),
-            ),
-          ),
+          Expanded(child: _SegmentButton(
+            selected: selectedIndex == 0,
+            label: 'On-Device ($onDeviceCount)',
+            icon: Icons.phone_android_rounded,
+            color: AppColors.primary,
+            onTap: () => onChanged(0),
+          )),
+          const SizedBox(width: 4),
+          Expanded(child: _SegmentButton(
+            selected: selectedIndex == 1,
+            label: 'Advanced ($advancedCount)',
+            icon: Icons.auto_awesome_rounded,
+            color: AppColors.secondary,
+            onTap: () => onChanged(1),
+          )),
         ],
       ),
     );
@@ -1340,50 +1279,41 @@ class _SegmentButton extends StatelessWidget {
   final bool selected;
   final String label;
   final IconData icon;
+  final Color color;
   final VoidCallback onTap;
 
   const _SegmentButton({
-    required this.selected,
-    required this.label,
-    required this.icon,
-    required this.onTap,
+    required this.selected, required this.label, required this.icon,
+    required this.color, required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: selected ? primary.withOpacity(0.14) : Colors.transparent,
-            border: Border.all(
-              color: selected ? primary.withOpacity(0.40) : theme.colorScheme.onSurface.withOpacity(0.10),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: selected ? color : Colors.transparent,
+          boxShadow: selected ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))] : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: selected ? Colors.white : (isDark ? AppColors.darkCaption : AppColors.lightCaption)),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(label,
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w800,
+                  color: selected ? Colors.white : (isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                )),
             ),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: selected ? primary : theme.colorScheme.onSurface.withOpacity(0.75)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: selected ? primary : theme.colorScheme.onSurface.withOpacity(0.78),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -1409,8 +1339,8 @@ class _EmptyStateCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        color: theme.colorScheme.surface.withOpacity(isDark ? 0.55 : 0.90),
-        border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.10)),
+        color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.90),
+        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
       ),
       child: Row(
         children: [
@@ -1418,9 +1348,9 @@ class _EmptyStateCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.12),
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.colorScheme.primary.withOpacity(0.18)),
+              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.18)),
             ),
             child: Icon(icon, color: theme.colorScheme.primary),
           ),
@@ -1434,7 +1364,7 @@ class _EmptyStateCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.70),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

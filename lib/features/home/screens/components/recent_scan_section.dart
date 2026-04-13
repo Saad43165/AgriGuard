@@ -65,7 +65,7 @@ class RecentScansSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: [
                     BoxShadow(
-                      color: sectionColor.withOpacity(0.3),
+                      color: sectionColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -105,9 +105,9 @@ class RecentScansSection extends StatelessWidget {
 
         SizedBox(height: screenHeight * 0.012),
 
-        // Scans Grid - REDUCED HEIGHT
+        // Scans list — height accommodates image + info without overflow
         SizedBox(
-          height: 135, // Reduced from 165
+          height: 170,
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding * 0.8),
             scrollDirection: Axis.horizontal,
@@ -116,33 +116,23 @@ class RecentScansSection extends StatelessWidget {
             itemBuilder: (context, index) {
               final scan = recentScans[index];
               final scanId = scan['id']?.toString() ?? 'scan_$index';
-              final screenWidth = MediaQuery.of(context).size.width;
-              final cardWidth = (screenWidth * 0.32).clamp(110.0, 135.0); // Reduced width
+              // Card width: enough for image + text without overflow
+              final cardWidth = (MediaQuery.of(context).size.width * 0.38).clamp(140.0, 160.0);
 
-              return Container(
+              return SizedBox(
                 width: cardWidth,
-                margin: EdgeInsets.only(
-                  right: index < recentScans.length - 1 ? 10 : 0,
-                  left: index == 0 ? 4 : 0,
-                ),
-                child: Hero(
-                  tag: 'recent_scan_hero_$scanId',
-                  flightShuttleBuilder: (_, animation, __, ___, toHeroContext) {
-                    return ScaleTransition(
-                      scale: animation,
-                      child: toHeroContext.widget,
-                    );
-                  },
-                  child: Material(
-                    color: Colors.transparent,
-                    child: ScanCard(
-                      key: ValueKey('scan_card_$scanId'),
-                      scan: scan,
-                      index: index,
-                      scaleAnimation: scaleAnimation,
-                      onShowOptions: (scanData) => onShowOptions(scanData),
-                      showFullPlantName: false,
-                    ),
+                child: Container(
+                  margin: EdgeInsets.only(
+                    right: index < recentScans.length - 1 ? 10 : 0,
+                    left: index == 0 ? 4 : 0,
+                  ),
+                  child: ScanCard(
+                    key: ValueKey('scan_card_$scanId'),
+                    scan: scan,
+                    index: index,
+                    scaleAnimation: scaleAnimation,
+                    onShowOptions: (scanData) => onShowOptions(scanData),
+                    showFullPlantName: false,
                   ),
                 ),
               );
@@ -170,19 +160,19 @@ class RecentScansSection extends StatelessWidget {
             gradient: LinearGradient(
               colors: isDark
                   ? [
-                sectionColor.withOpacity(0.2),
-                sectionColor.withOpacity(0.15),
+                sectionColor.withValues(alpha: 0.2),
+                sectionColor.withValues(alpha: 0.15),
               ]
                   : [
-                sectionColor.withOpacity(0.12),
-                sectionColor.withOpacity(0.08),
+                sectionColor.withValues(alpha: 0.12),
+                sectionColor.withValues(alpha: 0.08),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isDark
-                  ? sectionColor.withOpacity(0.4)
-                  : sectionColor.withOpacity(0.25),
+                  ? sectionColor.withValues(alpha: 0.4)
+                  : sectionColor.withValues(alpha: 0.25),
               width: 1.2,
             ),
           ),

@@ -49,7 +49,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
     HapticFeedback.mediumImpact();
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.9),
+      barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (context) => _FullImageDialog(imageFile: widget.imageFile!),
     );
   }
@@ -86,7 +86,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          Theme.of(context).colorScheme.primary.withOpacity(0.1 * _pulseAnimation.value),
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1 * _pulseAnimation.value),
                           Colors.transparent,
                         ],
                       ),
@@ -108,8 +108,8 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
                         Theme.of(context).colorScheme.secondary,
                       ]
                           : [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                        Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                       ],
                     ),
                   ),
@@ -154,7 +154,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
                                 begin: Alignment.topLeft,
                                 end: Alignment.center,
                                 colors: [
-                                  Colors.white.withOpacity(0.2),
+                                  Colors.white.withValues(alpha: 0.2),
                                   Colors.transparent,
                                 ],
                               ),
@@ -187,7 +187,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -208,7 +208,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.9),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -240,7 +240,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
                     height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                     ),
                     child: Center(
                       child: Column(
@@ -284,8 +284,8 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.05),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.05),
           ],
         ),
       ),
@@ -296,7 +296,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
             'Add Photo',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
@@ -306,7 +306,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker>
             'Tap to select',
             style: TextStyle(
               fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -339,7 +339,7 @@ class _FullImageDialog extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   blurRadius: 30,
                   spreadRadius: 10,
                 ),
@@ -372,7 +372,7 @@ class _FullImageDialog extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withValues(alpha: 0.6),
                             Colors.transparent,
                           ],
                         ),
@@ -400,9 +400,9 @@ class _FullImageDialog extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -425,10 +425,10 @@ class _FullImageDialog extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),

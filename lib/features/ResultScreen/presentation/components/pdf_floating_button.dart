@@ -86,13 +86,13 @@ class _PdfFloatingButtonState extends State<PdfFloatingButton>
                     ? []
                     : [
                   BoxShadow(
-                    color: _orange.withOpacity(_glowAnim.value * 0.5),
+                    color: _orange.withValues(alpha: _glowAnim.value * 0.5),
                     blurRadius: 22,
                     spreadRadius: 2,
                     offset: const Offset(0, 6),
                   ),
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

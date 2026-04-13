@@ -26,10 +26,10 @@ class FaqEmptyState extends StatelessWidget {
                           colors: [
                             Theme.of(
                               context,
-                            ).colorScheme.primary.withOpacity(0.1),
+                            ).colorScheme.primary.withValues(alpha: 0.1),
                             Theme.of(
                               context,
-                            ).colorScheme.primary.withOpacity(0.05),
+                            ).colorScheme.primary.withValues(alpha: 0.05),
                           ],
                         ),
                         shape: BoxShape.circle,
@@ -39,7 +39,7 @@ class FaqEmptyState extends StatelessWidget {
                         size: 64,
                         color: Theme.of(
                           context,
-                        ).colorScheme.primary.withOpacity(0.5),
+                        ).colorScheme.primary.withValues(alpha: 0.5),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -56,7 +56,7 @@ class FaqEmptyState extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -69,12 +69,12 @@ class FaqEmptyState extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.primary.withOpacity(0.1),
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primary.withOpacity(0.3),
+                          ).colorScheme.primary.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(

@@ -32,7 +32,7 @@ class ProcessingOverlay extends StatelessWidget {
       animation: translation,
       builder: (context, child) {
         return Container(
-          color: Colors.black.withOpacity(0.9),
+          color: Colors.black.withValues(alpha: 0.9),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -107,9 +107,9 @@ class ProcessingOverlay extends StatelessWidget {
                 width: 320,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
                 ),
                 child: Column(
                   children: [
@@ -127,10 +127,10 @@ class ProcessingOverlay extends StatelessWidget {
                 onPressed: isProcessing ? onCancel : null,
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  backgroundColor: Colors.white.withOpacity(0.1),
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                   ),
                 ),
                 child: Text(
@@ -178,7 +178,7 @@ class ProcessingOverlay extends StatelessWidget {
                 ],
               )
                   : null,
-              color: !isComplete ? Colors.white.withOpacity(0.2) : null,
+              color: !isComplete ? Colors.white.withValues(alpha: 0.2) : null,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -211,7 +211,7 @@ class ProcessingOverlay extends StatelessWidget {
           child: LinearProgressIndicator(
             minHeight: 8,
             color: theme.colorScheme.primary,
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
           ),
         ),
         const SizedBox(height: 12),
@@ -233,9 +233,9 @@ class ProcessingOverlay extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.2),
+          color: Colors.orange.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1.5),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Text(
           '$remainingScans ${translation.get('processing_guest_scans')}',

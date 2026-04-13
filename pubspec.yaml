@@ -64,7 +64,9 @@ dependencies:
   flutter_dotenv: ^5.1.0
   flutter_typeahead: ^5.2.0
   google_fonts: ^6.2.1
-  printing:   # ← this is what provides PdfGoogleFonts
+  printing: ^5.13.1   # provides PdfGoogleFonts
+  file_picker: ^8.1.2
+  csv: ^6.0.0
 
 
 dev_dependencies:
@@ -72,14 +74,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
-  file_picker: ^8.1.2
-  csv: ^6.0.0
 
 flutter:
   uses-material-design: true
 
   assets:
-    - .env
+    - .env   # NOTE: Use --dart-define or CI secrets for production; never commit real keys
     - assets/logo.png
     - assets/models/plant_species_final_quantized.tflite
     - assets/models/labels.txt

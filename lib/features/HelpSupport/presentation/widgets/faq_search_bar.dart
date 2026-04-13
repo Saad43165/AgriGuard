@@ -62,14 +62,14 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
         border: Border.all(
           color: _isFocused
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: _isFocused ? 2 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: _isFocused
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
-                : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: _isFocused ? 12 : 6,
             offset: Offset(0, _isFocused ? 4 : 2),
           ),
@@ -92,7 +92,7 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
                 border: InputBorder.none,
                 hintStyle: TextStyle(
                   color:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),
@@ -119,7 +119,7 @@ class _FaqSearchBarState extends State<FaqSearchBar> {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
                     size: 20,
                   ),
                 ),

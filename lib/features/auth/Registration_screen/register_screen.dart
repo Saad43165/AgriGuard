@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 import 'package:agriguard_fyp/features/auth/Registration_screen/utils/snackbar_utils.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart';
 import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/step/step_one.dart';
@@ -163,20 +162,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<String?> _uploadProfileImage(String uid) async {
     if (_imageFile == null) return null;
-
     try {
       if (!await _imageFile!.exists()) return null;
       final bytes = await _imageFile!.readAsBytes();
-      Uint8List compressedBytes = bytes;
-
-      if (bytes.length > 500000) {
-        final codec = await instantiateImageCodec(bytes);
-        final frame = await codec.getNextFrame();
-        final byteData = await frame.image.toByteData(format: ImageByteFormat.png);
-        compressedBytes = byteData!.buffer.asUint8List();
-      }
-
-      return base64Encode(compressedBytes);
+      // Encode directly — image_picker already applies quality compression
+      return base64Encode(bytes);
     } catch (e) {
       debugPrint('❌ Base64 conversion error: $e');
       return null;
@@ -279,7 +269,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Text(
               'A verification email has been sent to:',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -287,7 +277,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -303,7 +293,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Text(
               'Please check your inbox and verify your email to login',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -370,13 +360,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final isDark = ThemeProvider.of(context).isDarkMode;
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_currentStep > 0) {
+    return PopScope(
+      canPop: _currentStep == 0,
+      onPopInvoked: (didPop) {
+        if (!didPop && _currentStep > 0) {
           _previousStep();
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -389,8 +378,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: isDark ? AppColors.darkGradient : AppColors.lightGradient,
-              stops: AppColors.gradientStops,
+              colors: isDark ? AuthAppColors.darkGradient : AuthAppColors.lightGradient,
+              stops: AuthAppColors.gradientStops,
             ),
           ),
           child: SafeArea(
@@ -462,7 +451,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : null,
                       color: isActive
                           ? null
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
                   ),
                 ),
@@ -537,8 +526,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   gradient: LinearGradient(
                     colors: _isLoading
                         ? [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.6),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                     ]
                         : [
                       Theme.of(context).colorScheme.primary,

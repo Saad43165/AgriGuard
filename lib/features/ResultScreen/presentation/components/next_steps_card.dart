@@ -57,17 +57,17 @@ class NextStepsCard extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -103,13 +103,13 @@ class NextStepsCard extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF10B981).withOpacity(0.1),
-                  const Color(0xFF10B981).withOpacity(0.05),
+                  const Color(0xFF10B981).withValues(alpha: 0.1),
+                  const Color(0xFF10B981).withValues(alpha: 0.05),
                 ],
               ),
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFF10B981).withOpacity(0.3),
+                color: const Color(0xFF10B981).withValues(alpha: 0.3),
                 width: 2,
               ),
             ),
@@ -149,7 +149,7 @@ class NextStepsCard extends StatelessWidget {
             ? null
             : Border(
           bottom: BorderSide(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
             width: 1.5,
           ),
         ),
@@ -174,16 +174,16 @@ class NextStepsCard extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [itemColor, itemColor.withOpacity(0.8)],
+                      colors: [itemColor, itemColor.withValues(alpha: 0.8)],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: itemColor.withOpacity(0.4),
+                        color: itemColor.withValues(alpha: 0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -220,7 +220,7 @@ class NextStepsCard extends StatelessWidget {
                             fontSize: 13,
                             height: 1.5,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white.withOpacity(0.6) : Colors.black.withOpacity(0.5),
+                            color: isDark ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -231,10 +231,10 @@ class NextStepsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: itemColor.withOpacity(0.1),
+                    color: itemColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: itemColor.withOpacity(0.3),
+                      color: itemColor.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),

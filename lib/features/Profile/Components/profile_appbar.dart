@@ -28,12 +28,12 @@ class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-              const Color(0xFF0A0E27).withOpacity(0.95),
-              const Color(0xFF1A1F3A).withOpacity(0.95),
+              const Color(0xFF0A0E27).withValues(alpha: 0.95),
+              const Color(0xFF1A1F3A).withValues(alpha: 0.95),
             ]
                 : [
-              const Color(0xFFF8FAFB).withOpacity(0.95),
-              const Color(0xFFE8F5E9).withOpacity(0.95),
+              const Color(0xFFF8FAFB).withValues(alpha: 0.95),
+              const Color(0xFFE8F5E9).withValues(alpha: 0.95),
             ],
           ),
         ),
@@ -62,13 +62,13 @@ class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.red.shade400.withOpacity(0.15),
-                Colors.red.shade600.withOpacity(0.15),
+                Colors.red.shade400.withValues(alpha: 0.15),
+                Colors.red.shade600.withValues(alpha: 0.15),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.red.withOpacity(0.3),
+              color: Colors.red.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),

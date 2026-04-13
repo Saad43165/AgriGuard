@@ -116,7 +116,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _primaryColor.withOpacity(0.1),
+                  color: _primaryColor.withValues(alpha: 0.1),
                   border: Border(
                     bottom: BorderSide(
                       color: isDark ? Colors.white12 : Colors.black12,
@@ -176,8 +176,8 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                               prefixIcon: const Icon(Icons.location_city_rounded, size: 20),
                               filled: true,
                               fillColor: isDark
-                                  ? Colors.white.withOpacity(0.05)
-                                  : Colors.black.withOpacity(0.03),
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : Colors.black.withValues(alpha: 0.03),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
@@ -185,7 +185,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: _primaryColor.withOpacity(0.3),
+                                  color: _primaryColor.withValues(alpha: 0.3),
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -212,7 +212,7 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: _primaryColor.withOpacity(0.15),
+                                color: _primaryColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(

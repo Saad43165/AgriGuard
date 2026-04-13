@@ -1,17 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../../core/constants/app_measurements.dart';
+import '../../../../../core/constants/app_routes.dart';
+import '../../../../../core/widgets/app_themes.dart';
 import '../../../Profile/utils/profile_image_manager.dart';
+import '../../../chatbot/chatbot_screen.dart';
 
 class CustomHomeAppBar extends StatefulWidget implements PreferredSizeWidget {
   const CustomHomeAppBar({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(70);
+  Size get preferredSize => const Size.fromHeight(68);
 
   @override
   State<CustomHomeAppBar> createState() => _CustomHomeAppBarState();
@@ -28,354 +29,225 @@ class _CustomHomeAppBarState extends State<CustomHomeAppBar> {
     _loadProfileImage();
   }
 
-  @override
-  void didUpdateWidget(covariant CustomHomeAppBar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _loadProfileImage();
-  }
-
   Future<void> _loadProfileImage() async {
     if (!mounted) return;
-
     setState(() => _isLoadingImage = true);
-
     try {
-      // Check for pending image
-      final pendingImage = ProfileImageManager.getPendingImage();
-      if (pendingImage != null && await pendingImage.exists()) {
-        if (mounted) {
-          setState(() {
-            _profileImageFile = pendingImage;
-            _profileImageBase64 = null;
-            _isLoadingImage = false;
-          });
-        }
+      final pending = ProfileImageManager.getPendingImage();
+      if (pending != null && await pending.exists()) {
+        if (mounted) setState(() { _profileImageFile = pending; _isLoadingImage = false; });
         return;
       }
-
-      // Load from Firestore
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-
-        if (snapshot.exists && mounted) {
-          final data = snapshot.data() as Map<String, dynamic>;
-          final imageUrl = data['profileImageUrl'] as String?;
-
-          if (imageUrl != null && imageUrl.isNotEmpty) {
-            setState(() {
-              _profileImageBase64 = imageUrl;
-              _profileImageFile = null;
-              _isLoadingImage = false;
-            });
+        // First try Firestore (covers both email and Google users)
+        final snap = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (snap.exists && mounted) {
+          final url = (snap.data() as Map<String, dynamic>)['profileImageUrl'] as String?;
+          if (url != null && url.isNotEmpty) {
+            setState(() { _profileImageBase64 = url; _isLoadingImage = false; });
             return;
           }
         }
+        // Fallback: use Firebase Auth photoURL (Google profile picture)
+        if (user.photoURL != null && user.photoURL!.isNotEmpty && mounted) {
+          setState(() { _profileImageBase64 = user.photoURL; _isLoadingImage = false; });
+          return;
+        }
       }
-
-      if (mounted) {
-        setState(() => _isLoadingImage = false);
-      }
-    } catch (e) {
-      debugPrint('Error loading profile image: $e');
-      if (mounted) {
-        setState(() => _isLoadingImage = false);
-      }
+      if (mounted) setState(() => _isLoadingImage = false);
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingImage = false);
     }
   }
 
   Stream<String> _userNameStream() {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return Stream.value('User');
-    }
-
+    if (user == null) return Stream.value('User');
     return FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .snapshots()
-        .map((doc) {
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        return data['fullName'] ?? 'User';
-      }
-      return 'User';
-    });
+        .collection('users').doc(user.uid).snapshots()
+        .map((d) => d.exists ? ((d.data() as Map)['fullName'] ?? 'User') : 'User');
   }
 
   String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning';
-    } else if (hour < 17) {
-      return 'Good Afternoon';
-    } else {
-      return 'Good Evening';
-    }
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
   }
 
-  Widget _buildProfileAvatar() {
+  Widget _buildAvatar() {
+    Widget inner;
     if (_isLoadingImage) {
-      return _buildLoadingAvatar();
-    }
-
-    // Local file
-    if (_profileImageFile != null) {
-      return _buildAvatarContainer(
-        child: ClipOval(
-          child: Image.file(
-            _profileImageFile!,
-            fit: BoxFit.cover,
-            width: 48,
-            height: 48,
-            errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
+      inner = Center(
+        child: SizedBox(
+          width: 18, height: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation(AppColors.primary),
           ),
         ),
       );
-    }
-
-    // Base64 or URL
-    if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
+    } else if (_profileImageFile != null) {
+      inner = ClipOval(child: Image.file(_profileImageFile!, fit: BoxFit.cover, width: 40, height: 40,
+          errorBuilder: (_, __, ___) => _defaultIcon()));
+    } else if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
       if (_profileImageBase64!.startsWith('http')) {
-        return _buildAvatarContainer(
-          child: ClipOval(
-            child: Image.network(
-              _profileImageBase64!,
-              fit: BoxFit.cover,
-              width: 48,
-              height: 48,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return _buildLoadingAvatar();
-              },
-              errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
-            ),
-          ),
-        );
+        inner = ClipOval(child: Image.network(_profileImageBase64!, fit: BoxFit.cover, width: 40, height: 40,
+            loadingBuilder: (_, child, progress) => progress == null ? child : _defaultIcon(),
+            errorBuilder: (_, __, ___) => _defaultIcon()));
+      } else {
+        try {
+          final bytes = base64Decode(_profileImageBase64!);
+          inner = ClipOval(child: Image.memory(bytes, fit: BoxFit.cover, width: 40, height: 40,
+              errorBuilder: (_, __, ___) => _defaultIcon()));
+        } catch (_) { inner = _defaultIcon(); }
       }
-
-      try {
-        final Uint8List imageBytes = base64Decode(_profileImageBase64!);
-        return _buildAvatarContainer(
-          child: ClipOval(
-            child: Image.memory(
-              imageBytes,
-              fit: BoxFit.cover,
-              width: 48,
-              height: 48,
-              errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
-            ),
-          ),
-        );
-      } catch (e) {
-        return _buildDefaultAvatar();
-      }
+    } else {
+      inner = _defaultIcon();
     }
 
-    return _buildDefaultAvatar();
-  }
-
-  Widget _buildAvatarContainer({required Widget child}) {
     return Container(
-      width: 48,
-      height: 48,
+      width: 44, height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-          ],
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.secondary],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 3))],
       ),
-      padding: const EdgeInsets.all(2.5),
+      padding: const EdgeInsets.all(2),
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Theme.of(context).colorScheme.surface,
         ),
-        child: child,
+        child: inner,
       ),
     );
   }
 
-  Widget _buildLoadingAvatar() {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-          ],
-        ),
-      ),
-      child: Center(
-        child: SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDefaultAvatar() {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.secondary,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Icon(
-        Icons.person_rounded,
-        size: 26,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  void _navigateToProfile() {
-    Navigator.pushNamed(context, '/profile');
-  }
+  Widget _defaultIcon() => const Icon(Icons.person_rounded, size: 22, color: AppColors.primary);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
-    return StreamBuilder<String>(
-      stream: _userNameStream(),
-      builder: (context, snapshot) {
-        final fullName = snapshot.data ?? 'User';
-        final firstName = fullName.split(' ').first;
-
-        return AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          toolbarHeight: 70,
-          automaticallyImplyLeading: false,
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [
-                  const Color(0xFF0F0F23).withOpacity(0.95),
-                  const Color(0xFF16213E).withOpacity(0.9),
-                ]
-                    : [
-                  Theme.of(context).colorScheme.surface,
-                  Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                ],
-              ),
-            ),
-          ),
-          title: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
-              children: [
-                // Clickable Profile Avatar
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _navigateToProfile,
-                    borderRadius: BorderRadius.circular(24),
-                    child: Padding(
-                      padding: const EdgeInsets.all(2),
-                      child: _buildProfileAvatar(),
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border(bottom: BorderSide(color: borderColor, width: 1)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 68,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: StreamBuilder<String>(
+              stream: _userNameStream(),
+              builder: (context, snap) {
+                final firstName = (snap.data ?? 'User').split(' ').first;
+                return Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, '/profile'),
+                      child: _buildAvatar(),
                     ),
-                  ),
-                ),
-
-                const SizedBox(width: 14),
-
-                // Greeting & Name
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _getGreeting(),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                          fontSize: AppMeasurements.getResponsiveFontSize(
-                            context,
-                            baseSize: 12,
-                          ),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      ShaderMask(
-                        shaderCallback: (bounds) => LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(context).colorScheme.secondary,
-                          ],
-                        ).createShader(bounds),
-                        child: Text(
-                          firstName,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontSize: AppMeasurements.getResponsiveFontSize(
-                              context,
-                              baseSize: 19,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _getGreeting(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
                             ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          const SizedBox(height: 1),
+                          Text(
+                            firstName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // AI Chat — labeled feature button
+                    GestureDetector(
+                      onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => const ChatbotScreen())),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, AppColors.secondary],
+                            begin: Alignment.topLeft, end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 8, offset: const Offset(0, 3)),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 5),
+                            Text('AI Chat', style: TextStyle(
+                              color: Colors.white, fontSize: 12,
+                              fontWeight: FontWeight.w800, letterSpacing: 0.2,
+                            )),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                    const SizedBox(width: 8),
+                    // Analytics — labeled feature button
+                    GestureDetector(
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.analytics),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkCard : AppColors.lightBg,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: isDark ? 0.4 : 0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.bar_chart_rounded, color: AppColors.primary, size: 16),
+                            SizedBox(width: 5),
+                            Text('Analytics', style: TextStyle(
+                              color: AppColors.primary, fontSize: 12,
+                              fontWeight: FontWeight.w800, letterSpacing: 0.2,
+                            )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

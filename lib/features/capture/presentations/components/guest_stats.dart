@@ -18,13 +18,13 @@ class GuestStats extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.orange.withOpacity(0.15),
-                Colors.deepOrange.withOpacity(0.1),
+                Colors.orange.withValues(alpha: 0.15),
+                Colors.deepOrange.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.orange.withOpacity(0.4),
+              color: Colors.orange.withValues(alpha: 0.4),
               width: 1.5,
             ),
           ),
@@ -33,7 +33,7 @@ class GuestStats extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.2),
+                  color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(

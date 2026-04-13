@@ -21,7 +21,7 @@ class WeatherCardWidgets {
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: const Icon(
@@ -50,7 +50,7 @@ class WeatherCardWidgets {
                     Text(
                       WeatherCardHelpers.getLocationTime(provider),
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 9,
                         fontWeight: FontWeight.w500,
                       ),
@@ -127,7 +127,7 @@ class WeatherCardWidgets {
                 'Feels ${weatherData.feelsLike.toStringAsFixed(0)}°',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -173,10 +173,10 @@ class WeatherCardWidgets {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -207,11 +207,11 @@ class WeatherCardWidgets {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [primaryColor.withOpacity(0.2), primaryColor.withOpacity(0.1)]
-              : [primaryColor.withOpacity(0.15), primaryColor.withOpacity(0.08)],
+              ? [primaryColor.withValues(alpha: 0.2), primaryColor.withValues(alpha: 0.1)]
+              : [primaryColor.withValues(alpha: 0.15), primaryColor.withValues(alpha: 0.08)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryColor.withOpacity(isDark ? 0.3 : 0.2), width: 1.5),
+        border: Border.all(color: primaryColor.withValues(alpha: isDark ? 0.3 : 0.2), width: 1.5),
       ),
       child: Center(
         child: Column(
@@ -257,11 +257,11 @@ class WeatherCardWidgets {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [errorColor.withOpacity(0.2), errorColor.withOpacity(0.1)]
-              : [errorColor.withOpacity(0.15), errorColor.withOpacity(0.08)],
+              ? [errorColor.withValues(alpha: 0.2), errorColor.withValues(alpha: 0.1)]
+              : [errorColor.withValues(alpha: 0.15), errorColor.withValues(alpha: 0.08)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: errorColor.withOpacity(isDark ? 0.4 : 0.3), width: 1.5),
+        border: Border.all(color: errorColor.withValues(alpha: isDark ? 0.4 : 0.3), width: 1.5),
       ),
       child: Material(
         color: Colors.transparent,
@@ -276,7 +276,7 @@ class WeatherCardWidgets {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: errorColor.withOpacity(0.2),
+                    color: errorColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(_getErrorIcon(provider), size: 28, color: errorColor),
@@ -296,7 +296,7 @@ class WeatherCardWidgets {
                 Text(
                   _getErrorMessage(provider),
                   style: TextStyle(
-                    color: isDark ? errorColor.withOpacity(0.8) : errorColor.withOpacity(0.9),
+                    color: isDark ? errorColor.withValues(alpha: 0.8) : errorColor.withValues(alpha: 0.9),
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -324,10 +324,10 @@ class WeatherCardWidgets {
       child: Container(
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -367,7 +367,7 @@ class WeatherCardWidgets {
     return Container(
       width: 1,
       height: 14,
-      color: Colors.white.withOpacity(0.3),
+      color: Colors.white.withValues(alpha: 0.3),
     );
   }
 

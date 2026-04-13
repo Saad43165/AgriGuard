@@ -43,12 +43,12 @@ class DeleteConfirmationDialogContent extends StatelessWidget {
             AppMeasurements.getResponsiveBorderRadius(context) * 1.5,
           ),
           border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
               blurRadius: 24,
               spreadRadius: 0,
               offset: const Offset(0, 8),
@@ -72,8 +72,8 @@ class DeleteConfirmationDialogContent extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      theme.colorScheme.error.withOpacity(0.2),
-                      theme.colorScheme.error.withOpacity(0.1),
+                      theme.colorScheme.error.withValues(alpha: 0.2),
+                      theme.colorScheme.error.withValues(alpha: 0.1),
                     ],
                   ),
                 ),
@@ -93,7 +93,7 @@ class DeleteConfirmationDialogContent extends StatelessWidget {
                 shaderCallback: (bounds) => LinearGradient(
                   colors: [
                     theme.colorScheme.error,
-                    theme.colorScheme.error.withOpacity(0.8),
+                    theme.colorScheme.error.withValues(alpha: 0.8),
                   ],
                 ).createShader(bounds),
                 child: Text(
@@ -123,7 +123,7 @@ class DeleteConfirmationDialogContent extends StatelessWidget {
                       context,
                       baseSize: 14,
                     ),
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -146,7 +146,7 @@ class DeleteConfirmationDialogContent extends StatelessWidget {
                       backgroundColor: isDark
                           ? const Color(0xFF0F0F23)
                           : theme.colorScheme.surface,
-                      borderColor: theme.colorScheme.outline.withOpacity(0.3),
+                      borderColor: theme.colorScheme.outline.withValues(alpha: 0.3),
                       textColor: theme.colorScheme.onSurface,
                     ),
                   ),
@@ -243,7 +243,7 @@ class _ActionButtonState extends State<_ActionButton>
           boxShadow: widget.isPrimary
               ? [
             BoxShadow(
-              color: widget.backgroundColor.withOpacity(0.3),
+              color: widget.backgroundColor.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -263,11 +263,11 @@ class _ActionButtonState extends State<_ActionButton>
               });
             },
             splashColor: widget.isPrimary
-                ? Colors.white.withOpacity(0.2)
-                : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                ? Colors.white.withValues(alpha: 0.2)
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             highlightColor: widget.isPrimary
-                ? Colors.white.withOpacity(0.1)
-                : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                ? Colors.white.withValues(alpha: 0.1)
+                : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
             child: Center(
               child: Text(
                 widget.label,

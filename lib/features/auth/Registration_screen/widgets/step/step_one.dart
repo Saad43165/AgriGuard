@@ -60,7 +60,7 @@ class StepOneState extends State<StepOne> {
             Text(
               'Create your AgriGuard account',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -166,8 +166,8 @@ class StepOneState extends State<StepOne> {
                 color: isFocused
                     ? Theme.of(context).colorScheme.primary
                     : isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.08),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.08),
                 width: isFocused ? 2 : 1.5,
               ),
             ),
@@ -178,7 +178,7 @@ class StepOneState extends State<StepOne> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isFocused
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -191,8 +191,8 @@ class StepOneState extends State<StepOne> {
                         Theme.of(context).colorScheme.secondary,
                       ]
                           : [
-                        Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                        Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       ],
                     ).createShader(bounds),
                     child: Icon(icon, size: 22),
@@ -202,7 +202,7 @@ class StepOneState extends State<StepOne> {
                 Container(
                   height: 40,
                   width: 1,
-                  color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -219,7 +219,7 @@ class StepOneState extends State<StepOne> {
                     decoration: InputDecoration(
                       hintText: label == 'Full Name' ? 'John Doe' : 'your@email.com',
                       hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
                         fontWeight: FontWeight.w400,
                         fontSize: 16,
                         letterSpacing: 0.3,
@@ -254,13 +254,13 @@ class StepOneState extends State<StepOne> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.close_rounded,
                         size: 16,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ),

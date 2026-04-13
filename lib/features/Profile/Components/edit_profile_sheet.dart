@@ -29,7 +29,7 @@ void showEditProfileSheet({
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -45,7 +45,7 @@ void showEditProfileSheet({
                       gradient: LinearGradient(
                         colors: [
                           Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
@@ -132,7 +132,7 @@ void showEditProfileSheet({
                 color: Theme.of(context).colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -218,17 +218,17 @@ Widget _buildEditField(
           fillColor: Theme.of(context)
               .colorScheme
               .surfaceContainerHighest
-              .withOpacity(0.5),
+              .withValues(alpha: 0.5),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
           focusedBorder: OutlineInputBorder(
@@ -242,7 +242,7 @@ Widget _buildEditField(
             horizontal: 16,
             vertical: 16,
           ),
-          prefixIcon: Icon(icon, color: iconColor.withOpacity(0.6), size: 20),
+          prefixIcon: Icon(icon, color: iconColor.withValues(alpha: 0.6), size: 20),
         ),
       ),
     ],

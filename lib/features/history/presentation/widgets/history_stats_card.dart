@@ -1,5 +1,5 @@
-// lib/features/history/widgets/history_stats_card.dart
 import 'package:flutter/material.dart';
+import '../../../../../core/widgets/app_themes.dart';
 
 class HistoryStatsCard extends StatelessWidget {
   final int totalScans;
@@ -17,36 +17,23 @@ class HistoryStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textPrimary = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final textSub = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16),
-      padding: EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-            Color(0xFF1E3A5F).withOpacity(0.4),
-            Color(0xFF2D4A6F).withOpacity(0.3),
-          ]
-              : [
-            Color(0xFFE3F2FD),
-            Color(0xFFF3E5F5),
-          ],
-        ),
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
-          width: 1.5,
-        ),
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 12, offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -56,136 +43,68 @@ class HistoryStatsCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary.withOpacity(0.2),
-                      theme.colorScheme.secondary.withOpacity(0.2),
-                    ],
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.analytics_rounded,
-                  color: theme.colorScheme.primary,
-                  size: 32,
-                ),
+                child: const Icon(Icons.analytics_rounded, color: AppColors.primary, size: 28),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Total Scans', style: TextStyle(fontSize: 13, color: textSub, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 2),
                   Text(
-                    'Total Scans',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
-                      ],
-                    ).createShader(bounds),
-                    child: Text(
-                      isLoading ? '--' : '$totalScans',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    isLoading ? '--' : '$totalScans',
+                    style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.primary),
                   ),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 20),
-          Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  theme.colorScheme.primary.withOpacity(0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
+          Divider(color: borderColor, height: 1),
+          const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  Icons.phone_android_rounded,
-                  'On-Device',
-                  onDeviceCount,
-                  Colors.blue,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 50,
-                color: theme.colorScheme.outline.withOpacity(0.2),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  context,
-                  Icons.cloud_rounded,
-                  'Advanced AI',
-                  advancedCount,
-                  Colors.purple,
-                ),
-              ),
+              Expanded(child: _Stat(icon: Icons.phone_android_rounded, label: 'On-Device', count: onDeviceCount, color: AppColors.info, isLoading: isLoading, textSub: textSub)),
+              Container(width: 1, height: 48, color: borderColor),
+              Expanded(child: _Stat(icon: Icons.cloud_rounded, label: 'Advanced AI', count: advancedCount, color: AppColors.secondary, isLoading: isLoading, textSub: textSub)),
             ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildStatItem(
-      BuildContext context,
-      IconData icon,
-      String label,
-      int count,
-      Color color,
-      ) {
+class _Stat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int count;
+  final Color color;
+  final bool isLoading;
+  final Color textSub;
+
+  const _Stat({required this.icon, required this.label, required this.count,
+    required this.color, required this.isLoading, required this.textSub});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 24),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: color, size: 22),
         ),
-        SizedBox(height: 8),
-        Text(
-          isLoading ? '--' : '$count',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        const SizedBox(height: 6),
+        Text(isLoading ? '--' : '$count',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+        const SizedBox(height: 2),
+        Text(label, style: TextStyle(fontSize: 11, color: textSub, fontWeight: FontWeight.w500)),
       ],
     );
   }

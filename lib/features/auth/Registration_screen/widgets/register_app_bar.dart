@@ -47,12 +47,12 @@ class RegisterAppBar extends StatelessWidget implements PreferredSizeWidget {
             borderRadius: BorderRadius.circular(borderRadius),
             gradient: LinearGradient(
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.15),
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
               ],
             ),
             border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               width: 1,
 
             ),
@@ -100,7 +100,7 @@ class RegisterAppBar extends StatelessWidget implements PreferredSizeWidget {
           Text(
             'Step ${currentStep + 1} of 3',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               fontSize: 11,
             ),
           ),

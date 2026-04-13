@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/constants/app_measurements.dart';
-import '../../../../core/services/translation_service.dart';
+import '../../../../../core/widgets/app_themes.dart';
+import '../../../../../core/services/translation_service.dart';
 
 class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -20,142 +20,135 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
     this.onBackPressed,
     this.actions,
     this.elevation = 0,
-    this.topPadding = 8.0,
+    this.topPadding = 0,
     this.leading,
   });
 
   @override
   Widget build(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final translation = Provider.of<TranslationService>(context);
+    final bgColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
 
-    return Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: elevation,
-        centerTitle: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Back Button
-            if (showBackButton && leading == null)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border(bottom: BorderSide(color: borderColor, width: 1)),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                // Back button
+                if (showBackButton)
+                  _IconBtn(
+                    icon: Icons.arrow_back_rounded,
+                    isDark: isDark,
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      if (onBackPressed != null) {
-                        onBackPressed!();
-                      } else {
-                        Navigator.maybePop(context);
-                      }
+                      onBackPressed != null ? onBackPressed!() : Navigator.maybePop(context);
                     },
-                    child: Padding(
-                      padding: EdgeInsets.all(padding * 0.5),
-                      child: Icon(
-                        Icons.arrow_back_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else if (leading != null)
-              leading!
-            else
-              Container(width: 50),
+                  )
+                else
+                  const SizedBox(width: 40),
 
-            // Title
-            Expanded(
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  translation.get(title),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 22),
-                    color: Colors.white,
+                const SizedBox(width: 8),
+
+                // Title
+                Expanded(
+                  child: Text(
+                    translation.get(title),
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                      letterSpacing: -0.3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
+
+                const SizedBox(width: 8),
+
+                // Language toggle
+                _LangBtn(isDark: isDark, translation: translation),
+
+                if (actions != null) ...actions!,
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
 
-            // Language Toggle
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-                  ],
-                ),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    translation.toggleLanguage();
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: padding * 0.7,
-                      vertical: padding * 0.5,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.language_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          translation.isUrdu ? 'اردو' : 'EN',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                            color: Theme.of(context).colorScheme.primary,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 1);
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final bool isDark;
+  final VoidCallback onTap;
+  const _IconBtn({required this.icon, required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38, height: 38,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.lightBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: Icon(icon, size: 20,
+          color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+      ),
+    );
+  }
+}
+
+class _LangBtn extends StatelessWidget {
+  final bool isDark;
+  final TranslationService translation;
+  const _LangBtn({required this.isDark, required this.translation});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () { HapticFeedback.lightImpact(); translation.toggleLanguage(); },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.lightBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.language_rounded, size: 14, color: AppColors.primary),
+            const SizedBox(width: 4),
+            Text(
+              translation.isUrdu ? 'اردو' : 'EN',
+              style: const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w800,
+                color: AppColors.primary, letterSpacing: 0.3,
               ),
             ),
           ],
@@ -163,7 +156,4 @@ class AppBarContent extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8.0);
 }

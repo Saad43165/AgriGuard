@@ -56,11 +56,11 @@ class _LoadingSectionState extends State<LoadingSection>
         padding: const EdgeInsets.all(48),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.03)
-              : Colors.white.withOpacity(0.7),
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.white.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             width: 1.5,
           ),
         ),
@@ -113,8 +113,8 @@ class _LoadingSectionState extends State<LoadingSection>
                         colors: [
                           Theme.of(context).colorScheme.primary,
                           Theme.of(context).colorScheme.secondary,
-                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           Theme.of(context).colorScheme.primary,
                         ],
                         stops: const [0.0, 0.3, 0.5, 0.7, 1.0],
@@ -133,8 +133,8 @@ class _LoadingSectionState extends State<LoadingSection>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                        Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                       ],
                     ),
                   ),

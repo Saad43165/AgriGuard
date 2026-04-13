@@ -136,23 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-              const Color(0xFF0F0F23),
-              const Color(0xFF16213E),
-              const Color(0xFF1A1A2E),
-            ]
-                : [
-              const Color(0xFFF9FBFD),
-              const Color(0xFFF5F7FA),
-              const Color(0xFFF9FBFD),
-            ],
-          ),
-        ),
+        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
         child: Stack(
           children: [
             // Animated background circles
@@ -208,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      colorScheme.primary.withOpacity(isDark ? 0.05 : 0.08),
+                      colorScheme.primary.withValues(alpha: isDark ? 0.05 : 0.08),
                       Colors.transparent,
                     ],
                   ),
@@ -234,7 +218,7 @@ class _SplashScreenState extends State<SplashScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      colorScheme.secondary.withOpacity(isDark ? 0.05 : 0.08),
+                      colorScheme.secondary.withValues(alpha: isDark ? 0.05 : 0.08),
                       Colors.transparent,
                     ],
                   ),
@@ -280,7 +264,7 @@ class _SplashScreenState extends State<SplashScreen>
                           center: Alignment.topLeft,
                           radius: 1.5,
                           colors: [
-                            Colors.white.withOpacity(0.4),
+                            Colors.white.withValues(alpha: 0.4),
                             Colors.transparent,
                           ],
                         ),
@@ -311,7 +295,7 @@ class _SplashScreenState extends State<SplashScreen>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 width: 2,
                               ),
                             ),
@@ -361,7 +345,7 @@ class _SplashScreenState extends State<SplashScreen>
             Text(
               'Protecting Your Crops',
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.7),
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -377,13 +361,13 @@ class _SplashScreenState extends State<SplashScreen>
                 Icon(
                   Icons.agriculture_outlined,
                   size: 16,
-                  color: colorScheme.primary.withOpacity(0.7),
+                  color: colorScheme.primary.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Smart Agriculture Solutions',
                   style: TextStyle(
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
@@ -446,7 +430,7 @@ class _SplashScreenState extends State<SplashScreen>
               Text(
                 'LOADING',
                 style: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.4),
+                  color: colorScheme.onSurface.withValues(alpha: 0.4),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 3,

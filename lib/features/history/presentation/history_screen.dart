@@ -11,6 +11,7 @@ import 'package:agriguard_fyp/features/history/presentation/widgets/history_stat
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_tab_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/widgets/app_themes.dart';
 import '../../../core/widgets/floating_orb.dart';
 import '../../ResultScreen/presentation/results_screen.dart';
 import '../../advance_result_screen/advanced_result_screen.dart';
@@ -36,6 +37,11 @@ class _HistoryScreenState extends State<HistoryScreen>
   bool _hasError = false;
   String _selectedTab = 'onDevice';
   late final ScanRepository _scanRepository;
+
+  // Search & Filter state
+  String _searchQuery = '';
+  String _activeFilter = 'all'; // 'all', 'healthy', 'diseased', 'high'
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -246,11 +252,47 @@ class _HistoryScreenState extends State<HistoryScreen>
   void dispose() {
     _fadeController.dispose();
     _scaleController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   List<Map<String, dynamic>> get _currentScans {
     return _selectedTab == 'onDevice' ? _onDeviceScans : _advancedScans;
+  }
+
+  List<Map<String, dynamic>> get _filteredScans {
+    var scans = _currentScans;
+    // Apply search
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      scans = scans.where((s) {
+        final plant = (s['plantName'] ?? '').toString().toLowerCase();
+        final disease = (s['diseaseName'] ?? s['diagnosis'] ?? '').toString().toLowerCase();
+        return plant.contains(q) || disease.contains(q);
+      }).toList();
+    }
+    // Apply filter
+    switch (_activeFilter) {
+      case 'healthy':
+        scans = scans.where((s) {
+          final d = (s['diseaseName'] ?? s['diagnosis'] ?? '').toString().toLowerCase();
+          return d.contains('healthy');
+        }).toList();
+        break;
+      case 'diseased':
+        scans = scans.where((s) {
+          final d = (s['diseaseName'] ?? s['diagnosis'] ?? '').toString().toLowerCase();
+          return !d.contains('healthy');
+        }).toList();
+        break;
+      case 'high':
+        scans = scans.where((s) {
+          final sev = (s['severity'] ?? '').toString().toLowerCase();
+          return sev == 'high' || sev == 'severe' || sev == 'critical';
+        }).toList();
+        break;
+    }
+    return scans;
   }
 
   void _onScanTap(int index) {
@@ -349,23 +391,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-              const Color(0xFF0A0E27),
-              const Color(0xFF1A1F3A),
-              const Color(0xFF0F172A),
-            ]
-                : [
-              const Color(0xFFFAFAFA),
-              const Color(0xFFF5F5F5),
-              const Color(0xFFFFFFFF),
-            ],
-          ),
-        ),
+        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
         child: Stack(
           children: [
             // Floating orbs
@@ -410,7 +436,33 @@ class _HistoryScreenState extends State<HistoryScreen>
                       },
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
+
+                    // Search Bar
+                    _buildSearchBar(isDark),
+
+                    const SizedBox(height: 8),
+
+                    // Filter Chips
+                    _buildFilterChips(isDark),
+
+                    const SizedBox(height: 4),
+
+                    // Result count
+                    if (!_isLoading && !_hasError)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Text(
+                          'Showing ${_filteredScans.length} of ${_currentScans.length} scans',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 4),
 
                     // Content
                     Expanded(
@@ -445,18 +497,186 @@ class _HistoryScreenState extends State<HistoryScreen>
       );
     }
 
+    if (_filteredScans.isEmpty) {
+      return _buildNoResultsState();
+    }
+
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _currentScans.length,
+      itemCount: _filteredScans.length,
       itemBuilder: (context, index) {
         return HistoryScanCard(
-          scan: _currentScans[index],
+          scan: _filteredScans[index],
           index: index,
-          onTap: () => _onScanTap(index),
-          onDelete: () => _showDeleteConfirmationDialog(index),
+          onTap: () => _onFilteredScanTap(index),
+          onDelete: () => _showDeleteConfirmationDialogForScan(_filteredScans[index]),
         );
       },
+    );
+  }
+
+  void _onFilteredScanTap(int index) {
+    final scan = _filteredScans[index];
+    if (scan['isAdvanced'] == true) {
+      _openAdvancedScan(scan);
+    } else {
+      _openOnDeviceScan(scan);
+    }
+  }
+
+  Widget _buildSearchBar(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.lightCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1.5,
+          ),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (v) => setState(() => _searchQuery = v),
+          style: TextStyle(
+            color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Search by plant or disease...',
+            hintStyle: TextStyle(
+              color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+              fontSize: 14,
+            ),
+            prefixIcon: Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                    child: Icon(Icons.close_rounded,
+                        color: isDark ? AppColors.darkCaption : AppColors.lightCaption, size: 18),
+                  )
+                : null,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(bool isDark) {
+    final filters = [
+      ('all', 'All'),
+      ('healthy', 'Healthy'),
+      ('diseased', 'Diseased'),
+      ('high', 'High Severity'),
+    ];
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: filters.map((f) {
+          final isSelected = _activeFilter == f.$1;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _activeFilter = f.$1);
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                    width: 1.5,
+                  ),
+                ),
+                child: Text(
+                  f.$2,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected ? Colors.white : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.search_off_rounded, size: 48, color: AppColors.primary),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No results found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your search or filter',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  _searchQuery = '';
+                  _activeFilter = 'all';
+                });
+              },
+              icon: const Icon(Icons.clear_rounded, size: 16),
+              label: const Text('Clear filters'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -468,7 +688,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: CircularProgressIndicator(
@@ -484,7 +704,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -502,7 +722,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -524,7 +744,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               'Please check your connection and try again',
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -561,12 +781,12 @@ class _HistoryScreenState extends State<HistoryScreen>
           ),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 30,
               offset: const Offset(0, 15),
             ),
@@ -597,7 +817,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             Text(
               'Please wait...',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -622,12 +842,12 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
             borderRadius: BorderRadius.circular(32),
             border: Border.all(
-              color: Colors.red.withOpacity(0.3),
+              color: Colors.red.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
               ),
@@ -645,7 +865,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red.withOpacity(0.4),
+                      color: Colors.red.withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -671,7 +891,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 message,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -685,7 +905,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
                     elevation: 8,
-                    shadowColor: Colors.red.withOpacity(0.5),
+                    shadowColor: Colors.red.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -730,6 +950,128 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
+  Future<void> _showDeleteConfirmationDialogForScan(Map<String, dynamic> scan) async {
+    final diagnosis = scan['diagnosis']?.toString() ?? 'this scan';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : AppColors.lightCard,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_outline_rounded, size: 40, color: AppColors.error),
+              ),
+              const SizedBox(height: 20),
+              Text('Delete Scan?',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20,
+                      color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
+              const SizedBox(height: 10),
+              Text('Are you sure you want to delete "$diagnosis"? This cannot be undone.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14,
+                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption)),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.pop(context);
+                        _deleteScanById(scan['id'] as String?);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteScanById(String? scanId) async {
+    if (scanId == null) return;
+    try {
+      await _scanRepository.deleteScan(scanId);
+      setState(() {
+        _onDeviceScans.removeWhere((s) => s['id'] == scanId);
+        _advancedScans.removeWhere((s) => s['id'] == scanId);
+      });
+      HapticFeedback.mediumImpact();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(children: [
+              Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Text('Scan deleted successfully', style: TextStyle(fontWeight: FontWeight.w600)),
+            ]),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to delete scan'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
   // ==================== DELETE FUNCTIONALITY ====================
 
   Future<void> _showDeleteConfirmationDialog(int index) async {
@@ -741,7 +1083,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -767,13 +1109,13 @@ class _HistoryScreenState extends State<HistoryScreen>
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.black.withOpacity(0.05),
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.05),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
                 spreadRadius: 5,
@@ -796,7 +1138,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red.withOpacity(0.4),
+                      color: Colors.red.withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -839,7 +1181,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w500,
                   height: 1.5,
                 ),
@@ -861,11 +1203,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.white.withOpacity(0.1)
-                              : Colors.black.withOpacity(0.05),
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: colorScheme.primary.withOpacity(0.3),
+                            color: colorScheme.primary.withValues(alpha: 0.3),
                             width: 1.5,
                           ),
                         ),
@@ -905,7 +1247,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.4),
+                              color: Colors.red.withValues(alpha: 0.4),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),

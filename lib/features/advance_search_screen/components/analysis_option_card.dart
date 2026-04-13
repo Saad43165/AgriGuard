@@ -41,15 +41,15 @@ class AnalysisOptionCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isSelected
-                  ? color.withOpacity(isDark ? 0.15 : 0.1)
-                  : (isDark ? Colors.white.withOpacity(0.05) : Colors.white),
+                  ? color.withValues(alpha: isDark ? 0.15 : 0.1)
+                  : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected
                     ? color
                     : (isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.06)),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.06)),
                 width: isSelected ? 2 : 1.5,
               ),
             ),
@@ -62,9 +62,9 @@ class AnalysisOptionCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: isSelected
                         ? LinearGradient(
-                        colors: [color, color.withOpacity(0.8)])
+                        colors: [color, color.withValues(alpha: 0.8)])
                         : null,
-                    color: isSelected ? null : color.withOpacity(0.15),
+                    color: isSelected ? null : color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -101,7 +101,7 @@ class AnalysisOptionCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.2),
+                                color: Colors.grey.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -141,8 +141,8 @@ class AnalysisOptionCard extends StatelessWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: isDark
-                              ? Colors.white.withOpacity(0.6)
-                              : Colors.black.withOpacity(0.5),
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : Colors.black.withValues(alpha: 0.5),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -157,7 +157,7 @@ class AnalysisOptionCard extends StatelessWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: isDark
-                                ? Colors.orange.withOpacity(0.9)
+                                ? Colors.orange.withValues(alpha: 0.9)
                                 : Colors.orange.shade800,
                           ),
                           maxLines: 2,

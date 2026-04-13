@@ -27,13 +27,14 @@ import 'package:flutter/foundation.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
+import 'leaf_detector.dart';
 
 class DiseaseIdService {
   static const String _modelPath =
       'assets/models/plant_disease_dynamic_quant.tflite';
   static const String _labelsPath = 'assets/models/disease_labels.txt';
 
-  static const double _lowConfidenceThreshold = 0.6;
+  static const double _lowConfidenceThreshold = 60.0;
   static const int _minImageSize = 100;
   static const int _minImageBytes = 10240;
 
@@ -46,101 +47,8 @@ class DiseaseIdService {
   bool get isLoading => _isLoading;
 
   // ── Leaf detection ─────────────────────────────────────────────────────────
-  Future<Map<String, dynamic>> _performLeafDetection(File imageFile) async {
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final image = img.decodeImage(bytes);
-      if (image == null) {
-        return {
-          'isLeaf': true,
-          'confidence': 50.0,
-          'message': 'Failed to decode image'
-        };
-      }
-
-      final resizedImage = img.copyResize(image, width: 300);
-      int greenPixels = 0;
-      int totalPixels = resizedImage.width * resizedImage.height;
-      int edgeCount = 0;
-      const edgeThreshold = 25;
-
-      for (int y = 0; y < resizedImage.height; y++) {
-        for (int x = 0; x < resizedImage.width; x++) {
-          final pixel = resizedImage.getPixel(x, y);
-          final r = pixel.r.toDouble();
-          final g = pixel.g.toDouble();
-          final b = pixel.b.toDouble();
-
-          if (g > r * 1.2 && g > b * 1.2 && g > 30) greenPixels++;
-
-          if (y < resizedImage.height - 1 && x < resizedImage.width - 1) {
-            final current = (r + g + b) / 3;
-            final rightPixel = resizedImage.getPixel(x + 1, y);
-            final right =
-                (rightPixel.r + rightPixel.g + rightPixel.b) / 3;
-            final downPixel = resizedImage.getPixel(x, y + 1);
-            final down = (downPixel.r + downPixel.g + downPixel.b) / 3;
-            if ((current - right).abs() > edgeThreshold ||
-                (current - down).abs() > edgeThreshold) {
-              edgeCount++;
-            }
-          }
-        }
-      }
-
-      final greenPercentage = (greenPixels / totalPixels) * 100;
-      final edgeDensity = (edgeCount / totalPixels) * 100;
-
-      // Diseased leaves (rust, blight, scorch) lose green but gain warm
-      // orange/yellow/brown hues. Count warm pixels separately so they
-      // are not penalised by a green-only leaf check.
-      int warmPixels = 0;
-      for (int wy = 0; wy < resizedImage.height; wy++) {
-        for (int wx = 0; wx < resizedImage.width; wx++) {
-          final wp = resizedImage.getPixel(wx, wy);
-          final wr = wp.r.toDouble();
-          final wg = wp.g.toDouble();
-          final wb = wp.b.toDouble();
-          if (wr > 100 && wg > 40 && wb < 110 && wr > wb * 1.4) warmPixels++;
-        }
-      }
-      final warmPercentage = (warmPixels / totalPixels) * 100;
-      // Combined plant coverage: green + half of warm pixels
-      final plantPercentage = greenPercentage + (warmPercentage * 0.5);
-
-      // OLD rule: green > 25 && edge > 5  → fails orange/rusty diseased leaves
-      // NEW rule: plant coverage > 15% with edge > 4%, OR strong edge alone
-      final isLeaf = (plantPercentage > 15 && edgeDensity > 4) ||
-          (edgeDensity > 8 && plantPercentage > 8);
-
-      final confidence = (plantPercentage * 0.55) + (edgeDensity * 0.45);
-
-      debugPrint('🍃 Disease Service Leaf Detection:');
-      debugPrint('   Green: ${greenPercentage.toStringAsFixed(1)}%');
-      debugPrint('   Warm:  ${warmPercentage.toStringAsFixed(1)}%');
-      debugPrint('   Plant: ${plantPercentage.toStringAsFixed(1)}%');
-      debugPrint('   Edge Density: ${edgeDensity.toStringAsFixed(1)}%');
-      debugPrint('   Is Leaf: $isLeaf');
-      debugPrint('   Confidence: ${confidence.toStringAsFixed(1)}%');
-
-      return {
-        'isLeaf': isLeaf,
-        'confidence': confidence,
-        'greenPercentage': greenPercentage,
-        'edgeDensity': edgeDensity,
-        'message': isLeaf
-            ? 'Image appears to be a plant leaf'
-            : 'Image does not appear to be a plant leaf',
-      };
-    } catch (e) {
-      debugPrint('❌ Leaf detection error: $e');
-      return {
-        'isLeaf': true,
-        'confidence': 50.0,
-        'message': 'Detection error'
-      };
-    }
-  }
+  Future<Map<String, dynamic>> _performLeafDetection(File imageFile) =>
+      LeafDetector.detect(imageFile);
 
   // ── FIX 2: Visual disease indicator check ─────────────────────────────────
   // Detects warm-coloured lesions (rust, blight, scorch) that indicate the
@@ -148,7 +56,7 @@ class DiseaseIdService {
   //
   // Returns a penalty multiplier (0.0–1.0) to apply to the healthy class
   // score. 1.0 = no penalty, 0.5 = halve the healthy score, etc.
-  double _computeHealthyPenalty(File imageFile, img.Image resized) {
+  double _computeHealthyPenalty(img.Image resized) {
     try {
       int warmPixels = 0; // orange / yellow / brown pixels
       int totalPixels = resized.width * resized.height;
@@ -267,7 +175,7 @@ class DiseaseIdService {
       double healthyPenalty = 1.0;
       if (rawImage != null) {
         final smallImage = img.copyResize(rawImage, width: 100);
-        healthyPenalty = _computeHealthyPenalty(imageFile, smallImage);
+        healthyPenalty = _computeHealthyPenalty(smallImage);
       }
 
       // STEP 4: Preprocess and run inference

@@ -1,7 +1,7 @@
-// lib/features/home/screens/species/species_grid_widget.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/translation_service.dart';
+import '../../../../core/widgets/app_themes.dart';
 import 'plant_species.dart';
 
 class SpeciesGridWidget extends StatelessWidget {
@@ -94,32 +94,19 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
             child: Container(
               width: 72,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                    widget.species.color.withOpacity(0.25),
-                    widget.species.color.withOpacity(0.15),
-                  ]
-                      : [
-                    Colors.white,
-                    widget.species.color.withOpacity(0.12),
-                  ],
-                ),
+                color: isDark
+                    ? widget.species.color.withValues(alpha: 0.2)
+                    : widget.species.color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: _isPressed
-                      ? widget.species.color.withOpacity(0.6)
-                      : widget.species.color.withOpacity(0.35),
-                  width: 2,
+                  color: widget.species.color.withValues(alpha: _isPressed ? 0.8 : 0.5),
+                  width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                    widget.species.color.withOpacity(_isPressed ? 0.35 : 0.2),
-                    blurRadius: _isPressed ? 12 : 10,
-                    offset: Offset(0, _isPressed ? 4 : 3),
+                    color: widget.species.color.withValues(alpha: _isPressed ? 0.4 : 0.25),
+                    blurRadius: _isPressed ? 12 : 8,
+                    offset: Offset(0, _isPressed ? 4 : 2),
                   ),
                 ],
               ),
@@ -138,13 +125,13 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              widget.species.color.withOpacity(0.25),
-                              widget.species.color.withOpacity(0.15),
+                              widget.species.color.withValues(alpha: 0.25),
+                              widget.species.color.withValues(alpha: 0.15),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: widget.species.color.withOpacity(0.35),
+                            color: widget.species.color.withValues(alpha: 0.35),
                             width: 1.5,
                           ),
                         ),
@@ -168,11 +155,12 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                     Text(
                       widget.species.getName(translation.isUrdu),
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                         height: 1.2,
                         letterSpacing: -0.2,
+                        color: isDark ? AppColors.darkOnSurface : widget.species.color,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -206,7 +194,7 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
               const BorderRadius.vertical(top: Radius.circular(28)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 20,
                   offset: const Offset(0, -4),
                 ),
@@ -220,7 +208,7 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: widget.species.color.withOpacity(0.4),
+                    color: widget.species.color.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -248,20 +236,20 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: [
-                                          widget.species.color.withOpacity(0.3),
-                                          widget.species.color.withOpacity(0.15),
+                                          widget.species.color.withValues(alpha: 0.3),
+                                          widget.species.color.withValues(alpha: 0.15),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(18),
                                       border: Border.all(
                                         color: widget.species.color
-                                            .withOpacity(0.4),
+                                            .withValues(alpha: 0.4),
                                         width: 2,
                                       ),
                                       boxShadow: [
                                         BoxShadow(
                                           color: widget.species.color
-                                              .withOpacity(0.25),
+                                              .withValues(alpha: 0.25),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -294,11 +282,11 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                                         ),
                                         decoration: BoxDecoration(
                                           color: widget.species.color
-                                              .withOpacity(0.2),
+                                              .withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(6),
                                           border: Border.all(
                                             color: widget.species.color
-                                                .withOpacity(0.4),
+                                                .withValues(alpha: 0.4),
                                             width: 1,
                                           ),
                                         ),
@@ -336,7 +324,7 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                                           color: Theme.of(context)
                                               .colorScheme
                                               .onSurface
-                                              .withOpacity(0.6),
+                                              .withValues(alpha: 0.6),
                                           fontStyle: FontStyle.italic,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
@@ -391,14 +379,14 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                                 gradient: LinearGradient(
                                   colors: [
                                     widget.species.color,
-                                    widget.species.color.withOpacity(0.8),
+                                    widget.species.color.withValues(alpha: 0.8),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
                                     color:
-                                    widget.species.color.withOpacity(0.4),
+                                    widget.species.color.withValues(alpha: 0.4),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -463,13 +451,13 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            color.withOpacity(0.15),
-            color.withOpacity(0.08),
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.08),
           ],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -479,10 +467,10 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 width: 1.5,
               ),
             ),
@@ -511,7 +499,7 @@ class _ModernSpeciesCardState extends State<_ModernSpeciesCard>
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.75),
+                        .withValues(alpha: 0.75),
                     height: 1.4,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,

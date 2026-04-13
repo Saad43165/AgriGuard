@@ -35,12 +35,12 @@ class ProfileImageWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: theme.colorScheme.outline.withOpacity(0.15),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.15),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -67,7 +67,7 @@ class ProfileImageWidget extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -87,7 +87,7 @@ class ProfileImageWidget extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withValues(alpha: 0.4),
                   ),
                   child: const Center(
                     child: CircularProgressIndicator(
@@ -121,7 +121,7 @@ class ProfileImageWidget extends StatelessWidget {
 
   Widget _buildPlaceholder(ThemeData theme, double size) {
     return Container(
-      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -129,14 +129,14 @@ class ProfileImageWidget extends StatelessWidget {
             Icon(
               Icons.person_rounded,
               size: size * 0.35,
-              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             ),
             SizedBox(height: 8),
             Text(
               'Add Photo',
               style: TextStyle(
                 fontSize: 12,
-                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w500,
               ),
             ),

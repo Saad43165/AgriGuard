@@ -84,14 +84,14 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: weatherColor.withOpacity(isDark ? 0.3 : 0.2),
+          color: weatherColor.withValues(alpha: isDark ? 0.3 : 0.2),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.4)
-                : weatherColor.withOpacity(0.25),
+                ? Colors.black.withValues(alpha: 0.4)
+                : weatherColor.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -127,10 +127,10 @@ class _WeatherCardState extends State<WeatherCard> with SingleTickerProviderStat
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.25),
-                      Colors.black.withOpacity(0.1),
+                      Colors.black.withValues(alpha: 0.25),
+                      Colors.black.withValues(alpha: 0.1),
                       Colors.transparent,
-                      Colors.black.withOpacity(0.15),
+                      Colors.black.withValues(alpha: 0.15),
                     ],
                     stops: const [0.0, 0.15, 0.7, 1.0],
                   ),

@@ -129,8 +129,8 @@ class HistoryScanCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.blue.withOpacity(0.1),
-            Colors.purple.withOpacity(0.1),
+            Colors.blue.withValues(alpha: 0.1),
+            Colors.purple.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -139,7 +139,7 @@ class HistoryScanCard extends StatelessWidget {
         child: Icon(
           Icons.photo_library_rounded,
           size: size * 0.3,
-          color: Colors.blue.withOpacity(0.3),
+          color: Colors.blue.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -160,13 +160,13 @@ class HistoryScanCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         border: Border.all(
           color: _isAdvanced
-              ? theme.colorScheme.primary.withOpacity(0.3)
-              : theme.colorScheme.outline.withOpacity(0.2),
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
           width: _isAdvanced ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -194,7 +194,7 @@ class HistoryScanCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 3,
                             offset: Offset(0, 1),
                           ),
@@ -259,11 +259,11 @@ class HistoryScanCard extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: _getSeverityColor(severity)
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                     color: _getSeverityColor(severity)
-                                        .withOpacity(0.3),
+                                        .withValues(alpha: 0.3),
                                     width: 1,
                                   ),
                                 ),
@@ -292,7 +292,7 @@ class HistoryScanCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                                 ),
                               ),
                               SizedBox(width: 8),
@@ -300,7 +300,7 @@ class HistoryScanCard extends StatelessWidget {
                                 Icons.circle,
                                 size: 4,
                                 color:
-                                theme.colorScheme.onSurface.withOpacity(0.3),
+                                theme.colorScheme.onSurface.withValues(alpha: 0.3),
                               ),
                               SizedBox(width: 8),
                               Expanded(
@@ -310,7 +310,7 @@ class HistoryScanCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.6),
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),
@@ -332,7 +332,7 @@ class HistoryScanCard extends StatelessWidget {
                         padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color:
-                          theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -362,7 +362,7 @@ class HistoryScanCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: _getSeverityColor(severity)
-                                    .withOpacity(0.15),
+                                    .withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -387,17 +387,17 @@ class HistoryScanCard extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.error.withOpacity(0.08),
+                          color: theme.colorScheme.error.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: theme.colorScheme.error.withOpacity(0.2),
+                            color: theme.colorScheme.error.withValues(alpha: 0.2),
                             width: 1,
                           ),
                         ),
                         child: Icon(
                           Icons.delete_outline_rounded,
                           size: 18,
-                          color: theme.colorScheme.error.withOpacity(0.7),
+                          color: theme.colorScheme.error.withValues(alpha: 0.7),
                         ),
                       ),
                     ),

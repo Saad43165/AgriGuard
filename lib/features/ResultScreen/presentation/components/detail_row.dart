@@ -34,19 +34,19 @@ class DetailRow extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                effectiveIconColor.withOpacity(0.2),
-                effectiveIconColor.withOpacity(0.1),
+                effectiveIconColor.withValues(alpha: 0.2),
+                effectiveIconColor.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(isHighlight ? 14 : 12),
             border: Border.all(
-              color: effectiveIconColor.withOpacity(0.3),
+              color: effectiveIconColor.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: isHighlight
                 ? [
               BoxShadow(
-                color: effectiveIconColor.withOpacity(0.3),
+                color: effectiveIconColor.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -71,8 +71,8 @@ class DetailRow extends StatelessWidget {
                   fontSize: isHighlight ? 13 : 12,
                   fontWeight: FontWeight.w600,
                   color: isDark
-                      ? Colors.white.withOpacity(0.5)
-                      : Colors.black.withOpacity(0.4),
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.black.withValues(alpha: 0.4),
                   letterSpacing: 0.8,
                 ),
               ),
