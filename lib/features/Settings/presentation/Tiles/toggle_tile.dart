@@ -63,17 +63,9 @@ class _ToggleTileState extends State<ToggleTile> with SingleTickerProviderStateM
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: widget.value
-                        ? [
-                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
-                    ]
-                        : [
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                    ],
-                  ),
+                  color: widget.value
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
                 child: Icon(
                   widget.icon,

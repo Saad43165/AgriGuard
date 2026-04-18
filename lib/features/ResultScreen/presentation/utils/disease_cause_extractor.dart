@@ -23,32 +23,20 @@ class DiseaseCauseExtractor {
 
   List<dynamic> extract() {
     try {
-      if (!isLeafImage) {
-        return _getNonLeafCauses();
-      }
+      if (!isLeafImage) return _getNonLeafCauses();
+      if (_isFailedAnalysis()) return _getFailedAnalysisCauses();
+      if (_isUnknownPlant()) return _getUnknownPlantCauses();
+      if (_isHealthyPlant()) return _getHealthyPlantCauses();
+      if (confidence < minimumConfidence) return _getLowConfidenceCauses();
 
-      if (_isFailedAnalysis()) {
-        return _getFailedAnalysisCauses();
-      }
+      // The JSON has a "plant_disease_causes" wrapper — unwrap it
+      final causesDb = diseaseCauses['plant_disease_causes'] as Map<String, dynamic>?
+          ?? diseaseCauses;
 
-      if (_isUnknownPlant()) {
-        return _getUnknownPlantCauses();
-      }
-
-      if (_isHealthyPlant()) {
-        return _getHealthyPlantCauses();
-      }
-
-      if (confidence < minimumConfidence) {
-        return _getLowConfidenceCauses();
-      }
-
-      final diseaseKey = _findDiseaseKey();
-      if (diseaseKey != null && diseaseCauses.containsKey(diseaseKey)) {
-        final causes = _extractCausesFromKey(diseaseKey);
-        if (causes.isNotEmpty) {
-          return causes;
-        }
+      final diseaseKey = _findDiseaseKey(causesDb);
+      if (diseaseKey != null && causesDb.containsKey(diseaseKey)) {
+        final causes = _extractCausesFromKey(diseaseKey, causesDb);
+        if (causes.isNotEmpty) return causes;
       }
 
       return _tryGeneralCauses();
@@ -231,54 +219,100 @@ class DiseaseCauseExtractor {
         diseaseName?.toLowerCase().contains('healthy') == true;
   }
 
-  String? _findDiseaseKey() {
-    if (rawLabel != null && diseaseCauses.containsKey(rawLabel)) {
-      return rawLabel;
-    }
+  String? _findDiseaseKey(Map<String, dynamic> causesDb) {
+    // Try rawLabel directly (new format: "Apple Brown_spot" → build key)
+    if (rawLabel != null) {
+      // Try direct key match
+      if (causesDb.containsKey(rawLabel)) return rawLabel;
 
-    if (rawLabel != null && diseaseMapping.containsKey(rawLabel)) {
-      final displayName = diseaseMapping[rawLabel]['display_name']?.toString();
-      if (displayName != null) {
-        return _findKeyByDisplayName(displayName);
+      // Build key from mapping.json — try rawLabel as mapping key
+      if (diseaseMapping.containsKey(rawLabel)) {
+        final entry = diseaseMapping[rawLabel];
+        if (entry is Map) {
+          final plant = entry['plant']?.toString() ?? '';
+          final disease = entry['disease']?.toString() ?? '';
+          // Build PlantCity key format: Plant_Plant_disease
+          final plantClean = plant.replaceAll(' ', '_').replaceAll('(', '').replaceAll(')', '');
+          final diseaseClean = disease.replaceAll(' ', '_').toLowerCase();
+          final key = '${plantClean}_${plantClean}_$diseaseClean';
+          if (causesDb.containsKey(key)) return key;
+        }
       }
     }
 
+    // Try constructed key from plantName + diseaseName
     if (plantName != null && diseaseName != null) {
-      final constructedKey =
-          '${plantName!.replaceAll(' ', '_')}___${diseaseName!.replaceAll(' ', '_').toLowerCase()}';
-      if (diseaseCauses.containsKey(constructedKey)) {
-        return constructedKey;
+      // Normalize plant name — handle Corn/Maize alias
+      final pNorm = _normalizePlantName(plantName!);
+      final pClean = pNorm.replaceAll(' ', '_');
+      final dClean = diseaseName!.replaceAll(' ', '_').toLowerCase();
+
+      // PlantCity format: Plant_Plant_disease
+      final key1 = '${pClean}_${pClean}_$dClean';
+      if (causesDb.containsKey(key1)) return key1;
+
+      // Case-insensitive search
+      final lowerKey = key1.toLowerCase();
+      for (final k in causesDb.keys) {
+        if (k.toLowerCase() == lowerKey) return k;
+      }
+
+      // Partial match — plant prefix + disease fragment
+      final plantLower = pClean.toLowerCase();
+      final diseaseLower = dClean.toLowerCase();
+      for (final k in causesDb.keys) {
+        final kl = k.toLowerCase();
+        if (kl.startsWith(plantLower) && kl.contains(diseaseLower)) return k;
+      }
+
+      // Try just disease fragment
+      for (final k in causesDb.keys) {
+        if (k.toLowerCase().contains(diseaseLower) && diseaseLower.length > 4) return k;
       }
     }
 
     return null;
   }
 
-  String? _findKeyByDisplayName(String displayName) {
-    if (!displayName.contains(' - ')) return null;
+  /// Normalize plant name to match JSON keys (e.g. Corn → Maize)
+  String _normalizePlantName(String name) {
+    const aliases = {
+      'corn': 'Maize',
+      'maize': 'Maize',
+      'persimmon': 'Persimmon',
+    };
+    return aliases[name.toLowerCase()] ?? name;
+  }
 
+  String? _findKeyByDisplayName(String displayName, Map<String, dynamic> causesDb) {
+    if (!displayName.contains(' - ')) return null;
     final parts = displayName.split(' - ');
     if (parts.length != 2) return null;
-
     final plant = parts[0].replaceAll(' ', '_');
     final disease = parts[1].replaceAll(' ', '_').toLowerCase();
-
     final key = '${plant}___$disease';
-    if (diseaseCauses.containsKey(key)) return key;
-
+    if (causesDb.containsKey(key)) return key;
     if (disease == 'healthy') {
       final healthyKey = '${plant}___healthy';
-      if (diseaseCauses.containsKey(healthyKey)) return healthyKey;
+      if (causesDb.containsKey(healthyKey)) return healthyKey;
     }
-
     return null;
   }
 
-  List<dynamic> _extractCausesFromKey(String key) {
-    final diseaseData = diseaseCauses[key];
-    if (diseaseData is Map && diseaseData.containsKey('causes')) {
+  List<dynamic> _extractCausesFromKey(String key, Map<String, dynamic> causesDb) {
+    final diseaseData = causesDb[key];
+    if (diseaseData is Map) {
+      // Try 'causes' key first, then 'causes_ur' for bilingual
       final causes = diseaseData['causes'];
+      final causesUr = diseaseData['causes_ur'];
       if (causes is List && causes.isNotEmpty) {
+        // Return bilingual list if Urdu available
+        if (causesUr is List && causesUr.length == causes.length) {
+          return List.generate(causes.length, (i) => {
+            'en': causes[i].toString(),
+            'ur': causesUr[i].toString(),
+          });
+        }
         return List.from(causes);
       }
     }
@@ -286,32 +320,30 @@ class DiseaseCauseExtractor {
   }
 
   List<dynamic> _tryGeneralCauses() {
-    if (diseaseName == null ||
-        !diseaseCauses.containsKey('general_disease_causes')) {
+    // Try general causes from the JSON
+    final causesDb = diseaseCauses['plant_disease_causes'] as Map<String, dynamic>?
+        ?? diseaseCauses;
+    final generalCauses = diseaseCauses['general_disease_causes'] as Map?
+        ?? causesDb['general_disease_causes'] as Map?;
+
+    if (diseaseName == null || generalCauses == null) {
       return _getFallbackCauses();
     }
-
-    final generalCauses = diseaseCauses['general_disease_causes'];
-    if (generalCauses is! Map) return _getFallbackCauses();
 
     final lowerDisease = diseaseName!.toLowerCase();
     String? causeType;
 
-    if (lowerDisease.contains('spot')) {
-      causeType = 'bacterial_spot';
-    } else if (lowerDisease.contains('blight')) {
-      causeType = 'blight';
-    } else if (lowerDisease.contains('rust')) {
-      causeType = 'rust_disease';
-    } else if (lowerDisease.contains('mildew')) {
-      causeType = 'powdery_mildew';
-    }
+    if (lowerDisease.contains('spot')) causeType = 'bacterial_spot';
+    else if (lowerDisease.contains('blight')) causeType = 'blight';
+    else if (lowerDisease.contains('rust')) causeType = 'rust_disease';
+    else if (lowerDisease.contains('mildew')) causeType = 'powdery_mildew';
+    else if (lowerDisease.contains('virus') || lowerDisease.contains('curl')) causeType = 'viral';
+    else if (lowerDisease.contains('rot')) causeType = 'rot';
+    else if (lowerDisease.contains('scorch') || lowerDisease.contains('scab')) causeType = 'fungal';
 
     if (causeType != null && generalCauses.containsKey(causeType)) {
       final causes = generalCauses[causeType]['general_causes'];
-      if (causes is List && causes.isNotEmpty) {
-        return List.from(causes);
-      }
+      if (causes is List && causes.isNotEmpty) return List.from(causes);
     }
 
     return _getFallbackCauses();

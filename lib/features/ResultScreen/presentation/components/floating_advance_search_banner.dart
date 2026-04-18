@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../../core/widgets/app_themes.dart';
 
 class FloatingAdvancedSearchBanner extends StatefulWidget {
   final VoidCallback onTap;
@@ -27,26 +28,13 @@ class _FloatingAdvancedSearchBannerState
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutBack,
-    ));
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
-
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
     _controller.forward();
   }
 
@@ -64,8 +52,11 @@ class _FloatingAdvancedSearchBannerState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return SlideTransition(
       position: _slideAnimation,
@@ -74,30 +65,12 @@ class _FloatingAdvancedSearchBannerState
         child: Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                const Color(0xFF1E88E5),
-                const Color(0xFF1976D2),
-                const Color(0xFF1565C0),
-              ]
-                  : [
-                const Color(0xFF42A5F5),
-                const Color(0xFF2196F3),
-                const Color(0xFF1E88E5),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2196F3).withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -106,134 +79,63 @@ class _FloatingAdvancedSearchBannerState
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () {
-                HapticFeedback.mediumImpact();
-                widget.onTap();
-              },
-              borderRadius: BorderRadius.circular(20),
+              onTap: () { HapticFeedback.mediumImpact(); widget.onTap(); },
+              borderRadius: BorderRadius.circular(16),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 child: Row(
                   children: [
-                    // Animated Icon
-                    _buildAnimatedIcon(),
-                    const SizedBox(width: 16),
-
-                    // Text Content
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 24),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.stars_rounded,
-                                      size: 12,
-                                      color: Colors.yellow[300],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'NEW',
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 10,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Advanced AI Analysis',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            'Advanced AI Analysis',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: textColor,
+                            ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             'Get deeper insights with Groq AI & Plant.id',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 13,
-                            ),
-                            maxLines: 2,
+                            style: TextStyle(fontSize: 12, color: captionColor),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-
-                    // Action Buttons
-                    Column(
-                      children: [
-                        // Try Button
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            'Try Now',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: const Color(0xFF1976D2),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Close Button
-                        GestureDetector(
-                          onTap: _handleDismiss,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () { HapticFeedback.mediumImpact(); widget.onTap(); },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Try'),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: _handleDismiss,
+                      child: Icon(Icons.close_rounded, size: 18, color: captionColor),
                     ),
                   ],
                 ),
@@ -242,40 +144,6 @@ class _FloatingAdvancedSearchBannerState
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAnimatedIcon() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(seconds: 2),
-      builder: (context, value, child) {
-        return Transform.rotate(
-          angle: value * 2 * 3.14159, // Full rotation
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 2,
-              ),
-            ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-        );
-      },
-      onEnd: () {
-        // Restart animation
-        if (mounted) {
-          setState(() {});
-        }
-      },
     );
   }
 }

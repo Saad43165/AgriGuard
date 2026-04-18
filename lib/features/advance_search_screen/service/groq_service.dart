@@ -32,37 +32,35 @@ class GroqService {
       final apiKey = _requireApiKey();
 
       final system = '''
-You are an agronomy assistant for a farmer-facing app.
-Return a SINGLE valid JSON object (no markdown) with these exact fields:
+You are an expert agronomist assistant for a farmer-facing mobile app called AgriGuard.
+Your job is to provide accurate, practical plant disease advice.
+
+Return ONLY a single valid JSON object (no markdown, no explanation) with these exact fields:
 {
-  "plantName": "...",
-  "diseaseName": "...",
-  "confidence": "...",
-  "severity": "None/Low/Medium/High/Critical",
-  "cause": "...",
-  "symptoms": ["..."],
-  "remediation": ["..."],
-  "precautions": ["..."]
+  "plantName": "string — common plant name",
+  "diseaseName": "string — disease name or Healthy",
+  "confidence": "string — e.g. 87.5",
+  "severity": "None | Low | Medium | High | Critical",
+  "cause": "string — primary cause (fungal/bacterial/viral/environmental)",
+  "symptoms": ["string", "string", "string"],
+  "remediation": ["string", "string", "string", "string"],
+  "precautions": ["string", "string", "string"]
 }
 
-Constraints:
-- Keep remediation practical and safe.
-- If diseaseName is "Healthy", severity must be "None" and cause should indicate no disease detected.
+Rules:
+- If diseaseName is "Healthy", severity must be "None"
+- remediation must be specific, actionable, and safe for small farmers
+- symptoms must be observable visual signs
+- Keep each string under 100 characters
+- Do NOT include markdown, code blocks, or extra text
 ''';
 
-      final user = '''
-Plant: $plantName
-Disease: $diseaseName
-Severity: $severity
-ConfidencePercent: $confidencePercent
-
-Generate the JSON now.
-''';
+      final user = 'Plant: $plantName\nDisease: $diseaseName\nSeverity: $severity\nConfidence: $confidencePercent%\n\nGenerate the JSON.';
 
       final body = {
         'model': dotenv.env['GROQ_MODEL']?.trim().isNotEmpty == true
             ? dotenv.env['GROQ_MODEL']!.trim()
-            : 'llama-3.3-70b-versatile',
+            : 'llama-3.1-8b-instant',  // fast + accurate for structured JSON
         'temperature': 0.2,
         'max_tokens': 900,
         'messages': [
@@ -93,10 +91,10 @@ Generate the JSON now.
         // one retry for slow networks
         resp = await postWithModel(body['model'] as String);
       }
-      // Auto-fallback if Groq decommissions the configured model.
+      // Auto-fallback if model is decommissioned
       if (resp.statusCode == 400 &&
           resp.body.toLowerCase().contains('decommissioned')) {
-        resp = await postWithModel('llama-3.3-70b-versatile');
+        resp = await postWithModel('llama-3.1-8b-instant');
       }
 
       if (resp.statusCode < 200 || resp.statusCode >= 300) {

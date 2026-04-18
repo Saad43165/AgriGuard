@@ -8,7 +8,7 @@ class ResultScreenConstants {
   static const Duration scaleAnimationDuration = Duration(milliseconds: 600);
 
   // Confidence thresholds
-  static const double minimumConfidence = 30.0;
+  static const double minimumConfidence = 5.0;
   static const double nonLeafConfidence = 95.0;
   static const double leafDetectionThreshold = 40.0;
 

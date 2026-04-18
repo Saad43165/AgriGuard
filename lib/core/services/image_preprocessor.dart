@@ -1,6 +1,7 @@
 // lib/services/image_preprocessor.dart
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img_lib;
 
 class ImagePreprocessor {
@@ -14,11 +15,11 @@ class ImagePreprocessor {
       final bytes = await imageFile.readAsBytes();
       var image = img_lib.decodeImage(bytes);
       if (image == null) {
-        print('❌ Failed to decode image');
+        debugPrint('❌ Failed to decode image');
         return null;
       }
 
-      print('📸 Original image: ${image.width}x${image.height}');
+      debugPrint('📸 Original image: ${image.width}x${image.height}');
 
       // Fix orientation if needed
       image = img_lib.bakeOrientation(image);
@@ -31,11 +32,11 @@ class ImagePreprocessor {
         interpolation: img_lib.Interpolation.linear,
       );
 
-      print('✓ Resized to: ${resized.width}x${resized.height}');
+      debugPrint('✓ Resized to: ${resized.width}x${resized.height}');
 
       return resized;
     } catch (e) {
-      print('❌ Preprocess error: $e');
+      debugPrint('❌ Preprocess error: $e');
       return null;
     }
   }
@@ -93,10 +94,10 @@ class ImagePreprocessor {
 
   /// Debug helper: print sample pixel values
   static void debugPixels(img_lib.Image image, {int samples = 5}) {
-    print('🔍 Sample pixel values:');
+    debugPrint('🔍 Sample pixel values:');
     for (int i = 0; i < samples && i < image.width; i++) {
       final pixel = image.getPixel(i, i);
-      print('  Pixel($i,$i): R=${pixel.r.toInt()}, G=${pixel.g.toInt()}, B=${pixel.b.toInt()}');
+      debugPrint('  Pixel($i,$i): R=${pixel.r.toInt()}, G=${pixel.g.toInt()}, B=${pixel.b.toInt()}');
     }
 
     // Calculate basic stats
@@ -111,6 +112,6 @@ class ImagePreprocessor {
     }
     
     final totalPixels = image.width * image.height;
-    print('  Average RGB: (${sumR ~/ totalPixels}, ${sumG ~/ totalPixels}, ${sumB ~/ totalPixels})');
+    debugPrint('  Average RGB: (${sumR ~/ totalPixels}, ${sumG ~/ totalPixels}, ${sumB ~/ totalPixels})');
   }
 }

@@ -123,12 +123,7 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    gradient: LinearGradient(
-                      colors: [
-                        Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                        Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
-                      ],
-                    ),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   ),
                   child: Icon(
                     Icons.info_outline_rounded,

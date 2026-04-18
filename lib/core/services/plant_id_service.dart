@@ -18,9 +18,9 @@ class PlantIdService {
   static const String _labelsPath = 'assets/models/labels.txt';
   static const int _inputSize = 224;
 
-  static const double _baseConfidenceThreshold = 0.60;
-  static const double _highConfidenceThreshold = 0.80;
-  static const double _minAcceptableConfidence = 0.50;
+  static const double _baseConfidenceThreshold = 0.45;
+  static const double _highConfidenceThreshold = 0.75;
+  static const double _minAcceptableConfidence = 0.35;
 
   final String _normalizationScheme = '[-1, 1]';
 
@@ -31,17 +31,20 @@ class PlantIdService {
   int _numClasses = 0;
 
   final Map<String, double> _classSpecificThresholds = {
-    'Soybean': 0.50,
-    'Wheat': 0.50,
-    'Cherry': 0.45,
-    'Peach': 0.45,
-    'Strawberry': 0.45,
-    'Bell pepper': 0.48,
-    'Potato': 0.50,
-    'Apple': 0.50,
-    'Grape': 0.50,
-    'Corn (Maize)': 0.50,
-    'Tomato': 0.50,
+    'Apple': 0.30,
+    'Blueberry': 0.30,
+    'Cherry': 0.28,
+    'Corn': 0.30,
+    'Grape': 0.30,
+    'Orange': 0.30,
+    'Peach': 0.28,
+    'Bell Pepper': 0.28,
+    'Potato': 0.30,
+    'Raspberry': 0.28,
+    'Soybean': 0.30,
+    'Squash': 0.28,
+    'Strawberry': 0.28,
+    'Tomato': 0.30,
   };
 
   bool get isLoaded => _isLoaded;
@@ -89,6 +92,7 @@ class PlantIdService {
     _inputShape  = inputTensor.shape;
     _outputShape = outputTensor.shape;
     _numClasses  = _outputShape[1];
+    debugPrint('🔬 PlantID tensor types: input=${_tensorTypeToString(_inputType)} output=${_tensorTypeToString(_outputType)}');
   }
 
   String _tensorTypeToString(TensorType type) {
@@ -114,9 +118,9 @@ class PlantIdService {
     } catch (e) {
       debugPrint('⚠️ Failed to load labels, using default: $e');
       _labels = [
-        'Apple', 'Bell pepper', 'Cherry', 'Corn (Maize)',
-        'Grape', 'Peach', 'Potato', 'Soybean',
-        'Strawberry', 'Tomato', 'Wheat',
+        'Apple', 'Blueberry', 'Cherry', 'Corn', 'Grape',
+        'Orange', 'Peach', 'Bell Pepper', 'Potato', 'Raspberry',
+        'Soybean', 'Squash', 'Strawberry', 'Tomato',
       ];
     }
   }
@@ -153,17 +157,33 @@ class PlantIdService {
 
   // ── Inference helpers ──────────────────────────────────────────────────────
   dynamic _prepareInput(img_lib.Image image) {
-    if (_inputType == TensorType.uint8) return _prepareUint8Input(image);
+    if (_inputType == TensorType.uint8) {
+      debugPrint('🔢 PlantID: using UINT8 input (0-255)');
+      return _prepareUint8Input(image);
+    }
+    // Dynamic-quantized models keep float32 interface but were trained with
+    // ImageNet normalization: mean=[0.485,0.456,0.406] std=[0.229,0.224,0.225]
+    debugPrint('🔢 PlantID: using FLOAT32 input (ImageNet normalization)');
+    return _prepareImageNetInput(image);
+  }
 
-    final bytes = image.getBytes(order: img_lib.ChannelOrder.rgba);
-    final floatList = Float32List(3 * _inputSize * _inputSize);
-    int floatIndex = 0;
-    for (int i = 0; i < bytes.length; i += 4) {
-      for (int c = 0; c < 3; c++) {
-        floatList[floatIndex++] = (bytes[i + c].toDouble() / 127.5) - 1.0;
+  // ImageNet normalization: (pixel/255 - mean) / std
+  dynamic _prepareImageNetInput(img_lib.Image image) {
+    const means = [0.485, 0.456, 0.406];
+    const stds  = [0.229, 0.224, 0.225];
+    final shaped = List.generate(1, (_) =>
+      List.generate(_inputSize, (_) =>
+        List.generate(_inputSize, (_) =>
+          List<double>.filled(3, 0.0))));
+    for (int y = 0; y < _inputSize; y++) {
+      for (int x = 0; x < _inputSize; x++) {
+        final pixel = image.getPixel(x, y);
+        shaped[0][y][x][0] = (pixel.r.toDouble() / 255.0 - means[0]) / stds[0];
+        shaped[0][y][x][1] = (pixel.g.toDouble() / 255.0 - means[1]) / stds[1];
+        shaped[0][y][x][2] = (pixel.b.toDouble() / 255.0 - means[2]) / stds[2];
       }
     }
-    return _reshapeFloat32(floatList);
+    return shaped;
   }
 
   dynamic _reshapeFloat32(Float32List floatList) {
@@ -215,20 +235,29 @@ class PlantIdService {
   }
 
   List<double> _convertToProbabilities(dynamic output) {
-    List<double> probabilities;
+    List<double> raw;
     if (_outputType == TensorType.float32) {
-      probabilities = List<double>.from(output[0]);
+      raw = List<double>.from(output[0]);
     } else if (_outputType == TensorType.uint8) {
-      probabilities = List<int>.from(output[0]).map((v) => v / 255.0).toList();
+      raw = List<int>.from(output[0]).map((v) => v / 255.0).toList();
     } else if (_outputType == TensorType.int8) {
-      probabilities = List<int>.from(output[0]).map((v) => (v + 128) / 255.0).toList();
+      raw = List<int>.from(output[0]).map((v) => (v + 128) / 255.0).toList();
     } else {
       throw Exception('Unknown output type');
     }
-    if (probabilities.length != _numClasses) {
-      probabilities = probabilities.sublist(0, min(probabilities.length, _numClasses));
+    if (raw.length != _numClasses) {
+      raw = raw.sublist(0, min(raw.length, _numClasses));
     }
-    return probabilities;
+    // Apply softmax — model outputs raw logits
+    return _softmax(raw);
+  }
+
+  List<double> _softmax(List<double> logits) {
+    if (logits.isEmpty) return logits;
+    final maxVal = logits.reduce((a, b) => a > b ? a : b);
+    final exps = logits.map((v) => exp(v - maxVal)).toList();
+    final sum = exps.reduce((a, b) => a + b);
+    return exps.map((v) => v / sum).toList();
   }
 
   int _getMaxIndex(List<double> values) {
@@ -279,12 +308,44 @@ class PlantIdService {
       );
       if (image == null) throw Exception('Failed to process image');
 
-      // STEP 3: Inference
-      final input = _prepareInput(image);
+      // STEP 3: Inference with TTA
       final stopwatch = Stopwatch()..start();
-      final probabilities = _runInference(input);
+      final List<List<double>> ttaProbs = [];
+
+      // TTA variants: original, flipped, brightness adjusted
+      final ttaImages = <img_lib.Image>[
+        image,
+        img_lib.flipHorizontal(image),
+        img_lib.adjustColor(image, brightness: 1.15),
+        img_lib.adjustColor(image, brightness: 0.85),
+      ];
+
+      for (final ttaImg in ttaImages) {
+        final input = _prepareInput(ttaImg);
+        final probs = _runInference(input);
+        ttaProbs.add(probs);
+      }
+
+      // Average TTA predictions
+      final probabilities = List<double>.filled(_numClasses, 0.0);
+      for (final p in ttaProbs) {
+        for (int i = 0; i < probabilities.length && i < p.length; i++) {
+          probabilities[i] += p[i];
+        }
+      }
+      for (int i = 0; i < probabilities.length; i++) {
+        probabilities[i] /= ttaProbs.length;
+      }
       stopwatch.stop();
-      debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint('⏱️ Inference time (TTA x${ttaProbs.length}): ${stopwatch.elapsedMilliseconds}ms');
+
+      // Log raw distribution to diagnose normalization issues
+      debugPrint('🔬 PlantID raw distribution:');
+      for (int i = 0; i < probabilities.length && i < _labels.length; i++) {
+        if (probabilities[i] > 0.01) {
+          debugPrint('   ${_labels[i]}: ${(probabilities[i] * 100).toStringAsFixed(2)}%');
+        }
+      }
 
       // STEP 4: All predictions sorted by confidence
       final allPredictions = _getAllPredictions(probabilities);
@@ -399,9 +460,10 @@ class PlantIdService {
       };
     }
 
+    // Only reject as ambiguous if gap is very small AND both predictions are weak
     if (allPredictions.length > 1) {
       final secondConfidence = allPredictions[1]['confidence'] as double;
-      if (confidenceGap < 0.15 && topConfidence < 0.7 && secondConfidence > 0.3) {
+      if (confidenceGap < 0.06 && topConfidence < 0.50 && secondConfidence > 0.30) {
         return {
           'isUnknown': true,
           'thresholdUsed': classThreshold,
@@ -410,14 +472,6 @@ class PlantIdService {
               '2nd: ${(secondConfidence * 100).toStringAsFixed(1)}%)',
         };
       }
-    }
-
-    if (topConfidence < 0.3) {
-      return {
-        'isUnknown': true,
-        'thresholdUsed': classThreshold,
-        'reasoning': 'Unusually low confidence (${(topConfidence * 100).toStringAsFixed(1)}%)',
-      };
     }
 
     String reasoning = 'Confident prediction';

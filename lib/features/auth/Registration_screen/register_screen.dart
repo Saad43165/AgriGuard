@@ -1,577 +1,315 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:agriguard_fyp/features/auth/Registration_screen/utils/snackbar_utils.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/register_app_bar.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/step/step_one.dart';
-import 'package:agriguard_fyp/features/auth/Registration_screen/widgets/step/step_two.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../Forget_Pass_Screen/constants/app_colors.dart';
 import '../../Profile/utils/profile_image_manager.dart';
-import 'widgets/step/step_three.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final PageController _pageController = PageController();
-  int _currentStep = 0;
-
-  // Form Keys
-  final GlobalKey<FormState> _stepOneKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> _stepTwoKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> _stepThreeKey = GlobalKey<FormState>();
-
-  // ADDED: Keys to access step states
-  final GlobalKey<StepOneState> _stepOneStateKey = GlobalKey<StepOneState>();
-  final GlobalKey<StepTwoState> _stepTwoStateKey = GlobalKey<StepTwoState>();
-  final GlobalKey<StepThreeState> _stepThreeStateKey = GlobalKey<StepThreeState>();
-
-  // Controllers
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _farmSizeController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-
-  File? _imageFile;
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePass = true;
+  bool _obscureConfirm = true;
+  File? _imageFile;
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _locationController.dispose();
-    _farmSizeController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _nameCtrl.dispose(); _emailCtrl.dispose();
+    _passCtrl.dispose(); _confirmCtrl.dispose();
+    _locationCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage() async {
-    try {
-      HapticFeedback.lightImpact();
-      final pickedFile = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 90,
-      );
-
-      if (pickedFile != null) {
-        setState(() => _imageFile = File(pickedFile.path));
-        SnackbarUtils.showImageSuccessSnackBar(context);
-      }
-    } catch (e) {
-      HapticFeedback.heavyImpact();
-      SnackbarUtils.showImageErrorSnackBar(context, e.toString());
-    }
-  }
-
-  void _nextStep() {
-    bool isValid = false;
-
-    // FIXED: Enable autovalidation BEFORE validating
-    switch (_currentStep) {
-      case 0:
-      // Enable autovalidation in Step One
-        _stepOneStateKey.currentState?.enableAutoValidation();
-        isValid = _stepOneKey.currentState?.validate() ?? false;
-        break;
-      case 1:
-      // Step 2 is optional, always valid
-        _stepTwoStateKey.currentState?.enableAutoValidation();
-        isValid = _stepTwoKey.currentState?.validate() ?? true;
-        break;
-      case 2:
-      // Enable autovalidation in Step Three
-        _stepThreeStateKey.currentState?.enableAutoValidation();
-        isValid = _stepThreeKey.currentState?.validate() ?? false;
-        break;
-    }
-
-    if (isValid) {
-      if (_currentStep < 2) {
-        HapticFeedback.lightImpact();
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      } else {
-        _register();
-      }
-    } else {
-      // ADDED: Better error feedback
-      HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _currentStep == 0
-                      ? 'Please fill in your name and email'
-                      : _currentStep == 2
-                      ? 'Please enter and confirm your password'
-                      : 'Please check your inputs',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 3),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
-    }
-  }
-
-  void _previousStep() {
-    if (_currentStep > 0) {
-      HapticFeedback.lightImpact();
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  void _goToLogin() {
-    HapticFeedback.lightImpact();
-    Navigator.pop(context);
-  }
-
-  Future<String?> _uploadProfileImage(String uid) async {
-    if (_imageFile == null) return null;
-    try {
-      if (!await _imageFile!.exists()) return null;
-      final bytes = await _imageFile!.readAsBytes();
-      // Encode directly — image_picker already applies quality compression
-      return base64Encode(bytes);
-    } catch (e) {
-      debugPrint('❌ Base64 conversion error: $e');
-      return null;
-    }
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery, maxWidth: 800, maxHeight: 800, imageQuality: 85);
+    if (picked != null && mounted) setState(() => _imageFile = File(picked.path));
   }
 
   Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-
     try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
-      final name = _nameController.text.trim();
-      final phone = _phoneController.text.trim();
-      final location = _locationController.text.trim();
-      final farmSize = _farmSizeController.text.trim();
-
-      final credential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
-      final user = credential.user;
-
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailCtrl.text.trim(), password: _passCtrl.text.trim());
+      final user = cred.user;
       if (user == null) throw Exception('User creation failed');
 
-      final uid = user.uid;
-
-      String? profileImageUrl;
-      if (_imageFile != null && await _imageFile!.existsSync()) {
-        profileImageUrl = await _uploadProfileImage(uid);
+      String? imageUrl;
+      if (_imageFile != null && await _imageFile!.exists()) {
+        final bytes = await _imageFile!.readAsBytes();
+        imageUrl = base64Encode(bytes);
       }
 
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'fullName': name,
-        'email': email,
-        'phoneNumber': phone,
-        'location': location,
-        'farmSize': farmSize,
-        'profileImageUrl': profileImageUrl,
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'fullName': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'location': _locationCtrl.text.trim(),
+        'profileImageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
-        'emailVerified': false,
-        'uid': uid,
+        'uid': user.uid,
       });
 
       await user.sendEmailVerification();
 
       if (mounted) {
-        if (_imageFile != null) {
-          ProfileImageManager.setPendingImage(_imageFile!);
-        }
-
-        HapticFeedback.mediumImpact();
-        await _showSuccessDialog();
-
-        await FirebaseAuth.instance.signOut();
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
+        if (_imageFile != null) ProfileImageManager.setPendingImage(_imageFile!);
+        _showSuccess();
       }
     } on FirebaseAuthException catch (e) {
-      HapticFeedback.heavyImpact();
-      _handleFirebaseAuthError(e);
+      _snack(_authError(e.code), isError: true);
     } catch (e) {
-      HapticFeedback.heavyImpact();
-      SnackbarUtils.showUnexpectedErrorSnackBar(context, e.toString());
+      _snack('Registration failed. Please try again.', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _showSuccessDialog() async {
-    return showDialog(
+  void _showSuccess() {
+    showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        contentPadding: const EdgeInsets.all(32),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ),
-              ),
-              child: const Icon(Icons.check_rounded, color: Colors.white, size: 56),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              'Account Created!',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'A verification email has been sent to:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _emailController.text.trim(),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Please check your inbox and verify your email to login',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+      builder: (ctx) => AppDialog(
+        icon: const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20),
+        title: 'Account Created!',
+        content: Text(
+          'Verification email sent to ${_emailCtrl.text.trim()}',
+          style: const TextStyle(fontSize: 13),
         ),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Got it!',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+          AppDialogActions.primary(
+            ctx,
+            label: 'Go to Login',
+            icon: Icons.login_rounded,
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) Navigator.pushNamedAndRemoveUntil(
+                  context, AppRoutes.login, (_) => false);
+            },
           ),
         ],
       ),
     );
   }
 
-  void _handleFirebaseAuthError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'email-already-in-use':
-        SnackbarUtils.showEmailAlreadyInUseSnackBar(context);
-        _pageController.animateToPage(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-        break;
-      case 'weak-password':
-        SnackbarUtils.showWeakPasswordSnackBar(context);
-        break;
-      case 'invalid-email':
-        SnackbarUtils.showInvalidEmailSnackBar(context);
-        _pageController.animateToPage(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-        break;
-      default:
-        SnackbarUtils.showErrorSnackBar(
-          context: context,
-          message: 'Registration failed: ${e.message}',
-        );
+  String _authError(String code) {
+    switch (code) {
+      case 'email-already-in-use': return 'An account with this email already exists.';
+      case 'invalid-email': return 'Please enter a valid email address.';
+      case 'weak-password': return 'Password is too weak. Use 6+ characters.';
+      default: return 'Registration failed. Please try again.';
     }
+  }
+
+  void _snack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? AppColors.error : AppColors.primary,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeProvider.of(context).isDarkMode;
-
-    return PopScope(
-      canPop: _currentStep == 0,
-      onPopInvoked: (didPop) {
-        if (!didPop && _currentStep > 0) {
-          _previousStep();
-        }
-      },
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: RegisterAppBar(
-          currentStep: _currentStep,
-          onBackPressed: _currentStep > 0 ? _previousStep : _goToLogin,
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.lightOnSurface),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark ? AuthAppColors.darkGradient : AuthAppColors.lightGradient,
-              stops: AuthAppColors.gradientStops,
-            ),
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildProgressIndicator(),
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    onPageChanged: (index) => setState(() => _currentStep = index),
+        title: const Text('Create Account',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.lightOnSurface)),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.lightBorder),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+
+              // Profile photo
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
                     children: [
-                      StepOne(
-                        key: _stepOneStateKey, // ADDED: State key
-                        formKey: _stepOneKey,
-                        nameController: _nameController,
-                        emailController: _emailController,
-                        imageFile: _imageFile,
-                        onImagePick: _pickImage,
+                      CircleAvatar(
+                        radius: 44,
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                        backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                        child: _imageFile == null
+                            ? const Icon(Icons.person_outline_rounded,
+                                size: 40, color: AppColors.primary)
+                            : null,
                       ),
-                      StepTwo(
-                        key: _stepTwoStateKey, // ADDED: State key
-                        formKey: _stepTwoKey,
-                        phoneController: _phoneController,
-                        locationController: _locationController,
-                        farmSizeController: _farmSizeController,
-                      ),
-                      StepThree(
-                        key: _stepThreeStateKey, // ADDED: State key
-                        formKey: _stepThreeKey,
-                        passwordController: _passwordController,
-                        confirmPasswordController: _confirmPasswordController,
+                      Positioned(
+                        bottom: 0, right: 0,
+                        child: Container(
+                          width: 28, height: 28,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary, shape: BoxShape.circle),
+                          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                _buildNavigationButtons(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+              ),
+              const SizedBox(height: 8),
+              const Center(
+                child: Text('Add photo (optional)',
+                    style: TextStyle(fontSize: 12, color: AppColors.lightCaption)),
+              ),
+              const SizedBox(height: 24),
 
-  Widget _buildProgressIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        children: List.generate(3, (index) {
-          final isActive = index <= _currentStep;
+              _label('Full Name'),
+              const SizedBox(height: 6),
+              _field(_nameCtrl, 'Enter your full name', Icons.person_outline_rounded,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null),
+              const SizedBox(height: 16),
 
-          return Expanded(
-            child: Row(
-              children: [
-                Expanded(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: 4,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      gradient: isActive
-                          ? LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.secondary,
-                        ],
-                      )
-                          : null,
-                      color: isActive
-                          ? null
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-                    ),
+              _label('Email'),
+              const SizedBox(height: 6),
+              _field(_emailCtrl, 'Enter your email', Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null),
+              const SizedBox(height: 16),
+
+              _label('Location (optional)'),
+              const SizedBox(height: 6),
+              _field(_locationCtrl, 'City, Country', Icons.location_on_outlined),
+              const SizedBox(height: 16),
+
+              _label('Password'),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _passCtrl,
+                obscureText: _obscurePass,
+                decoration: _inputDeco('Create a password', Icons.lock_outline_rounded).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: const Color(0xFF9E9E9E), size: 20),
+                    onPressed: () => setState(() => _obscurePass = !_obscurePass),
                   ),
                 ),
-                if (index < 2) const SizedBox(width: 8),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
+                validator: (v) => (v == null || v.length < 6) ? 'Password must be 6+ characters' : null,
+              ),
+              const SizedBox(height: 16),
 
-  Widget _buildNavigationButtons() {
-    final padding = AppMeasurements.getResponsivePadding(context);
-
-    return Container(
-      padding: EdgeInsets.all(padding),
-      child: Row(
-        children: [
-          if (_currentStep > 0)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isLoading ? null : _previousStep,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              _label('Confirm Password'),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _confirmCtrl,
+                obscureText: _obscureConfirm,
+                decoration: _inputDeco('Confirm your password', Icons.lock_outline_rounded).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: const Color(0xFF9E9E9E), size: 20),
+                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                   ),
                 ),
+                validator: (v) => v != _passCtrl.text ? 'Passwords do not match' : null,
+              ),
+              const SizedBox(height: 28),
+
+              SizedBox(
+                width: double.infinity, height: 52,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(width: 20, height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Create Account',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.arrow_back_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    ShaderMask(
-                      blendMode: BlendMode.srcIn,
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.secondary,
-                        ],
-                      ).createShader(bounds),
-                      child: Text(
-                        'Back',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
+                    const Text('Already have an account? ',
+                        style: TextStyle(color: AppColors.lightCaption, fontSize: 14)),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Text('Sign In',
+                          style: TextStyle(color: AppColors.primary,
+                              fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                   ],
                 ),
               ),
-            ),
-          if (_currentStep > 0) const SizedBox(width: 12),
-          Expanded(
-            flex: _currentStep == 0 ? 1 : 1,
-            child: GestureDetector(
-              onTap: _isLoading ? null : _nextStep,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: _isLoading
-                        ? [
-                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                    ]
-                        : [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: _isLoading
-                      ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
-                    ),
-                  )
-                      : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _currentStep == 2 ? 'Create Account' : 'Next',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        _currentStep == 2 ? Icons.check_rounded : Icons.arrow_forward_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+              const SizedBox(height: 32),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
+
+  Widget _label(String text) => Text(text,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.lightOnSurface));
+
+  Widget _field(TextEditingController ctrl, String hint, IconData icon,
+      {TextInputType? keyboardType, String? Function(String?)? validator}) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      decoration: _inputDeco(hint, icon),
+      validator: validator,
+    );
+  }
+
+  InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: AppColors.lightCaption, fontSize: 14),
+    prefixIcon: Icon(icon, color: AppColors.lightCaption, size: 20),
+    filled: true,
+    fillColor: AppColors.lightBg,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.lightBorder)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.lightBorder)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+    errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.error)),
+    focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.error, width: 1.5)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  );
 }

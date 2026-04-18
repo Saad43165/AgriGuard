@@ -1,546 +1,354 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/services/translation_service.dart';
-import '../../../core/widgets/floating_orb.dart';
-import 'components/analysis_info_note.dart';
-import 'components/analysis_option_card.dart';
-import 'components/analysis_start_button.dart';
-import 'components/header_card.dart';
-import 'components/image_preview_card.dart';
+import '../../../core/widgets/app_themes.dart';
 import '../advance_result_screen/advanced_result_screen.dart';
 import 'service/advanced_search_service.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
   final Map<String, dynamic> originalScanData;
-
-  const AdvancedSearchScreen({
-    super.key,
-    required this.originalScanData,
-  });
+  const AdvancedSearchScreen({super.key, required this.originalScanData});
 
   @override
   State<AdvancedSearchScreen> createState() => _AdvancedSearchScreenState();
 }
 
-class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-
+class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   bool _isAnalyzing = false;
-  bool _isCheckingApis = true; // show loading while checking API availability
-  int _selectedAnalysisType = 0; // 0 = Cloud Vision (HF), 1 = Plant.id, 2 = Groq advice
+  bool _isCheckingApis = true;
+  int _selectedIndex = 2; // default Groq
   Map<String, dynamic>? _apiStatus;
-
   final AdvancedSearchService _searchService = AdvancedSearchService();
 
-  // Using translation keys instead of hardcoded text
-  List<Map<String, dynamic>> get _analysisOptions => [
-    {
-      'titleKey': 'cloud_ai',
-      'descKey': 'cloud_ai_desc',
-      'icon': Icons.psychology_rounded,
-      'duration': '2-5',
-      'type': 'Cloud',
-      'color': const Color(0xFF8B5CF6),
-    },
-    {
-      'titleKey': 'plantid',
-      'descKey': 'plantid_desc',
-      'icon': Icons.local_florist_rounded,
-      'duration': '3-5',
-      'type': 'PlantId',
-      'color': const Color(0xFF4CAF50),
-    },
-    {
-      'titleKey': 'groq_ai',
-      'descKey': 'groq_desc',
-      'icon': Icons.auto_awesome_rounded,
-      'duration': '2-4',
-      'type': 'Advice',
-      'color': const Color(0xFF3B82F6),
-    },
+  static const _options = [
+    _Option('Disease Scanner', 'Identifies plant diseases from photo', CupertinoIcons.leaf_arrow_circlepath, 'HuggingFace', '3–6s'),
+    _Option('Plant Expert', 'Deep plant & disease identification', CupertinoIcons.tree, 'Plant.id', '3–5s'),
+    _Option('AI Advisor', 'Get expert farming advice & treatment', CupertinoIcons.chat_bubble_text, 'Groq', '2–4s'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
-    _checkApiAvailability();
+    _checkApis();
   }
 
-  Future<void> _checkApiAvailability() async {
+  Future<void> _checkApis() async {
     try {
-      final status = await _searchService.testAllApis();
-      if (mounted) setState(() { _apiStatus = status; _isCheckingApis = false; });
+      final s = await _searchService.testAllApis();
+      if (mounted) setState(() { _apiStatus = s; _isCheckingApis = false; });
     } catch (_) {
-      if (mounted) setState(() { _apiStatus = {'success': false}; _isCheckingApis = false; });
+      if (mounted) setState(() { _apiStatus = {}; _isCheckingApis = false; });
     }
   }
 
-  bool _isOptionAvailable(int index) {
-    final status = _apiStatus;
-    if (status == null) return true; // don't block while loading
-
-    if (index == 0) {
-      final hf = status['huggingface'];
-      return hf is Map ? (hf['available'] == true) : false;
-    }
-    if (index == 1) {
-      final plantId = status['plantId'];
-      return plantId is Map ? (plantId['available'] == true) : false;
-    }
-    if (index == 2) {
-      final groq = status['groq'];
-      return groq is Map ? (groq['available'] == true) : false;
-    }
-    return true;
+  bool _available(int i) {
+    if (_apiStatus == null) return true;
+    final keys = ['huggingface', 'plantId', 'groq'];
+    final v = _apiStatus![keys[i]];
+    // PlantNet (index 0) works without a token — always available
+    if (i == 0) return true;
+    return v is Map ? (v['available'] == true) : false;
   }
 
-  String? _unavailableReason(int index) {
-    final status = _apiStatus;
-    if (status == null) return null;
-    if (index == 0) return (status['huggingface'] as Map?)?['message']?.toString();
-    if (index == 1) return (status['plantId'] as Map?)?['message']?.toString();
-    if (index == 2) return (status['groq'] as Map?)?['message']?.toString();
-    return null;
-  }
-
-  void _initializeAnimations() {
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fadeController.forward();
-        _scaleController.forward();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    _scaleController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _startAdvancedAnalysis() async {
-    final t = Provider.of<TranslationService>(context, listen: false);
+  Future<void> _start() async {
     if (_isAnalyzing) return;
-    if (!_isOptionAvailable(_selectedAnalysisType)) {
-      _showError(_unavailableReason(_selectedAnalysisType) ??
-          t.get('error_selected_method_unavailable'));
-      return;
-    }
-
     final imagePath = widget.originalScanData['imagePath'] as String?;
-    if (imagePath == null) {
-      _showError(t.get('error_file_not_found'));
-      return;
+    if (imagePath == null || !File(imagePath).existsSync()) {
+      _err('Image not found. Please go back and retake the photo.'); return;
     }
-
-    final imageFile = File(imagePath);
-    if (!await imageFile.exists()) {
-      _showError(t.get('error_file_not_found'));
-      return;
+    if (!_available(_selectedIndex)) {
+      _err('This service is offline. Please select another option.'); return;
     }
-
-    final fileSize = await imageFile.length();
-    if (fileSize > 5 * 1024 * 1024) {
-      _showError(t.get('error_image_too_large_5mb'));
-      return;
-    }
-
-    final selectedType = _selectedAnalysisType == 0
-        ? 'HuggingFace'
-        : _selectedAnalysisType == 1
-            ? 'Plant.id'
-            : 'Groq';
-
     HapticFeedback.mediumImpact();
     setState(() => _isAnalyzing = true);
-
     try {
+      final f = File(imagePath);
+      final tag = _options[_selectedIndex].tag;
       Map<String, dynamic> result;
-
-      if (selectedType == 'HuggingFace') {
-        result = await _searchService.analyzeWithHuggingFace(imageFile);
-      } else if (selectedType == 'Plant.id') {
-        result = await _searchService.analyzeWithPlantId(imageFile);
-      } else {
-        result = await _searchService.analyzePlant(imageFile);
-      }
-
+      if (tag == 'HuggingFace') result = await _searchService.analyzeWithHuggingFace(f);
+      else if (tag == 'Plant.id') result = await _searchService.analyzeWithPlantId(f);
+      else result = await _searchService.analyzePlant(f);
       if (!mounted) return;
-
       setState(() => _isAnalyzing = false);
-
       if (result['success'] == true) {
         HapticFeedback.lightImpact();
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdvancedResultsScreen(
-              analysisResult: result,
-              originalScanData: widget.originalScanData,
-            ),
+        await Navigator.push(context, MaterialPageRoute(
+          builder: (_) => AdvancedResultsScreen(
+            analysisResult: result,
+            originalScanData: widget.originalScanData,
           ),
-        );
+        ));
       } else {
-        final errorMessage =
-            result['message'] ?? result['error'] ?? 'Analysis failed';
-        _showError('$selectedType Error: $errorMessage');
+        _err(result['message'] ?? result['error'] ?? 'Analysis failed.');
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isAnalyzing = false);
-        _showError('${t.get('error_unexpected')}: ${e.toString()}');
-      }
+      if (mounted) { setState(() => _isAnalyzing = false); _err('Error: $e'); }
     }
   }
 
-  void _showError(String message) {
-    final t = Provider.of<TranslationService>(context, listen: false);
+  void _err(String msg) {
     HapticFeedback.heavyImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style:
-                const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        action: SnackBarAction(
-          label: t.get('dismiss'),
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        const Icon(CupertinoIcons.exclamationmark_circle, color: Colors.white, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(msg, style: const TextStyle(fontSize: 13))),
+      ]),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    final imagePath = widget.originalScanData['imagePath'] as String?;
 
     return PopScope(
       canPop: !_isAnalyzing,
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: _buildAppBar(context, isDark),
-        body: Container(
-          color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
-          child: Stack(
-            children: [
-              // Background orbs
-              ...List.generate(
-                8,
-                    (i) => FloatingOrb(
-                  index: i,
-                  maxWidth: size.width,
-                  fadeController: _fadeController,
-                  scaleAnimation: _scaleAnimation,
-                ),
-              ),
+        backgroundColor: Colors.black,
+        body: Stack(children: [
+          Column(children: [
+            // ── Image top 45% ──────────────────────────────────────────
+            Expanded(
+              flex: 45,
+              child: Stack(fit: StackFit.expand, children: [
+                if (imagePath != null && File(imagePath).existsSync())
+                  Image.file(File(imagePath), fit: BoxFit.cover)
+                else
+                  Container(color: AppColors.primary.withValues(alpha: 0.1),
+                    child: const Center(child: Icon(CupertinoIcons.photo, size: 64, color: AppColors.primary))),
+                // Bottom fade
+                Positioned(bottom: 0, left: 0, right: 0,
+                  child: Container(height: 80,
+                    decoration: BoxDecoration(gradient: LinearGradient(
+                      begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                      colors: [isDark ? AppColors.darkCard : Colors.white, Colors.transparent],
+                    )))),
+                // Back
+                Positioned(top: MediaQuery.of(context).padding.top + 12, left: 16,
+                  child: GestureDetector(
+                    onTap: _isAnalyzing ? null : () => Navigator.pop(context),
+                    child: Container(width: 36, height: 36,
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+                      child: const Icon(CupertinoIcons.back, color: Colors.white, size: 18)))),
+                // Lang toggle
+                Positioned(top: MediaQuery.of(context).padding.top + 12, right: 16,
+                  child: Consumer<TranslationService>(builder: (_, t, __) =>
+                    GestureDetector(onTap: () => t.toggleLanguage(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(20)),
+                        child: Text(t.isUrdu ? 'EN' : 'اردو',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)))))),
+              ]),
+            ),
 
-      // Main content - wrapped with AnimatedBuilder
-              SafeArea(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Consumer<TranslationService>(
-                    builder: (context, t, child) => _buildContent(t),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+            // ── Bottom sheet 55% ───────────────────────────────────────
+            Expanded(
+              flex: 55,
+              child: Container(
+                color: isDark ? AppColors.darkCard : Colors.white,
+                padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 16),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(t.isUrdu ? 'ایڈوانسڈ AI تجزیہ' : 'Advanced AI Analysis',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800,
+                      color: textColor, letterSpacing: -0.5)),
+                  const SizedBox(height: 4),
+                  Text(t.isUrdu ? 'گہری پودوں کی تشخیص کے لیے AI طریقہ منتخب کریں' : 'Choose an AI method for deeper plant diagnosis',
+                    style: TextStyle(fontSize: 13, color: captionColor)),
+                  const SizedBox(height: 16),
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, bool isDark) {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      leadingWidth: 70,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.25)
-                  : Colors.black.withValues(alpha: 0.08),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _isAnalyzing
-                  ? null
-                  : () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).pop();
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Center(
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: isDark
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.primary,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      title: Consumer<TranslationService>(
-        builder: (context, t, _) => ShaderMask(
-          blendMode: BlendMode.srcIn,
-          shaderCallback: (bounds) => LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ).createShader(bounds),
-          child: Text(
-            t.get('advanced_analysis'),
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-              letterSpacing: 0.5,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        // Language Toggle
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 8, right: 12),
-          child: Consumer<TranslationService>(
-            builder: (context, t, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.25)
-                        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
+                  if (_isCheckingApis)
+                    Expanded(child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                      const SizedBox(height: 12),
+                      Text(t.isUrdu ? 'سروسز چیک ہو رہی ہیں…' : 'Checking services…', style: TextStyle(fontSize: 13, color: captionColor)),
+                    ])))
+                  else ...[
+                    Expanded(child: Column(children: List.generate(_options.length, (i) =>
+                      Padding(padding: const EdgeInsets.only(bottom: 10),
+                        child: _OptionCard(
+                          option: _options[i],
+                          isSelected: _selectedIndex == i,
+                          isAvailable: _available(i),
+                          isDark: isDark,
+                          onTap: _available(i) && !_isAnalyzing ? () => setState(() => _selectedIndex = i) : null,
+                        ))))),
+
+                    SizedBox(width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isAnalyzing ? null : _start,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
+                          disabledForegroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                        child: _isAnalyzing
+                          ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              const SizedBox(width: 18, height: 18,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)),
+                              const SizedBox(width: 10), Text(t.isUrdu ? 'تجزیہ ہو رہا ہے…' : 'Analyzing…')])
+                          : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              const Icon(CupertinoIcons.sparkles, size: 18),
+                              const SizedBox(width: 8),
+                              Text('Analyze with ${_options[_selectedIndex].title}')]),
+                      )),
                   ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => t.toggleLanguage(),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.language_rounded,
-                            size: 18,
-                            color: isDark
-                                ? Colors.white
-                                : Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            t.isUrdu ? 'EN' : 'اردو',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: isDark
-                                  ? Colors.white
-                                  : Theme.of(context).colorScheme.primary,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+                ]),
+              ),
+            ),
+          ]),
 
-  Widget _buildContent(TranslationService t) {
-    if (_isCheckingApis) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Checking available services...'),
-          ],
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          HeaderCard(padding: 24),
-
-          const SizedBox(height: 20),
-
-          // Image Preview
-          ImagePreviewCard(
-            imagePath: widget.originalScanData['imagePath'] as String?,
-          ),
-
-          const SizedBox(height: 28),
-
-          // Section Title
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 20,
+          // Analyzing overlay
+          if (_isAnalyzing)
+            Container(color: Colors.black.withValues(alpha: 0.5),
+              child: Center(child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 40),
+                padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                t.get('analysis_methods'),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black87,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Analysis Options
-          ...List.generate(_analysisOptions.length, (index) {
-            final option = _analysisOptions[index];
-            final isSelected = _selectedAnalysisType == index;
-            final isAvailable = _isOptionAvailable(index);
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: AnalysisOptionCard(
-                option: option,
-                isSelected: isSelected,
-                isAvailable: isAvailable,
-                unavailableReason: _unavailableReason(index),
-                onTap: () {
-                  if (!_isAnalyzing) {
-                    if (isAvailable) {
-                      setState(() => _selectedAnalysisType = index);
-                    } else {
-                      _showError(_unavailableReason(index) ??
-                          t.get('error_option_unavailable'));
-                    }
-                  }
-                },
-              ),
-            );
-          }),
-
-          const SizedBox(height: 20),
-
-          // Start Button
-          AnalysisStartButton(
-            isAnalyzing: _isAnalyzing,
-            selectedOption: _analysisOptions[_selectedAnalysisType],
-            isAvailable: _isOptionAvailable(_selectedAnalysisType),
-            onPressed: _startAdvancedAnalysis,
-          ),
-
-          const SizedBox(height: 16),
-
-          // Info Note
-          const AnalysisInfoNote(),
-
-          const SizedBox(height: 20),
-        ],
+                  color: isDark ? AppColors.darkCard : Colors.white,
+                  borderRadius: BorderRadius.circular(20)),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
+                  const SizedBox(height: 16),
+                  Text('Analyzing with ${_options[_selectedIndex].title}…',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
+                    textAlign: TextAlign.center),
+                  const SizedBox(height: 6),
+                  Text(t.isUrdu ? 'اس میں چند سیکنڈ لگ سکتے ہیں' : 'This may take a few seconds',
+                    style: TextStyle(fontSize: 12, color: captionColor)),
+                ]),
+              ))),
+        ]),
       ),
     );
   }
 }
+
+class _Option {
+  final String title, subtitle, tag, duration;
+  final IconData icon;
+  const _Option(this.title, this.subtitle, this.icon, this.tag, this.duration);
+}
+
+class _OptionCard extends StatelessWidget {
+  final _Option option;
+  final bool isSelected, isAvailable, isDark;
+  final VoidCallback? onTap;
+  const _OptionCard({required this.option, required this.isSelected,
+    required this.isAvailable, required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final borderColor = isSelected
+        ? AppColors.primary
+        : (isDark ? AppColors.darkBorder : AppColors.lightBorder);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1),
+        ),
+        child: Row(children: [
+          // Icon box — always white/dark, no color tint
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            ),
+            child: Icon(option.icon,
+              color: isSelected ? AppColors.primary : captionColor,
+              size: 20),
+          ),
+          const SizedBox(width: 14),
+
+          // Text
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text(option.title,
+                style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w700,
+                  color: isAvailable ? textColor : captionColor,
+                )),
+              if (!isAvailable) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6)),
+                  child: Text('Offline',
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700,
+                        color: AppColors.error))),
+              ],
+            ]),
+            const SizedBox(height: 3),
+            Text(option.subtitle,
+              style: TextStyle(fontSize: 12, color: captionColor, height: 1.3)),
+          ])),
+
+          const SizedBox(width: 12),
+
+          // Right side: duration + radio
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(CupertinoIcons.clock, size: 10, color: captionColor),
+              const SizedBox(width: 3),
+              Text(option.duration,
+                style: TextStyle(fontSize: 10, color: captionColor)),
+            ]),
+            const SizedBox(height: 8),
+            // Radio circle
+            Container(
+              width: 20, height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark ? AppColors.darkBorder : const Color(0xFFCBD5E0)),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 12)
+                  : null,
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
+
+
+
+

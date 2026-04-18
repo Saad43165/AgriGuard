@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../../core/constants/app_measurements.dart';
+import '../../../../../core/widgets/app_themes.dart';
 
 class SettingsHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -17,101 +17,51 @@ class SettingsHeader extends StatelessWidget implements PreferredSizeWidget {
     this.onBackPressed,
     this.actions,
     this.elevation = 0,
-    this.topPadding = 8.0,
+    this.topPadding = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
-    return Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: elevation,
-        centerTitle: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Back Button on LEFT SIDE
-            if (showBackButton)
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
-                    ],
-                  ),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      if (onBackPressed != null) {
-                        onBackPressed!();
-                      } else {
-                        Navigator.maybePop(context);
-                      }
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.all(padding * 0.5),
-                      child: Icon(
-                        Icons.arrow_back_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: AppMeasurements.getResponsiveIconSizeMedium(context),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else
-              Container(width: 50), // Spacer to maintain layout
-
-            // Title in Center with Gradient
-            Expanded(
-              child: ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: AppMeasurements.getResponsiveFontSize(context, baseSize: 26),
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-
-            // Actions or Empty Spacer on RIGHT SIDE
-            if (actions != null && actions!.isNotEmpty)
-              Row(
-                children: actions!,
-              )
-            else
-              Container(width: 50), // Spacer to maintain layout
-          ],
+    return AppBar(
+      automaticallyImplyLeading: false,
+      backgroundColor: bg,
+      elevation: 0,
+      centerTitle: false,
+      leading: showBackButton
+          ? IconButton(
+              icon: Icon(Icons.arrow_back_rounded, color: textColor, size: 22),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                if (onBackPressed != null) {
+                  onBackPressed!();
+                } else {
+                  Navigator.maybePop(context);
+                }
+              },
+            )
+          : null,
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: textColor,
+          letterSpacing: -0.3,
         ),
+      ),
+      actions: actions,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Divider(height: 1, color: borderColor),
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 8);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 1);
 }

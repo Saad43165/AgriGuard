@@ -71,8 +71,8 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
         widget.child,
         if (_showBanner)
           Positioned(
-            // Place below status bar — doesn't overlap app bar content
-            top: MediaQuery.of(context).padding.top + 4,
+            // Place below status bar + app bar height (kToolbarHeight = 56)
+            top: MediaQuery.of(context).padding.top + kToolbarHeight + 4,
             left: 16,
             right: 16,
             child: FadeTransition(

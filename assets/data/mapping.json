@@ -1,122 +1,314 @@
 {
-  "Apple___Apple_scab": {
+  "Apple_Apple_scab": {
     "plant": "Apple",
-    "disease": "Apple scab"
+    "plant_ur": "سیب",
+    "disease": "Apple scab",
+    "disease_ur": "سیب کی کھجلی"
   },
-  "Apple___Black_rot": {
+  "Apple_Apple_black_spot": {
     "plant": "Apple",
-    "disease": "Black rot"
+    "plant_ur": "سیب",
+    "disease": "Black spot",
+    "disease_ur": "کالا دھبہ"
   },
-  "Apple___healthy": {
+  "Apple_Apple_normal": {
     "plant": "Apple",
-    "disease": "healthy"
+    "plant_ur": "سیب",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Bell_pepper___Bacterial_spot": {
-    "plant": "Bell pepper",
-    "disease": "Bacterial spot"
+  "Apricot_Apricot_normal": {
+    "plant": "Apricot",
+    "plant_ur": "خوبانی",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Bell_pepper___healthy": {
-    "plant": "Bell pepper",
-    "disease": "healthy"
+  "Apricot_Apricot_blight_leaf_disease": {
+    "plant": "Apricot",
+    "plant_ur": "خوبانی",
+    "disease": "Blight leaf disease",
+    "disease_ur": "پتوں کا جھلساؤ"
   },
-  "Cherry___Powdery_mildew": {
+  "Apricot_Apricot_shot_hole": {
+    "plant": "Apricot",
+    "plant_ur": "خوبانی",
+    "disease": "Shot hole",
+    "disease_ur": "سوراخ دار پتے"
+  },
+  "Bean_Bean_normal_leaf": {
+    "plant": "Bean",
+    "plant_ur": "پھلیاں",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
+  },
+  "Bean_Bean_fungal_leaf_disease": {
+    "plant": "Bean",
+    "plant_ur": "پھلیاں",
+    "disease": "Fungal leaf disease",
+    "disease_ur": "فنگل پتوں کی بیماری"
+  },
+  "Bean_Bean_rust": {
+    "plant": "Bean",
+    "plant_ur": "پھلیاں",
+    "disease": "Rust",
+    "disease_ur": "زنگ"
+  },
+  "Bean_Bean_shot_hole": {
+    "plant": "Bean",
+    "plant_ur": "پھلیاں",
+    "disease": "Shot hole",
+    "disease_ur": "سوراخ دار پتے"
+  },
+  "Cherry_Cherry_normal_leaf": {
     "plant": "Cherry",
-    "disease": "Powdery mildew"
+    "plant_ur": "چیری",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Cherry___healthy": {
+  "Cherry_Cherry_leaf_scorch": {
     "plant": "Cherry",
-    "disease": "healthy"
+    "plant_ur": "چیری",
+    "disease": "Leaf scorch",
+    "disease_ur": "پتوں کا جھلساؤ"
   },
-  "Corn_(Maize)___Cercospora_leaf_spot": {
-    "plant": "Corn (Maize)",
-    "disease": "Cercospora leaf spot"
+  "Cherry_Cherry_brown_spot": {
+    "plant": "Cherry",
+    "plant_ur": "چیری",
+    "disease": "Brown spot",
+    "disease_ur": "بھورے دھبے"
   },
-  "Corn_(Maize)___Common_rust": {
-    "plant": "Corn (Maize)",
-    "disease": "Common rust"
+  "Cherry_Cherry_purple_leaf_spot": {
+    "plant": "Cherry",
+    "plant_ur": "چیری",
+    "disease": "Purple leaf spot",
+    "disease_ur": "جامنی پتوں کے دھبے"
   },
-  "Corn_(Maize)___Northern_Leaf_Blight": {
-    "plant": "Corn (Maize)",
-    "disease": "Northern Leaf Blight"
+  "Cherry_Cherry_shot_hole_disease": {
+    "plant": "Cherry",
+    "plant_ur": "چیری",
+    "disease": "Shot hole",
+    "disease_ur": "سوراخ دار پتے"
   },
-  "Corn_(Maize)___healthy": {
-    "plant": "Corn (Maize)",
-    "disease": "healthy"
+  "Maize_Maize_normal_leaf": {
+    "plant": "Maize (Corn)",
+    "plant_ur": "مکئی",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Grape___Black_rot": {
+  "Maize_Maize_fungal_leaf": {
+    "plant": "Maize (Corn)",
+    "plant_ur": "مکئی",
+    "disease": "Fungal leaf disease",
+    "disease_ur": "فنگل پتوں کی بیماری"
+  },
+  "Maize_Maize_gray_leaf_spot": {
+    "plant": "Maize (Corn)",
+    "plant_ur": "مکئی",
+    "disease": "Gray leaf spot",
+    "disease_ur": "بھوری پتوں کے دھبے"
+  },
+  "Maize_Maize_holcus_leaf_spot": {
+    "plant": "Maize (Corn)",
+    "plant_ur": "مکئی",
+    "disease": "Holcus leaf spot",
+    "disease_ur": "ہولکس پتوں کے دھبے"
+  },
+  "Fig_Fig_normal_leaf": {
+    "plant": "Fig",
+    "plant_ur": "انجیر",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
+  },
+  "Fig_Fig_bight_leaf_disease": {
+    "plant": "Fig",
+    "plant_ur": "انجیر",
+    "disease": "Blight leaf disease",
+    "disease_ur": "پتوں کا جھلساؤ"
+  },
+  "Fig_Fig_brown_spot": {
+    "plant": "Fig",
+    "plant_ur": "انجیر",
+    "disease": "Brown spot",
+    "disease_ur": "بھورے دھبے"
+  },
+  "Fig_Fig_rust_leaf": {
+    "plant": "Fig",
+    "plant_ur": "انجیر",
+    "disease": "Rust",
+    "disease_ur": "زنگ"
+  },
+  "Grape_Grape_normal_leaf": {
     "plant": "Grape",
-    "disease": "Black rot"
+    "plant_ur": "انگور",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Grape___Esca_(Black_Measles)": {
+  "Grape_Grape_anthracnose_leaf": {
     "plant": "Grape",
-    "disease": "Esca (Black Measles)"
+    "plant_ur": "انگور",
+    "disease": "Anthracnose",
+    "disease_ur": "اینتھراکنوز"
   },
-  "Grape___Leaf_blight": {
+  "Grape_Grape_brown_spot_leaf": {
     "plant": "Grape",
-    "disease": "Leaf blight"
+    "plant_ur": "انگور",
+    "disease": "Brown spot",
+    "disease_ur": "بھورے دھبے"
   },
-  "Grape___healthy": {
+  "Grape_Grape_downy_mildew_leaf": {
     "plant": "Grape",
-    "disease": "healthy"
+    "plant_ur": "انگور",
+    "disease": "Downy mildew",
+    "disease_ur": "نیچے کی پھپھوندی"
   },
-  "Peach___Bacterial_spot": {
-    "plant": "Peach",
-    "disease": "Bacterial spot"
+  "Grape_Grape_mites_leaf_disease": {
+    "plant": "Grape",
+    "plant_ur": "انگور",
+    "disease": "Mite damage",
+    "disease_ur": "کیڑوں کا نقصان"
   },
-  "Peach___healthy": {
-    "plant": "Peach",
-    "disease": "healthy"
+  "Grape_Grape_powdery_mildew_leaf": {
+    "plant": "Grape",
+    "plant_ur": "انگور",
+    "disease": "Powdery mildew",
+    "disease_ur": "پھپھوندی"
   },
-  "Potato___Early_blight": {
-    "plant": "Potato",
-    "disease": "Early blight"
+  "Grape_Grape_shot_hole_leaf_disease": {
+    "plant": "Grape",
+    "plant_ur": "انگور",
+    "disease": "Shot hole",
+    "disease_ur": "سوراخ دار پتے"
   },
-  "Potato___Late_blight": {
-    "plant": "Potato",
-    "disease": "Late blight"
+  "Loquat_Loquat_normal_leaf": {
+    "plant": "Loquat",
+    "plant_ur": "لوکاٹ",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Potato___healthy": {
-    "plant": "Potato",
-    "disease": "healthy"
+  "Loquat_Loquat_leaf_spot": {
+    "plant": "Loquat",
+    "plant_ur": "لوکاٹ",
+    "disease": "Leaf spot",
+    "disease_ur": "پتوں کے دھبے"
   },
-  "Soybean___Bacterial_blight": {
-    "plant": "Soybean",
-    "disease": "Bacterial blight"
+  "Pear_Pear_normal_leaf": {
+    "plant": "Pear",
+    "plant_ur": "ناشپاتی",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Strawberry___Leaf_scorch": {
-    "plant": "Strawberry",
-    "disease": "Leaf scorch"
+  "Pear_Pear_black_spot_leaf_disease": {
+    "plant": "Pear",
+    "plant_ur": "ناشپاتی",
+    "disease": "Black spot",
+    "disease_ur": "کالے دھبے"
   },
-  "Strawberry___healthy": {
-    "plant": "Strawberry",
-    "disease": "healthy"
+  "Pear_Pear_fire_blight": {
+    "plant": "Pear",
+    "plant_ur": "ناشپاتی",
+    "disease": "Fire blight",
+    "disease_ur": "آگ کا جھلساؤ"
   },
-  "Tomato___Bacterial_spot": {
+  "Persimmon_persimmons_brown_spot": {
+    "plant": "Persimmon",
+    "plant_ur": "املوک",
+    "disease": "Brown spot",
+    "disease_ur": "بھورے دھبے"
+  },
+  "Tomato_Tomato_healthy_leaf": {
     "plant": "Tomato",
-    "disease": "Bacterial spot"
+    "plant_ur": "ٹماٹر",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
   },
-  "Tomato___Early_blight": {
+  "Tomato_Tomato_bacterial_spot": {
     "plant": "Tomato",
-    "disease": "Early blight"
+    "plant_ur": "ٹماٹر",
+    "disease": "Bacterial spot",
+    "disease_ur": "بیکٹیریل دھبے"
   },
-  "Tomato___Late_blight": {
+  "Tomato_Tomato_early_blight": {
     "plant": "Tomato",
-    "disease": "Late blight"
+    "plant_ur": "ٹماٹر",
+    "disease": "Early blight",
+    "disease_ur": "ابتدائی جھلساؤ"
   },
-  "Tomato___Septoria_leaf_spot": {
+  "Tomato_Tomato_late_blight": {
     "plant": "Tomato",
-    "disease": "Septoria leaf spot"
+    "plant_ur": "ٹماٹر",
+    "disease": "Late blight",
+    "disease_ur": "آخری جھلساؤ"
   },
-  "Tomato___Yellow_Leaf_Curl_Virus": {
+  "Tomato_Tomato_leaf_curl": {
     "plant": "Tomato",
-    "disease": "Yellow Leaf Curl Virus"
+    "plant_ur": "ٹماٹر",
+    "disease": "Leaf curl",
+    "disease_ur": "پتوں کا کرل"
   },
-  "Tomato___healthy": {
+  "Tomato_Tomato_leaf_miner": {
     "plant": "Tomato",
-    "disease": "healthy"
+    "plant_ur": "ٹماٹر",
+    "disease": "Leaf miner",
+    "disease_ur": "پتوں کا کان کن"
   },
-  "Wheat___Stripe_rust": {
-    "plant": "Wheat",
-    "disease": "Stripe rust"
+  "Tomato_Tomato_leaf_mold": {
+    "plant": "Tomato",
+    "plant_ur": "ٹماٹر",
+    "disease": "Leaf mold",
+    "disease_ur": "پتوں کی پھپھوندی"
+  },
+  "Tomato_tomato_septoria_leaf": {
+    "plant": "Tomato",
+    "plant_ur": "ٹماٹر",
+    "disease": "Septoria leaf spot",
+    "disease_ur": "سیپٹوریا پتوں کے دھبے"
+  },
+  "Tomato_tomato_spider_mites": {
+    "plant": "Tomato",
+    "plant_ur": "ٹماٹر",
+    "disease": "Spider mites",
+    "disease_ur": "مکڑی کے ذرات"
+  },
+  "Tomato_tomato_verticillium_wilt": {
+    "plant": "Tomato",
+    "plant_ur": "ٹماٹر",
+    "disease": "Verticillium wilt",
+    "disease_ur": "ورٹیسیلیم مرجھاؤ"
+  },
+  "Tomato_tomato_fusarium_wilt": {
+    "plant": "Tomato",
+    "plant_ur": "ٹماٹر",
+    "disease": "Fusarium wilt",
+    "disease_ur": "فیوزیریم مرجھاؤ"
+  },
+  "Walnut_Walnut_normal_leaf": {
+    "plant": "Walnut",
+    "plant_ur": "اخروٹ",
+    "disease": "Healthy",
+    "disease_ur": "صحت مند"
+  },
+  "Walnut_Walnut_anthracnose_leaf_disease": {
+    "plant": "Walnut",
+    "plant_ur": "اخروٹ",
+    "disease": "Anthracnose",
+    "disease_ur": "اینتھراکنوز"
+  },
+  "Walnut_Walnut_blotch_leaf_disease": {
+    "plant": "Walnut",
+    "plant_ur": "اخروٹ",
+    "disease": "Blotch",
+    "disease_ur": "دھبے"
+  },
+  "Walnut_Walnut_shot_hole": {
+    "plant": "Walnut",
+    "plant_ur": "اخروٹ",
+    "disease": "Shot hole",
+    "disease_ur": "سوراخ دار پتے"
+  },
+  "Walnut_Walnut_leaf_gall_mite": {
+    "plant": "Walnut",
+    "plant_ur": "اخروٹ",
+    "disease": "Leaf gall mite",
+    "disease_ur": "پتوں کے گال ذرات"
   }
 }

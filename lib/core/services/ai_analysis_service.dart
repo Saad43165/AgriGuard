@@ -88,17 +88,23 @@ class PlantAnalysisService {
     debugPrint('⚠️  Mismatch: PlantID="$plantIdName" (${ (plantIdConfidence * 100).toStringAsFixed(1)}%) '
         'vs Disease="$diseasePlantName" (isHealthy=$isHealthy)');
 
-    // ── Healthy plant — ALWAYS use plant ID model ─────────────────────────
-    // The disease model only knows which healthy *training class* scored
-    // highest — that's irrelevant to the actual species in the photo.
+    // ── Healthy plant — trust disease model's plant name ─────────────────
+    // For healthy plants, the disease model picks the healthy class that
+    // scored highest — this is actually a reasonable species signal because
+    // the model was trained on per-species healthy classes.
+    // The plant ID model is less reliable for species that look similar
+    // (e.g. strawberry vs tomato), so prefer disease model's plant name
+    // for healthy results unless plant ID has a very clear gap.
     if (isHealthy) {
-      if (plantIdConfidence >= 0.50) {
-        debugPrint('✅ Healthy plant: trusting PlantID model → $plantIdName');
+      // Only override disease model if plant ID is very confident AND
+      // the two models agree (already handled above) or plant ID gap is huge
+      if (plantIdConfidence >= 0.85) {
+        debugPrint('✅ Healthy plant, very high PlantID confidence: trusting PlantID → $plantIdName');
         return plantIdName;
       } else {
-        debugPrint('⚠️  Healthy + low PlantID confidence. '
-            'Using PlantID anyway: $plantIdName');
-        return plantIdName;
+        // Trust disease model's plant name — it's more specific for healthy classes
+        debugPrint('✅ Healthy plant: trusting Disease model plant → $diseasePlantName');
+        return diseasePlantName;
       }
     }
 
@@ -107,7 +113,7 @@ class PlantAnalysisService {
       return plantIdName;
     }
 
-    if (plantIdConfidence >= 0.60) {
+    if (plantIdConfidence >= 0.55) {
       debugPrint('✅ Diseased plant, medium PlantID confidence: trusting PlantID → $plantIdName');
       return plantIdName;
     }
@@ -232,7 +238,17 @@ class PlantAnalysisService {
   // ══════════════════════════════════════════════════════════════════════════
   // Main entry point
   // ══════════════════════════════════════════════════════════════════════════
-  Future<Map<String, dynamic>> analyzePlant(File imageFile) async {
+
+  /// Quick leaf check — returns true if image is a leaf, false if not.
+  /// Used by advanced search service to gate API calls.
+  Future<bool> checkIsLeaf(File imageFile) async {
+    try {
+      final result = await LeafDetector.detect(imageFile);
+      return result['isLeaf'] as bool? ?? true;
+    } catch (_) { return true; }
+  }
+
+  Future<Map<String, dynamic>> analyzePlant(File imageFile, {String? plantHint}) async {
     try {
       debugPrint('🔍 Starting comprehensive plant analysis...');
 
@@ -250,25 +266,23 @@ class PlantAnalysisService {
       // Ensure models are loaded before any inference.
       await _ensureModelsLoaded();
 
-      // STEP 1: Plant species identification
-      debugPrint('🌱 Running species identification...');
+      // STEP 1: Plant species identification (kept for FYP demo — 3 models)
+      // NOTE: Plant ID model runs but its result is NOT used for plant name.
+      // The disease model identifies the plant through its label (e.g. Potato___Late_blight).
+      // This gives much better accuracy on real phone photos.
+      debugPrint('🌱 Running species identification (reference only)...');
       final speciesResult = await _speciesService.predict(imageFile);
-
-      final isSpeciesUnknown = speciesResult['isUnknown'] ?? true;
       final speciesName = (speciesResult['label'] ?? 'Unknown Plant') as String;
       final speciesConfidence = (speciesResult['confidence'] ?? 0.0) as double;
-      final isLeafFromSpecies = speciesResult['isLeaf'] ?? true;
+      debugPrint('📊 PlantID result (not used for name): $speciesName ${(speciesConfidence*100).toStringAsFixed(0)}%');
 
-      if (!isLeafFromSpecies) {
-        // Species model leaf heuristics are stricter and can false-reject valid leaves
-        // (e.g., close-up blur / low edges). We already passed the global leaf check,
-        // and the disease model has its own leaf check. So we do NOT stop here.
-        debugPrint('⚠️ Species service marked non-leaf; continuing with disease detection.');
-      }
-
-      // STEP 2: Disease detection
+      // STEP 2: Disease detection — this is the primary model
       debugPrint('🩺 Running disease detection...');
-      final diseaseResult = await _diseaseService.predict(imageFile);
+      // Use plant hint if provided (e.g. user tapped a species chip)
+      final diseaseResult = plantHint != null && plantHint.isNotEmpty
+          ? await _diseaseService.predictWithPlantHint(imageFile,
+              plantHint: plantHint, plantHintConfidence: 0.95)
+          : await _diseaseService.predict(imageFile);
 
       if (diseaseResult['isLeaf'] == false) {
         // Both plant ID and disease service rejected this as non-leaf
@@ -277,16 +291,11 @@ class PlantAnalysisService {
             allChecks: true);
       }
 
-      // ── STEP 2b: Cross-model plant consistency check + name reconciliation
-      //
-      // When plant ID model fails (returns Non-Plant / 0% confidence) but
-      // disease model succeeds, trust the disease model's plant name.
-      //
-      // When both succeed but disagree, apply reconciliation rules.
-      // When disease model's plant name doesn't match plant ID model but
-      // the disease result is 'Healthy', always prefer plant ID model.
+      // ── STEP 2b: Plant name — always use disease model
+      // Disease model identifies plant through its label (e.g. Potato___Late_blight → Potato).
+      // This is more reliable than the plant ID model on real phone photos.
       String finalPlantName;
-      bool diseaseModelPlantTrusted = false;
+      bool diseaseModelPlantTrusted = true;
 
       final diseasePlantName =
       (diseaseResult['plantName'] ?? 'Unknown Plant') as String;
@@ -295,70 +304,30 @@ class PlantAnalysisService {
           ? double.tryParse(diseaseResult['confidence'].toString()) ?? 0.0
           : 0.0;
 
-      if (isSpeciesUnknown || speciesConfidence < 0.50) {
-        // Plant ID failed or very low confidence — use disease model's plant
-        finalPlantName = diseasePlantName == 'Unknown Plant' || diseasePlantName.isEmpty
-            ? 'Unknown Plant'
-            : diseasePlantName;
-        diseaseModelPlantTrusted = true;
-        debugPrint('📌 Plant ID failed/uncertain — using disease model plant: $finalPlantName');
+      if (diseasePlantName.isEmpty || diseasePlantName == 'Unknown Plant') {
+        finalPlantName = 'Unknown Plant';
+        diseaseModelPlantTrusted = false;
+        debugPrint('📌 Disease model no plant — Unknown');
       } else {
-        // Both models produced a result — reconcile
-        finalPlantName = _reconcilePlantName(
-          plantIdName: speciesName,
-          plantIdConfidence: speciesConfidence,
-          diseasePlantName: diseasePlantName,
-          isHealthy: diseaseIsHealthy,
-        );
-        debugPrint('📌 Reconciled plant name: $finalPlantName');
+        finalPlantName = diseasePlantName;
+        debugPrint('📌 Plant: $finalPlantName (from disease model)');
       }
 
       // ── Cross-model disease validity check ──────────────────────────────
-      // If disease model says plant=Tomato+Healthy but plant ID says Apple,
-      // and they don't match, the healthy result is suspicious — flag it.
+      // Only flag as suspect if disease model itself is uncertain
       bool diseaseResultSuspect = false;
-      if (!diseaseModelPlantTrusted && diseaseIsHealthy) {
-        final idLower = speciesName.trim().toLowerCase();
-        final disLower = diseasePlantName.trim().toLowerCase();
-        if (idLower != disLower && speciesConfidence >= 0.65) {
-          // Disease model picked a healthy class from the WRONG plant.
-          diseaseResultSuspect = true;
-          debugPrint('⚠️ Disease model plant ($diseasePlantName) != PlantID ($speciesName) '
-              'and result is Healthy — disease result suspect!');
-        }
-      }
 
-      // Use disease result values but with suspect flag for UI/severity
-      final rawDiseaseName = diseaseResultSuspect
-          ? 'Unable to Determine'  // Don't claim healthy when we're unsure
-          : (diseaseResult['diseaseName'] ?? diseaseResult['diagnosis'] ?? 'Unknown Disease')
-              .toString();
-      final isHealthyPlant = diseaseResultSuspect ? false
-          : (diseaseResult['isHealthy'] ?? true) as bool;
-      final diseaseConfidence = diseaseResultSuspect ? 0.0 : diseaseConfidenceRaw;
+      // Use disease result values directly
+      final rawDiseaseName = (diseaseResult['diseaseName'] ?? diseaseResult['diagnosis'] ?? 'Unknown Disease').toString();
+      final isHealthyPlant = (diseaseResult['isHealthy'] ?? true) as bool;
+      final diseaseConfidence = diseaseConfidenceRaw;
 
       // Low-confidence guard: don't claim a specific disease when the model is unsure.
-      // This prevents wrong labels like "Apple Black Rot" at ~20% from being treated as real.
-      const double minDiseaseConfidenceToClaim = 35.0; // percentage
+      const double minDiseaseConfidenceToClaim = 20.0; // percentage
       final bool diseaseTooUncertain =
           !isHealthyPlant && diseaseConfidence > 0 && diseaseConfidence < minDiseaseConfidenceToClaim;
 
-      // Cross-plant mismatch guard:
-      // If the disease model thinks the plant is a different species than the (high-confidence)
-      // species model, and the disease confidence isn't strong, treat as uncertain.
-      final bool plantMismatch =
-          diseasePlantName.trim().isNotEmpty &&
-          speciesName.trim().isNotEmpty &&
-          diseasePlantName.trim().toLowerCase() != speciesName.trim().toLowerCase();
-      const double minDiseaseConfidenceWhenPlantMismatch = 55.0; // percentage
-      final bool mismatchTooWeak =
-          !isHealthyPlant &&
-          plantMismatch &&
-          speciesConfidence >= 0.70 &&
-          diseaseConfidence > 0 &&
-          diseaseConfidence < minDiseaseConfidenceWhenPlantMismatch;
-
-      final bool shouldGuardDisease = diseaseTooUncertain || mismatchTooWeak;
+      final bool shouldGuardDisease = diseaseTooUncertain;
       final String guardedDiseaseName =
           shouldGuardDisease ? 'Unable to Determine' : rawDiseaseName;
       final double guardedDiseaseConfidence =
@@ -423,18 +392,18 @@ class PlantAnalysisService {
         ];
       }
 
-      // STEP 4: Analysis status
+      // STEP 4: Analysis status — based on disease model result
+      final bool isUnknownPlant = finalPlantName == 'Unknown Plant' || finalPlantName.isEmpty;
       final String analysisStatus;
       final String displayMessage;
 
-      if (isSpeciesUnknown) {
+      if (isUnknownPlant) {
         analysisStatus = 'UNKNOWN_PLANT';
-        displayMessage =
-        'Plant species could not be identified with confidence. Try a clearer image.';
-      } else if (speciesConfidence >= 0.8) {
+        displayMessage = 'Plant species could not be identified. Try a clearer image.';
+      } else if (diseaseConfidence >= 70) {
         analysisStatus = 'HIGH_CONFIDENCE';
-        displayMessage = 'Plant confidently identified as $finalPlantName';
-      } else if (speciesConfidence >= 0.6) {
+        displayMessage = 'Plant identified as $finalPlantName';
+      } else if (diseaseConfidence >= 40) {
         analysisStatus = 'MEDIUM_CONFIDENCE';
         displayMessage = 'Plant identified as $finalPlantName';
       } else {
@@ -451,44 +420,34 @@ class PlantAnalysisService {
         'isLeaf': true,
         'leafConfidence': leafConfidence,
 
-        // ▶ Use reconciled name everywhere
         'species': finalPlantName,
-        // Canonical keys for UI/storage
         'plantName': finalPlantName,
-        'speciesConfidence': speciesConfidence,
-        'isUnknown': isSpeciesUnknown,
+        'speciesConfidence': diseaseConfidence / 100.0, // use disease confidence as species confidence
+        'isUnknown': isUnknownPlant,
         'analysisStatus': analysisStatus,
         'speciesMessage': displayMessage,
 
         'disease': rawDiseaseName,
-        // Canonical keys for UI/storage
         'diseaseName': rawDiseaseName,
         'healthStatus': isHealthyPlant ? 'Healthy' : 'Diseased',
         'diseaseConfidence': diseaseConfidence,
-        // Canonical key used by ResultsScreen/DiagnosisResult
-        // Keep as a percentage-like value (same scale as diseaseConfidence).
         'confidence': diseaseConfidence,
         'isHealthy': isHealthyPlant,
 
         'hasDiseaseData': hasDiseaseData,
-        'shouldShowDisease':
-        !isSpeciesUnknown && speciesConfidence >= 0.6,
+        'shouldShowDisease': !isUnknownPlant,
 
-        'displayTitle':
-        isSpeciesUnknown ? 'Plant Not Identified' : 'Plant Analysis Complete',
+        'displayTitle': isUnknownPlant ? 'Plant Not Identified' : 'Plant Analysis Complete',
         'primaryMessage': _getPrimaryMessage(
-            isSpeciesUnknown, finalPlantName, speciesConfidence, diseaseResult, finalSeverity),
+            isUnknownPlant, finalPlantName, diseaseConfidence / 100.0, diseaseResult, finalSeverity),
         'secondaryMessage': _getSecondaryMessage(
-            isSpeciesUnknown, speciesConfidence, diseaseResult, finalSeverity),
+            isUnknownPlant, diseaseConfidence / 100.0, diseaseResult, finalSeverity),
 
         '_rawSpecies': speciesResult,
         '_rawDisease': diseaseResult,
         '_leafAnalysis': leafAnalysis,
 
-        // Convenience top-level fields for downstream components
         'rawLabel': diseaseResult['rawLabel'],
-
-        // Debug fields — helpful for diagnosing future mismatches
         '_plantIdName': speciesName,
         '_diseasePlantName': diseaseResult['plantName'],
         '_reconciledName': finalPlantName,

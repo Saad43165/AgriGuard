@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/translation_service.dart';
+import '../../../../core/widgets/app_themes.dart';
 
 class HeaderCard extends StatelessWidget {
   final double padding;
@@ -18,12 +19,10 @@ class HeaderCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+            color: isDark ? AppColors.darkCard : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.06),
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
               width: 1.5,
             ),
           ),
@@ -33,20 +32,16 @@ class HeaderCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.secondary,
-                    ],
-                  ),
+                  color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
                 child: const Center(
                   child: Text(
                     '3',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
+                      color: AppColors.primary,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -62,7 +57,7 @@ class HeaderCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -71,9 +66,7 @@ class HeaderCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.6)
-                            : Colors.black.withValues(alpha: 0.5),
+                        color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
                       ),
                     ),
                   ],

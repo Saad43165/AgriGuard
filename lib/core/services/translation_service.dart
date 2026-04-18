@@ -81,11 +81,33 @@ class TranslationService extends ChangeNotifier {
     return _plantTranslations[normalized]?['ur'] ?? plantName;
   }
 
-  // Translate disease names
+  // Translate disease names — handles full names and partial matches
   String translateDisease(String diseaseName) {
     if (!_isUrdu) return diseaseName;
+    if (diseaseName.isEmpty) return diseaseName;
+    
     final normalized = diseaseName.toLowerCase().trim();
-    return _diseaseTranslations[normalized]?['ur'] ?? diseaseName;
+    
+    // 1. Exact match
+    if (_diseaseTranslations.containsKey(normalized)) {
+      return _diseaseTranslations[normalized]!['ur']!;
+    }
+    
+    // 2. Try removing "tomato " prefix (model sometimes returns "Tomato Mosaic Virus")
+    final withoutPlant = normalized.replaceFirst(RegExp(r'^(tomato|apple|corn|grape|potato|strawberry|peach|pepper|cherry|orange|squash|soybean|raspberry|blueberry)\s+'), '');
+    if (_diseaseTranslations.containsKey(withoutPlant)) {
+      return _diseaseTranslations[withoutPlant]!['ur']!;
+    }
+    
+    // 3. Partial match — find key that is contained in the disease name
+    for (final entry in _diseaseTranslations.entries) {
+      if (normalized.contains(entry.key) && entry.key != 'healthy') {
+        return entry.value['ur']!;
+      }
+    }
+    
+    // 4. Return original (English) — better than showing nothing
+    return diseaseName;
   }
 
   // Translate severity
@@ -724,32 +746,53 @@ class TranslationService extends ChangeNotifier {
     'soybean': {'en': 'Soybean', 'ur': 'سویابین'},
   };
 
-  // Disease translations
+  // Disease translations — all 38 PlantVillage classes
   static const Map<String, Map<String, String>> _diseaseTranslations = {
     'healthy': {'en': 'Healthy', 'ur': 'صحت مند'},
+    // Apple
+    'apple scab': {'en': 'Apple Scab', 'ur': 'سیب کا خارش'},
+    'black rot': {'en': 'Black Rot', 'ur': 'کالی سڑن'},
+    'cedar apple rust': {'en': 'Cedar Apple Rust', 'ur': 'دیودار سیب کا زنگ'},
+    // Cherry
+    'powdery mildew': {'en': 'Powdery Mildew', 'ur': 'سفید پھپھوندی'},
+    // Corn
+    'cercospora leaf spot': {'en': 'Cercospora Leaf Spot', 'ur': 'سرکوسپورا پتوں کا داغ'},
+    'gray leaf spot': {'en': 'Gray Leaf Spot', 'ur': 'سرمئی پتوں کا داغ'},
+    'common rust': {'en': 'Common Rust', 'ur': 'عام زنگ'},
+    'northern leaf blight': {'en': 'Northern Leaf Blight', 'ur': 'شمالی پتوں کا جھلساؤ'},
+    // Grape
+    'esca': {'en': 'Esca', 'ur': 'ایسکا'},
+    'black measles': {'en': 'Black Measles', 'ur': 'کالا خسرہ'},
+    'leaf blight': {'en': 'Leaf Blight', 'ur': 'پتوں کا جھلساؤ'},
+    // Orange
+    'haunglongbing': {'en': 'Haunglongbing', 'ur': 'ہوانگلونگبنگ'},
+    'citrus greening': {'en': 'Citrus Greening', 'ur': 'سٹرس گریننگ'},
+    // Peach & Pepper
     'bacterial spot': {'en': 'Bacterial Spot', 'ur': 'بیکٹیریل داغ'},
+    // Potato
     'early blight': {'en': 'Early Blight', 'ur': 'ابتدائی جھلساؤ'},
     'late blight': {'en': 'Late Blight', 'ur': 'تاخیری جھلساؤ'},
+    // Squash
+    // Strawberry
+    'leaf scorch': {'en': 'Leaf Scorch', 'ur': 'پتوں کا جھلساؤ'},
+    // Tomato
     'leaf mold': {'en': 'Leaf Mold', 'ur': 'پتوں کی سڑن'},
     'septoria leaf spot': {'en': 'Septoria Leaf Spot', 'ur': 'سیپٹوریا داغ'},
     'spider mites': {'en': 'Spider Mites', 'ur': 'مکڑی کیڑے'},
+    'two spotted spider mite': {'en': 'Two-Spotted Spider Mite', 'ur': 'دو دھبوں والا مکڑی کیڑا'},
     'target spot': {'en': 'Target Spot', 'ur': 'ہدف داغ'},
-    'mosaic virus': {'en': 'Mosaic Virus', 'ur': 'موزیک وائرس'},
+    'tomato yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
     'yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
-    'powdery mildew': {'en': 'Powdery Mildew', 'ur': 'سفید پھپھوندی'},
+    'tomato mosaic virus': {'en': 'Tomato Mosaic Virus', 'ur': 'ٹماٹر موزیک وائرس'},
+    'mosaic virus': {'en': 'Mosaic Virus', 'ur': 'موزیک وائرس'},
+    // Generic
     'rust': {'en': 'Rust', 'ur': 'زنگ'},
     'blight': {'en': 'Blight', 'ur': 'جھلساؤ'},
-    'leaf blight': {'en': 'Leaf Blight', 'ur': 'پتوں کا جھلساؤ'},
-    'black rot': {'en': 'Black Rot', 'ur': 'کالی سڑن'},
-    'apple scab': {'en': 'Apple Scab', 'ur': 'سیب کا خارش'},
-    'common rust': {'en': 'Common Rust', 'ur': 'عام زنگ'},
-    'northern leaf blight': {'en': 'Northern Leaf Blight', 'ur': 'شمالی پتوں کا جھلساؤ'},
-    'cercospora leaf spot': {'en': 'Cercospora Leaf Spot', 'ur': 'سرکوسپورا پتوں کا داغ'},
-    'esca': {'en': 'Esca', 'ur': 'ایسکا'},
-    'black measles': {'en': 'Black Measles', 'ur': 'کالا خسرہ'},
-    'leaf scorch': {'en': 'Leaf Scorch', 'ur': 'پتوں کا جھلساؤ'},
-    'stripe rust': {'en': 'Stripe Rust', 'ur': 'دھاری دار زنگ'},
-    'yellow rust': {'en': 'Yellow Rust', 'ur': 'پیلا زنگ'},
+    'spot': {'en': 'Spot', 'ur': 'داغ'},
+    'mildew': {'en': 'Mildew', 'ur': 'پھپھوندی'},
+    'scorch': {'en': 'Scorch', 'ur': 'جھلساؤ'},
+    'rot': {'en': 'Rot', 'ur': 'سڑن'},
+    'virus': {'en': 'Virus', 'ur': 'وائرس'},
   };
 
   // Severity translations

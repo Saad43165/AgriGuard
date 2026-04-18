@@ -5,15 +5,15 @@ import 'package:flutter/services.dart';
 import '../../../../core/services/ai_analysis_service.dart';
 import '../../../../core/services/severity_id_service.dart';
 import 'groq_service.dart';
-import 'huggingface_vision_service.dart';
+import 'plantnet_api_service.dart';
 import 'plant_id_service.dart';
 
 class AdvancedSearchService {
-  final PlantIdService _plantIdService = PlantIdService();
+  final PlantNetApiService _plantNetApiService = PlantNetApiService();
   final GroqService _groqService = GroqService();
   final PlantAnalysisService _onDeviceAnalysis = PlantAnalysisService();
-  final HuggingFaceVisionService _hfVision = HuggingFaceVisionService();
   final SeverityIdService _severityService = SeverityIdService();
+  final PlantIdService _plantIdService = PlantIdService();
   Map<String, dynamic>? _mapping;
   Map<String, dynamic>? _diseaseCauses;
 
@@ -40,7 +40,7 @@ class AdvancedSearchService {
 
     final groqKeyPresent = _groqService.hasApiKey();
     final groqTest = groqKeyPresent ? await testGroqApi() : false;
-    final hfAvailable = _hfVision.hasToken();
+    final plantNetAvailable = _plantNetApiService.hasApiKey;
     final plantIdKeyPresent = _plantIdService.hasApiKey();
     Map<String, dynamic>? plantIdStatus;
     bool plantIdUsable = false;
@@ -58,14 +58,14 @@ class AdvancedSearchService {
       }
     }
 
-    debugPrint('📊 API Status: HF=${hfAvailable ? "✅" : "❌"}, Groq=${groqTest ? "✅" : "❌"}, Plant.id=${plantIdUsable ? "✅" : "❌"}');
+    debugPrint('📊 API Status: PlantNet=${plantNetAvailable ? "✅" : "❌"}, Groq=${groqTest ? "✅" : "❌"}, Plant.id=${plantIdUsable ? "✅" : "❌"}');
 
     return {
-      'success': hfAvailable || groqKeyPresent || plantIdUsable,
+      'success': plantNetAvailable || groqKeyPresent || plantIdUsable,
       'huggingface': {
-        'available': hfAvailable,
-        'status': hfAvailable ? '✅ Ready' : '❌ Unavailable',
-        'message': hfAvailable ? 'Hugging Face ready' : 'Set HF_API_TOKEN in .env',
+        'available': plantNetAvailable,
+        'status': plantNetAvailable ? '✅ Ready' : '⚠️ No Roboflow key',
+        'message': plantNetAvailable ? 'Roboflow AI ready' : 'Set ROBOFLOW_INFER_API_KEY in .env',
       },
       'groq': {
         'available': groqKeyPresent,
@@ -86,7 +86,7 @@ class AdvancedSearchService {
                 : 'Set PLANTID_API_KEY in .env'),
         'details': plantIdStatus?['details'],
       },
-      'message': hfAvailable || groqKeyPresent || plantIdUsable
+      'message': plantNetAvailable || groqKeyPresent || plantIdUsable
           ? 'At least one API is available'
           : 'No APIs are currently available',
       'timestamp': DateTime.now().toIso8601String(),
@@ -153,100 +153,117 @@ class AdvancedSearchService {
     return const ['Leaf discoloration', 'Spots or lesions', 'Reduced plant vigor'];
   }
 
-  /// Advanced (free-tier) vision detection using Hugging Face model inference.
-  /// This is the closest replacement for cloud vision while staying free.
+  /// PlantNet official API (my.plantnet.org) — plant species identification
+  /// Combined with on-device disease detection for full diagnosis.
   Future<Map<String, dynamic>> analyzeWithHuggingFace(File imageFile) async {
-    debugPrint('🌿 Starting Hugging Face vision analysis...');
+    debugPrint('🌿 Starting PlantNet API analysis...');
     try {
       await _ensureReferenceDataLoaded();
 
-      final hf = await _hfVision.classifyPlantDisease(imageFile);
-      if (hf['success'] != true) return hf;
-
-      final preds = (hf['predictions'] as List).cast<Map<String, dynamic>>();
-      final top = preds.first;
-      final rawLabel = top['label']?.toString() ?? 'Unknown';
-      final score = (top['score'] as num?)?.toDouble() ?? 0.0;
-      final confidencePct = (score * 100).clamp(0.0, 100.0);
-
-      final parsed = _parseLabelToPlantDisease(rawLabel);
-      var plantName = parsed['plant'] ?? 'Unknown Plant';
-      var diseaseName = parsed['disease'] ?? 'Healthy';
-
-      // If mapping.json contains this key, use its nicer names
-      final mapKey = rawLabel.contains('___') ? rawLabel : _mapToCanonicalKey(plantName, diseaseName);
-      final mapped = _mapping?[mapKey];
-      if (mapped is Map) {
-        plantName = mapped['plant']?.toString() ?? plantName;
-        final mappedDisease = mapped['disease']?.toString();
-        if (mappedDisease != null && mappedDisease.isNotEmpty) {
-          diseaseName = mappedDisease.toLowerCase() == 'healthy' ? 'Healthy' : mappedDisease;
-        }
+      // Leaf detection gate — block non-leaf images before calling API
+      final leafCheck = await _onDeviceAnalysis.checkIsLeaf(imageFile);
+      if (leafCheck == false) {
+        return {
+          'success': false,
+          'isNonLeaf': true,
+          'error': 'Not a plant leaf',
+          'message': 'The image does not appear to be a plant leaf. Please take a clear photo of a plant leaf.',
+          'source': 'PlantNet AI',
+        };
       }
 
-      // Severity/remediation reuse existing engine (TFLite severity model + remediation.json)
+      // Step 1: Roboflow API — detect plant disease
+      final roboflowResult = await _plantNetApiService.identify(imageFile);
+
+      // Step 2: On-device disease detection as fallback/supplement
+      final onDevice = await _onDeviceAnalysis.analyzePlant(imageFile);
+
+      // Determine plant name and disease — prefer Roboflow if successful
+      String plantName;
+      String diseaseName;
+      String scientificName = '';
+      double confidence;
+
+      if (roboflowResult['success'] == true) {
+        final rfConf = (roboflowResult['confidence'] as num?)?.toDouble() ?? 0.0;
+        final rfPlant = roboflowResult['plantName']?.toString() ?? '';
+        final rfDisease = roboflowResult['diseaseName']?.toString() ?? '';
+        final odConf = double.tryParse(onDevice['confidence']?.toString() ?? '0') ?? 0.0;
+
+        // Use Roboflow if it has higher confidence or on-device is unknown
+        if (rfConf >= odConf || rfPlant.isEmpty == false) {
+          plantName = rfPlant.isNotEmpty ? rfPlant : (onDevice['plantName']?.toString() ?? 'Unknown Plant');
+          diseaseName = rfDisease.isNotEmpty ? rfDisease : (onDevice['diseaseName']?.toString() ?? 'Healthy');
+          confidence = rfConf;
+        } else {
+          plantName = onDevice['plantName']?.toString() ?? 'Unknown Plant';
+          diseaseName = onDevice['diseaseName']?.toString() ?? 'Healthy';
+          confidence = odConf;
+        }
+      } else {
+        // Roboflow failed — use on-device
+        plantName = onDevice['plantName']?.toString() ?? 'Unknown Plant';
+        diseaseName = onDevice['diseaseName']?.toString() ?? 'Healthy';
+        confidence = double.tryParse(onDevice['confidence']?.toString() ?? '0') ?? 0.0;
+      }
+
+      final isHealthy = diseaseName.toLowerCase() == 'healthy';
+
+      // Step 3: Severity & remediation
       final severity = await _severityService.getSeverityAndRemediation(
         diseaseName: diseaseName,
         plantName: plantName,
-        confidence: confidencePct,
+        confidence: confidence,
         imagePath: imageFile.path,
-        imageBase64: null,
       );
-
-      final severityLevel = severity?['severity']?.toString() ??
-          (diseaseName.toLowerCase() == 'healthy' ? 'None' : 'Unknown');
+      final severityLevel = severity?['severity']?.toString() ?? (isHealthy ? 'None' : 'Unknown');
       final remediation = severity?['remediation'] is List
           ? List<String>.from(severity!['remediation'])
           : <String>[];
 
-      final canonicalKey = mapKey;
-      final cause = _lookupCause(canonicalKey, diseaseName: diseaseName);
-      final symptoms = _lookupSymptoms(diseaseName);
-      final precautions = const [
-        'Monitor the plant daily for changes',
-        'Avoid overhead watering if disease is suspected',
-        'Improve air circulation around plants',
-        'Disinfect tools between plants',
-      ];
+      // Build predictions list
+      final rfPredictions = roboflowResult['predictions'] as List? ?? [];
+      final allPredictions = rfPredictions.isNotEmpty
+          ? rfPredictions
+          : (onDevice['allPredictions'] as List? ?? []).take(5).map((p) => {
+              'label': '${p['plantName']} - ${p['diseaseName']}',
+              'confidence': p['confidence']?.toString() ?? '0',
+            }).toList();
 
       return {
         'success': true,
-        'source': 'Hugging Face',
+        'source': 'Roboflow AI',
         'isRealData': true,
-        'hasDiseaseInfo': diseaseName.toLowerCase() != 'healthy',
+        'hasDiseaseInfo': !isHealthy,
         'data': {
           'plantName': plantName,
-          'scientificName': plantName,
+          'scientificName': scientificName,
           'diseaseName': diseaseName,
-          'confidence': confidencePct.toStringAsFixed(1),
+          'confidence': confidence.toStringAsFixed(1),
           'severity': severityLevel,
-          'cause': cause,
-          'symptoms': symptoms,
+          'cause': _lookupCause('', diseaseName: diseaseName),
+          'symptoms': _lookupSymptoms(diseaseName),
           'remediation': remediation.isNotEmpty
               ? remediation
-              : [
-                  'Consult an agricultural expert for confirmation',
-                  'Remove affected leaves to reduce spread',
-                ],
-          'precautions': precautions,
-          'rawLabel': rawLabel,
-          'allPredictions': preds
-              .map((p) => {
-                    'label': p['label'],
-                    'confidence': ((p['score'] as double) * 100).toStringAsFixed(2),
-                  })
-              .take(5)
-              .toList(),
+              : ['Consult an agricultural expert', 'Remove affected leaves to reduce spread'],
+          'precautions': const [
+            'Monitor the plant daily for changes',
+            'Avoid overhead watering if disease is suspected',
+            'Improve air circulation around plants',
+            'Disinfect tools between plants',
+          ],
+          'rawLabel': onDevice['rawLabel'] ?? '',
+          'allPredictions': allPredictions,
         },
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
-      debugPrint('❌ HF analysis error: $e');
+      debugPrint('❌ PlantNet API analysis error: $e');
       return {
         'success': false,
-        'error': 'Hugging Face analysis failed',
+        'error': 'PlantNet analysis failed',
         'message': e.toString(),
-        'source': 'Hugging Face',
+        'source': 'PlantNet AI',
       };
     }
   }
@@ -270,14 +287,15 @@ class AdvancedSearchService {
         };
       }
 
-      // If it isn't a leaf, Groq advice won't help (and we shouldn't call APIs).
+      // If it isn't a leaf, stop here — don't run Groq on non-plant images
       if (onDevice['isLeaf'] == false) {
+        debugPrint('❌ Non-leaf image — blocking Groq analysis');
         return {
           'success': false,
-          'error': 'Non-leaf image',
-          'message': onDevice['leafAnalysis']?['message']?.toString() ??
-              'Image does not appear to be a plant leaf',
-          'source': 'On-Device AI',
+          'isNonLeaf': true,
+          'error': 'Not a plant leaf',
+          'message': 'The image does not appear to be a plant leaf. Please take a clear photo of a plant leaf.',
+          'source': 'Groq AI',
         };
       }
 
@@ -432,10 +450,10 @@ class AdvancedSearchService {
   }
 
   Future<bool> isAnyApiAvailable() async {
-    final hf = _hfVision.hasToken();
+    final plantNet = _plantNetApiService.hasApiKey;
     final groq = await testGroqApi();
     final plantId = _plantIdService.hasApiKey() ? await testPlantIdApi() : false;
-    return hf || groq || plantId;
+    return plantNet || groq || plantId;
   }
 
   Map<String, dynamic> getApiRecommendations() {

@@ -67,14 +67,13 @@ class _HelpAndSupportScreenState extends State<HelpAndSupportScreen>
     final translation = Provider.of<TranslationService>(context);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
       appBar: CustomAppBar(
         title: translation.get('help_support'),
-        topPadding: 20.0,
         onBackPressed: _handleBackPressed,
       ),
       body: Container(
-        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
+        color: isDark ? AppColors.darkBg : AppColors.lightBg,
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
@@ -220,35 +219,40 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    final accentColor = gradient[0];
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: gradient[0].withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
+            color: cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: Colors.white, size: 20),
+                child: Icon(icon, color: accentColor, size: 20),
               ),
               const SizedBox(height: 10),
-              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+              Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.w700, fontSize: 14)),
               const SizedBox(height: 2),
-              Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11, fontWeight: FontWeight.w500)),
+              Text(subtitle, style: TextStyle(color: captionColor, fontSize: 11, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -263,118 +267,53 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final t = Provider.of<TranslationService>(context);
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-        color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.90),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.support_agent_rounded, color: AppColors.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(t.get('help_support'),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: textColor)),
+                const SizedBox(height: 4),
+                Text('Guides, FAQs, and support — made simple for everyone.',
+                    style: TextStyle(fontSize: 13, color: captionColor, height: 1.4)),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8, runSpacing: 6,
+                  children: [
+                    _Pill(icon: Icons.photo_camera_rounded, label: 'Photo tips'),
+                    _Pill(icon: Icons.analytics_rounded, label: 'Result meaning'),
+                    _Pill(icon: Icons.bug_report_rounded, label: 'Troubleshooting'),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Opacity(
-                opacity: isDark ? 0.20 : 0.16,
-                child: Image.asset(
-                  'assets/images/grape.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      theme.colorScheme.primary.withValues(alpha: isDark ? 0.28 : 0.16),
-                      theme.colorScheme.secondary.withValues(alpha: isDark ? 0.18 : 0.10),
-                      Colors.transparent,
-                    ],
-                    stops: const [0.0, 0.55, 1.0],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.secondary,
-                        ],
-                      ),
-                    ),
-                    child: const Icon(Icons.support_agent_rounded, color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t.get('help_support'),
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Guides, FAQs, and support — made simple for everyone.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            height: 1.35,
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _Pill(
-                              icon: Icons.photo_camera_rounded,
-                              label: 'Photo tips',
-                            ),
-                            _Pill(
-                              icon: Icons.analytics_rounded,
-                              label: 'Result meaning',
-                            ),
-                            _Pill(
-                              icon: Icons.bug_report_rounded,
-                              label: 'Troubleshooting',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -387,27 +326,23 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.65 : 0.90),
-        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+        borderRadius: BorderRadius.circular(50),
+        color: isDark ? AppColors.darkBg : AppColors.lightBg,
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: theme.colorScheme.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
-            ),
-          ),
+          Icon(icon, size: 13, color: AppColors.primary),
+          const SizedBox(width: 5),
+          Text(label, style: TextStyle(
+            fontSize: 11, fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
+          )),
         ],
       ),
     );

@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/translation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -52,7 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _fadeCtrl = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    _fadeCtrl = AnimationController(duration: const Duration(milliseconds: 400), vsync: this);
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _guestService.initialize().then((_) { if (mounted) setState(() {}); });
   }
@@ -78,43 +81,100 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   Future<void> _loadAll() async {
     setState(() => _isLoading = true);
     await Future.wait([_loadProfile(), _loadStats()]);
-    if (mounted) {
-      setState(() => _isLoading = false);
-      _fadeCtrl.forward();
-    }
+    if (mounted) { setState(() => _isLoading = false); _fadeCtrl.forward(); }
   }
 
   Future<void> _loadProfile() async {
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
+      final authUser = FirebaseAuth.instance.currentUser;
+      if (authUser == null) return;
+      final uid = authUser.uid;
+
+      // Always seed from Firebase Auth first (works for Google, email, etc.)
+      final authName  = authUser.displayName ?? '';
+      final authEmail = authUser.email ?? '';
+      final authPhoto = authUser.photoURL ?? '';
+
+      // Try to get Firestore doc — may not exist for Google sign-in users
       final snap = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (!snap.exists) return;
-      final d = snap.data()!;
-      _profile = {
-        'name': d['fullName'] ?? d['name'] ?? 'User',
-        'email': d['email'] ?? '',
-        'phone': d['phoneNumber'] ?? d['phone'] ?? '',
-        'location': d['location'] ?? '',
-        'farmSize': d['farmSize']?.toString() ?? '',
-        'crops': d['crops'] ?? [],
-        'joinDate': d['createdAt']?.toString() ?? '',
-        'scanCount': d['scanCount'] ?? 0,
-        'profileImageUrl': d['profileImageUrl'],
-      };
-      final imgUrl = d['profileImageUrl'] as String?;
-      if (imgUrl != null && imgUrl.isNotEmpty) {
-        _profileImageBase64 = imgUrl;
+
+      if (snap.exists) {
+        final d = snap.data()!;
+        _profile = {
+          // Prefer Firestore data, fall back to Auth data
+          'name':     (d['fullName'] ?? d['name'] ?? authName).toString().isNotEmpty
+                          ? (d['fullName'] ?? d['name'] ?? authName)
+                          : authName,
+          'email':    (d['email'] ?? authEmail).toString().isNotEmpty
+                          ? (d['email'] ?? authEmail)
+                          : authEmail,
+          'phone':    d['phoneNumber'] ?? d['phone'] ?? '',
+          'location': d['location'] ?? '',
+          'farmSize': d['farmSize']?.toString() ?? '',
+          'crops':    d['crops'] ?? [],
+          'joinDate': d['createdAt']?.toString() ?? '',
+          'scanCount': d['scanCount'] ?? 0,
+          'profileImageUrl': d['profileImageUrl'],
+        };
+
+        // Image priority: Firestore stored image > Google photoURL
+        final storedImg = d['profileImageUrl'] as String?;
+        if (storedImg != null && storedImg.isNotEmpty) {
+          _profileImageBase64 = storedImg;
+        } else if (authPhoto.isNotEmpty) {
+          _profileImageBase64 = authPhoto;
+        }
       } else {
-        final authUser = FirebaseAuth.instance.currentUser;
-        if (authUser?.photoURL?.isNotEmpty == true) _profileImageBase64 = authUser!.photoURL;
+        // No Firestore doc — use Auth data directly (common for Google sign-in)
+        _profile = {
+          'name':     authName.isNotEmpty ? authName : 'User',
+          'email':    authEmail,
+          'phone':    '',
+          'location': '',
+          'farmSize': '',
+          'crops':    [],
+          'joinDate': '',
+          'scanCount': 0,
+          'profileImageUrl': authPhoto.isNotEmpty ? authPhoto : null,
+        };
+
+        if (authPhoto.isNotEmpty) _profileImageBase64 = authPhoto;
+
+        // Create Firestore doc so future edits work
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(uid).set({
+            'fullName': authName,
+            'email':    authEmail,
+            'profileImageUrl': authPhoto,
+            'createdAt': FieldValue.serverTimestamp(),
+            'provider': authUser.providerData.isNotEmpty
+                ? authUser.providerData.first.providerId
+                : 'unknown',
+          }, SetOptions(merge: true));
+        } catch (e) {
+          debugPrint('Could not create Firestore doc: $e');
+        }
       }
-      _nameCtrl.text     = _profile['name'];
-      _emailCtrl.text    = _profile['email'];
-      _phoneCtrl.text    = _profile['phone'];
-      _locationCtrl.text = _profile['location'] ?? '';
+
+      _nameCtrl.text     = _profile['name']?.toString() ?? '';
+      _emailCtrl.text    = _profile['email']?.toString() ?? '';
+      _phoneCtrl.text    = _profile['phone']?.toString() ?? '';
+      _locationCtrl.text = _profile['location']?.toString() ?? '';
       _farmCtrl.text     = _profile['farmSize']?.toString() ?? '';
-    } catch (e) { debugPrint('Profile load error: $e'); }
+    } catch (e) {
+      debugPrint('Profile load error: $e');
+      // Last resort — use Auth data
+      final authUser = FirebaseAuth.instance.currentUser;
+      if (authUser != null) {
+        _profile['name']  = authUser.displayName ?? 'User';
+        _profile['email'] = authUser.email ?? '';
+        if (authUser.photoURL?.isNotEmpty == true) {
+          _profileImageBase64 = authUser.photoURL;
+        }
+        _nameCtrl.text  = _profile['name'];
+        _emailCtrl.text = _profile['email'];
+      }
+    }
   }
 
   Future<void> _loadStats() async {
@@ -195,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
     if (_guestService.isGuestMode) {
       return Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
         body: GuestRestrictionView(
           maxWidth: MediaQuery.of(context).size.width,
           fadeController: _fadeCtrl..forward(),
@@ -206,421 +266,466 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFF4F6F9),
-      body: _isLoading ? _buildLoading(isDark) : _buildBody(isDark),
-    );
-  }
-
-  Widget _buildLoading(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
-          const SizedBox(height: 16),
-          Text('Loading profile...', style: TextStyle(color: isDark ? AppColors.darkCaption : AppColors.lightCaption, fontSize: 14)),
-        ],
-      ),
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3))
+          : FadeTransition(opacity: _fadeAnim, child: _buildBody(isDark)),
     );
   }
 
   Widget _buildBody(bool isDark) {
-    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFF4F6F9);
-    final cardBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final textPrimary = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
-    final textSub = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    final surfaceBg = isDark ? AppColors.darkSurface : Colors.white;
 
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── App Bar ──────────────────────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-            elevation: 0,
-            automaticallyImplyLeading: false,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-                child: TextButton.icon(
-                  onPressed: () => showLogoutConfirmationDialog(context: context, onConfirm: _logout),
-                  icon: const Icon(Icons.logout_rounded, size: 16, color: AppColors.error),
-                  label: const Text('Logout', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700, fontSize: 13)),
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.error.withValues(alpha: 0.1),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        // ── Top bar: title only (no settings icon — it's in the App section below) ──
+        SliverAppBar(
+          pinned: true,
+          backgroundColor: surfaceBg,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          title: Text(t.isUrdu ? 'پروفائل' : 'Profile',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor)),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Divider(height: 1, color: border),
+          ),
+        ),
+
+        // ── Avatar + name + stats ────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Container(
+            color: surfaceBg,
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Column(
+              children: [
+                // Avatar
+                GestureDetector(
+                  onTap: () => showProfilePictureOptionsSheet(
+                    context: context,
+                    profileImageFile: _profileImageFile,
+                    profileImageBase64: _profileImageBase64,
+                    onChangeImage: _pickImage,
+                  ),
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 88, height: 88,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primary, width: 2.5),
+                        ),
+                        padding: const EdgeInsets.all(3),
+                        child: ClipOval(child: _buildAvatarImage()),
+                      ),
+                      Positioned(
+                        bottom: 2, right: 2,
+                        child: Container(
+                          width: 26, height: 26,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: surfaceBg, width: 2),
+                          ),
+                          child: const Icon(CupertinoIcons.camera_fill, size: 12, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: _buildProfileHero(isDark, cardBg, border, textPrimary, textSub),
+                const SizedBox(height: 12),
+
+                // Name
+                Text(
+                  _profile['name']?.toString().isNotEmpty == true ? _profile['name'] : 'User',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
+                      color: textColor, letterSpacing: -0.3),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _profile['email'] ?? '',
+                  style: TextStyle(fontSize: 13, color: captionColor),
+                ),
+                if ((_profile['location'] as String?)?.isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(CupertinoIcons.location_fill, size: 11, color: AppColors.primary),
+                    const SizedBox(width: 3),
+                    Text(_profile['location'],
+                        style: const TextStyle(fontSize: 12, color: AppColors.primary,
+                            fontWeight: FontWeight.w600)),
+                  ]),
+                ],
+                const SizedBox(height: 16),
+
+                // Edit profile button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => showEditProfileSheet(
+                      context: context,
+                      nameController: _nameCtrl,
+                      phoneController: _phoneCtrl,
+                      locationController: _locationCtrl,
+                      farmSizeController: _farmCtrl,
+                      onSave: () { _saveProfile(); Navigator.pop(context); },
+                    ),
+                    icon: const Icon(CupertinoIcons.pencil, size: 15),
+                    label: const Text('Edit Profile'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: textColor,
+                      side: BorderSide(color: border, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      backgroundColor: isDark ? AppColors.darkBg : const Color(0xFFF8F8F8),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
 
-          // ── Stats ─────────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            sliver: SliverToBoxAdapter(child: _buildStats(isDark, cardBg, border)),
+        // ── Stats row ────────────────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                _StatItem(value: '$_totalScans', label: t.isUrdu ? 'کل اسکینز' : 'Total Scans', isDark: isDark),
+                _Divider(isDark: isDark),
+                _StatItem(value: '$_healthyScans', label: t.isUrdu ? 'صحت مند' : 'Healthy', isDark: isDark, color: AppColors.primary),
+                _Divider(isDark: isDark),
+                _StatItem(value: '$_diseasedScans', label: t.isUrdu ? 'بیمار' : 'Diseased', isDark: isDark, color: AppColors.error),
+              ],
+            ),
           ),
+        ),
 
-          // ── Info Fields ───────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            sliver: SliverToBoxAdapter(child: _buildInfoSection(isDark, cardBg, border, textPrimary, textSub)),
+        // ── Account section ──────────────────────────────────────────────
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _SectionLabel(label: t.isUrdu ? 'اکاؤنٹ' : 'Account', isDark: isDark),
           ),
-
-          // ── Quick Actions ─────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-            sliver: SliverToBoxAdapter(child: _buildActions(isDark, cardBg, border, textPrimary, textSub)),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _MenuCard(isDark: isDark, items: [
+              _MenuItem(
+                icon: CupertinoIcons.person_crop_circle,
+                label: t.isUrdu ? 'ذاتی معلومات' : 'Personal Info',
+                subtitle: _profile['name']?.toString().isNotEmpty == true
+                    ? _profile['name'] : 'Tap to fill in',
+                onTap: () => showEditProfileSheet(
+                  context: context,
+                  nameController: _nameCtrl,
+                  phoneController: _phoneCtrl,
+                  locationController: _locationCtrl,
+                  farmSizeController: _farmCtrl,
+                  onSave: () { _saveProfile(); Navigator.pop(context); },
+                ),
+              ),
+              _MenuItem(
+                icon: CupertinoIcons.phone,
+                label: t.isUrdu ? 'فون' : 'Phone',
+                subtitle: _profile['phone']?.toString().isNotEmpty == true
+                    ? _profile['phone'] : 'Not set',
+                onTap: () => showEditProfileSheet(
+                  context: context,
+                  nameController: _nameCtrl,
+                  phoneController: _phoneCtrl,
+                  locationController: _locationCtrl,
+                  farmSizeController: _farmCtrl,
+                  onSave: () { _saveProfile(); Navigator.pop(context); },
+                ),
+              ),
+              _MenuItem(
+                icon: CupertinoIcons.location,
+                label: t.isUrdu ? 'مقام' : 'Location',
+                subtitle: _profile['location']?.toString().isNotEmpty == true
+                    ? _profile['location'] : 'Not set',
+                onTap: () => showEditProfileSheet(
+                  context: context,
+                  nameController: _nameCtrl,
+                  phoneController: _phoneCtrl,
+                  locationController: _locationCtrl,
+                  farmSizeController: _farmCtrl,
+                  onSave: () { _saveProfile(); Navigator.pop(context); },
+                ),
+              ),
+              _MenuItem(
+                icon: CupertinoIcons.tree,
+                label: t.isUrdu ? 'فارم کا سائز' : 'Farm Size',
+                subtitle: _profile['farmSize']?.toString().isNotEmpty == true
+                    ? '${_profile['farmSize']} acres' : 'Not set',
+                onTap: () => showEditProfileSheet(
+                  context: context,
+                  nameController: _nameCtrl,
+                  phoneController: _phoneCtrl,
+                  locationController: _locationCtrl,
+                  farmSizeController: _farmCtrl,
+                  onSave: () { _saveProfile(); Navigator.pop(context); },
+                ),
+              ),
+            ]),
           ),
+        ),
 
-          const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-        ],
-      ),
+        // ── Danger zone ──────────────────────────────────────────────────
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _SectionLabel(label: t.isUrdu ? 'اکاؤنٹ اقدامات' : 'Account Actions', isDark: isDark),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _MenuCard(isDark: isDark, items: [
+              _MenuItem(
+                icon: CupertinoIcons.square_arrow_right,
+                label: t.isUrdu ? 'لاگ آؤٹ' : 'Log Out',
+                subtitle: 'Sign out of your account',
+                labelColor: AppColors.error,
+                iconColor: AppColors.error,
+                onTap: () => showLogoutConfirmationDialog(
+                    context: context, onConfirm: _logout),
+              ),
+            ]),
+          ),
+        ),
+
+        const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+      ],
     );
   }
 
-  // ── Profile Hero (avatar + name + email + edit) ──────────────────────
-  Widget _buildProfileHero(bool isDark, Color cardBg, Color border, Color textPrimary, Color textSub) {
-    return Container(
-      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar
-              GestureDetector(
-                onTap: () => showProfilePictureOptionsSheet(
-                  context: context,
-                  profileImageFile: _profileImageFile,
-                  profileImageBase64: _profileImageBase64,
-                  onChangeImage: _pickImage,
-                ),
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 80, height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(colors: [AppColors.primary, AppColors.secondary]),
-                        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
-                      ),
-                      padding: const EdgeInsets.all(2.5),
-                      child: Container(
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: isDark ? AppColors.darkCard : Colors.white),
-                        child: ClipOval(child: _buildAvatarImage()),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0, right: 0,
-                      child: Container(
-                        width: 24, height: 24,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary, shape: BoxShape.circle,
-                          border: Border.all(color: isDark ? AppColors.darkSurface : Colors.white, width: 2),
-                        ),
-                        child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
+  Widget _buildAvatarImage() {
+    // Google photoURL is an https:// URL
+    if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
+      if (_profileImageBase64!.startsWith('http')) {
+        return Image.network(
+          _profileImageBase64!,
+          fit: BoxFit.cover, width: 82, height: 82,
+          loadingBuilder: (_, child, progress) =>
+              progress == null ? child : _defaultAvatar(),
+          errorBuilder: (_, __, ___) => _defaultAvatar(),
+        );
+      }
+      // Local file path
+      if (_profileImageFile != null) {
+        return Image.file(
+          _profileImageFile!,
+          fit: BoxFit.cover, width: 82, height: 82,
+          errorBuilder: (_, __, ___) => _defaultAvatar(),
+        );
+      }
+      // Base64 encoded
+      try {
+        return Image.memory(
+          base64Decode(_profileImageBase64!),
+          fit: BoxFit.cover, width: 82, height: 82,
+          errorBuilder: (_, __, ___) => _defaultAvatar(),
+        );
+      } catch (_) {}
+    }
+    // Local file (picked from gallery)
+    if (_profileImageFile != null) {
+      return Image.file(
+        _profileImageFile!,
+        fit: BoxFit.cover, width: 82, height: 82,
+        errorBuilder: (_, __, ___) => _defaultAvatar(),
+      );
+    }
+    return _defaultAvatar();
+  }
 
-              // Name + email
+  Widget _defaultAvatar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      color: AppColors.primary.withValues(alpha: 0.1),
+      child: const Icon(CupertinoIcons.person_fill, size: 40, color: AppColors.primary),
+    );
+  }
+}
+
+// ── Section label ─────────────────────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  const _SectionLabel({required this.label, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+        letterSpacing: 0.8,
+      ),
+    );
+  }
+}
+
+// ── Menu card ─────────────────────────────────────────────────────────────────
+class _MenuCard extends StatelessWidget {
+  final bool isDark;
+  final List<_MenuItem> items;
+  const _MenuCard({required this.isDark, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        children: items.asMap().entries.map((e) {
+          final item = e.value;
+          final isLast = e.key == items.length - 1;
+          return Column(
+            children: [
+              _MenuRow(item: item, isDark: isDark),
+              if (!isLast) Divider(
+                height: 1,
+                indent: 56,
+                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _MenuItem {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+  final Color? labelColor;
+  final Color? iconColor;
+
+  const _MenuItem({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+    this.labelColor,
+    this.iconColor,
+  });
+}
+
+class _MenuRow extends StatelessWidget {
+  final _MenuItem item;
+  final bool isDark;
+  const _MenuRow({required this.item, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = item.labelColor ?? (isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E));
+    final iconColor = item.iconColor ?? AppColors.primary;
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () { HapticFeedback.lightImpact(); item.onTap(); },
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          child: Row(
+            children: [
+              Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: isDark ? 0.18 : 0.1),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(item.icon, size: 17, color: iconColor),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(_profile['name']?.toString().isNotEmpty == true ? _profile['name'] : 'User',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textPrimary, letterSpacing: -0.5),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 3),
-                    Text(_profile['email'] ?? '',
-                      style: TextStyle(fontSize: 13, color: textSub, fontWeight: FontWeight.w500),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                    if ((_profile['location'] as String?)?.isNotEmpty == true) ...[
-                      const SizedBox(height: 4),
-                      Row(children: [
-                        Icon(Icons.location_on_rounded, size: 12, color: AppColors.primary),
-                        const SizedBox(width: 3),
-                        Flexible(child: Text(_profile['location'], style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                      ]),
-                    ],
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 34,
-                      child: ElevatedButton.icon(
-                        onPressed: () => showEditProfileSheet(
-                          context: context,
-                          nameController: _nameCtrl,
-                          phoneController: _phoneCtrl,
-                          locationController: _locationCtrl,
-                          farmSizeController: _farmCtrl,
-                          onSave: () { _saveProfile(); Navigator.pop(context); },
-                        ),
-                        icon: const Icon(Icons.edit_rounded, size: 14),
-                        label: const Text('Edit Profile', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
+                    Text(item.label,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
+                    Text(item.subtitle,
+                        style: TextStyle(fontSize: 11, color: captionColor),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
+              Icon(CupertinoIcons.chevron_right, size: 14, color: captionColor),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildAvatarImage() {
-    if (_profileImageFile != null) {
-      return Image.file(_profileImageFile!, fit: BoxFit.cover, width: 76, height: 76, errorBuilder: (_, __, ___) => _defaultAvatar());
-    }
-    if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
-      if (_profileImageBase64!.startsWith('http')) {
-        return Image.network(_profileImageBase64!, fit: BoxFit.cover, width: 76, height: 76,
-          loadingBuilder: (_, child, p) => p == null ? child : _defaultAvatar(),
-          errorBuilder: (_, __, ___) => _defaultAvatar());
-      }
-      try {
-        return Image.memory(base64Decode(_profileImageBase64!), fit: BoxFit.cover, width: 76, height: 76, errorBuilder: (_, __, ___) => _defaultAvatar());
-      } catch (_) {}
-    }
-    return _defaultAvatar();
-  }
+// ── Stat item ─────────────────────────────────────────────────────────────────
+class _StatItem extends StatelessWidget {
+  final String value;
+  final String label;
+  final bool isDark;
+  final Color? color;
+  const _StatItem({required this.value, required this.label, required this.isDark, this.color});
 
-  Widget _defaultAvatar() => const Icon(Icons.person_rounded, size: 36, color: AppColors.primary);
-
-  // ── Stats row ─────────────────────────────────────────────────────────
-  Widget _buildStats(bool isDark, Color cardBg, Color border) {
-    return Row(
-      children: [
-        Expanded(child: _StatCard(value: '$_totalScans', label: 'Total Scans', icon: Icons.qr_code_scanner_rounded, color: AppColors.primary, isDark: isDark)),
-        const SizedBox(width: 10),
-        Expanded(child: _StatCard(value: '$_healthyScans', label: 'Healthy', icon: Icons.check_circle_rounded, color: AppColors.success, isDark: isDark)),
-        const SizedBox(width: 10),
-        Expanded(child: _StatCard(value: '$_diseasedScans', label: 'Diseased', icon: Icons.warning_rounded, color: AppColors.warning, isDark: isDark)),
-      ],
-    );
-  }
-
-  // ── Info section ──────────────────────────────────────────────────────
-  Widget _buildInfoSection(bool isDark, Color cardBg, Color border, Color textPrimary, Color textSub) {
-    final fields = [
-      {'icon': Icons.person_rounded, 'label': 'Full Name', 'value': _profile['name'] ?? '', 'color': AppColors.primary},
-      {'icon': Icons.email_rounded, 'label': 'Email', 'value': _profile['email'] ?? '', 'color': AppColors.info},
-      {'icon': Icons.phone_rounded, 'label': 'Phone', 'value': _profile['phone']?.toString().isNotEmpty == true ? _profile['phone'] : 'Not set', 'color': AppColors.secondary},
-      {'icon': Icons.location_on_rounded, 'label': 'Location', 'value': _profile['location']?.toString().isNotEmpty == true ? _profile['location'] : 'Not set', 'color': AppColors.warning},
-      {'icon': Icons.agriculture_rounded, 'label': 'Farm Size', 'value': _profile['farmSize']?.toString().isNotEmpty == true ? '${_profile['farmSize']} acres' : 'Not set', 'color': const Color(0xFF8B5CF6)},
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? (isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E));
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    return Expanded(
       child: Column(
         children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text('Profile Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => showEditProfileSheet(
-                    context: context,
-                    nameController: _nameCtrl,
-                    phoneController: _phoneCtrl,
-                    locationController: _locationCtrl,
-                    farmSizeController: _farmCtrl,
-                    onSave: () { _saveProfile(); Navigator.pop(context); },
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                    ),
-                    child: const Text('Edit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: border),
-          ...fields.asMap().entries.map((e) {
-            final f = e.value;
-            final isLast = e.key == fields.length - 1;
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36, height: 36,
-                        decoration: BoxDecoration(
-                          color: (f['color'] as Color).withValues(alpha: isDark ? 0.18 : 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(f['icon'] as IconData, size: 18, color: f['color'] as Color),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(f['label'] as String, style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkCaption : AppColors.lightCaption, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 2),
-                            Text(f['value'] as String, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!isLast) Divider(height: 1, indent: 64, color: border),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  // ── Quick actions ─────────────────────────────────────────────────────
-  Widget _buildActions(bool isDark, Color cardBg, Color border, Color textPrimary, Color textSub) {
-    final items = [
-      {'icon': Icons.history_rounded, 'label': 'Scan History', 'sub': 'View all past scans', 'color': AppColors.primary, 'route': AppRoutes.history},
-      {'icon': Icons.settings_rounded, 'label': 'Settings', 'sub': 'App preferences', 'color': AppColors.secondary, 'route': AppRoutes.settings},
-      {'icon': Icons.help_outline_rounded, 'label': 'Help & Support', 'sub': 'FAQs and contact', 'color': AppColors.info, 'route': AppRoutes.help},
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Row(
-              children: [
-                const Icon(Icons.apps_rounded, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text('Quick Actions', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: textPrimary)),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: border),
-          ...items.asMap().entries.map((e) {
-            final item = e.value;
-            final isLast = e.key == items.length - 1;
-            final color = item['color'] as Color;
-            return Column(
-              children: [
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () { HapticFeedback.lightImpact(); Navigator.pushNamed(context, item['route'] as String); },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38, height: 38,
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: isDark ? 0.18 : 0.1),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: Icon(item['icon'] as IconData, size: 20, color: color),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item['label'] as String, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textPrimary)),
-                                Text(item['sub'] as String, style: TextStyle(fontSize: 11, color: textSub, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right_rounded, size: 20, color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                if (!isLast) Divider(height: 1, indent: 66, color: border),
-              ],
-            );
-          }),
+          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: c)),
+          const SizedBox(height: 3),
+          Text(label, style: TextStyle(fontSize: 11, color: captionColor, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 }
 
-// ── Stat card widget ──────────────────────────────────────────────────────
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  final IconData icon;
-  final Color color;
+class _Divider extends StatelessWidget {
   final bool isDark;
-
-  const _StatCard({required this.value, required this.label, required this.icon, required this.color, required this.isDark});
+  const _Divider({required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: isDark ? 0.3 : 0.2)),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(color: color.withValues(alpha: isDark ? 0.2 : 0.12), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color, height: 1)),
-          const SizedBox(height: 3),
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isDark ? AppColors.darkCaption : AppColors.lightCaption), textAlign: TextAlign.center),
-        ],
-      ),
+      width: 1, height: 36,
+      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
     );
   }
 }
+
+
+
+

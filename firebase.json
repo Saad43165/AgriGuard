@@ -1,1 +1,29 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"agriguard-867e6","appId":"1:1063721443887:android:768853519ba9f2ec469cda","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"agriguard-867e6","configurations":{"android":"1:1063721443887:android:768853519ba9f2ec469cda","ios":"1:1063721443887:ios:8d9be3085422f23f469cda","macos":"1:1063721443887:ios:8d9be3085422f23f469cda","web":"1:1063721443887:web:4ca9d393381d70a2469cda","windows":"1:1063721443887:web:675ff8cf43a73c0d469cda"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "agriguard-867e6",
+          "appId": "1:1063721443887:android:768853519ba9f2ec469cda",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "agriguard-867e6",
+          "configurations": {
+            "android": "1:1063721443887:android:768853519ba9f2ec469cda",
+            "ios": "1:1063721443887:ios:8d9be3085422f23f469cda",
+            "macos": "1:1063721443887:ios:8d9be3085422f23f469cda",
+            "web": "1:1063721443887:web:4ca9d393381d70a2469cda",
+            "windows": "1:1063721443887:web:675ff8cf43a73c0d469cda"
+          }
+        }
+      }
+    }
+  }
+}

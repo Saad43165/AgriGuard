@@ -16,4 +16,5 @@ class AppRoutes {
   static const String analytics = '/analytics';
   static const String farmDiary = '/farm-diary';
   static const String cropCalendar = '/crop-calendar';
+  static const String diseaseLibrary = '/disease-library';
 }

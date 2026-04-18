@@ -29,8 +29,8 @@ class LeafDetector {
       final totalPixels = resized.width * resized.height;
 
       int greenPixels = 0;
-      int warmPixels = 0;
-      int edgeCount = 0;
+      int warmPixels  = 0;
+      int edgeCount   = 0;
       const edgeThreshold = 25;
 
       for (int y = 0; y < resized.height; y++) {
@@ -43,16 +43,16 @@ class LeafDetector {
           // Healthy leaf — green dominant
           if (g > r * 1.2 && g > b * 1.2 && g > 30) greenPixels++;
 
-          // Diseased leaf — rust / blight / scorch / scab colours
-          if (r > 100 && g > 40 && b < 110 && r > b * 1.4) warmPixels++;
+          // Diseased leaf — rust / blight / scorch / spider mites / bronzing
+          if (r > 100 && g > 30 && b < 120 && r > b * 1.3) warmPixels++;
 
           // Edge detection
           if (y < resized.height - 1 && x < resized.width - 1) {
             final current = (r + g + b) / 3;
-            final rp = resized.getPixel(x + 1, y);
+            final rp    = resized.getPixel(x + 1, y);
             final right = (rp.r + rp.g + rp.b) / 3;
-            final dp = resized.getPixel(x, y + 1);
-            final down = (dp.r + dp.g + dp.b) / 3;
+            final dp    = resized.getPixel(x, y + 1);
+            final down  = (dp.r + dp.g + dp.b) / 3;
             if ((current - right).abs() > edgeThreshold ||
                 (current - down).abs() > edgeThreshold) {
               edgeCount++;
@@ -61,19 +61,24 @@ class LeafDetector {
         }
       }
 
-      final greenPct = (greenPixels / totalPixels) * 100;
-      final warmPct = (warmPixels / totalPixels) * 100;
-      final edgeDensity = (edgeCount / totalPixels) * 100;
+      final greenPct    = (greenPixels / totalPixels) * 100;
+      final warmPct     = (warmPixels  / totalPixels) * 100;
+      final edgeDensity = (edgeCount   / totalPixels) * 100;
 
       // Combined plant coverage: green + discounted warm pixels
       final plantPct = greenPct + (warmPct * 0.5);
 
-      // Canonical decision rule (from ai_analysis_service.dart)
-      final isLeaf = (plantPct > 15 && edgeDensity > 4) ||
-          (edgeDensity > 8 && plantPct > 8) ||
-          (plantPct >= 55 && edgeDensity >= 2.5);
+      // Leaf detection rules — original working version.
+      // Real leaves have meaningful green/warm coverage AND texture edges.
+      // Non-plant objects (phones, food, faces, walls) fail both checks.
+      // Rule 1: good plant coverage + edges (standard leaf)
+      // Rule 2: strong edges + some plant coverage (close-up diseased leaf)
+      // Rule 3: very high plant coverage (healthy leaf filling frame)
+      final isLeaf = (plantPct > 15 && edgeDensity > 3.0) ||
+          (edgeDensity > 6 && plantPct > 8) ||
+          (plantPct >= 45 && edgeDensity >= 2.0);
 
-      // Canonical confidence formula (from ai_analysis_service.dart)
+      // Canonical confidence formula
       final confidence = (plantPct * 0.7) + (edgeDensity * 0.3);
 
       debugPrint('🍃 LeafDetector: '

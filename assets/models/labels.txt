@@ -1,11 +1,14 @@
 Apple
-Bell pepper
+Blueberry
 Cherry
-Corn (Maize)
+Corn
 Grape
+Orange
 Peach
+Bell Pepper
 Potato
+Raspberry
 Soybean
+Squash
 Strawberry
 Tomato
-Wheat

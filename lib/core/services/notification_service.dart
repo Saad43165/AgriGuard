@@ -254,10 +254,12 @@ class NotificationService {
       if (daysUntil == 0 && scheduledDate.isBefore(now)) daysUntil = 7;
       scheduledDate = scheduledDate.add(Duration(days: daysUntil));
 
-      await _localNotifications.show(
+      // Use periodically repeating notification as workaround (no timezone package)
+      await _localNotifications.periodicallyShow(
         _reminderNotificationId,
         '🌿 Time to scan your plants!',
         'Check your crops for diseases with AgriGuard.',
+        RepeatInterval.weekly,
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'agriguard_reminders',
@@ -266,7 +268,7 @@ class NotificationService {
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
-            color: Color(0xFF00C896),
+            color: Color(0xFF2D6A4F),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -274,9 +276,10 @@ class NotificationService {
             presentSound: true,
           ),
         ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
 
-      debugPrint('✅ Weekly scan reminder set for weekday $weekday at ${time.hour}:${time.minute}');
+      debugPrint('✅ Weekly scan reminder scheduled for weekday $weekday at ${time.hour}:${time.minute}');
     } catch (e) {
       debugPrint('❌ Error scheduling reminder: $e');
     }

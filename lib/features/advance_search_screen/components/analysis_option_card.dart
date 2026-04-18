@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/services/translation_service.dart';
+import '../../../../core/widgets/app_themes.dart';
 
 class AnalysisOptionCard extends StatelessWidget {
   final Map<String, dynamic> option;
@@ -42,14 +43,10 @@ class AnalysisOptionCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? color.withValues(alpha: isDark ? 0.15 : 0.1)
-                  : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white),
+                  : (isDark ? AppColors.darkCard : Colors.white),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected
-                    ? color
-                    : (isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.06)),
+                color: isSelected ? color : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
                 width: isSelected ? 2 : 1.5,
               ),
             ),
@@ -60,11 +57,7 @@ class AnalysisOptionCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(
-                        colors: [color, color.withValues(alpha: 0.8)])
-                        : null,
-                    color: isSelected ? null : color.withValues(alpha: 0.15),
+                    color: isSelected ? color : color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -90,7 +83,7 @@ class AnalysisOptionCard extends StatelessWidget {
                                 fontWeight: FontWeight.w800,
                                 color: isSelected
                                     ? color
-                                    : (isDark ? Colors.white : Colors.black87),
+                                    : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
                               ),
                             ),
                           ),
@@ -140,9 +133,7 @@ class AnalysisOptionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.black.withValues(alpha: 0.5),
+                          color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

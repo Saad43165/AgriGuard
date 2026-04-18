@@ -10,9 +10,10 @@ import 'package:agriguard_fyp/features/history/presentation/widgets/history_scan
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_stats_card.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_tab_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../../core/services/translation_service.dart';
 import 'package:flutter/services.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../../../core/widgets/floating_orb.dart';
 import '../../ResultScreen/presentation/results_screen.dart';
 import '../../advance_result_screen/advanced_result_screen.dart';
 import '../../../../core/repositories/scan_repository.dart';
@@ -366,12 +367,12 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final size = MediaQuery.of(context).size;
+    final t = Provider.of<TranslationService>(context, listen: false);
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       appBar: HistoryAppBar(
-        title: 'Scan History',
+        title: t.isUrdu ? 'اسکین ہسٹری' : 'Scan History',
         showBackButton: true,
         onBackPressed: () => Navigator.pop(context),
         actions: [
@@ -391,21 +392,8 @@ class _HistoryScreenState extends State<HistoryScreen>
         ],
       ),
       body: Container(
-        color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
-        child: Stack(
-          children: [
-            // Floating orbs
-            ...List.generate(
-              3,
-                  (i) => FloatingOrb(
-                index: i,
-                maxWidth: size.width,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              ),
-            ),
-
-            SafeArea(
+        color: isDark ? AppColors.darkBg : AppColors.lightBg,
+        child: SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(
@@ -476,10 +464,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
   }
 
   Widget _buildContent(BuildContext context) {
@@ -526,6 +512,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildSearchBar(bool isDark) {
+    final t = Provider.of<TranslationService>(context, listen: false);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -546,7 +533,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
-            hintText: 'Search by plant or disease...',
+            hintText: t.isUrdu ? 'پودے یا بیماری سے تلاش کریں...' : 'Search by plant or disease...',
             hintStyle: TextStyle(
               color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
               fontSize: 14,
@@ -576,11 +563,12 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildFilterChips(bool isDark) {
+    final t = Provider.of<TranslationService>(context, listen: false);
     final filters = [
-      ('all', 'All'),
-      ('healthy', 'Healthy'),
-      ('diseased', 'Diseased'),
-      ('high', 'High Severity'),
+      ('all', t.isUrdu ? 'سب' : 'All'),
+      ('healthy', t.isUrdu ? 'صحت مند' : 'Healthy'),
+      ('diseased', t.isUrdu ? 'بیمار' : 'Diseased'),
+      ('high', t.isUrdu ? 'زیادہ شدت' : 'High Severity'),
     ];
     return SizedBox(
       height: 36,
@@ -625,6 +613,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Widget _buildNoResultsState() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final t = Provider.of<TranslationService>(context, listen: false);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -641,7 +630,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'No results found',
+              t.isUrdu ? 'کوئی نتیجہ نہیں ملا' : 'No results found',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -650,7 +639,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Try adjusting your search or filter',
+              t.isUrdu ? 'اپنی تلاش یا فلٹر تبدیل کریں' : 'Try adjusting your search or filter',
               style: TextStyle(
                 fontSize: 14,
                 color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
@@ -667,7 +656,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 });
               },
               icon: const Icon(Icons.clear_rounded, size: 16),
-              label: const Text('Clear filters'),
+              label: Text(t.isUrdu ? 'فلٹر صاف کریں' : 'Clear filters'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -681,6 +670,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildLoadingState() {
+    final t = Provider.of<TranslationService>(context, listen: false);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -700,7 +690,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           ),
           const SizedBox(height: 24),
           Text(
-            'Loading your scans...',
+            t.isUrdu ? 'آپ کے اسکینز لوڈ ہو رہے ہیں...' : 'Loading your scans...',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -713,6 +703,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildErrorState() {
+    final t = Provider.of<TranslationService>(context, listen: false);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -732,9 +723,9 @@ class _HistoryScreenState extends State<HistoryScreen>
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Failed to load scans',
-              style: TextStyle(
+            Text(
+              t.isUrdu ? 'اسکینز لوڈ کرنے میں ناکامی' : 'Failed to load scans',
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -758,7 +749,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 ),
               ),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try Again', style: TextStyle(fontSize: 16)),
+              label: Text(t.isUrdu ? 'دوبارہ کوشش کریں' : 'Try Again', style: const TextStyle(fontSize: 16)),
             ),
           ],
         ),
@@ -769,56 +760,35 @@ class _HistoryScreenState extends State<HistoryScreen>
   // ==================== DIALOG BUILDERS ====================
 
   Widget _buildLoadingDialog(String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? [const Color(0xFF1E1E2E), const Color(0xFF16213E)]
-                : [Colors.white, const Color(0xFFF8F9FF)],
-          ),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 30,
-              offset: const Offset(0, 15),
-            ),
-          ],
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 64,
-              height: 64,
-              child: CircularProgressIndicator(
-                strokeWidth: 5,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
+            const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
+            const SizedBox(height: 20),
             Text(
               message,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: 20,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Text(
               'Please wait...',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w500,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
               ),
             ),
           ],
@@ -828,96 +798,62 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   void _showErrorDialog(String title, String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? [const Color(0xFF1E1E2E), const Color(0xFF16213E)]
-                  : [Colors.white, const Color(0xFFFFF8F8)],
-            ),
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(
-              color: Colors.red.withValues(alpha: 0.3),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              ),
-            ],
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE53935), Color(0xFFD32F2F)],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withValues(alpha: 0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.error_outline_rounded,
-                  size: 56,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.error_outline_rounded, size: 36, color: AppColors.error),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 message,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 13,
+                  color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+                  height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                height: 52,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.error,
                     foregroundColor: Colors.white,
-                    elevation: 8,
-                    shadowColor: Colors.red.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  child: const Text('Close', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
@@ -1078,202 +1014,80 @@ class _HistoryScreenState extends State<HistoryScreen>
     final scan = _currentScans[index];
     final diagnosis = scan['diagnosis']?.toString() ?? 'this scan';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
         child: Container(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                const Color(0xFF1E1E2E),
-                const Color(0xFF16213E),
-              ]
-                  : [
-                Colors.white,
-                const Color(0xFFF8F9FF),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.05),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-                spreadRadius: 5,
-              ),
-            ],
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.red.shade400,
-                      Colors.red.shade600,
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.red.withValues(alpha: 0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.delete_outline_rounded,
-                  size: 48,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.delete_outline_rounded, size: 32, color: AppColors.error),
               ),
-
-              const SizedBox(height: 24),
-
-              // Title
-              ShaderMask(
-                blendMode: BlendMode.srcIn,
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.secondary,
-                  ],
-                ).createShader(bounds),
-                child: const Text(
-                  'Delete Scan?',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 24,
-                    letterSpacing: -0.5,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Description
+              const SizedBox(height: 16),
               Text(
-                'Are you sure you want to delete "$diagnosis"? This action cannot be undone.',
+                'Delete Scan?',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Are you sure you want to delete "$diagnosis"? This cannot be undone.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 15,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
                   height: 1.5,
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              // Buttons
+              const SizedBox(height: 20),
               Row(
                 children: [
-                  // Cancel Button
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: colorScheme.primary.withValues(alpha: 0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.primary,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
+                    child: OutlinedButton(
+                      onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
+                        side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
+                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
-
-                  const SizedBox(width: 12),
-
-                  // Delete Button
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () {
+                    child: ElevatedButton(
+                      onPressed: () {
                         HapticFeedback.mediumImpact();
                         Navigator.pop(context);
                         _deleteScan(index);
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.red.shade400,
-                              Colors.red.shade600,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.delete_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Delete',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
+                      child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],
@@ -1349,3 +1163,6 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
   }
 }
+
+
+

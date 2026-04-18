@@ -2,516 +2,287 @@ import 'package:agriguard_fyp/features/auth/Login_Screen/services/guest_service.
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants/animation_mixin.dart';
-import '../../../core/constants/app_measurements.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../Forget_Pass_Screen/constants/app_colors.dart';
-import 'widgets/action_button.dart';
-import 'widgets/header_section.dart';
-import 'widgets/login_form.dart';
-import 'widgets/guest_mode_button.dart';
-import 'widgets/signup_link.dart';
 import '/auth_services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with TickerProviderStateMixin, ScreenAnimationMixin {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   bool _isLoading = false;
-  final GuestService _guestService = GuestService();
+  bool _obscure = true;
+  final _guestService = GuestService();
 
   @override
   void initState() {
     super.initState();
-    initializeAnimations();
     _guestService.initialize();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    disposeAnimations();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      final auth = authService.value;
-      final userCredential = await auth.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
-      final user = userCredential;
-      if (user != null) {
-        await FirebaseAuth.instance.currentUser?.reload();
-        final refreshedUser = FirebaseAuth.instance.currentUser;
-        if (refreshedUser != null && !refreshedUser.emailVerified) {
-          if (mounted) {
-            _showDetailedSnackBar(
-              title: 'Email Not Verified',
-              message: 'Please verify your email to log in. Check your inbox or spam folder.',
-              errorCode: 'email-not-verified',
-            );
-            await refreshedUser.sendEmailVerification();
-          }
+      final cred = await authService.value.signInWithEmailAndPassword(
+        _emailCtrl.text.trim(), _passCtrl.text.trim());
+      if (cred != null) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null && !user.emailVerified) {
+          _snack('Please verify your email first.', isError: true);
+          await user.sendEmailVerification();
           return;
         }
         await _guestService.disableGuestMode();
-        if (mounted) {
-          _showSuccessSnackBar('Login successful. Redirecting...');
-          await Future.delayed(const Duration(milliseconds: 1500));
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
-        }
-      } else {
-        if (mounted) _showErrorSnackBar('Login failed. Please try again.');
+        if (mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        String message = 'Login failed';
-        String title = 'Error';
-        String errorCode = e.code;
-        switch (e.code) {
-          case 'user-not-found':
-            title = 'User Not Found';
-            message = 'No account found with this email. Would you like to create one?';
-            break;
-          case 'wrong-password':
-            title = 'Incorrect Password';
-            message = 'The password is incorrect. Please try again or reset your password.';
-            break;
-          case 'invalid-email':
-            title = 'Invalid Email';
-            message = 'Please enter a valid email address.';
-            break;
-          case 'user-disabled':
-            title = 'Account Disabled';
-            message = 'This account has been disabled. Contact support.';
-            break;
-          case 'too-many-requests':
-            title = 'Too Many Attempts';
-            message = 'Too many login attempts. Please try again later.';
-            break;
-          default:
-            title = 'Login Error';
-            message = 'An error occurred: ${e.message}';
-        }
-        _showDetailedSnackBar(title: title, message: message, errorCode: errorCode);
-      }
+      _snack(_authError(e.code), isError: true);
     } catch (e) {
-      if (mounted) _showErrorSnackBar('An unexpected error occurred: $e');
+      _snack('Login failed. Please try again.', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _handleGuestLogin() async {
-    HapticFeedback.mediumImpact();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => _buildGuestDialog(),
-    );
-    if (confirmed == true && mounted) {
-      setState(() => _isLoading = true);
-      try {
-        await _guestService.enableGuestMode();
-        if (mounted) {
-          HapticFeedback.mediumImpact();
-          _showSuccessSnackBar('Welcome! You have 5 free scans.');
-          await Future.delayed(const Duration(milliseconds: 1500));
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-          _showErrorSnackBar('Failed to enter guest mode: $e');
-        }
+  Future<void> _googleLogin() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final user = await authService.value.signInWithGoogle();
+      if (user != null) {
+        await _guestService.disableGuestMode();
+        if (mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
       }
+    } catch (e) {
+      _snack('Google sign-in failed.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _handleGoogleLogin() async {
-    if (_isLoading) return;
+  Future<void> _guestLogin() async {
     HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
     try {
-      final auth = authService.value;
-      final user = await auth.signInWithGoogle();
-      if (user == null) return;
-      await _guestService.disableGuestMode();
-      if (!mounted) return;
-      _showSuccessSnackBar('Signed in with Google. Redirecting...');
-      await Future.delayed(const Duration(milliseconds: 900));
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
+      await _guestService.enableGuestMode();
+      if (mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
     } catch (e) {
-      if (mounted) _showErrorSnackBar(e.toString());
+      _snack('Failed to enter guest mode.', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Widget _buildDivider() {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.15))),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              'or continue with',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(child: Divider(color: theme.colorScheme.onSurface.withValues(alpha: 0.15))),
-        ],
-      ),
-    );
+  String _authError(String code) {
+    switch (code) {
+      case 'user-not-found': return 'No account found with this email.';
+      case 'wrong-password': return 'Incorrect password. Please try again.';
+      case 'invalid-email': return 'Please enter a valid email address.';
+      case 'too-many-requests': return 'Too many attempts. Please try later.';
+      default: return 'Login failed. Please try again.';
+    }
   }
 
-  Widget _buildSocialRow() {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 46,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleGoogleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF1F1F1F),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                side: const BorderSide(color: Color(0xFFDADCE0), width: 1),
-                padding: EdgeInsets.zero,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isLoading)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    Image.asset('assets/images/google_g.png', width: 18, height: 18),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Google',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: SizedBox(
-            height: 46,
-            child: OutlinedButton(
-              onPressed: _isLoading ? null : _handleGuestLogin,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.18)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                padding: EdgeInsets.zero,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.person_outline_rounded, size: 18, color: theme.colorScheme.primary),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Guest',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGuestDialog() {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      title: Row(
-        children: [
-          Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 6),
-          const Text('Guest Mode'),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('In guest mode, you can:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            _buildFeatureItem(Icons.check_circle_outline, 'Capture leaf images (5 scans only)', true),
-            _buildFeatureItem(Icons.check_circle_outline, 'View scan results', true),
-            const SizedBox(height: 16),
-            Text('You will NOT be able to:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            _buildFeatureItem(Icons.cancel_outlined, 'View profile', false),
-            _buildFeatureItem(Icons.cancel_outlined, 'Save scan history', false),
-            _buildFeatureItem(Icons.cancel_outlined, 'Share results', false),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade300, width: 1),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.lightbulb_outline, size: 18, color: Colors.orange.shade700),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sign up for unlimited scans and full access!',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.orange.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text('Cancel',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          child: const Text('Continue as Guest'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFeatureItem(IconData icon, String text, bool isAvailable) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: isAvailable ? Colors.green : Colors.red.shade400),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary, size: 22),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.w500))),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onError, size: 22),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onError, fontWeight: FontWeight.w500))),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
-
-  void _showDetailedSnackBar({
-    required String title,
-    required String message,
-    required String errorCode,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.warning_amber_rounded,
-                    color: Theme.of(context).colorScheme.onError, size: 20),
-                const SizedBox(width: 8),
-                Text(title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onError,
-                      fontWeight: FontWeight.bold,
-                    )),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(message,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.9),
-                )),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-                AppMeasurements.getResponsiveBorderRadius(context))),
-        duration: const Duration(seconds: 6),
-        action: SnackBarAction(
-          label: errorCode == 'email-not-verified'
-              ? 'Resend Email'
-              : errorCode == 'user-not-found'
-              ? 'Sign Up'
-              : errorCode == 'wrong-password'
-              ? 'Reset Password'
-              : 'Dismiss',
-          textColor: Theme.of(context).colorScheme.onError,
-          onPressed: () async {
-            if (errorCode == 'email-not-verified') {
-              try {
-                await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-                _showSuccessSnackBar('Verification email resent.');
-              } catch (e) {
-                _showErrorSnackBar('Failed to resend email: $e');
-              }
-            } else if (errorCode == 'user-not-found') {
-              Navigator.pushNamed(context, AppRoutes.register);
-            } else if (errorCode == 'wrong-password') {
-              Navigator.pushNamed(context, AppRoutes.forgotPassword);
-            }
-          },
-        ),
-      ),
-    );
+  void _snack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? AppColors.error : AppColors.primary,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final padding = AppMeasurements.getResponsivePadding(context);
-    final isDark = ThemeProvider.of(context).isDarkMode;
-
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      resizeToAvoidBottomInset: false,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark ? AuthAppColors.darkGradient : AuthAppColors.lightGradient,
-            stops: AuthAppColors.gradientStops,
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: padding * 1.2),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top breathing room — absorbs leftover space above header
-                const Spacer(flex: 2),
+                const SizedBox(height: 48),
 
-                // ── Logo + title ──
-                const LoginHeader(),
-
-                // ── Fixed gap: header → fields (tight) ──
-                const SizedBox(height: 20),
-
-                // ── Email + password + forgot password ──
-                LoginForm(
-                  formKey: _formKey,
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                  onForgotPassword: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                  },
+                // Logo + title
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 72, height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(Icons.eco_rounded, color: Colors.white, size: 40),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Welcome back',
+                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
+                              color: Color(0xFF1B2B1E), letterSpacing: -0.5)),
+                      const SizedBox(height: 4),
+                      const Text('Sign in to your AgriGuard account',
+                          style: TextStyle(fontSize: 14, color: Color(0xFF718096))),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 40),
 
-                // ── Sign In button — sits right below form ──
-                const SizedBox(height: 14),
-                ActionButton(
-                  isLoading: _isLoading,
-                  onPressed: _handleLogin,
-                  label: 'Sign In',
-                  icon: Icons.login_rounded,
-                  loadingLabel: 'Signing In...',
+                // Email
+                _label('Email'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: _inputDeco('Enter your email', Icons.email_outlined),
+                  validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
+                const SizedBox(height: 16),
 
-                // ── Divider ──
-                _buildDivider(),
-
-                // ── Google + Guest side by side ──
-                _buildSocialRow(),
-
-                // ── Create account ──
-                const SizedBox(height: 10),
-                SignUpLink(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
+                // Password
+                _label('Password'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _passCtrl,
+                  obscureText: _obscure,
+                  decoration: _inputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          color: const Color(0xFF9E9E9E), size: 20),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                  validator: (v) => (v == null || v.length < 6) ? 'Password must be 6+ characters' : null,
                 ),
+                const SizedBox(height: 8),
 
-                // Bottom breathing room — mirrors top spacer
-                const Spacer(flex: 2),
+                // Forgot password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                    child: const Text('Forgot password?',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Sign in button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Sign In',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Divider
+                Row(children: [
+                  const Expanded(child: Divider(color: Color(0xFFE8E8E8))),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('or', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
+                  ),
+                  const Expanded(child: Divider(color: Color(0xFFE8E8E8))),
+                ]),
+                const SizedBox(height: 16),
+
+                // Google button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _googleLogin,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE8E8E8), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                      backgroundColor: Colors.white,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset('assets/images/google_g.png', width: 20, height: 20),
+                        const SizedBox(width: 10),
+                        const Text('Continue with Google',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                                color: Color(0xFF1B2B1E))),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Guest button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _guestLogin,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE8E8E8), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                      backgroundColor: Colors.white,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person_outline_rounded, size: 20, color: Color(0xFF718096)),
+                        SizedBox(width: 10),
+                        Text('Continue as Guest (5 free scans)',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                                color: Color(0xFF718096))),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Sign up link
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Don't have an account? ",
+                          style: TextStyle(color: Color(0xFF718096), fontSize: 14)),
+                      GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+                        child: const Text('Sign Up',
+                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700,
+                                fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -519,4 +290,36 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
+
+  Widget _label(String text) => Text(text,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1B2B1E)));
+
+  InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
+    prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
+    filled: true,
+    fillColor: const Color(0xFFF9F9F9),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.error),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  );
 }

@@ -66,9 +66,19 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
       ['groq','huggingface','plantid','plantId'].contains(widget.scan['analysisSource']?.toString());
 
   String get _plantName => widget.scan['plantName']?.toString() ?? 'Unknown';
-  String get _disease   => widget.scan['diagnosis']?.toString() ?? widget.scan['diseaseName']?.toString() ?? 'Healthy';
+  String get _disease {
+    // Prefer diseaseName directly — diagnosis field contains emoji-prefixed strings
+    final d = widget.scan['diseaseName']?.toString();
+    if (d != null && d.isNotEmpty) return d;
+    // Fallback: strip emoji prefix from diagnosis
+    final diag = widget.scan['diagnosis']?.toString() ?? '';
+    if (diag.contains(' on ')) return diag.split(' on ').first.replaceAll(RegExp(r'^[^\w]+'), '').trim();
+    return diag.replaceAll(RegExp(r'^[^\w]+'), '').trim().isNotEmpty
+        ? diag.replaceAll(RegExp(r'^[^\w]+'), '').trim()
+        : 'Healthy';
+  }
   String get _severity  => widget.scan['severity']?.toString() ?? '';
-  bool   get _isHealthy => _disease.toLowerCase() == 'healthy';
+  bool   get _isHealthy => _disease.toLowerCase() == 'healthy' || _disease.toLowerCase().contains('healthy');
   Color  get _statusColor => _isHealthy ? AppColors.success : AppColors.warning;
 
   Color get _severityColor {

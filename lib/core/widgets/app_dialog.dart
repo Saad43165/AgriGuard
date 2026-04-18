@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'app_themes.dart';
 
+/// Botanical-style dialog — clean white card, no gradients
 class AppDialog extends StatelessWidget {
   final Widget? icon;
   final String? title;
@@ -20,93 +22,86 @@ class AppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8);
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final subColor = isDark ? AppColors.darkCaption : const Color(0xFF718096);
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.92 : 1.0),
-          border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.12),
-              blurRadius: 26,
-              offset: const Offset(0, 14),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+              blurRadius: 20, offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Material(
-            color: Colors.transparent,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (icon != null) ...[
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                          ),
-                          child: Center(child: icon),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
-                      Expanded(
-                        child: titleWidget ??
-                            Text(
-                              title ?? '',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.1,
-                              ),
-                            ),
+                  if (icon != null) ...[
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      if (showClose)
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.close_rounded),
-                          onPressed: () => Navigator.of(context).maybePop(),
-                        ),
-                    ],
-                  ),
-                  if (content != null) ...[
-                    const SizedBox(height: 12),
-                    DefaultTextStyle(
-                      style: theme.textTheme.bodyMedium!.copyWith(
-                        height: 1.35,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      child: content!,
+                      child: Center(child: icon),
                     ),
+                    const SizedBox(width: 12),
                   ],
-                  const SizedBox(height: 16),
-                  if (actions.isNotEmpty)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: actions
-                          .map((w) => Padding(
-                                padding: const EdgeInsets.only(left: 10),
-                                child: w,
-                              ))
-                          .toList(),
+                  Expanded(
+                    child: titleWidget ?? Text(
+                      title ?? '',
+                      style: TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w800,
+                        color: textColor, letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  if (showClose)
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      child: Icon(Icons.close_rounded, size: 20, color: subColor),
                     ),
                 ],
               ),
-            ),
+
+              // Content
+              if (content != null) ...[
+                const SizedBox(height: 12),
+                DefaultTextStyle(
+                  style: TextStyle(fontSize: 14, color: subColor, height: 1.5),
+                  child: content!,
+                ),
+              ],
+
+              // Actions
+              if (actions.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: actions.map((w) => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: w,
+                  )).toList(),
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -121,18 +116,20 @@ class AppDialogActions {
     required VoidCallback onPressed,
     IconData? icon,
   }) {
-    final theme = Theme.of(context);
-    return ElevatedButton.icon(
+    return ElevatedButton(
       onPressed: onPressed,
-      icon: icon == null ? const SizedBox.shrink() : Icon(icon, size: 18),
-      label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
         elevation: 0,
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
       ),
+      child: icon != null
+          ? Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 16), const SizedBox(width: 6), Text(label)])
+          : Text(label),
     );
   }
 
@@ -141,14 +138,19 @@ class AppDialogActions {
     required String label,
     required VoidCallback onPressed,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        foregroundColor: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
+        side: BorderSide(
+          color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
       ),
       child: Text(label),
     );
   }
 }
-

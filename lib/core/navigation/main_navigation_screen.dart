@@ -1,13 +1,13 @@
-// lib/core/navigation/main_navigation_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../features/Navbar/presentation/nav_bar.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/capture/presentations/capture_screen.dart';
 import '../../features/Profile/presentation/profile_screen.dart';
-import '../widgets/app_dialog.dart';
+import '../../features/history/presentation/history_screen.dart';
+import '../../features/chatbot/chatbot_screen.dart';
 import '../widgets/connectivity_banner.dart';
-
+import '../widgets/app_themes.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
@@ -24,124 +24,83 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  // Tab indices: 0=Home, 1=History, 2=AI Chat, 3=Profile
   late int _currentIndex;
-  late PageController _pageController;
-  bool _isAnimating = false;
-  late bool _pendingStartOnDevice;
-  late bool _pendingStartAdvanced;
-
-  // CRITICAL: Store the body widgets to prevent rebuilding
-  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex;
-    _pageController = PageController(initialPage: _currentIndex);
-    _pendingStartOnDevice = widget.userData?['startOnDevice'] == true;
-    _pendingStartAdvanced = widget.userData?['startAdvanced'] == true;
+    // Clamp to valid range 0-3
+    _currentIndex = widget.initialIndex.clamp(0, 3);
 
-    // Initialize screens ONCE
-    _screens = [
-      HomeScreen(userData: widget.userData),
-      CaptureScreen(
-        startOnDevice: _pendingStartOnDevice,
-        startAdvanced: _pendingStartAdvanced,
-      ),
-      ProfileScreen(userData: widget.userData),
-    ];
-    // Consume startup flags once; future tab opens should start at Welcome.
-    _pendingStartOnDevice = false;
-    _pendingStartAdvanced = false;
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _onTabTapped(int index) {
-    if (_currentIndex == index || _isAnimating) return;
-
-    HapticFeedback.lightImpact();
-
-    // Recreate Capture screen whenever user opens scan tab from navbar,
-    // so it always starts from welcome flow.
-    if (index == 1) {
-      _screens[1] = CaptureScreen(key: UniqueKey());
+    // If openCamera flag is set, open capture screen after first frame
+    if (widget.userData?['openCamera'] == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openCaptureScreen();
+      });
     }
+  }
 
-    setState(() {
-      _isAnimating = true;
-      _currentIndex = index;
-    });
+  void _onTabTapped(int navIndex) {
+    if (navIndex == 2) {
+      // Camera — directly open CaptureScreen (no dialog)
+      _openCaptureScreen();
+      return;
+    }
+    final screenIndex = navIndex <= 1 ? navIndex : navIndex - 1;
+    if (_currentIndex == screenIndex) return;
+    HapticFeedback.lightImpact();
+    setState(() => _currentIndex = screenIndex);
+  }
 
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    ).then((_) {
-      if (mounted) {
-        setState(() => _isAnimating = false);
-      }
-    });
+  void _openCaptureScreen({bool startAdvanced = false}) {
+    HapticFeedback.mediumImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CaptureScreen(startAdvanced: startAdvanced)),
+    );
+  }
+
+  // Map screen index back to navbar selected index
+  int get _navbarSelectedIndex {
+    // 0→0, 1→1, 2→3, 3→4
+    return _currentIndex < 2 ? _currentIndex : _currentIndex + 1;
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _currentIndex == 0,
+      canPop: false, // we handle all pops ourselves
       onPopInvoked: (didPop) {
-        if (!didPop && _currentIndex != 0) {
-          _onTabTapped(0);
-        } else if (!didPop && _currentIndex == 0) {
-          _showExitDialog();
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          // Go to home tab first
+          HapticFeedback.lightImpact();
+          setState(() => _currentIndex = 0);
+        } else {
+          // Already on home — exit app
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(
-        extendBodyBehindAppBar: true,
         body: ConnectivityBanner(
-          child: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            onPageChanged: (index) {
-              if (mounted) {
-                setState(() => _currentIndex = index);
-              }
-            },
-            children: _screens, // Use pre-built screens
+          child: IndexedStack(
+            index: _currentIndex,
+            children: [
+              HomeScreen(userData: widget.userData),     // 0 = Home
+              const HistoryScreen(),                      // 1 = History
+              const ChatbotScreen(),                      // 2 = AI Chat
+              ProfileScreen(userData: widget.userData),   // 3 = Profile
+            ],
           ),
         ),
         bottomNavigationBar: BottomNavBar(
-          selectedIndex: _currentIndex,
+          selectedIndex: _navbarSelectedIndex,
           onTap: _onTabTapped,
         ),
       ),
     );
   }
 
-  void _showExitDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AppDialog(
-        icon: const Icon(Icons.exit_to_app_rounded),
-        title: 'Exit App',
-        content: const Text('Are you sure you want to exit?'),
-        actions: [
-          AppDialogActions.secondary(
-            ctx,
-            label: 'Cancel',
-            onPressed: () => Navigator.pop(ctx),
-          ),
-          AppDialogActions.primary(
-            ctx,
-            label: 'Exit',
-            icon: Icons.exit_to_app_rounded,
-            onPressed: () => SystemNavigator.pop(),
-          ),
-        ],
-      ),
-    );
-  }
+  // Exit is handled by PopScope — SystemNavigator.pop() called directly
 }

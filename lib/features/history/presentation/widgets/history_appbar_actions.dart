@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../../core/widgets/app_themes.dart';
 
+/// Standard action button for the history AppBar.
+/// Matches the app-wide icon button style.
 class HistoryAppBarAction extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
@@ -15,67 +18,13 @@ class HistoryAppBarAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final button = Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-            colorScheme.primary.withValues(alpha: 0.2),
-            colorScheme.secondary.withValues(alpha: 0.2),
-          ]
-              : [
-            colorScheme.primary.withValues(alpha: 0.12),
-            colorScheme.secondary.withValues(alpha: 0.12),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark
-              ? colorScheme.primary.withValues(alpha: 0.3)
-              : colorScheme.primary.withValues(alpha: 0.4),
-          width: 1.5,
-        ),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onPressed();
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Icon(
-              icon,
-              color: colorScheme.primary,
-              size: 24,
-            ),
-          ),
-        ),
-      ),
+    return IconButton(
+      icon: Icon(icon, color: AppColors.primary, size: 22),
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onPressed();
+      },
+      tooltip: tooltip,
     );
-
-    if (tooltip != null) {
-      return Tooltip(
-        message: tooltip!,
-        child: button,
-      );
-    }
-
-    return button;
   }
 }

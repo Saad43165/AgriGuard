@@ -1,15 +1,15 @@
 {
   "metadata": {
-    "version": "1.0",
-    "description": "Plant disease causes database with Urdu translations",
-    "description_ur": "پودوں کی بیماریوں کے اسباب کا ڈیٹا بیس اردو ترجمے کے ساتھ",
-    "last_updated": "2026-01-14",
-    "usage": "Use plant species and disease name to lookup specific causes",
-    "usage_ur": "پودے کی قسم اور بیماری کا نام استعمال کرکے مخصوص اسباب تلاش کریں"
+    "version": "2.0",
+    "description": "Plant disease causes database for PlantCity dataset (52 classes) with Urdu translations",
+    "description_ur": "پلانٹ سٹی ڈیٹاسیٹ (52 کلاسز) کے لیے پودوں کی بیماریوں کے اسباب کا ڈیٹا بیس اردو ترجمے کے ساتھ",
+    "last_updated": "2026-04-18",
+    "total_classes": 52,
+    "total_crops": 12
   },
 
   "plant_disease_causes": {
-    "Apple___Apple_scab": {
+    "Apple_Apple_scab": {
       "plant": "Apple",
       "plant_ur": "سیب",
       "disease": "Apple scab",
@@ -18,61 +18,16 @@
         "Fungal infection caused by Venturia inaequalis",
         "Thrives in cool, wet spring weather (15-24°C)",
         "Spreads through water splash and wind-dispersed spores",
-        "Overwintering fungus in fallen infected leaves",
-        "High humidity (>90%) and prolonged leaf wetness (6+ hours)"
+        "Overwintering fungus in fallen infected leaves"
       ],
       "causes_ur": [
         "وینٹوریا انایکوالس نامی فنگس کی وجہ سے انفیکشن",
         "ٹھنڈے، گیلی موسم بہار میں پھیلتا ہے (15-24°C)",
         "پانی کے چھینٹوں اور ہوا سے پھیلنے والے بیجوں سے پھیلتا ہے",
-        "گرے ہوئے متاثرہ پتوں میں فنگس سردیوں میں زندہ رہتی ہے",
-        "زیادہ نمی (>90%) اور پتوں کی طویل نمی (6+ گھنٹے)"
+        "گرے ہوئے متاثرہ پتوں میں فنگس سردیوں میں زندہ رہتی ہے"
       ]
     },
-
-    "Apple___Black_rot": {
-      "plant": "Apple",
-      "plant_ur": "سیب",
-      "disease": "Black rot",
-      "disease_ur": "کالا سڑنا",
-      "causes": [
-        "Fungal pathogen Botryosphaeria obtusa",
-        "Infects through wounds, cuts, or natural openings in bark",
-        "Warm, humid weather (20-28°C) promotes infection",
-        "Spreads via rain splash and wind",
-        "Overwinters in mummified fruit and branch cankers"
-      ],
-      "causes_ur": [
-        "بوٹریوسفیریا اوبٹوسا نامی فنگس",
-        "زخموں، کٹوں یا چھال میں قدرتی سوراخوں کے ذریعے انفیکشن",
-        "گرم، مرطوب موسم (20-28°C) انفیکشن کو فروغ دیتا ہے",
-        "بارش کے چھینٹوں اور ہوا سے پھیلتا ہے",
-        "خشک پھلوں اور شاخوں کے ناسور میں سردیوں میں زندہ رہتا ہے"
-      ]
-    },
-
-    "Apple___Cedar_apple_rust": {
-      "plant": "Apple",
-      "plant_ur": "سیب",
-      "disease": "Cedar apple rust",
-      "disease_ur": "دیودار سیب کا زنگ",
-      "causes": [
-        "Fungal disease requiring two hosts: apple trees and Eastern red cedar/juniper",
-        "Spores travel from cedar galls during wet spring weather",
-        "Cool, moist spring conditions (10-20°C) favor infection",
-        "Wind-dispersed spores can travel several miles from cedar trees",
-        "Proximity to Eastern red cedar or juniper increases risk significantly"
-      ],
-      "causes_ur": [
-        "فنگس کی بیماری جس کے لیے دو میزبان درکار ہیں: سیب اور دیودار/جونیپر",
-        "گیلے موسم بہار میں دیودار کے گالوں سے بیج سفر کرتے ہیں",
-        "ٹھنڈے، نم موسم بہار (10-20°C) انفیکشن کو فروغ دیتے ہیں",
-        "ہوا سے پھیلنے والے بیج دیودار سے کئی میل دور جا سکتے ہیں",
-        "دیودار یا جونیپر کی قربت سے خطرہ نمایاں طور پر بڑھ جاتا ہے"
-      ]
-    },
-
-    "Apple___healthy": {
+    "Apple_Apple_normal": {
       "plant": "Apple",
       "plant_ur": "سیب",
       "disease": "Healthy",
@@ -80,59 +35,135 @@
       "causes": [],
       "causes_ur": []
     },
-
-    "Bell_pepper___Bacterial_spot": {
-      "plant": "Bell pepper",
-      "plant_ur": "شملہ مرچ",
-      "disease": "Bacterial spot",
-      "disease_ur": "بیکٹیریل دھبے",
+    "Apple_Apple_black_spot": {
+      "plant": "Apple",
+      "plant_ur": "سیب",
+      "disease": "Black spot",
+      "disease_ur": "کالا دھبہ",
       "causes": [
-        "Bacterial pathogen Xanthomonas campestris pv. vesicatoria",
-        "Enters plant through stomata, hydathodes, and wounds",
-        "Spread by water splash from rain and overhead irrigation",
-        "Warm temperatures (24-30°C) with high humidity",
-        "Contaminated seeds, transplants, or infected plant debris"
+        "Fungal pathogen Diplocarpon mali",
+        "Warm, humid conditions with prolonged leaf wetness",
+        "Spreads by rain splash during growing season"
       ],
       "causes_ur": [
-        "زینتھوموناس کیمپیسٹرس نامی بیکٹیریا",
-        "سٹوماٹا، ہائیڈاتھوڈس اور زخموں کے ذریعے پودے میں داخل ہوتا ہے",
-        "بارش اور اوپری آبپاشی کے پانی کے چھینٹوں سے پھیلتا ہے",
-        "گرم درجہ حرارت (24-30°C) زیادہ نمی کے ساتھ",
-        "آلودہ بیج، پودے یا متاثرہ پودوں کا ملبہ"
+        "ڈپلوکارپن مالی نامی فنگس",
+        "گرم، مرطوب حالات پتوں کی طویل نمی کے ساتھ",
+        "بڑھتے ہوئے موسم میں بارش کے چھینٹوں سے پھیلتا ہے"
       ]
     },
-
-    "Bell_pepper___healthy": {
-      "plant": "Bell pepper",
-      "plant_ur": "شملہ مرچ",
+    "Apricot_Apricot_normal": {
+      "plant": "Apricot",
+      "plant_ur": "خوبانی",
       "disease": "Healthy",
       "disease_ur": "صحت مند",
       "causes": [],
       "causes_ur": []
     },
-
-    "Cherry___Powdery_mildew": {
+    "Apricot_Apricot_blight_leaf_disease": {
+      "plant": "Apricot",
+      "plant_ur": "خوبانی",
+      "disease": "Blight leaf disease",
+      "disease_ur": "پتوں کا جھلساؤ",
+      "causes": [
+        "Fungal or bacterial pathogen",
+        "Warm, wet weather conditions",
+        "Spreads rapidly during humid periods"
+      ],
+      "causes_ur": [
+        "فنگل یا بیکٹیریل پیتھوجین",
+        "گرم، گیلا موسم",
+        "مرطوب ادوار میں تیزی سے پھیلتا ہے"
+      ]
+    },
+    "Apricot_Apricot_shot_hole": {
+      "plant": "Apricot",
+      "plant_ur": "خوبانی",
+      "disease": "Shot hole disease",
+      "disease_ur": "سوراخ دار پتوں کی بیماری",
+      "causes": [
+        "Fungal pathogen Wilsonomyces carpophilus",
+        "Wet spring weather with moderate temperatures",
+        "Spores spread by rain splash and wind"
+      ],
+      "causes_ur": [
+        "ولسنومائسس کارپوفیلس نامی فنگس",
+        "گیلا موسم بہار معتدل درجہ حرارت کے ساتھ",
+        "بارش کے چھینٹوں اور ہوا سے بیج پھیلتے ہیں"
+      ]
+    },
+    "Bean_Bean_fungal_leaf_disease": {
+      "plant": "Bean",
+      "plant_ur": "پھلیاں",
+      "disease": "Fungal leaf disease",
+      "disease_ur": "فنگل پتوں کی بیماری",
+      "causes": [
+        "Various fungal pathogens including Colletotrichum, Alternaria",
+        "High humidity and prolonged leaf wetness",
+        "Spreads by rain splash and infected seeds"
+      ],
+      "causes_ur": [
+        "مختلف فنگل پیتھوجینز بشمول کلیٹوٹرکم، الٹرنیریا",
+        "زیادہ نمی اور پتوں کی طویل نمی",
+        "بارش کے چھینٹوں اور متاثرہ بیجوں سے پھیلتا ہے"
+      ]
+    },
+    "Bean_Bean_normal_leaf": {
+      "plant": "Bean",
+      "plant_ur": "پھلیاں",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Bean_Bean_rust": {
+      "plant": "Bean",
+      "plant_ur": "پھلیاں",
+      "disease": "Rust",
+      "disease_ur": "زنگ",
+      "causes": [
+        "Fungal pathogen Uromyces appendiculatus",
+        "Moderate temperatures (17-27°C) with high humidity",
+        "Wind-dispersed spores spread rapidly"
+      ],
+      "causes_ur": [
+        "یورومائسس اپینڈیکیولیٹس نامی فنگس",
+        "معتدل درجہ حرارت (17-27°C) زیادہ نمی کے ساتھ",
+        "ہوا سے پھیلنے والے بیج تیزی سے پھیلتے ہیں"
+      ]
+    },
+    "Bean_Bean_shot_hole": {
+      "plant": "Bean",
+      "plant_ur": "پھلیاں",
+      "disease": "Shot hole",
+      "disease_ur": "سوراخ دار پتے",
+      "causes": [
+        "Bacterial or fungal infection",
+        "Wet conditions promote disease development",
+        "Spreads through water splash"
+      ],
+      "causes_ur": [
+        "بیکٹیریل یا فنگل انفیکشن",
+        "گیلے حالات بیماری کی نشوونما کو فروغ دیتے ہیں",
+        "پانی کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Cherry_Cherry_leaf_scorch": {
       "plant": "Cherry",
       "plant_ur": "چیری",
-      "disease": "Powdery mildew",
-      "disease_ur": "پھپھوندی",
+      "disease": "Leaf scorch",
+      "disease_ur": "پتوں کا جھلساؤ",
       "causes": [
-        "Fungal pathogen Podosphaera clandestina",
-        "Warm days (21-27°C) and cool nights (15-21°C) favor development",
-        "Does not require water on leaf surface (unlike most fungi)",
-        "Spreads by wind-borne spores (conidia)",
-        "Poor air circulation and dense canopy increase severity"
+        "Bacterial pathogen Xylella fastidiosa",
+        "Spread by xylem-feeding insects (leafhoppers, sharpshooters)",
+        "Drought stress increases symptom severity"
       ],
       "causes_ur": [
-        "پوڈوسفیرا کلینڈیسٹینا نامی فنگس",
-        "گرم دن (21-27°C) اور ٹھنڈی راتیں (15-21°C) نشوونما کو فروغ دیتی ہیں",
-        "پتوں کی سطح پر پانی کی ضرورت نہیں (زیادہ تر فنگس کے برعکس)",
-        "ہوا سے پھیلنے والے بیجوں سے پھیلتا ہے",
-        "ناکافی ہوا کی گردش اور گھنے پودے شدت بڑھاتے ہیں"
+        "زائلیلا فاسٹیڈیوسا نامی بیکٹیریا",
+        "زائلم پر کھانا کھانے والے کیڑوں سے پھیلتا ہے",
+        "خشک سالی کا دباؤ علامات کی شدت بڑھاتا ہے"
       ]
     },
-
-    "Cherry___healthy": {
+    "Cherry_Cherry_normal_leaf": {
       "plant": "Cherry",
       "plant_ur": "چیری",
       "disease": "Healthy",
@@ -140,539 +171,596 @@
       "causes": [],
       "causes_ur": []
     },
-
-    "Corn_(Maize)___Cercospora_leaf_spot": {
-      "plant": "Corn (Maize)",
+    "Cherry_Cherry_brown_spot": {
+      "plant": "Cherry",
+      "plant_ur": "چیری",
+      "disease": "Brown spot",
+      "disease_ur": "بھورے دھبے",
+      "causes": [
+        "Fungal pathogen Cercospora circumscissa",
+        "Warm, humid conditions",
+        "Spreads by rain splash and wind"
+      ],
+      "causes_ur": [
+        "سرکوسپورا سرکمسسیسا نامی فنگس",
+        "گرم، مرطوب حالات",
+        "بارش کے چھینٹوں اور ہوا سے پھیلتا ہے"
+      ]
+    },
+    "Cherry_Cherry_purple_leaf_spot": {
+      "plant": "Cherry",
+      "plant_ur": "چیری",
+      "disease": "Purple leaf spot",
+      "disease_ur": "جامنی پتوں کے دھبے",
+      "causes": [
+        "Fungal pathogen Cercospora circumscissa",
+        "Wet spring weather",
+        "Overwinters in fallen leaves"
+      ],
+      "causes_ur": [
+        "سرکوسپورا سرکمسسیسا نامی فنگس",
+        "گیلا موسم بہار",
+        "گرے ہوئے پتوں میں سردیوں میں زندہ رہتا ہے"
+      ]
+    },
+    "Cherry_Cherry_shot_hole_disease": {
+      "plant": "Cherry",
+      "plant_ur": "چیری",
+      "disease": "Shot hole disease",
+      "disease_ur": "سوراخ دار پتوں کی بیماری",
+      "causes": [
+        "Fungal pathogen Wilsonomyces carpophilus",
+        "Wet conditions during leaf emergence",
+        "Spores spread by rain splash"
+      ],
+      "causes_ur": [
+        "ولسنومائسس کارپوفیلس نامی فنگس",
+        "پتوں کے نکلنے کے دوران گیلے حالات",
+        "بارش کے چھینٹوں سے بیج پھیلتے ہیں"
+      ]
+    },
+    "Maize_Maize_fungal_leaf": {
+      "plant": "Maize (Corn)",
       "plant_ur": "مکئی",
-      "disease": "Cercospora leaf spot (Gray leaf spot)",
-      "disease_ur": "سرکوسپورا پتوں کے دھبے",
+      "disease": "Fungal leaf disease",
+      "disease_ur": "فنگل پتوں کی بیماری",
+      "causes": [
+        "Various fungal pathogens",
+        "High humidity and warm temperatures",
+        "Spreads by wind and rain splash"
+      ],
+      "causes_ur": [
+        "مختلف فنگل پیتھوجینز",
+        "زیادہ نمی اور گرم درجہ حرارت",
+        "ہوا اور بارش کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Maize_Maize_normal_leaf": {
+      "plant": "Maize (Corn)",
+      "plant_ur": "مکئی",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Maize_Maize_gray_leaf_spot": {
+      "plant": "Maize (Corn)",
+      "plant_ur": "مکئی",
+      "disease": "Gray leaf spot",
+      "disease_ur": "بھوری پتوں کے دھبے",
       "causes": [
         "Fungal pathogen Cercospora zeae-maydis",
-        "Warm temperatures (22-30°C) with high humidity (>90%)",
-        "Extended periods of leaf wetness and dew",
-        "Overwinters in corn crop residue on soil surface",
-        "Spreads by wind-blown spores and rain splash"
+        "Warm temperatures (22-30°C) with high humidity",
+        "Extended periods of leaf wetness"
       ],
       "causes_ur": [
         "سرکوسپورا زیاے-مایڈس نامی فنگس",
-        "گرم درجہ حرارت (22-30°C) زیادہ نمی کے ساتھ (>90%)",
-        "پتوں کی نمی اور اوس کے طویل عرصے",
-        "مٹی کی سطح پر مکئی کی فصل کی باقیات میں سردیوں میں زندہ رہتا ہے",
-        "ہوا سے اڑنے والے بیجوں اور بارش کے چھینٹوں سے پھیلتا ہے"
+        "گرم درجہ حرارت (22-30°C) زیادہ نمی کے ساتھ",
+        "پتوں کی نمی کے طویل عرصے"
       ]
     },
-
-    "Corn_(Maize)___Common_rust": {
-      "plant": "Corn (Maize)",
+    "Maize_Maize_holcus_leaf_spot": {
+      "plant": "Maize (Corn)",
       "plant_ur": "مکئی",
-      "disease": "Common rust",
-      "disease_ur": "عام زنگ",
+      "disease": "Holcus leaf spot",
+      "disease_ur": "ہولکس پتوں کے دھبے",
       "causes": [
-        "Fungal pathogen Puccinia sorghi",
-        "Cool to moderate temperatures (16-25°C)",
-        "High humidity and leaf wetness from dew or rain",
-        "Spores blown in from southern regions by wind currents",
-        "Cannot overwinter in cold climates (needs living host)"
+        "Bacterial pathogen Pseudomonas syringae pv. syringae",
+        "Cool, wet weather conditions",
+        "Enters through natural openings and wounds"
       ],
       "causes_ur": [
-        "پکینیا سورگی نامی فنگس",
-        "ٹھنڈے سے معتدل درجہ حرارت (16-25°C)",
-        "اوس یا بارش سے زیادہ نمی اور پتوں کی نمی",
-        "ہوا کے دھاروں سے جنوبی علاقوں سے بیج آتے ہیں",
-        "سرد موسم میں زندہ نہیں رہ سکتا (زندہ میزبان درکار ہے)"
+        "سوڈوموناس سیرنگائی سیرنگائی نامی بیکٹیریا",
+        "ٹھنڈے، گیلے موسمی حالات",
+        "قدرتی سوراخوں اور زخموں کے ذریعے داخل ہوتا ہے"
       ]
     },
-
-    "Corn_(Maize)___Northern_Leaf_Blight": {
-      "plant": "Corn (Maize)",
-      "plant_ur": "مکئی",
-      "disease": "Northern Leaf Blight",
-      "disease_ur": "شمالی پتوں کا جھلساؤ",
+    "Fig_Fig_bight_leaf_disease": {
+      "plant": "Fig",
+      "plant_ur": "انجیر",
+      "disease": "Blight leaf disease",
+      "disease_ur": "پتوں کا جھلساؤ",
       "causes": [
-        "Fungal pathogen Exserohilum turcicum (Setosphaeria turcica)",
-        "Moderate temperatures (18-27°C)",
-        "Prolonged leaf wetness (6-18 hours) from rain or dew",
-        "Overwinters in corn debris and crop residue",
-        "Spreads by wind-blown spores during humid conditions"
+        "Fungal or bacterial pathogen",
+        "Warm, humid conditions",
+        "Spreads during wet weather"
       ],
       "causes_ur": [
-        "ایکسیروہیلم ٹرکم (سیٹوسفیریا ٹرکا) نامی فنگس",
-        "معتدل درجہ حرارت (18-27°C)",
-        "بارش یا اوس سے پتوں کی طویل نمی (6-18 گھنٹے)",
-        "مکئی کے ملبے اور فصل کی باقیات میں سردیوں میں زندہ رہتا ہے",
-        "مرطوب حالات میں ہوا سے اڑنے والے بیجوں سے پھیلتا ہے"
+        "فنگل یا بیکٹیریل پیتھوجین",
+        "گرم، مرطوب حالات",
+        "گیلے موسم میں پھیلتا ہے"
       ]
     },
-
-    "Corn_(Maize)___healthy": {
-      "plant": "Corn (Maize)",
-      "plant_ur": "مکئی",
+    "Fig_Fig_brown_spot": {
+      "plant": "Fig",
+      "plant_ur": "انجیر",
+      "disease": "Brown spot",
+      "disease_ur": "بھورے دھبے",
+      "causes": [
+        "Fungal pathogen Cercospora fici",
+        "High humidity and warm temperatures",
+        "Spores spread by rain splash"
+      ],
+      "causes_ur": [
+        "سرکوسپورا فائیسی نامی فنگس",
+        "زیادہ نمی اور گرم درجہ حرارت",
+        "بارش کے چھینٹوں سے بیج پھیلتے ہیں"
+      ]
+    },
+    "Fig_Fig_normal_leaf": {
+      "plant": "Fig",
+      "plant_ur": "انجیر",
       "disease": "Healthy",
       "disease_ur": "صحت مند",
       "causes": [],
       "causes_ur": []
     },
-
-    "Grape___Black_rot": {
-      "plant": "Grape",
-      "plant_ur": "انگور",
-      "disease": "Black rot",
-      "disease_ur": "کالا سڑنا",
+    "Fig_Fig_rust_leaf": {
+      "plant": "Fig",
+      "plant_ur": "انجیر",
+      "disease": "Rust",
+      "disease_ur": "زنگ",
       "causes": [
-        "Fungal pathogen Guignardia bidwellii",
-        "Warm, wet weather (25-30°C) during bloom and fruit set",
-        "Overwinters in mummified berries on ground and infected canes",
-        "Spores released during rain events and spread by splashing water",
-        "High humidity and frequent rainfall promote rapid spread"
+        "Fungal pathogen Cerotelium fici",
+        "Warm, humid conditions",
+        "Wind-dispersed spores"
       ],
       "causes_ur": [
-        "گگنارڈیا بڈویلی نامی فنگس",
-        "پھول اور پھل لگنے کے دوران گرم، گیلا موسم (25-30°C)",
-        "زمین پر خشک بیر اور متاثرہ شاخوں میں سردیوں میں زندہ رہتا ہے",
-        "بارش کے دوران بیج خارج ہوتے ہیں اور پانی کے چھینٹوں سے پھیلتے ہیں",
-        "زیادہ نمی اور بار بار بارش تیزی سے پھیلاؤ کو فروغ دیتی ہے"
+        "سیروٹیلیم فائیسی نامی فنگس",
+        "گرم، مرطوب حالات",
+        "ہوا سے پھیلنے والے بیج"
       ]
     },
-
-    "Grape___Esca_(Black_Measles)": {
-    "plant": "Grape",
-    "plant_ur": "انگور",
-    "disease": "Esca (Black Measles)",
-    "disease_ur": "ایسکا (کالا خسرہ)",
-    "causes": [
-      "Complex of wood-rotting fungi including Phaeomoniella chlamydospora and Phaeoacremonium species",
-      "Enters vines through pruning wounds and natural cracks",
-      "Heat stress and water deficit during summer trigger symptom expression",
-      "Spreads through infected propagation material and pruning tools",
-      "Older vines (8+ years) are more susceptible"
-    ],
-    "causes_ur": [
-      "لکڑی سڑانے والی فنگس کا مجموعہ بشمول فیومونیلا کلیمڈوسپورا اور فیوآکریمونیم انواع",
-      "کٹائی کے زخموں اور قدرتی دراڑوں کے ذریعے بیلوں میں داخل ہوتا ہے",
-      "گرمی کا دباؤ اور پانی کی کمی گرمیوں میں علامات کو ظاہر کرتی ہے",
-      "متاثرہ پودوں اور کٹائی کے اوزاروں سے پھیلتا ہے",
-      "پرانی بیلیں (8+ سال) زیادہ حساس ہوتی ہیں"
-    ]
+    "Grape_Grape_anthracnose_leaf": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Anthracnose",
+      "disease_ur": "اینتھراکنوز",
+      "causes": [
+        "Fungal pathogen Elsinoe ampelina",
+        "Warm, wet weather (20-25°C)",
+        "Spreads by rain splash during spring"
+      ],
+      "causes_ur": [
+        "ایلسینو ایمپیلینا نامی فنگس",
+        "گرم، گیلا موسم (20-25°C)",
+        "موسم بہار میں بارش کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Grape_Grape_brown_spot_leaf": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Brown spot",
+      "disease_ur": "بھورے دھبے",
+      "causes": [
+        "Fungal pathogen Pseudocercospora vitis",
+        "Warm, humid conditions",
+        "Overwinters in fallen leaves"
+      ],
+      "causes_ur": [
+        "سوڈو سرکوسپورا ویٹس نامی فنگس",
+        "گرم، مرطوب حالات",
+        "گرے ہوئے پتوں میں سردیوں میں زندہ رہتا ہے"
+      ]
+    },
+    "Grape_Grape_downy_mildew_leaf": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Downy mildew",
+      "disease_ur": "نیچے کی پھپھوندی",
+      "causes": [
+        "Oomycete pathogen Plasmopara viticola",
+        "Cool, wet weather with high humidity",
+        "Requires water on leaf surface for infection"
+      ],
+      "causes_ur": [
+        "پلاسموسپورا وٹیکولا نامی اومیسیٹ پیتھوجین",
+        "ٹھنڈا، گیلا موسم زیادہ نمی کے ساتھ",
+        "انفیکشن کے لیے پتوں کی سطح پر پانی کی ضرورت ہوتی ہے"
+      ]
+    },
+    "Grape_Grape_mites_leaf_disease": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Mite damage",
+      "disease_ur": "کیڑوں کا نقصان",
+      "causes": [
+        "Eriophyid mites (Calepitrimerus vitis)",
+        "Feeding causes leaf distortion and discoloration",
+        "Mites overwinter in bark crevices and buds"
+      ],
+      "causes_ur": [
+        "ایریوفائیڈ ذرات (کیلیپیٹریمیرس ویٹس)",
+        "خوراک پتوں کی خرابی اور رنگت کا سبب بنتی ہے",
+        "ذرات چھال کی دراڑوں اور کلیوں میں سردیوں میں زندہ رہتے ہیں"
+      ]
+    },
+    "Grape_Grape_normal_leaf": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Grape_Grape_powdery_mildew_leaf": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Powdery mildew",
+      "disease_ur": "پھپھوندی",
+      "causes": [
+        "Fungal pathogen Erysiphe necator",
+        "Warm days (25-30°C) with high humidity",
+        "Does not require water on leaf surface"
+      ],
+      "causes_ur": [
+        "ایریسیفے نیکیٹر نامی فنگس",
+        "گرم دن (25-30°C) زیادہ نمی کے ساتھ",
+        "پتوں کی سطح پر پانی کی ضرورت نہیں"
+      ]
+    },
+    "Grape_Grape_shot_hole_leaf_disease": {
+      "plant": "Grape",
+      "plant_ur": "انگور",
+      "disease": "Shot hole",
+      "disease_ur": "سوراخ دار پتے",
+      "causes": [
+        "Fungal or bacterial infection",
+        "Wet conditions promote development",
+        "Spreads through water splash"
+      ],
+      "causes_ur": [
+        "فنگل یا بیکٹیریل انفیکشن",
+        "گیلے حالات نشوونما کو فروغ دیتے ہیں",
+        "پانی کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Loquat_Loquat_normal_leaf": {
+      "plant": "Loquat",
+      "plant_ur": "لوکاٹ",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Loquat_Loquat_leaf_spot": {
+      "plant": "Loquat",
+      "plant_ur": "لوکاٹ",
+      "disease": "Leaf spot",
+      "disease_ur": "پتوں کے دھبے",
+      "causes": [
+        "Fungal pathogen Cercospora eriobotryae",
+        "Warm, humid conditions",
+        "Spreads by rain splash"
+      ],
+      "causes_ur": [
+        "سرکوسپورا ایریوبوٹریاے نامی فنگس",
+        "گرم، مرطوب حالات",
+        "بارش کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Pear_Pear_normal_leaf": {
+      "plant": "Pear",
+      "plant_ur": "ناشپاتی",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Pear_Pear_black_spot_leaf_disease": {
+      "plant": "Pear",
+      "plant_ur": "ناشپاتی",
+      "disease": "Black spot",
+      "disease_ur": "کالے دھبے",
+      "causes": [
+        "Fungal pathogen Alternaria alternata",
+        "Warm, humid conditions",
+        "Spreads during wet weather"
+      ],
+      "causes_ur": [
+        "الٹرنیریا الٹرناٹا نامی فنگس",
+        "گرم، مرطوب حالات",
+        "گیلے موسم میں پھیلتا ہے"
+      ]
+    },
+    "Pear_Pear_fire_blight": {
+      "plant": "Pear",
+      "plant_ur": "ناشپاتی",
+      "disease": "Fire blight",
+      "disease_ur": "آگ کا جھلساؤ",
+      "causes": [
+        "Bacterial pathogen Erwinia amylovora",
+        "Warm, wet spring weather",
+        "Enters through blossoms and wounds"
+      ],
+      "causes_ur": [
+        "ارونیا ایمائلوورا نامی بیکٹیریا",
+        "گرم، گیلا موسم بہار",
+        "پھولوں اور زخموں کے ذریعے داخل ہوتا ہے"
+      ]
+    },
+    "Persimmon_persimmons_brown_spot": {
+      "plant": "Persimmon",
+      "plant_ur": "املوک",
+      "disease": "Brown spot",
+      "disease_ur": "بھورے دھبے",
+      "causes": [
+        "Fungal pathogen",
+        "Warm, humid conditions",
+        "Spreads by rain splash"
+      ],
+      "causes_ur": [
+        "فنگل پیتھوجین",
+        "گرم، مرطوب حالات",
+        "بارش کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Tomato_tomato_spider_mites": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Spider mite damage",
+      "disease_ur": "مکڑی کے ذرات کا نقصان",
+      "causes": [
+        "Two-spotted spider mite (Tetranychus urticae)",
+        "Hot, dry weather conditions",
+        "Mites feed on leaf undersides causing stippling"
+      ],
+      "causes_ur": [
+        "دو دھبوں والے مکڑی کے ذرات (ٹیٹرانائیکس یورٹیکاے)",
+        "گرم، خشک موسمی حالات",
+        "ذرات پتوں کے نیچے خوراک کرتے ہیں جس سے دھبے پڑتے ہیں"
+      ]
+    },
+    "Tomato_tomato_verticillium_wilt": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Verticillium wilt",
+      "disease_ur": "ورٹیسیلیم مرجھاؤ",
+      "causes": [
+        "Fungal pathogens Verticillium dahliae or Verticillium albo-atrum",
+        "Persists in soil for many years",
+        "Enters through roots, blocks water transport"
+      ],
+      "causes_ur": [
+        "ورٹیسیلیم ڈہلیاے یا ورٹیسیلیم البو-ایٹرم نامی فنگس",
+        "مٹی میں کئی سالوں تک زندہ رہتی ہے",
+        "جڑوں کے ذریعے داخل ہوتی ہے، پانی کی ترسیل روکتی ہے"
+      ]
+    },
+    "Tomato_Tomato_bacterial_spot": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Bacterial spot",
+      "disease_ur": "بیکٹیریل دھبے",
+      "causes": [
+        "Bacterial pathogens (Xanthomonas species)",
+        "Warm, wet weather (24-30°C)",
+        "Spread by water splash and contaminated tools"
+      ],
+      "causes_ur": [
+        "بیکٹیریل پیتھوجینز (زینتھوموناس انواع)",
+        "گرم، گیلا موسم (24-30°C)",
+        "پانی کے چھینٹوں اور آلودہ آلات سے پھیلتا ہے"
+      ]
+    },
+    "Tomato_Tomato_early_blight": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Early blight",
+      "disease_ur": "ابتدائی جھلساؤ",
+      "causes": [
+        "Fungal pathogen Alternaria solani",
+        "Warm temperatures (24-29°C)",
+        "Overwinters in crop debris"
+      ],
+      "causes_ur": [
+        "الٹرنیریا سولانی نامی فنگس",
+        "گرم درجہ حرارت (24-29°C)",
+        "فصل کے ملبے میں سردیوں میں زندہ رہتا ہے"
+      ]
+    },
+    "Tomato_Tomato_healthy_leaf": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Tomato_Tomato_late_blight": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Late blight",
+      "disease_ur": "آخری جھلساؤ",
+      "causes": [
+        "Oomycete pathogen Phytophthora infestans",
+        "Cool, wet weather (10-25°C) with high humidity",
+        "Wind-dispersed spores can travel long distances"
+      ],
+      "causes_ur": [
+        "فائٹوفتھورا انفیسٹینس نامی اومیسیٹ پیتھوجین",
+        "ٹھنڈا، گیلا موسم (10-25°C) زیادہ نمی کے ساتھ",
+        "ہوا سے پھیلنے والے بیج لمبے فاصلے تک جا سکتے ہیں"
+      ]
+    },
+    "Tomato_Tomato_leaf_curl": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Leaf curl",
+      "disease_ur": "پتوں کا کرل",
+      "causes": [
+        "Tomato Yellow Leaf Curl Virus (TYLCV)",
+        "Transmitted by whitefly (Bemisia tabaci)",
+        "Warm weather increases whitefly populations"
+      ],
+      "causes_ur": [
+        "ٹماٹر پیلا پتوں کا کرل وائرس",
+        "سفید مکھی (بیمیشیا تاباچی) سے منتقل ہوتا ہے",
+        "گرم موسم سفید مکھی کی آبادی بڑھاتا ہے"
+      ]
+    },
+    "Tomato_Tomato_leaf_miner": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Leaf miner damage",
+      "disease_ur": "پتوں کا کان کن نقصان",
+      "causes": [
+        "Liriomyza species (leaf miner flies)",
+        "Larvae tunnel through leaves creating winding mines",
+        "Adult flies lay eggs inside leaf tissue"
+      ],
+      "causes_ur": [
+        "لیریومائزا انواع (پتوں کی کان کن مکھیاں)",
+        "لاروا پتوں کے ذریعے سرنگ بناتے ہیں",
+        "بالغ مکھیاں پتوں کے اندر انڈے دیتی ہیں"
+      ]
+    },
+    "Tomato_Tomato_leaf_mold": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Leaf mold",
+      "disease_ur": "پتوں کی پھپھوندی",
+      "causes": [
+        "Fungal pathogen Passalora fulva",
+        "High humidity (>85%) and moderate temperatures",
+        "Common in greenhouse conditions"
+      ],
+      "causes_ur": [
+        "پاسالورا فولوا نامی فنگس",
+        "زیادہ نمی (>85%) اور معتدل درجہ حرارت",
+        "گرین ہاؤس حالات میں عام ہے"
+      ]
+    },
+    "Tomato_tomato_septoria_leaf": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Septoria leaf spot",
+      "disease_ur": "سیپٹوریا پتوں کے دھبے",
+      "causes": [
+        "Fungal pathogen Septoria lycopersici",
+        "Warm, wet weather (20-25°C)",
+        "Requires extended leaf wetness"
+      ],
+      "causes_ur": [
+        "سیپٹوریا لائکوپرسیسی نامی فنگس",
+        "گرم، گیلا موسم (20-25°C)",
+        "پتوں کی طویل نمی کی ضرورت ہوتی ہے"
+      ]
+    },
+    "Tomato_tomato_fusarium_wilt": {
+      "plant": "Tomato",
+      "plant_ur": "ٹماٹر",
+      "disease": "Fusarium wilt",
+      "disease_ur": "فیوزیریم مرجھاؤ",
+      "causes": [
+        "Fungal pathogen Fusarium oxysporum f.sp. lycopersici",
+        "Warm soil temperatures (25-30°C)",
+        "Persists in soil for many years"
+      ],
+      "causes_ur": [
+        "فیوزیریم ایکسیسپورم نامی فنگس",
+        "گرم مٹی کا درجہ حرارت (25-30°C)",
+        "مٹی میں کئی سالوں تک زندہ رہتی ہے"
+      ]
+    },
+    "Walnut_Walnut_anthracnose_leaf_disease": {
+      "plant": "Walnut",
+      "plant_ur": "اخروٹ",
+      "disease": "Anthracnose",
+      "disease_ur": "اینتھراکنوز",
+      "causes": [
+        "Fungal pathogen Ophiognomonia leptostyla",
+        "Wet spring weather",
+        "Spreads by rain splash"
+      ],
+      "causes_ur": [
+        "اوفیوگنومونیا لیپٹوسٹیلا نامی فنگس",
+        "گیلا موسم بہار",
+        "بارش کے چھینٹوں سے پھیلتا ہے"
+      ]
+    },
+    "Walnut_Walnut_blotch_leaf_disease": {
+      "plant": "Walnut",
+      "plant_ur": "اخروٹ",
+      "disease": "Blotch",
+      "disease_ur": "دھبے",
+      "causes": [
+        "Bacterial pathogen Xanthomonas campestris pv. juglandis",
+        "Wet spring weather with warm temperatures",
+        "Enters through natural openings and wounds"
+      ],
+      "causes_ur": [
+        "زینتھوموناس کیمپیسٹرس جگلینڈس نامی بیکٹیریا",
+        "گیلا موسم بہار گرم درجہ حرارت کے ساتھ",
+        "قدرتی سوراخوں اور زخموں کے ذریعے داخل ہوتا ہے"
+      ]
+    },
+    "Walnut_Walnut_normal_leaf": {
+      "plant": "Walnut",
+      "plant_ur": "اخروٹ",
+      "disease": "Healthy",
+      "disease_ur": "صحت مند",
+      "causes": [],
+      "causes_ur": []
+    },
+    "Walnut_Walnut_shot_hole": {
+      "plant": "Walnut",
+      "plant_ur": "اخروٹ",
+      "disease": "Shot hole",
+      "disease_ur": "سوراخ دار پتے",
+      "causes": [
+        "Fungal pathogen Wilsonomyces carpophilus",
+        "Wet conditions during leaf emergence",
+        "Spores spread by rain splash"
+      ],
+      "causes_ur": [
+        "ولسنومائسس کارپوفیلس نامی فنگس",
+        "پتوں کے نکلنے کے دوران گیلے حالات",
+        "بارش کے چھینٹوں سے بیج پھیلتے ہیں"
+      ]
+    },
+    "Walnut_Walnut_leaf_gall_mite": {
+      "plant": "Walnut",
+      "plant_ur": "اخروٹ",
+      "disease": "Leaf gall mite",
+      "disease_ur": "پتوں کے گال ذرات",
+      "causes": [
+        "Eriophyid mite (Aceria erinea)",
+        "Mites feed on leaves causing gall formation",
+        "Mites overwinter in bark crevices and buds"
+      ],
+      "causes_ur": [
+        "ایریوفائیڈ ذرات (ایسیریا ایرینیا)",
+        "ذرات پتوں پر خوراک کرتے ہیں جس سے گال بنتے ہیں",
+        "ذرات چھال کی دراڑوں اور کلیوں میں سردیوں میں زندہ رہتے ہیں"
+      ]
+    }
   },
 
-  "Grape___Leaf_blight": {
-    "plant": "Grape",
-    "plant_ur": "انگور",
-    "disease": "Leaf blight (Isariopsis leaf spot)",
-    "disease_ur": "پتوں کا جھلساؤ",
-    "causes": [
-      "Fungal pathogen Pseudocercospora vitis",
-      "Warm, humid conditions (24-28°C) with high moisture",
-      "Poor air circulation in dense canopies",
-      "Extended periods of leaf wetness from rain or dew",
-      "Spreads by rain splash and infected plant debris"
-    ],
-    "causes_ur": [
-      "سوڈو سرکوسپورا ویٹس نامی فنگس",
-      "گرم، مرطوب حالات (24-28°C) زیادہ نمی کے ساتھ",
-      "گھنے پودوں میں ناکافی ہوا کی گردش",
-      "بارش یا اوس سے پتوں کی نمی کے طویل عرصے",
-      "بارش کے چھینٹوں اور متاثرہ پودوں کے ملبے سے پھیلتا ہے"
-    ]
-  },
-
-  "Grape___healthy": {
-    "plant": "Grape",
-    "plant_ur": "انگور",
-    "disease": "Healthy",
-    "disease_ur": "صحت مند",
-    "causes": [],
-    "causes_ur": []
-  },
-
-  "Peach___Bacterial_spot": {
-    "plant": "Peach",
-    "plant_ur": "آڑو",
-    "disease": "Bacterial spot",
-    "disease_ur": "بیکٹیریل دھبے",
-    "causes": [
-      "Bacterial pathogen Xanthomonas arboricola pv. pruni",
-      "Enters through stomata, lenticels, and mechanical wounds",
-      "Warm, wet spring weather (24-30°C) promotes spread",
-      "Overwinters in twig cankers, bud scales, and infected tissues",
-      "Wind-driven rain spreads bacteria between trees"
-    ],
-    "causes_ur": [
-      "زینتھوموناس آربوریکولا پروونی نامی بیکٹیریا",
-      "سٹوماٹا، لینٹیسلز اور مکینیکل زخموں کے ذریعے داخل ہوتا ہے",
-      "گرم، گیلا موسم بہار (24-30°C) پھیلاؤ کو فروغ دیتا ہے",
-      "ٹہنیوں کے ناسور، کلیوں کے ترازو اور متاثرہ بافتوں میں سردیوں میں زندہ رہتا ہے",
-      "ہوا سے چلنے والی بارش درختوں کے درمیان بیکٹیریا پھیلاتی ہے"
-    ]
-  },
-
-  "Peach___healthy": {
-    "plant": "Peach",
-    "plant_ur": "آڑو",
-    "disease": "Healthy",
-    "disease_ur": "صحت مند",
-    "causes": [],
-    "causes_ur": []
-  },
-
-  "Potato___Early_blight": {
-    "plant": "Potato",
-    "plant_ur": "آلو",
-    "disease": "Early blight",
-    "disease_ur": "ابتدائی جھلساؤ",
-    "causes": [
-      "Fungal pathogen Alternaria solani",
-      "Warm temperatures (24-29°C) with alternating wet and dry periods",
-      "High humidity and frequent rain or dew",
-      "Stressed plants (nutrient deficiency, drought) are more susceptible",
-      "Overwinters in infected crop debris and soil"
-    ],
-    "causes_ur": [
-      "الٹرنیریا سولانی نامی فنگس",
-      "گرم درجہ حرارت (24-29°C) گیلے اور خشک ادوار کے ساتھ",
-      "زیادہ نمی اور بار بار بارش یا اوس",
-      "تناؤ زدہ پودے (غذائیت کی کمی، خشک سالی) زیادہ حساس ہوتے ہیں",
-      "متاثرہ فصل کے ملبے اور مٹی میں سردیوں میں زندہ رہتا ہے"
-    ]
-  },
-
-  "Potato___Late_blight": {
-    "plant": "Potato",
-    "plant_ur": "آلو",
-    "disease": "Late blight",
-    "disease_ur": "آخری جھلساؤ",
-    "causes": [
-      "Oomycete pathogen Phytophthora infestans (water mold, not true fungus)",
-      "Cool, wet weather (10-25°C) with very high humidity (>90%)",
-      "Overcast conditions and frequent rain or heavy dew",
-      "Spreads rapidly by wind-blown sporangia over long distances",
-      "Can originate from infected seed potatoes or volunteer plants"
-    ],
-    "causes_ur": [
-      "فائٹوفتھورا انفیسٹینس نامی اومیسیٹ پیتھوجین (پانی کا سانچہ، حقیقی فنگس نہیں)",
-      "ٹھنڈا، گیلا موسم (10-25°C) بہت زیادہ نمی کے ساتھ (>90%)",
-      "ابر آلود حالات اور بار بار بارش یا شدید اوس",
-      "ہوا سے اڑنے والے اسپورانگیا کے ذریعے تیزی سے دور دراز تک پھیلتا ہے",
-      "متاثرہ بیج آلو یا خود رو پودوں سے شروع ہو سکتا ہے"
-    ]
-  },
-
-  "Potato___healthy": {
-    "plant": "Potato",
-    "plant_ur": "آلو",
-    "disease": "Healthy",
-    "disease_ur": "صحت مند",
-    "causes": [],
-    "causes_ur": []
-  },
-
-  "Soybean___Bacterial_blight": {
-    "plant": "Soybean",
-    "plant_ur": "سویا بین",
-    "disease": "Bacterial blight",
-    "disease_ur": "بیکٹیریل جھلساؤ",
-    "causes": [
-      "Bacterial pathogen Pseudomonas syringae pv. glycinea",
-      "Cool, wet weather (18-24°C) favors disease development",
-      "Enters plants through stomata and leaf wounds",
-      "Seed-borne pathogen spreads to new plantings",
-      "Mechanical damage from hail, wind, or equipment increases infection"
-    ],
-    "causes_ur": [
-      "سوڈوموناس سیرنگائی گلیسینا نامی بیکٹیریا",
-      "ٹھنڈا، گیلا موسم (18-24°C) بیماری کی نشوونما کو فروغ دیتا ہے",
-      "سٹوماٹا اور پتوں کے زخموں کے ذریعے پودوں میں داخل ہوتا ہے",
-      "بیج سے پھیلنے والا پیتھوجین نئی بوائیوں تک پھیلتا ہے",
-      "اولے، ہوا یا آلات سے مکینیکل نقصان انفیکشن بڑھاتا ہے"
-    ]
-  },
-
-  "Strawberry___Leaf_scorch": {
-    "plant": "Strawberry",
-    "plant_ur": "اسٹرابیری",
-    "disease": "Leaf scorch",
-    "disease_ur": "پتوں کا جھلساؤ",
-    "causes": [
-      "Fungal pathogen Diplocarpon earlianum",
-      "Warm, humid weather (24-28°C)",
-      "Spreads by rain splash and overhead irrigation",
-      "Overwinters in infected leaves and plant debris",
-      "Older, mature leaves are more susceptible than young leaves"
-    ],
-    "causes_ur": [
-      "ڈپلوکارپن ارلیانم نامی فنگس",
-      "گرم، مرطوب موسم (24-28°C)",
-      "بارش کے چھینٹوں اور اوپری آبپاشی سے پھیلتا ہے",
-      "متاثرہ پتوں اور پودوں کے ملبے میں سردیوں میں زندہ رہتا ہے",
-      "پرانے، بالغ پتے نوجوان پتوں کے مقابلے میں زیادہ حساس ہوتے ہیں"
-    ]
-  },
-
-  "Strawberry___healthy": {
-    "plant": "Strawberry",
-    "plant_ur": "اسٹرابیری",
-    "disease": "Healthy",
-    "disease_ur": "صحت مند",
-    "causes": [],
-    "causes_ur": []
-  },
-
-  "Tomato___Bacterial_spot": {
-    "plant": "Tomato",
-    "plant_ur": "ٹماٹر",
-    "disease": "Bacterial spot",
-    "disease_ur": "بیکٹیریل دھبے",
-    "causes": [
-      "Bacterial pathogens: four Xanthomonas species (X. euvesicatoria, X. vesicatoria, X. perforans, X. gardneri)",
-      "Warm, wet weather (24-30°C) with high humidity",
-      "Spread by water splash from rain, irrigation, and wind-driven rain",
-      "Seed-borne and can be introduced via infected transplants",
-      "Enters through stomata and wounds on leaves, stems, and fruit"
-    ],
-    "causes_ur": [
-      "بیکٹیریل پیتھوجینز: چار زینتھوموناس انواع",
-      "گرم، گیلا موسم (24-30°C) زیادہ نمی کے ساتھ",
-      "بارش، آبپاشی اور ہوا سے چلنے والی بارش کے پانی کے چھینٹوں سے پھیلتا ہے",
-      "بیج سے پھیلتا ہے اور متاثرہ پودوں کے ذریعے داخل ہو سکتا ہے",
-      "پتوں، تنوں اور پھل پر سٹوماٹا اور زخموں کے ذریعے داخل ہوتا ہے"
-    ]
-  },
-
-  "Tomato___Early_blight": {
-    "plant": "Tomato",
-    "plant_ur": "ٹماٹر",
-    "disease": "Early blight",
-    "disease_ur": "ابتدائی جھلساؤ",
-    "causes": [
-      "Fungal pathogen Alternaria solani",
-      "Warm temperatures (24-29°C) with alternating wet and dry conditions",
-      "High humidity and leaf wetness from rain or dew",
-      "Plant stress from nutrient deficiency or drought increases susceptibility",
-      "Overwinters in crop debris and infected plant material in soil"
-    ],
-    "causes_ur": [
-      "الٹرنیریا سولانی نامی فنگس",
-      "گرم درجہ حرارت (24-29°C) گیلے اور خشک حالات کے ساتھ",
-      "بارش یا اوس سے زیادہ نمی اور پتوں کی نمی",
-      "غذائیت کی کمی یا خشک سالی سے پودوں کا تناؤ حساسیت بڑھاتا ہے",
-      "فصل کے ملبے اور مٹی میں متاثرہ پودوں کے مواد میں سردیوں میں زندہ رہتا ہے"
-    ]
-  },
-
-  "Tomato___Late_blight": {
-    "plant": "Tomato",
-    "plant_ur": "ٹماٹر",
-    "disease": "Late blight",
-    "disease_ur": "آخری جھلساؤ",
-    "causes": [
-      "Oomycete pathogen Phytophthora infestans",
-      "Cool, wet weather (10-25°C) with very high humidity (>90%)",
-      "Prolonged leaf wetness from rain, dew, or fog",
-      "Wind-dispersed sporangia can travel miles from infected plants",
-      "Can spread from nearby infected potato fields or volunteer potato plants"
-    ],
-    "causes_ur": [
-      "فائٹوفتھورا انفیسٹینس نامی اومیسیٹ پیتھوجین",
-      "ٹھنڈا، گیلا موسم (10-25°C) بہت زیادہ نمی کے ساتھ (>90%)",
-      "بارش، اوس یا دھند سے پتوں کی طویل نمی",
-      "ہوا سے پھیلنے والے اسپورانگیا متاثرہ پودوں سے میل دور جا سکتے ہیں",
-      "قریبی متاثرہ آلو کے کھیتوں یا خود رو آلو کے پودوں سے پھیل سکتا ہے"
-    ]
-  },
-
-  "Tomato___Septoria_leaf_spot": {
-    "plant": "Tomato",
-    "plant_ur": "ٹماٹر",
-    "disease": "Septoria leaf spot",
-    "disease_ur": "سیپٹوریا پتوں کے دھبے",
-    "causes": [
-      "Fungal pathogen Septoria lycopersici",
-      "Warm, wet weather (20-25°C) with high humidity",
-      "Spreads by rain splash and overhead watering",
-      "Overwinters in infected crop debris and soil",
-      "Requires extended periods of leaf wetness (48+ hours)"
-    ],
-    "causes_ur": [
-      "سیپٹوریا لائکوپرسیسی نامی فنگس",
-      "گرم، گیلا موسم (20-25°C) زیادہ نمی کے ساتھ",
-      "بارش کے چھینٹوں اور اوپری آبپاشی سے پھیلتا ہے",
-      "متاثرہ فصل کے ملبے اور مٹی میں سردیوں میں زندہ رہتا ہے",
-      "پتوں کی نمی کے طویل عرصے کی ضرورت ہوتی ہے (48+ گھنٹے)"
-    ]
-  },
-
-  "Tomato___Yellow_Leaf_Curl_Virus": {
-    "plant": "Tomato",
-    "plant_ur": "ٹماٹر",
-    "disease": "Tomato Yellow Leaf Curl Virus (TYLCV)",
-    "disease_ur": "ٹماٹر پیلا پتوں کا کرل وائرس",
-    "causes": [
-      "Viral disease (Begomovirus) transmitted exclusively by silverleaf whitefly (Bemisia tabaci)",
-      "Cannot be cured once plant is infected",
-      "Warm weather (25-30°C) increases whitefly populations",
-      "Whiteflies acquire virus by feeding on infected plants (15-30 minutes)",
-      "Spreads rapidly in greenhouse conditions with poor whitefly control"
-    ],
-    "causes_ur": [
-      "وائرل بیماری (بیگومو وائرس) صرف سلور لیف وائٹ فلائی (بیمیشیا تاباچی) سے پھیلتی ہے",
-      "ایک بار پودا متاثر ہو جائے تو اس کا علاج ممکن نہیں",
-      "گرم موسم (25-30°C) سفید مکھی کی آبادی بڑھاتا ہے",
-      "سفید مکھیاں متاثرہ پودوں پر کھانا کھا کر وائرس حاصل کرتی ہیں (15-30 منٹ)",
-      "گرین ہاؤس میں سفید مکھی کے ناقص کنٹرول سے تیزی سے پھیلتی ہے"
-    ]
-  },
-
-  "Tomato___healthy": {
-    "plant": "Tomato",
-    "plant_ur": "ٹماٹر",
-    "disease": "Healthy",
-    "disease_ur": "صحت مند",
-    "causes": [],
-    "causes_ur": []
-  },
-
-  "Wheat___Stripe_rust": {
-    "plant": "Wheat",
-    "plant_ur": "گندم",
-    "disease": "Stripe rust (Yellow rust)",
-    "disease_ur": "پٹی زنگ (پیلا زنگ)",
-    "causes": [
-      "Fungal pathogen Puccinia striiformis f. sp. tritici",
-      "Cool, moist conditions (10-15°C) with high humidity",
-      "Spreads by wind-borne urediniospores over hundreds of miles",
-      "Can travel intercontinentally on air currents",
-      "Most damaging in cool wheat-growing regions"
-    ],
-    "causes_ur": [
-      "پکینیا سٹرائیفارمس ٹریٹسی نامی فنگس",
-      "ٹھنڈے، نم حالات (10-15°C) زیادہ نمی کے ساتھ",
-      "ہوا سے اڑنے والے یوریڈینیوسپورس کے ذریعے سینکڑوں میل تک پھیلتا ہے",
-      "ہوا کے دھاروں پر بین البراعظمی سفر کر سکتا ہے",
-      "گندم اگانے والے ٹھنڈے علاقوں میں سب سے زیادہ نقصان دہ"
-    ]
+  "unknown_plant_response": {
+    "message": "Plant species not identified. General disease information shown below.",
+    "message_ur": "پودے کی قسم کی شناخت نہیں ہو سکی۔ بیماری کی عمومی معلومات نیچے دکھائی گئی ہیں۔",
+    "recommendation": "For accurate diagnosis, please identify the plant species first.",
+    "recommendation_ur": "درست تشخیص کے لیے، براہ کرم پہلے پودے کی قسم کی شناخت کریں۔"
   }
-},
-
-"general_disease_causes": {
-"bacterial_spot": {
-"disease_type": "Bacterial disease",
-"disease_type_ur": "بیکٹیریل بیماری",
-"general_causes": [
-"Caused by Xanthomonas bacteria species",
-"Warm, wet weather conditions promote spread",
-"Enters plants through natural openings (stomata) and wounds",
-"Spread by water splash, rain, and contaminated tools",
-"Can be seed-borne or introduced via infected transplants"
-],
-"general_causes_ur": [
-"زینتھوموناس بیکٹیریا کی وجہ سے ہوتی ہے",
-"گرم، گیلا موسم پھیلاؤ کو فروغ دیتا ہے",
-"قدرتی سوراخوں (سٹوماٹا) اور زخموں کے ذریعے پودوں میں داخل ہوتا ہے",
-"پانی کے چھینٹوں، بارش اور آلودہ آلات سے پھیلتا ہے",
-"بیج سے پھیل سکتا ہے یا متاثرہ پودوں کے ذریعے داخل ہو سکتا ہے"
-]
-},
-
-"fungal_leaf_spot": {
-"disease_type": "Fungal disease",
-"disease_type_ur": "فنگل بیماری",
-"general_causes": [
-"Various fungal pathogens (Alternaria, Cercospora, Septoria species)",
-"High humidity and prolonged leaf wetness",
-"Warm temperatures varying by specific pathogen",
-"Spreads by rain splash and wind-blown spores",
-"Overwinters in crop debris and soil"
-],
-"general_causes_ur": [
-"مختلف فنگل پیتھوجینز (الٹرنیریا، سرکوسپورا، سیپٹوریا انواع)",
-"زیادہ نمی اور پتوں کی طویل نمی",
-"مخصوص پیتھوجین کے مطابق گرم درجہ حرارت مختلف ہوتا ہے",
-"بارش کے چھینٹوں اور ہوا سے اڑنے والے بیجوں سے پھیلتا ہے",
-"فصل کے ملبے اور مٹی میں سردیوں میں زندہ رہتا ہے"
-]
-},
-
-"rust_disease": {
-"disease_type": "Fungal disease (Rust)",
-"disease_type_ur": "فنگل بیماری (زنگ)",
-"general_causes": [
-"Caused by Puccinia or related rust fungi",
-"Moderate temperatures with high humidity",
-"Wind disperses spores over long distances",
-"Some rust diseases require alternate host plants",
-"Extended periods of leaf wetness from dew or rain"
-],
-"general_causes_ur": [
-"پکینیا یا متعلقہ زنگ فنگس کی وجہ سے ہوتی ہے",
-"معتدل درجہ حرارت زیادہ نمی کے ساتھ",
-"ہوا بیجوں کو لمبے فاصلے تک پھیلاتی ہے",
-"کچھ زنگ کی بیماریوں کو متبادل میزبان پودوں کی ضرورت ہوتی ہے",
-"اوس یا بارش سے پتوں کی نمی کے طویل عرصے"
-]
-},
-
-"blight": {
-"disease_type": "Fungal/Oomycete disease",
-"disease_type_ur": "فنگل/اومیسیٹ بیماری",
-"general_causes": [
-"Various pathogens (Alternaria, Phytophthora, Exserohilum species)",
-"Specific weather conditions vary by pathogen type",
-"Rapid spread under favorable conditions",
-"Can be devastating if left uncontrolled",
-"Overwinters in crop debris, soil, or infected plant material"
-],
-"general_causes_ur": [
-"مختلف پیتھوجینز (الٹرنیریا، فائٹوفتھورا، ایکسیروہیلم انواع)",
-"پیتھوجین کی قسم کے مطابق موسمی حالات مختلف ہوتے ہیں",
-"موافق حالات میں تیزی سے پھیلتا ہے",
-"اگر قابو نہ کیا جائے تو تباہ کن ہو سکتا ہے",
-"فصل کے ملبے، مٹی یا متاثرہ پودوں کے مواد میں سردیوں میں زندہ رہتا ہے"
-]
-},
-
-"powdery_mildew": {
-"disease_type": "Fungal disease",
-"disease_type_ur": "فنگل بیماری",
-"general_causes": [
-"Various powdery mildew fungi",
-"Warm days with cool nights",
-"Does not require water on leaf surface (unique among fungi)",
-"Spreads by wind-borne spores",
-"Poor air circulation increases severity"
-],
-"general_causes_ur": [
-"مختلف پاؤڈری پھپھوندی فنگس",
-"گرم دن ٹھنڈی راتوں کے ساتھ",
-"پتوں کی سطح پر پانی کی ضرورت نہیں (فنگس میں منفرد)",
-"ہوا سے پھیلنے والے بیجوں سے پھیلتی ہے",
-"ناکافی ہوا کی گردش شدت بڑھاتی ہے"
-]
-},
-
-"viral_disease": {
-"disease_type": "Viral disease",
-"disease_type_ur": "وائرل بیماری",
-"general_causes": [
-"Transmitted by insect vectors (whiteflies, aphids, leafhoppers)",
-"Cannot be cured once plant is infected",
-"Spread by infected transplants and propagation material",
-"Vector insects move virus between plants while feeding",
-"Warm weather often increases vector populations"
-],
-"general_causes_ur": [
-"کیڑوں (سفید مکھی، افڈس، لیف ہاپر) کے ذریعے منتقل ہوتی ہے",
-"ایک بار پودا متاثر ہو جائے تو علاج ممکن نہیں",
-"متاثرہ پودوں اور پھیلاؤ کے مواد سے پھیلتی ہے",
-"کیڑے خوراک کے دوران پودوں کے درمیان وائرس منتقل کرتے ہیں",
-"گرم موسم اکثر کیڑوں کی آبادی بڑھاتا ہے"
-]
-}
-},
-
-"unknown_plant_response": {
-"message": "Plant species not identified. Disease-specific causes shown below.",
-"message_ur": "پودے کی قسم کی شناخت نہیں ہو سکی۔ بیماری کے مخصوص اسباب نیچے دکھائے گئے ہیں۔",
-"recommendation": "For accurate diagnosis, please identify the plant species first using the species identification feature.",
-"recommendation_ur": "درست تشخیص کے لیے، براہ کرم پہلے پرجاتیوں کی شناخت کی خصوصیت کا استعمال کرتے ہوئے پودے کی قسم کی شناخت کریں۔"
-}
 }

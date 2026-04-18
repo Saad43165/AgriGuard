@@ -2,177 +2,170 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../models/onboarding_data.dart';
-import '../widgets/onboarding_action_button.dart';
-import '../widgets/onboarding_app_bar.dart';
-import '../widgets/onboarding_page_view.dart';
-import '../widgets/completion_overlay.dart';
-import '../widgets/page_indicator.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
-
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with TickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  late AnimationController _fadeController;
-  late AnimationController _completionController;
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  final _ctrl = PageController();
+  int _page = 0;
 
-  int _currentPage = 0;
-  bool _isCompleting = false;
-  final List<OnboardingData> _pages = OnboardingData.pages;
+  final _pages = const [
+    _OnboardPage(
+      emoji: '🌿',
+      title: 'Detect Plant Diseases',
+      subtitle: 'Take a photo of any plant leaf and get instant AI-powered disease diagnosis.',
+      bg: AppColors.primaryLight,
+    ),
+    _OnboardPage(
+      emoji: '🔬',
+      title: 'Advanced AI Analysis',
+      subtitle: 'Use Groq AI and Plant.id for deep analysis, treatment plans, and expert advice.',
+      bg: Color(0xFFE8F5E9),
+    ),
+    _OnboardPage(
+      emoji: '📊',
+      title: 'Track Your Farm',
+      subtitle: 'Monitor crop health, track disease trends, and manage your farm diary.',
+      bg: Color(0xFFD8F3DC),
+    ),
+  ];
 
-  @override
-  void initState() {
-    super.initState();
+  void _next() {
+    if (_page < _pages.length - 1) {
+      _ctrl.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    } else {
+      _finish();
+    }
+  }
 
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
-    _completionController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _fadeController.forward();
+  void _finish() {
+    HapticFeedback.mediumImpact();
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _fadeController.dispose();
-    _completionController.dispose();
+    _ctrl.dispose();
     super.dispose();
-  }
-
-  void _onPageChanged(int index) {
-    setState(() => _currentPage = index);
-    HapticFeedback.selectionClick();
-  }
-
-  void _onSkip() {
-    HapticFeedback.mediumImpact();
-    _navigateToLogin();
-  }
-
-  void _onNext() {
-    HapticFeedback.lightImpact();
-
-    if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutCubic,
-      );
-    } else {
-      _completeOnboarding();
-    }
-  }
-
-  void _onPrevious() {
-    HapticFeedback.lightImpact();
-    _pageController.previousPage(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
-    );
-  }
-
-  void _onDotTapped(int index) {
-    HapticFeedback.lightImpact();
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
-    );
-  }
-
-  Future<void> _completeOnboarding() async {
-    setState(() => _isCompleting = true);
-    HapticFeedback.mediumImpact();
-
-    await _completionController.forward();
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    if (mounted) {
-      _navigateToLogin();
-    }
-  }
-
-  void _navigateToLogin() {
-    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeProvider.of(context).isDarkMode;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF),
-      body: Stack(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Skip button
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _finish,
+                child: const Text('Skip',
+                    style: TextStyle(color: AppColors.lightCaption, fontWeight: FontWeight.w600)),
+              ),
+            ),
+
+            // Pages
+            Expanded(
+              child: PageView.builder(
+                controller: _ctrl,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemCount: _pages.length,
+                itemBuilder: (_, i) => _pages[i],
+              ),
+            ),
+
+            // Dots + button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              child: Column(
+                children: [
+                  // Dots
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_pages.length, (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: _page == i ? 24 : 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _page == i ? AppColors.primary : const Color(0xFFE0E0E0),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    )),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Button
+                  SizedBox(
+                    width: double.infinity, height: 54,
+                    child: ElevatedButton(
+                      onPressed: _next,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _page == _pages.length - 1 ? 'Get Started' : 'Next',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OnboardPage extends StatelessWidget {
+  final String emoji, title, subtitle;
+  final Color bg;
+
+  const _OnboardPage({
+    required this.emoji, required this.title,
+    required this.subtitle, required this.bg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Solid background
-          Container(color: isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF)),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Modern App Bar
-                ModernAppBar(
-                  onSkip: _onSkip,
-                  currentPage: _currentPage,
-                  totalPages: _pages.length,
-                ),
-
-                // Main Content - FIXED: Wrapped in Expanded with proper constraints
-                Expanded(
-                  child: OnboardingPageView(
-                    pageController: _pageController,
-                    pages: _pages,
-                    currentPage: _currentPage,
-                    onPageChanged: _onPageChanged,
-                  ),
-                ),
-
-                // Bottom Section - FIXED: Removed extra space
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Page Indicators
-                      ModernPageIndicators(
-                        currentPage: _currentPage,
-                        pageCount: _pages.length,
-                        onDotTapped: _onDotTapped,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Action Buttons
-                      ModernActionButtons(
-                        currentPage: _currentPage,
-                        totalPages: _pages.length,
-                        onNext: _onNext,
-                        onPrevious: _onPrevious,
-                        isCompleting: _isCompleting,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          // Illustration
+          Container(
+            width: 200, height: 200,
+            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+            child: Center(
+              child: Text(emoji, style: const TextStyle(fontSize: 80)),
             ),
           ),
+          const SizedBox(height: 40),
 
-          // Completion Overlay
-          if (_isCompleting)
-            CompletionOverlay(
-              controller: _completionController,
-            ),
+          Text(title,
+              style: const TextStyle(
+                fontSize: 26, fontWeight: FontWeight.w800,
+                color: AppColors.lightOnSurface, letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          Text(subtitle,
+              style: const TextStyle(
+                fontSize: 15, color: AppColors.lightCaption, height: 1.6,
+              ),
+              textAlign: TextAlign.center),
         ],
       ),
     );

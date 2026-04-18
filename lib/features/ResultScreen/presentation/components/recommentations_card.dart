@@ -79,8 +79,16 @@ class _RecommendationsCardState extends State<RecommendationsCard>
           return item.toString();
         }).where((s) => s.isNotEmpty).toList();
       } else {
-        // Simple string list - ensure all items are strings
-        tempList = list.map((e) => e.toString()).toList();
+        // Simple string list - ensure all items are strings, translate if Urdu
+        tempList = list.map((e) {
+          final str = e.toString();
+          if (translation.isUrdu) {
+            // Try to find Urdu translation for this treatment string
+            final urdu = translation.get('treatments.$str');
+            if (urdu != 'treatments.$str') return urdu; // found translation
+          }
+          return str;
+        }).toList();
       }
     } else if (widget.recommendations is Map) {
       // Single recommendation map with en/ur

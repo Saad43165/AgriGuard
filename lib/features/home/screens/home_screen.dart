@@ -1,29 +1,23 @@
-// lib/features/home/presentation/screens/home_screen.dart - MAGICAL REDESIGN
+// lib/features/home/screens/home_screen.dart
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:agriguard_fyp/features/home/screens/species/species_grid_widget.dart';
-import 'package:agriguard_fyp/features/home/screens/weather/provider/weather_provider.dart';
-import 'package:agriguard_fyp/features/home/screens/weather/weather_card/weather_card.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/models/scan_model.dart';
 import '../../../core/repositories/scan_repository.dart';
-import '../../../core/widgets/floating_orb.dart';
 import '../../../core/widgets/app_themes.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../auth/Login_Screen/services/guest_service.dart';
-import 'PdfDialogs/scan_options_bottomsheet.dart';
-import 'components/all_scans_dialog_content.dart';
-import 'components/custom_home_app_bar.dart';
-import 'components/first_time_user_guide.dart';
 import 'components/guest_mode_banner.dart';
-import 'components/loading_section.dart';
-import 'components/recent_scan_section.dart';
-import 'components/advance_scan_section.dart';
+import 'species/species_grid_widget.dart';
+import 'weather/provider/weather_provider.dart';
+import '../../../core/services/translation_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -34,18 +28,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final List<Map<String, dynamic>> _onDeviceScans = [];
-  final List<Map<String, dynamic>> _advancedScans = [];
-  bool _isFirstTimeUser = true;
+  final List<Map<String, dynamic>> _recentScans = [];
   bool _isLoading = false;
   bool _hasHandledRouteArgs = false;
-  int _scanFeedIndex = 0; // 0=On-device, 1=Advanced
 
   late final AnimationController _fadeController;
-  late final AnimationController _scaleController;
-  late final AnimationController _slideController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<Offset> _slideAnimation;
 
   final ScanRepository _scanRepository = ScanRepository();
   final GuestService _guestService = GuestService();
@@ -54,14 +41,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    )..forward();
     _initializeGuestService();
-    _loadFirstTimeUser();
     _loadRecentScans();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleRouteArguments();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleRouteArguments());
   }
 
   Future<void> _initializeGuestService() async {
@@ -81,8 +67,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _fadeController.dispose();
-    _scaleController.dispose();
-    _slideController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -92,110 +76,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args == null) return;
     _hasHandledRouteArgs = true;
-
-    if (args.containsKey('newScan')) {
-      final newScan = args['newScan'] as Map<String, dynamic>;
-      _handleNewScan(newScan);
-    }
-    if (args['refreshScans'] == true) {
-      _loadRecentScans();
-    }
-  }
-
-  void _initializeAnimations() {
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    )..forward();
-
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    )..forward();
-
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..forward();
-
-    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
-  }
-
-  Future<void> _loadFirstTimeUser() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getBool('isFirstTimeUser');
-      if (mounted) {
-        setState(() => _isFirstTimeUser = saved ?? true);
-      }
-    } catch (e) {
-      debugPrint('SharedPreferences error: $e');
-    }
-  }
-
-  Future<void> _saveFirstTimeUser() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isFirstTimeUser', _isFirstTimeUser);
-    } catch (e) {
-      debugPrint('Failed to save first-time flag: $e');
-    }
+    if (args.containsKey('newScan')) _handleNewScan(args['newScan'] as Map<String, dynamic>);
+    if (args['refreshScans'] == true) _loadRecentScans();
   }
 
   Future<void> _loadRecentScans() async {
     if (_guestService.isGuestMode) {
-      if (mounted) {
-        setState(() {
-          _onDeviceScans.clear();
-          _advancedScans.clear();
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() { _recentScans.clear(); _isLoading = false; });
       return;
     }
-
     if (!mounted) return;
     setState(() => _isLoading = true);
-
     try {
-      final allScans = await _scanRepository.getUserScans(limit: 20);
+      final allScans = await _scanRepository.getUserScans(limit: 3);
       if (!mounted) return;
-
       setState(() {
-        _onDeviceScans.clear();
-        _advancedScans.clear();
-
+        _recentScans.clear();
         for (final scan in allScans) {
-          final map = _convertScanToMap(scan);
-          if (scan.scanType == ScanType.onDevice) {
-            _onDeviceScans.add(map);
-          } else {
-            _advancedScans.add(map);
-          }
+          _recentScans.add(_convertScanToMap(scan));
         }
-
-        _onDeviceScans.sort((a, b) => (b['scanDate'] as DateTime).compareTo(a['scanDate'] as DateTime));
-        _advancedScans.sort((a, b) => (b['scanDate'] as DateTime).compareTo(a['scanDate'] as DateTime));
+        _recentScans.sort((a, b) => (b['scanDate'] as DateTime).compareTo(a['scanDate'] as DateTime));
         _isLoading = false;
-
-        if (_onDeviceScans.isEmpty && _advancedScans.isEmpty && !_isFirstTimeUser) {
-          _isFirstTimeUser = true;
-          _saveFirstTimeUser();
-        }
       });
     } catch (e) {
       debugPrint('Error loading recent scans: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showSnackBar('Failed to load scans', true);
-      }
+      if (mounted) setState(() => _isLoading = false);
+    } finally {
+      if (mounted && _isLoading) setState(() => _isLoading = false);
     }
   }
 
@@ -225,698 +132,527 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     };
   }
 
-  Future<void> _refreshScans() async {
-    if (_guestService.isGuestMode) {
-      _showSnackBar(_guestService.getRestrictionMessage('view_history'), true);
-      return;
-    }
-    HapticFeedback.lightImpact();
-    await _loadRecentScans();
-    if (mounted) {
-      _showSnackBar('Scans refreshed!', false);
-    }
-  }
-
   void _handleNewScan(Map<String, dynamic> newScan) {
     if (_guestService.isGuestMode) return;
     final id = newScan['id']?.toString();
     if (id == null) return;
-
-    final isAdvanced = newScan['isAdvanced'] == true || newScan['scanType'] == 'advanced';
+    if (_recentScans.any((s) => s['id'] == id)) return;
     final enrichedScan = {...newScan};
-
     if (!enrichedScan.containsKey('imageBase64') && newScan['imagePath'] != null) {
       final file = File(newScan['imagePath']);
       if (file.existsSync()) {
         try {
-          final bytes = file.readAsBytesSync();
-          enrichedScan['imageBase64'] = base64Encode(bytes);
-        } catch (e) {
-          debugPrint('Failed to read image as base64: $e');
-        }
+          enrichedScan['imageBase64'] = base64Encode(file.readAsBytesSync());
+        } catch (_) {}
       }
     }
-
-    if (isAdvanced) {
-      if (_advancedScans.any((s) => s['id'] == id)) return;
-      setState(() => _advancedScans.insert(0, enrichedScan));
-    } else {
-      if (_onDeviceScans.any((s) => s['id'] == id)) return;
-      setState(() => _onDeviceScans.insert(0, enrichedScan));
-    }
-
-    if (_isFirstTimeUser) {
-      setState(() => _isFirstTimeUser = false);
-      _saveFirstTimeUser();
-    }
-    _showSnackBar('New scan added!', false);
+    setState(() {
+      _recentScans.insert(0, enrichedScan);
+      if (_recentScans.length > 3) _recentScans.removeLast();
+    });
   }
 
-  Future<void> _deleteScan(String? id) async {
-    if (id == null || !mounted) return;
-    try {
-      await _scanRepository.deleteScan(id);
-      setState(() {
-        _onDeviceScans.removeWhere((s) => s['id'] == id);
-        _advancedScans.removeWhere((s) => s['id'] == id);
-      });
-      _showSnackBar('Scan deleted!', false);
-      if (_onDeviceScans.isEmpty && _advancedScans.isEmpty && !_isFirstTimeUser) {
-        setState(() => _isFirstTimeUser = true);
-        _saveFirstTimeUser();
-      }
-    } catch (e) {
-      _showSnackBar('Failed to delete scan', true);
-    }
-  }
-
-  void _showSnackBar(String message, bool isError) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: Duration(seconds: isError ? 4 : 2),
-      ),
-    );
-  }
-
-  Future<void> _showOnDeviceScansDialog() async {
-    if (_guestService.isGuestMode) {
-      _showSnackBar(_guestService.getRestrictionMessage('view_history'), true);
-      return;
-    }
+  Future<void> _refreshScans() async {
     HapticFeedback.lightImpact();
-    if (!mounted) return;
-
-    await showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: AllScansDialogContent(
-          recentScans: _onDeviceScans,
-          onDeleteScan: _deleteScan,
-          onShowOptions: _showScanOptionsBottomSheet,
-          title: 'On-Device Scans',
-        ),
-      ),
-    );
+    await _loadRecentScans();
   }
 
-  Future<void> _showAdvancedScansDialog() async {
-    if (_guestService.isGuestMode) {
-      _showSnackBar(_guestService.getRestrictionMessage('view_history'), true);
-      return;
-    }
-    HapticFeedback.lightImpact();
-    if (!mounted) return;
-
-    await showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: AllScansDialogContent(
-          recentScans: _advancedScans,
-          onDeleteScan: _deleteScan,
-          onShowOptions: _showScanOptionsBottomSheet,
-          title: 'Advanced AI Scans',
-        ),
-      ),
-    );
+  String _getGreeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
   }
 
-  Future<void> _showScanOptionsBottomSheet(Map<String, dynamic> scan) async {
-    if (!mounted) return;
-    HapticFeedback.mediumImpact();
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => ScanOptionsBottomSheet(
-        scan: scan,
-        onDelete: () => _deleteScan(scan['id'] as String?),
-      ),
-    );
+  String _getFormattedDate() {
+    final now = DateTime.now();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ChangeNotifierProvider(
       create: (_) => WeatherProvider(),
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: const CustomHomeAppBar(),
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: Theme.of(context).brightness == Brightness.dark
-                  ? [const Color(0xFF0D1117), const Color(0xFF161B22), const Color(0xFF0D1117)]
-                  : [const Color(0xFFF0F7FF), const Color(0xFFFFFFFF), const Color(0xFFF0F7FF)],
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Keep background motion subtle (Home must stay fast).
-              ...List.generate(3, (i) => FloatingOrb(
-                index: i,
-                maxWidth: MediaQuery.of(context).size.width,
-                fadeController: _fadeController,
-                scaleAnimation: _scaleAnimation,
-              )),
-              SafeArea(
-                child: RefreshIndicator(
-                  onRefresh: _refreshScans,
-                  color: Theme.of(context).colorScheme.primary,
-                  child: Consumer<WeatherProvider>(
-                    builder: (context, weatherProvider, _) {
-                      return CustomScrollView(
-                        controller: _scrollController,
-                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                        slivers: [
-                          // Guest mode banner
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
-                            sliver: SliverToBoxAdapter(
-                              child: FadeTransition(
-                                opacity: _fadeController,
-                                child: ListenableBuilder(
-                                  listenable: _guestService,
-                                  builder: (context, _) => GuestModeBanner(guestService: _guestService),
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Weather card — TOP
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                            sliver: SliverToBoxAdapter(
-                              child: FadeTransition(
-                                opacity: _fadeController,
-                                child: const WeatherCard(),
-                              ),
-                            ),
-                          ),
-                          // Quick actions — below weather
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
-                            sliver: SliverToBoxAdapter(
-                              child: FadeTransition(
-                                opacity: _fadeController,
-                                child: _QuickActionsCard(
-                                  isGuest: _guestService.isGuestMode,
-                                  onQuickScan: _showScanChoiceDialog,
-                                  onOpenHistory: () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.pushNamed(context, AppRoutes.history);
-                                  },
-                                  onOpenHelp: () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.pushNamed(context, AppRoutes.help);
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Species grid
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
-                            sliver: SliverToBoxAdapter(
-                              child: ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: const SpeciesGridWidget(),
-                              ),
-                            ),
-                          ),
-                          if (!_guestService.isGuestMode)
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(10, 18, 10, 0),
-                              sliver: SliverToBoxAdapter(
-                                child: FadeTransition(
-                                  opacity: _fadeController,
-                                  child: _ScanFeedToggle(
-                                    selectedIndex: _scanFeedIndex,
-                                    onChanged: (v) => setState(() => _scanFeedIndex = v),
-                                    onDeviceCount: _onDeviceScans.length,
-                                    advancedCount: _advancedScans.length,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          if (_guestService.isGuestMode)
-                            SliverPadding(
-                              padding: const EdgeInsets.all(10),
-                              sliver: SliverToBoxAdapter(child: _buildGuestModeContent()),
-                            )
-                          else if (_isLoading)
-                            const SliverPadding(
-                              padding: EdgeInsets.all(10),
-                              sliver: SliverToBoxAdapter(child: LoadingSection()),
-                            )
-                          else if (_isFirstTimeUser && _onDeviceScans.isEmpty && _advancedScans.isEmpty)
-                              SliverPadding(
-                                padding: const EdgeInsets.all(10),
-                                sliver: SliverToBoxAdapter(
-                                  child: FadeTransition(
-                                    opacity: _fadeController,
-                                    child: const FirstTimeUserGuide(),
-                                  ),
-                                ),
-                              )
-                            else ...[
-                                if (_scanFeedIndex == 0 && _onDeviceScans.isNotEmpty)
-                                  SliverPadding(
-                                    padding: const EdgeInsets.only(top: 10),
-                                    sliver: SliverToBoxAdapter(
-                                      child: ScaleTransition(
-                                        scale: _scaleAnimation,
-                                        child: RecentScansSection(
-                                          key: const ValueKey('on_device_scans'),
-                                          recentScans: _onDeviceScans.take(5).toList(),
-                                          scaleAnimation: _scaleAnimation,
-                                          onDeleteScan: _deleteScan,
-                                          onShowAllScans: _showOnDeviceScansDialog,
-                                          onShowOptions: _showScanOptionsBottomSheet,
-                                          sectionTitle: 'On-Device Scans',
-                                          showAdvancedBadge: false,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                if (_scanFeedIndex == 1 && _advancedScans.isNotEmpty)
-                                  SliverPadding(
-                                    padding: const EdgeInsets.only(top: 10),
-                                    sliver: SliverToBoxAdapter(
-                                      child: ScaleTransition(
-                                        scale: _scaleAnimation,
-                                        child: AdvanceScanSection(
-                                          advancedScans: _advancedScans,
-                                          onShowOptions: _showScanOptionsBottomSheet,
-                                          onShowAllAdvancedScans: _showAdvancedScansDialog,
-                                          scaleAnimation: _scaleAnimation,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                if (_onDeviceScans.isEmpty && _advancedScans.isEmpty)
-                                  SliverPadding(
-                                    padding: const EdgeInsets.all(10),
-                                    sliver: SliverToBoxAdapter(child: _buildNoScansContent()),
-                                  ),
-                                if (_scanFeedIndex == 0 && _onDeviceScans.isEmpty && _advancedScans.isNotEmpty)
-                                  SliverPadding(
-                                    padding: const EdgeInsets.all(10),
-                                    sliver: SliverToBoxAdapter(
-                                      child: _EmptyStateCard(
-                                        title: 'No on-device scans yet',
-                                        subtitle: 'Try scanning offline, or switch to Advanced scans.',
-                                        icon: Icons.qr_code_scanner_rounded,
-                                      ),
-                                    ),
-                                  ),
-                                if (_scanFeedIndex == 1 && _advancedScans.isEmpty && _onDeviceScans.isNotEmpty)
-                                  SliverPadding(
-                                    padding: const EdgeInsets.all(10),
-                                    sliver: SliverToBoxAdapter(
-                                      child: _EmptyStateCard(
-                                        title: 'No advanced scans yet',
-                                        subtitle: 'Try Advanced scan for deeper analysis.',
-                                        icon: Icons.auto_awesome_rounded,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                          const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-                        ],
-                      );
-                    },
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _refreshScans,
+            color: AppColors.primary,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                // ── Top header with weather ──────────────────────────────
+                SliverToBoxAdapter(
+                  child: FadeTransition(
+                    opacity: _fadeController,
+                    child: _HomeHeader(isDark: isDark),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildGuestModeContent() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.history_rounded, size: 40, color: Theme.of(context).colorScheme.primary),
-          ),
-          const SizedBox(height: 16),
-          Text('History Not Available', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(
-            'Scan history is only available for registered users.\nSign in to save and view your scans.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoScansContent() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-            Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.scanner_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
-          ),
-          const SizedBox(height: 20),
-          Text('No Scans Yet', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Text(
-            'Start scanning your plants to build your history.\nOn-device and advanced scans are shown separately.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openScanFlow({required bool startAdvanced}) {
-    Navigator.pushNamed(
-      context,
-      AppRoutes.scan,
-      arguments: {
-        'startOnDevice': !startAdvanced,
-        'startAdvanced': startAdvanced,
-      },
-    );
-  }
-
-  void _showScanChoiceDialog() {
-    final theme = Theme.of(context);
-    final isGuest = _guestService.isGuestMode;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ScanModeButton(
-                    icon: Icons.qr_code_scanner_rounded,
-                    title: 'On-device scan',
-                    subtitle: 'Fast and works offline',
-                    primary: theme.colorScheme.primary,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _openScanFlow(startAdvanced: false);
-                    },
+                // ── Guest banner ─────────────────────────────────────────
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: ListenableBuilder(
+                      listenable: _guestService,
+                      builder: (context, _) => GuestModeBanner(guestService: _guestService),
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  _ScanModeButton(
-                    icon: Icons.auto_awesome_rounded,
-                    title: 'Advanced scan',
-                    subtitle: isGuest
-                        ? 'Locked in guest mode'
-                        : 'Cloud analysis with deeper insights',
-                    primary: theme.colorScheme.secondary,
-                    onTap: isGuest
-                        ? null
-                        : () {
-                            Navigator.pop(context);
-                            _openScanFlow(startAdvanced: true);
-                          },
-                    isLocked: isGuest,
+                ),
+
+                // ── Recent scans ─────────────────────────────────────────
+                if (!_guestService.isGuestMode)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: FadeTransition(
+                        opacity: _fadeController,
+                        child: _RecentScansSection(
+                          isDark: isDark,
+                          scans: _recentScans,
+                          isLoading: _isLoading,
+                          onSeeAll: () => Navigator.pushNamed(context, AppRoutes.history),
+                          onScanTap: (scan) => Navigator.pushNamed(
+                            context,
+                            AppRoutes.results,
+                            arguments: {'scanData': {...scan, 'isFromHistory': true, 'skipSave': true}},
+                          ),
+                          onScanFirst: () => Navigator.pushNamed(context, AppRoutes.scan),
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+
+                // ── Species / feature cards ──────────────────────────────
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                  sliver: const SliverToBoxAdapter(child: SpeciesGridWidget()),
+                ),
+
+                const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-class _OnDeviceScanCta extends StatelessWidget {
-  final VoidCallback onTap;
-  const _OnDeviceScanCta({required this.onTap});
+// ── Home header with weather in top bar ──────────────────────────────────────
+class _HomeHeader extends StatelessWidget {
+  final bool isDark;
+  const _HomeHeader({required this.isDark});
+
+  Stream<Map<String, String>> _userStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return Stream.value({'name': 'User'});
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .map((d) => {
+              'name': d.exists ? ((d.data() as Map)['fullName'] ?? 'User') : 'User',
+            });
+  }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
-    final primary = theme.colorScheme.primary;
-    final secondary = theme.colorScheme.secondary;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Ink(
-          height: 78,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                primary.withValues(alpha: isDark ? 0.85 : 0.92),
-                secondary.withValues(alpha: isDark ? 0.55 : 0.75),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: primary.withValues(alpha: isDark ? 0.28 : 0.18),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+    return Column(
+      children: [
+        // ── Top bar: weather left, settings right ──────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          child: Row(
+            children: [
+              // Weather inline
+              Expanded(child: Consumer<WeatherProvider>(
+                builder: (_, provider, __) {
+                  if (provider.hasData) {
+                    final w = provider.currentWeather!;
+                    final icon = _weatherEmoji(w.conditionText, w.isDay == 1);
+                    return Row(
+                      children: [
+                        Text(icon, style: const TextStyle(fontSize: 22)),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${w.temperature.toStringAsFixed(0)}°C  ${w.conditionText}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: textColor,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Icon(CupertinoIcons.location_fill,
+                                    size: 10, color: AppColors.primary),
+                                const SizedBox(width: 3),
+                                Text(
+                                  w.cityName,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+                  if (provider.isLoading) {
+                    return Row(children: [
+                      const SizedBox(width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                      const SizedBox(width: 8),
+                      Text(t.isUrdu ? 'موسم لوڈ ہو رہا ہے…' : 'Loading weather…',
+                          style: TextStyle(fontSize: 12, color: captionColor)),
+                    ]);
+                  }
+                  return Row(children: [
+                    Icon(CupertinoIcons.cloud, size: 18, color: captionColor),
+                    const SizedBox(width: 6),
+                    Text(t.isUrdu ? 'موسم دستیاب نہیں' : 'Weather unavailable',
+                        style: TextStyle(fontSize: 12, color: captionColor)),
+                  ]);
+                },
+              )),
+              // Settings button
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
+                child: Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkCard : Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  ),
+                  child: Icon(CupertinoIcons.settings,
+                      size: 17,
+                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Report Bug button
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, AppRoutes.bugReport),
+                child: Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkCard : Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  ),
+                  child: Icon(CupertinoIcons.ant,
+                      size: 17,
+                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                ),
               ),
             ],
-            border: Border.all(color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.22)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.20),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-                  ),
-                  child: const Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Quick Scan',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Offline • Fast • Works without internet',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.88),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-                  ),
-                  child: const Icon(Icons.arrow_forward_rounded, color: Colors.white),
-                ),
-              ],
-            ),
           ),
         ),
-      ),
+
+        // ── Greeting ───────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: StreamBuilder<Map<String, String>>(
+            stream: _userStream(),
+            builder: (context, snap) {
+              final firstName = (snap.data?['name'] ?? 'User').split(' ').first;
+              final h = DateTime.now().hour;
+              final t = Provider.of<TranslationService>(context, listen: false);
+              final greeting = h < 12 ? t.get('good_morning') : h < 17 ? t.get('good_afternoon') : t.get('good_evening');
+              return Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '$greeting, $firstName 👋',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: textColor,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
+  }
+
+  String _weatherEmoji(String condition, bool isDay) {
+    final c = condition.toLowerCase();
+    if (c.contains('sunny') || c.contains('clear')) return isDay ? '☀️' : '🌙';
+    if (c.contains('partly') || c.contains('cloudy')) return isDay ? '⛅' : '🌤️';
+    if (c.contains('overcast')) return '☁️';
+    if (c.contains('rain') || c.contains('drizzle')) return '🌧️';
+    if (c.contains('thunder') || c.contains('storm')) return '⛈️';
+    if (c.contains('snow') || c.contains('sleet')) return '❄️';
+    if (c.contains('fog') || c.contains('mist')) return '🌫️';
+    return isDay ? '🌤️' : '🌙';
   }
 }
 
-class _QuickActionsCard extends StatelessWidget {
-  final bool isGuest;
-  final VoidCallback onQuickScan;
-  final VoidCallback onOpenHistory;
-  final VoidCallback onOpenHelp;
+// ── Recent scans section ──────────────────────────────────────────────────────
+class _RecentScansSection extends StatelessWidget {
+  final bool isDark;
+  final List<Map<String, dynamic>> scans;
+  final bool isLoading;
+  final VoidCallback onSeeAll;
+  final void Function(Map<String, dynamic>) onScanTap;
+  final VoidCallback onScanFirst;
 
-  const _QuickActionsCard({
-    required this.isGuest,
-    required this.onQuickScan,
-    required this.onOpenHistory,
-    required this.onOpenHelp,
+  const _RecentScansSection({
+    required this.isDark,
+    required this.scans,
+    required this.isLoading,
+    required this.onSeeAll,
+    required this.onScanTap,
+    required this.onScanFirst,
   });
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final t = Provider.of<TranslationService>(context, listen: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Big scan CTA
-        _PrimaryScanCta(onTap: onQuickScan),
-        const SizedBox(height: 12),
-
-        // Feature grid — 4 prominent tiles
-        GridView.count(
-          crossAxisCount: 4,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 0.9,
+        Row(
           children: [
-            _FeatureTile(
-              icon: Icons.history_rounded,
-              label: 'History',
-              color: AppColors.info,
-              onTap: onOpenHistory,
+            Text(
+              t.get('recent_scans'),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                letterSpacing: -0.3,
+              ),
             ),
-            _FeatureTile(
-              icon: Icons.agriculture_rounded,
-              label: 'Farm\nDiary',
-              color: AppColors.success,
-              onTap: () => Navigator.pushNamed(context, '/farm-diary'),
-            ),
-            _FeatureTile(
-              icon: Icons.calendar_month_rounded,
-              label: 'Crop\nCalendar',
-              color: AppColors.warning,
-              onTap: () => Navigator.pushNamed(context, '/crop-calendar'),
-            ),
-            _FeatureTile(
-              icon: Icons.help_rounded,
-              label: 'Help',
-              color: AppColors.secondary,
-              onTap: onOpenHelp,
-            ),
+            const Spacer(),
+            if (scans.isNotEmpty)
+              GestureDetector(
+                onTap: onSeeAll,
+                child: Text(
+                  t.get('see_all'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
           ],
         ),
+        const SizedBox(height: 12),
+        if (isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+            ),
+          )
+        else if (scans.isEmpty)
+          _EmptyScansState(isDark: isDark, onScanFirst: onScanFirst)
+        else
+          ...scans.map((scan) => _ScanCard(
+                scan: scan,
+                isDark: isDark,
+                onTap: () => onScanTap(scan),
+              )),
       ],
     );
   }
 }
 
-class _FeatureTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
+// ── Individual scan card ──────────────────────────────────────────────────────
+class _ScanCard extends StatelessWidget {
+  final Map<String, dynamic> scan;
+  final bool isDark;
   final VoidCallback onTap;
 
-  const _FeatureTile({
-    required this.icon, required this.label,
-    required this.color, required this.onTap,
-  });
+  const _ScanCard({required this.scan, required this.isDark, required this.onTap});
+
+  Widget _buildImage() {
+    final imagePath = scan['imagePath'] as String?;
+    final imageUrl = scan['imageUrl'] as String?;
+    final imageBase64 = scan['imageBase64'] as String?;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover, width: 64, height: 64,
+            errorBuilder: (_, __, ___) => _placeholder());
+      }
+    }
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(imageUrl, fit: BoxFit.cover, width: 64, height: 64,
+          errorBuilder: (_, __, ___) => _placeholder());
+    }
+    if (imageBase64 != null && imageBase64.isNotEmpty) {
+      try {
+        return Image.memory(base64Decode(imageBase64), fit: BoxFit.cover, width: 64, height: 64,
+            errorBuilder: (_, __, ___) => _placeholder());
+      } catch (_) {}
+    }
+    return _placeholder();
+  }
+
+  Widget _placeholder() => Container(
+        width: 64, height: 64,
+        color: AppColors.primary.withValues(alpha: 0.1),
+        child: const Icon(CupertinoIcons.leaf_arrow_circlepath,
+            color: AppColors.primary, size: 28),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final plantName = scan['plantName']?.toString() ?? 'Unknown Plant';
+    final diseaseName = scan['diseaseName']?.toString() ??
+        scan['diagnosis']?.toString() ?? 'Healthy';
+    final isHealthy = diseaseName.toLowerCase().contains('healthy');
+    final diseaseColor = isHealthy ? AppColors.primary : AppColors.error;
+    final isAdvanced = scan['isAdvanced'] as bool? ?? false;
+
+    final scanDate = scan['scanDate'];
+    String dateStr = '';
+    if (scanDate is DateTime) {
+      final now = DateTime.now();
+      final diff = now.difference(scanDate);
+      if (diff.inDays == 0) {
+        dateStr = 'Today';
+      } else if (diff.inDays == 1) {
+        dateStr = 'Yesterday';
+      } else if (diff.inDays < 7) {
+        dateStr = '${diff.inDays}d ago';
+      } else {
+        dateStr = '${scanDate.day}/${scanDate.month}/${scanDate.year}';
+      }
+    }
+
     return GestureDetector(
-      onTap: () { HapticFeedback.lightImpact(); onTap(); },
+      onTap: onTap,
       child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.18 : 0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: isDark ? 0.4 : 0.35), width: 1.5),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.12), blurRadius: 6, offset: const Offset(0, 2))],
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: isDark ? 0.25 : 0.18),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 20, color: color),
+            // Scan image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildImage(),
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10.5, fontWeight: FontWeight.w800,
-                color: color, height: 1.2,
+            const SizedBox(width: 12),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    plantName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(
+                        isHealthy
+                            ? CupertinoIcons.checkmark_seal_fill
+                            : CupertinoIcons.exclamationmark_triangle_fill,
+                        size: 12,
+                        color: diseaseColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          diseaseName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: diseaseColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (dateStr.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(CupertinoIcons.clock,
+                            size: 10,
+                            color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                        const SizedBox(width: 3),
+                        Text(
+                          dateStr,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+                          ),
+                        ),
+                        if (isAdvanced) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('AI',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.secondary)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ],
               ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+              size: 16,
             ),
           ],
         ),
@@ -925,454 +661,173 @@ class _FeatureTile extends StatelessWidget {
   }
 }
 
-class _PrimaryScanCta extends StatelessWidget {
-  final VoidCallback onTap;
-  const _PrimaryScanCta({required this.onTap});
+// ── Empty state ───────────────────────────────────────────────────────────────
+class _EmptyScansState extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onScanFirst;
+
+  const _EmptyScansState({required this.isDark, required this.onScanFirst});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Ink(
-          height: 76,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, AppColors.secondary],
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        children: [
+          // Top green banner
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
             ),
-            boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 14, offset: const Offset(0, 5))],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
+            child: Column(
               children: [
-                Container(
-                  width: 46, height: 46,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 26),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Scan a Plant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17, letterSpacing: -0.3)),
-                      const SizedBox(height: 2),
-                      Text('On-device or Advanced AI', style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 12, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 34, height: 34,
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), shape: BoxShape.circle),
-                  child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickActionMini extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _QuickActionMini({required this.icon, required this.label, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            // Solid prominent color — not pale
-            color: color.withValues(alpha: isDark ? 0.22 : 0.15),
-            border: Border.all(color: color.withValues(alpha: isDark ? 0.5 : 0.45), width: 1.5),
-            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2))],
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: color),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(label,
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ScanModeButton extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color primary;
-  final VoidCallback? onTap;
-  final bool isLocked;
-
-  const _ScanModeButton({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.primary,
-    required this.onTap,
-    this.isLocked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final disabled = onTap == null;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: disabled
-                ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45)
-                : primary.withValues(alpha: 0.10),
-            border: Border.all(
-              color: disabled ? theme.disabledColor.withValues(alpha: 0.3) : primary.withValues(alpha: 0.35),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: disabled ? theme.disabledColor.withValues(alpha: 0.16) : primary.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: disabled ? theme.disabledColor : primary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Animated plant icon with rings
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              color: disabled ? theme.disabledColor : null,
-                            ),
-                          ),
-                        ),
-                        if (isLocked)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              color: theme.colorScheme.error.withValues(alpha: 0.12),
-                            ),
-                            child: Text(
-                              'Locked',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: disabled
-                            ? theme.disabledColor
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.72),
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      width: 80, height: 80,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withValues(alpha: 0.08),
                       ),
+                    ),
+                    Container(
+                      width: 60, height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    Container(
+                      width: 44, height: 44,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
+                      ),
+                      child: const Icon(CupertinoIcons.leaf_arrow_circlepath,
+                          size: 22, color: Colors.white),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: disabled ? theme.disabledColor : primary,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionShell extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final Widget child;
-  final Widget? trailing;
-
-  const _SectionShell({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.90),
-          border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 14),
+                Text(
+                  t.isUrdu ? 'ابھی تک کوئی اسکین نہیں' : 'No scans yet',
+                  style: TextStyle(
+                    fontSize: 17, fontWeight: FontWeight.w800,
+                    color: textColor, letterSpacing: -0.3,
                   ),
                 ),
-                if (trailing != null) trailing!,
+                const SizedBox(height: 5),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    t.isUrdu
+                        ? 'اپنے پودے کی تصویر لیں اور فوری بیماری کی تشخیص حاصل کریں'
+                        : 'Take a photo of your plant leaf and get instant disease diagnosis',
+                    style: TextStyle(fontSize: 12, color: captionColor, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ],
             ),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
+          ),
 
-class _SectionTrailingButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
+          // Steps row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              children: [
+                _Step(number: '1', label: t.isUrdu ? 'تصویر لیں' : 'Take photo', isDark: isDark),
+                _StepArrow(isDark: isDark),
+                _Step(number: '2', label: t.isUrdu ? 'AI تجزیہ' : 'AI analysis', isDark: isDark),
+                _StepArrow(isDark: isDark),
+                _Step(number: '3', label: t.isUrdu ? 'نتائج دیکھیں' : 'Get results', isDark: isDark),
+              ],
+            ),
+          ),
 
-  const _SectionTrailingButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final disabled = onTap == null;
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        foregroundColor: disabled ? theme.disabledColor : theme.colorScheme.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
-      ),
-    );
-  }
-}
-
-class _ScanFeedToggle extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onChanged;
-  final int onDeviceCount;
-  final int advancedCount;
-
-  const _ScanFeedToggle({
-    required this.selectedIndex,
-    required this.onChanged,
-    required this.onDeviceCount,
-    required this.advancedCount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : AppColors.lightCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: _SegmentButton(
-            selected: selectedIndex == 0,
-            label: 'On-Device ($onDeviceCount)',
-            icon: Icons.phone_android_rounded,
-            color: AppColors.primary,
-            onTap: () => onChanged(0),
-          )),
-          const SizedBox(width: 4),
-          Expanded(child: _SegmentButton(
-            selected: selectedIndex == 1,
-            label: 'Advanced ($advancedCount)',
-            icon: Icons.auto_awesome_rounded,
-            color: AppColors.secondary,
-            onTap: () => onChanged(1),
-          )),
+          // CTA button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onScanFirst,
+                icon: const Icon(CupertinoIcons.camera_fill, size: 16),
+                label: Text(t.isUrdu ? 'پہلا پودا اسکین کریں' : 'Scan Your First Plant'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SegmentButton extends StatelessWidget {
-  final bool selected;
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _SegmentButton({
-    required this.selected, required this.label, required this.icon,
-    required this.color, required this.onTap,
-  });
+class _Step extends StatelessWidget {
+  final String number, label;
+  final bool isDark;
+  const _Step({required this.number, required this.label, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: selected ? color : Colors.transparent,
-          boxShadow: selected ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))] : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 16, color: selected ? Colors.white : (isDark ? AppColors.darkCaption : AppColors.lightCaption)),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(label,
-                maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w800,
-                  color: selected ? Colors.white : (isDark ? AppColors.darkCaption : AppColors.lightCaption),
-                )),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyStateCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  const _EmptyStateCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: theme.colorScheme.surface.withValues(alpha: isDark ? 0.55 : 0.90),
-        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
-      ),
-      child: Row(
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    return Expanded(
+      child: Column(
         children: [
           Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.18)),
-            ),
-            child: Icon(icon, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.70),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            width: 28, height: 28,
+            decoration: const BoxDecoration(
+              color: AppColors.primary, shape: BoxShape.circle),
+            child: Center(
+              child: Text(number,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white)),
             ),
           ),
+          const SizedBox(height: 5),
+          Text(label,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: captionColor),
+              textAlign: TextAlign.center),
         ],
       ),
     );
   }
 }
+
+class _StepArrow extends StatelessWidget {
+  final bool isDark;
+  const _StepArrow({required this.isDark});
+  @override
+  Widget build(BuildContext context) => Icon(
+    CupertinoIcons.chevron_right,
+    size: 14,
+    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+  );
+}
+
+
+
+
+

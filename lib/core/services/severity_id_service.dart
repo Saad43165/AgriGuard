@@ -28,32 +28,26 @@ class SeverityResult {
     required this.action,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'severity': severity,
-      'severityLevel': severityLevel,
-      'confidence': confidence,
-      'remediation': remediation,
-      'effect': effect,
-      'colorCode': colorCode,
-      'description': description,
-      'action': action,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+    'severity': severity,
+    'severityLevel': severityLevel,
+    'confidence': confidence,
+    'remediation': remediation,
+    'effect': effect,
+    'colorCode': colorCode,
+    'description': description,
+    'action': action,
+  };
 }
 
 class SeverityIdService {
-  // Model and metadata
   late Interpreter _interpreter;
   Map<String, dynamic> _modelInfo = {};
   Map<String, dynamic> _remediationData = {};
-  final List<String> _severityLevels = ['None', 'Low', 'Medium', 'High', 'Critical'];
   bool _isInitialized = false;
 
-  // Initialize the service
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
     try {
       await _loadModelInfo();
       await _loadRemediationData();
@@ -66,350 +60,198 @@ class SeverityIdService {
     }
   }
 
-  // Load model_info.json
   Future<void> _loadModelInfo() async {
     try {
-      final String modelInfoString = await rootBundle.loadString('assets/models/model_info.json');
-      _modelInfo = json.decode(modelInfoString);
+      final s = await rootBundle.loadString('assets/models/model_info.json');
+      _modelInfo = json.decode(s);
       debugPrint('✅ Model info loaded');
     } catch (e) {
       debugPrint('❌ Error loading model info: $e');
-      _modelInfo = {
-        'severity_levels': {
-          '0_None': {'name': 'None', 'color_code': '#4CAF50', 'description': 'No disease detected', 'action': 'Continue regular care'},
-          '1_Low': {'name': 'Low', 'color_code': '#8BC34A', 'description': 'Mild infection, early stage', 'action': 'Monitor and apply preventive measures'},
-          '2_Medium': {'name': 'Medium', 'color_code': '#FFC107', 'description': 'Moderate infection, spreading', 'action': 'Apply treatment and isolate plant'},
-          '3_High': {'name': 'High', 'color_code': '#FF9800', 'description': 'Severe infection, advanced stage', 'action': 'Immediate treatment required'},
-          '4_Critical': {'name': 'Critical', 'color_code': '#F44336', 'description': 'Critical condition, plant at risk', 'action': 'Emergency measures needed'}
-        }
-      };
+      _modelInfo = {};
     }
   }
 
-  // Load remediation.json
   Future<void> _loadRemediationData() async {
     try {
-      final String remediationString = await rootBundle.loadString('assets/data/remediation.json');
-      _remediationData = json.decode(remediationString);
+      final s = await rootBundle.loadString('assets/data/remediation.json');
+      _remediationData = json.decode(s);
       debugPrint('✅ Remediation data loaded');
     } catch (e) {
       debugPrint('❌ Error loading remediation data: $e');
-      _remediationData = {
-        'remediations': {},
-        'general_guidelines': {
-          'severity_none': 'Continue regular plant care and monitoring.',
-          'severity_low': 'Apply preventive measures and monitor closely.',
-          'severity_medium': 'Begin treatment and consider plant isolation.',
-          'severity_high': 'Apply intensive treatment and seek expert advice.',
-          'severity_critical': 'Take immediate action to save the plant.'
-        },
-        'important_notes': {
-          'note1': 'Always test treatments on a small area first.',
-          'note2': 'Consult with agricultural experts for severe cases.',
-          'note3': 'Environmental factors may affect treatment effectiveness.'
-        }
-      };
+      _remediationData = {'remediations': {}, 'general_guidelines': {}};
     }
   }
 
-  // Load TFLite model
   Future<void> _loadModel() async {
     try {
-      // Try to load the model with different possible names
-        _interpreter = await Interpreter.fromAsset('assets/models/severity_dynamic_quant.tflite');
-     
-      
-      // Get input and output tensors info
-      final inputTensors = _interpreter.getInputTensors();
-      final outputTensors = _interpreter.getOutputTensors();
-      
+      _interpreter = await Interpreter.fromAsset('assets/models/severity_dynamic_quant.tflite');
       debugPrint('✅ Model loaded successfully');
-      debugPrint('📊 Input shape: ${inputTensors[0].shape}');
-      debugPrint('📊 Output shape: ${outputTensors[0].shape}');
+      debugPrint('📊 Input shape: ${_interpreter.getInputTensors()[0].shape}');
+      debugPrint('📊 Output shape: ${_interpreter.getOutputTensors()[0].shape}');
     } catch (e) {
       debugPrint('❌ Error loading model: $e');
       throw Exception('Failed to load severity model: $e');
     }
   }
 
-  // Convert base64 to Uint8List
-  Uint8List _base64ToBytes(String base64String) {
-    try {
-      // Remove data URL prefix if present
-      String cleanBase64 = base64String;
-      if (base64String.contains(',')) {
-        cleanBase64 = base64String.split(',').last;
-      }
-      
-      return base64Decode(cleanBase64);
-    } catch (e) {
-      debugPrint('❌ Error decoding base64: $e');
-      throw Exception('Invalid base64 image data');
-    }
-  }
+  // ── Remediation helpers ────────────────────────────────────────────────────
 
-  // Preprocess image for MobileNetV3
-  Future<Float32List> _preprocessImage(Uint8List imageBytes) async {
-    try {
-      // Decode image
-      final image = img.decodeImage(imageBytes);
-      
-      if (image == null) {
-        throw Exception('Failed to decode image');
-      }
-
-      // Resize to 224x224
-      final resized = img.copyResize(image, width: 224, height: 224);
-      
-      // Convert to float32 and normalize: (pixel / 127.5) - 1.0
-      final input = Float32List(1 * 224 * 224 * 3);
-      int pixelIndex = 0;
-      
-      for (var y = 0; y < 224; y++) {
-        for (var x = 0; x < 224; x++) {
-          final pixel = resized.getPixel(x, y);
-          final r = pixel.r.toDouble();
-          final g = pixel.g.toDouble();
-          final b = pixel.b.toDouble();
-          
-          // Normalize to [-1, 1]
-          input[pixelIndex++] = (r / 127.5) - 1.0;
-          input[pixelIndex++] = (g / 127.5) - 1.0;
-          input[pixelIndex++] = (b / 127.5) - 1.0;
-        }
-      }
-      
-      return input;
-    } catch (e) {
-      debugPrint('❌ Error preprocessing image: $e');
-      throw Exception('Image preprocessing failed: $e');
-    }
-  }
-
-  // Alternative preprocessing for file
-  Future<Float32List> _preprocessImageFile(File imageFile) async {
-    final bytes = await imageFile.readAsBytes();
-    return _preprocessImage(bytes);
-  }
-
-  List<List<List<List<double>>>> _to4dFloatInput(Float32List input) {
-    const h = 224, w = 224, c = 3;
-    var idx = 0;
-    return List.generate(
-      1,
-      (_) => List.generate(
-        h,
-        (_) => List.generate(
-          w,
-          (_) => List.generate(c, (_) => input[idx++]),
-        ),
-      ),
-    );
-  }
-
-  // Run inference on image
-  Future<List<double>> _runInference(Float32List input) async {
-    try {
-      // The model expects a 4D tensor: [1, 224, 224, 3]
-      // Note: the reshape helper used here only supports 2D reshaping,
-      // so we build a nested 4D structure.
-      final inputTensor = _to4dFloatInput(input);
-
-      // Prepare output tensor
-      final output = List.filled(1 * 5, 0.0).reshape([1, 5]);
-      
-      // Run inference
-      _interpreter.run(inputTensor, output);
-      
-      // Apply softmax to get probabilities
-      final probabilities = _softmax(output[0]);
-      
-      debugPrint('📈 Inference probabilities: ${probabilities.map((p) => p.toStringAsFixed(4)).toList()}');
-      return probabilities;
-    } catch (e) {
-      debugPrint('❌ Error running inference: $e');
-      throw Exception('Inference failed: $e');
-    }
-  }
-
-  // Softmax function
-  List<double> _softmax(List<double> logits) {
-    try {
-      final maxLogit = logits.reduce((a, b) => a > b ? a : b);
-      final exps = logits.map((e) => math.exp(e - maxLogit)).toList();
-      final sumExps = exps.reduce((a, b) => a + b);
-      return exps.map((e) => e / sumExps).toList();
-    } catch (e) {
-      debugPrint('❌ Error in softmax: $e');
-      // Return uniform distribution as fallback
-      return List.filled(logits.length, 1.0 / logits.length);
-    }
-  }
-
-  // Exponential function removed — use math.exp directly
-
-  // Get remediation info based on disease and severity
   Map<String, dynamic> _getRemediationInfo(String diseaseKey, String severityLevel) {
     try {
-      final remediationsRaw = _remediationData['remediations'];
-      final remediations = remediationsRaw is Map<String, dynamic>
-          ? remediationsRaw
-          : <String, dynamic>{};
-      
+      final remediations = (_remediationData['remediations'] as Map<String, dynamic>?) ?? {};
       if (!remediations.containsKey(diseaseKey)) {
-        // Fallback: use general guidelines
-        final ggRaw = _remediationData['general_guidelines'];
-        final generalGuidelines =
-            ggRaw is Map<String, dynamic> ? ggRaw : <String, dynamic>{};
-        final guidelineKey = 'severity_${severityLevel.toLowerCase()}';
-        
-        return {
-          'remediation': generalGuidelines[guidelineKey] ?? 'Apply appropriate treatment for plant disease. Consult an agricultural expert for specific recommendations.',
-          'effect': 'General treatment guidelines for $severityLevel severity level.'
-        };
+        return _generalGuideline(severityLevel);
       }
-      
-      final diseaseRaw = remediations[diseaseKey];
-      final diseaseData = diseaseRaw is Map<String, dynamic>
-          ? diseaseRaw
-          : <String, dynamic>{};
-      
+      final diseaseData = remediations[diseaseKey] as Map<String, dynamic>? ?? {};
       if (!diseaseData.containsKey(severityLevel)) {
-        // Fallback to Medium severity if specific level not found
-        final fallbackSeverity = diseaseData['Medium'] ?? diseaseData['medium'];
-        if (fallbackSeverity is Map) {
-          return {
-            'remediation': fallbackSeverity['remediation'] ?? 'Apply standard treatment for this disease.',
-            'effect': fallbackSeverity['effect'] ?? 'Treatment effect varies based on application.'
-          };
-        }
-        
-        // Final fallback to general guidelines
-        final ggRaw = _remediationData['general_guidelines'];
-        final generalGuidelines =
-            ggRaw is Map<String, dynamic> ? ggRaw : <String, dynamic>{};
-        final guidelineKey = 'severity_${severityLevel.toLowerCase()}';
-        
-        return {
-          'remediation': generalGuidelines[guidelineKey] ?? 'Apply appropriate treatment based on disease severity.',
-          'effect': 'Follow general plant care guidelines for disease management.'
-        };
+        final fallback = diseaseData['Medium'] ?? diseaseData['medium'];
+        if (fallback is Map) return _extractRem(fallback);
+        return _generalGuideline(severityLevel);
       }
-      
       final sevRaw = diseaseData[severityLevel];
-      final severityData = sevRaw is Map<String, dynamic>
-          ? sevRaw
-          : <String, dynamic>{};
-      return {
-        'remediation': severityData['remediation'] ?? 'Treatment information not available.',
-        'effect': severityData['effect'] ?? 'Effect information not available.'
-      };
+      return _extractRem(sevRaw is Map ? sevRaw : {});
     } catch (e) {
       debugPrint('❌ Error getting remediation info: $e');
       return {
-        'remediation': 'Consult with an agricultural expert for appropriate treatment.',
-        'effect': 'Expert consultation recommended for accurate treatment planning.'
+        'remediation': 'Consult an agricultural expert.',
+        'remediation_ur': 'زرعی ماہر سے مشورہ کریں۔',
+        'effect': 'Expert consultation recommended.',
+        'effect_ur': 'ماہر سے مشورہ تجویز کیا جاتا ہے۔',
       };
     }
   }
 
-  // Get severity metadata from model_info.json
-  Map<String, dynamic> _getSeverityMetadata(int severityIndex) {
-    try {
-      if (severityIndex < 0 || severityIndex >= _severityLevels.length) {
-        severityIndex = 2; // Default to Medium
-      }
-      
-      final severityKey = '${severityIndex}_${_severityLevels[severityIndex]}';
-      final severityInfo = _modelInfo['severity_levels'][severityKey] as Map<String, dynamic>?;
-      
-      if (severityInfo == null) {
-        // Default fallback values
-        return {
-          'name': _severityLevels[severityIndex],
-          'colorCode': '#FFC107', // Yellow for medium
-          'description': '${_severityLevels[severityIndex]} severity level disease',
-          'action': 'Take appropriate measures based on severity level'
-        };
-      }
-      
+  Map<String, dynamic> _generalGuideline(String severityLevel) {
+    final gg = (_remediationData['general_guidelines'] as Map<String, dynamic>?) ?? {};
+    final key = 'severity_${severityLevel.toLowerCase()}';
+    final text = gg[key]?.toString() ?? 'Apply appropriate treatment.';
+    return {
+      'remediation': text,
+      'remediation_ur': text,
+      'effect': 'General treatment for $severityLevel severity.',
+      'effect_ur': '$severityLevel شدت کے لیے عمومی علاج۔',
+    };
+  }
+
+  Map<String, dynamic> _extractRem(Map sevData) {
+    String remEn, remUr, effEn, effUr;
+    final remRaw = sevData['remediation'];
+    final effRaw = sevData['effect'];
+    if (remRaw is Map) {
+      remEn = remRaw['en']?.toString() ?? 'Treatment not available.';
+      remUr = remRaw['ur']?.toString() ?? remEn;
+    } else {
+      remEn = remRaw?.toString() ?? 'Treatment not available.';
+      remUr = remEn;
+    }
+    if (effRaw is Map) {
+      effEn = effRaw['en']?.toString() ?? 'Effect not available.';
+      effUr = effRaw['ur']?.toString() ?? effEn;
+    } else {
+      effEn = effRaw?.toString() ?? 'Effect not available.';
+      effUr = effEn;
+    }
+    return {'remediation': remEn, 'remediation_ur': remUr, 'effect': effEn, 'effect_ur': effUr};
+  }
+
+  // ── Disease-based severity (replaces unreliable TFLite severity model) ─────
+  // The severity TFLite model always outputs Low regardless of disease.
+  // This method derives severity from disease name — accurate for PlantCity 52 classes.
+  Map<String, dynamic> _getDiseaseBasedSeverity(
+      String diseaseName, String plantName, double confidence) {
+    final d = diseaseName.toLowerCase();
+
+    // Healthy
+    if (d == 'healthy' || d.contains('healthy') || d == 'normal') {
       return {
-        'name': severityInfo['name'] ?? _severityLevels[severityIndex],
-        'colorCode': severityInfo['color_code'] ?? '#FFC107',
-        'description': severityInfo['description'] ?? '',
-        'action': severityInfo['action'] ?? ''
-      };
-    } catch (e) {
-      debugPrint('❌ Error getting severity metadata: $e');
-      return {
-        'name': _severityLevels[severityIndex],
-        'colorCode': '#FFC107',
-        'description': 'Disease severity assessment',
-        'action': 'Consult expert for treatment'
+        'severity': 'None',
+        'severityLevel': 'None',
+        'confidence': confidence,
+        'remediation': ['Continue regular plant care', 'Monitor for any changes'],
+        'remediation_ur': ['باقاعدہ پودوں کی دیکھ بھال جاری رکھیں', 'کسی بھی تبدیلی کے لیے نگرانی کریں'],
+        'colorCode': '#4CAF50',
+        'description': 'Plant is healthy',
+        'action': 'Continue regular care',
+        'effect': 'Plant is in good health.',
+        'effect_ur': 'پودا اچھی صحت میں ہے۔',
       };
     }
-  }
 
-  // Main function to assess severity and get remediation
-  Future<SeverityResult> assessSeverity(
-    File imageFile,
-    String diseaseKey, // e.g., "Apple___Apple_scab"
-  ) async {
-    try {
-      if (!_isInitialized) {
-        await initialize();
+    // Map disease → severity
+    String severity;
+    String colorCode;
+
+    if (d.contains('late blight') || d.contains('fusarium wilt') ||
+        d.contains('verticillium wilt') || d.contains('leaf curl') ||
+        d.contains('fire blight') || d.contains('leaf scorch')) {
+      severity = 'Critical'; colorCode = '#F44336';
+    } else if (d.contains('early blight') || d.contains('bacterial spot') ||
+        d.contains('anthracnose') || d.contains('downy mildew') ||
+        d.contains('rust') || d.contains('blight') || d.contains('spider mites')) {
+      severity = 'High'; colorCode = '#FF9800';
+    } else if (d.contains('powdery mildew') || d.contains('brown spot') ||
+        d.contains('black spot') || d.contains('leaf spot') ||
+        d.contains('leaf mold') || d.contains('septoria') ||
+        d.contains('blotch') || d.contains('shot hole') ||
+        d.contains('leaf miner') || d.contains('mites')) {
+      severity = 'Medium'; colorCode = '#FFC107';
+    } else {
+      severity = 'Low'; colorCode = '#8BC34A';
+    }
+
+    // Look up remediation from JSON
+    final remediations = (_remediationData['remediations'] as Map<String, dynamic>?) ?? {};
+    final pNorm = _normalizePlantName(plantName);
+    final pClean = pNorm.replaceAll(' ', '_');
+    final dClean = diseaseName.replaceAll(' ', '_').toLowerCase();
+    String diseaseKey = '${pClean}_${pClean}_$dClean';
+
+    if (!remediations.containsKey(diseaseKey)) {
+      final lk = diseaseKey.toLowerCase();
+      for (final k in remediations.keys) {
+        if (k.toLowerCase() == lk) { diseaseKey = k; break; }
       }
-      
-      debugPrint('🔍 Assessing severity for disease: $diseaseKey');
-      
-      // Preprocess image
-      final input = await _preprocessImageFile(imageFile);
-      
-      // Run inference
-      final probabilities = await _runInference(input);
-      
-      // Get highest probability index
-      final maxIndex = probabilities.indexOf(probabilities.reduce((a, b) => a > b ? a : b));
-      final confidence = probabilities[maxIndex];
-      
-      // Get severity level
-      final severityLevel = _severityLevels[maxIndex];
-      
-      // Get remediation info
-      final remediationInfo = _getRemediationInfo(diseaseKey, severityLevel);
-      
-      // Get severity metadata
-      final severityMetadata = _getSeverityMetadata(maxIndex);
-      
-      debugPrint('✅ Severity assessment complete: $severityLevel (${(confidence * 100).toStringAsFixed(1)}%)');
-      
-      return SeverityResult(
-        severity: severityMetadata['name'],
-        severityLevel: severityLevel,
-        confidence: confidence,
-        remediation: remediationInfo['remediation'],
-        effect: remediationInfo['effect'],
-        colorCode: severityMetadata['colorCode'],
-        description: severityMetadata['description'],
-        action: severityMetadata['action'],
-      );
-    } catch (e) {
-      debugPrint('❌ Error in severity assessment: $e');
-      // Return a default result with fallback values
-      return SeverityResult(
-        severity: 'Medium',
-        severityLevel: 'Medium',
-        confidence: 0.5,
-        remediation: 'Unable to assess severity. Please consult an agricultural expert.',
-        effect: 'Expert consultation required for accurate assessment.',
-        colorCode: '#FFC107',
-        description: 'Severity assessment could not be completed',
-        action: 'Consult with plant disease expert',
-      );
     }
+    if (!remediations.containsKey(diseaseKey)) {
+      for (final k in remediations.keys) {
+        if (k.toLowerCase().startsWith(pClean.toLowerCase()) &&
+            k.toLowerCase().contains(dClean.split('_').first)) {
+          diseaseKey = k; break;
+        }
+      }
+    }
+
+    final remInfo = _getRemediationInfo(diseaseKey, severity);
+    final remStr = remInfo['remediation'] as String? ?? '';
+    final remStrUr = remInfo['remediation_ur'] as String? ?? remStr;
+
+    List<String> remList = remStr.isNotEmpty
+        ? remStr.split(RegExp(r'\.\s+')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+        : _getGeneralRemediations(severity);
+    List<String> remListUr = remStrUr.isNotEmpty
+        ? remStrUr.split(RegExp(r'\.\s+')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+        : remList;
+
+    debugPrint('✅ Disease-based severity: $diseaseName → $severity');
+
+    return {
+      'severity': severity,
+      'severityLevel': severity,
+      'confidence': confidence,
+      'remediation': remList,
+      'remediation_ur': remListUr,
+      'effect': remInfo['effect'] ?? '',
+      'effect_ur': remInfo['effect_ur'] ?? '',
+      'colorCode': colorCode,
+      'description': '$severity severity — $diseaseName',
+      'action': (severity == 'Critical' || severity == 'High')
+          ? 'Immediate treatment required'
+          : 'Apply appropriate treatment',
+    };
   }
 
-  // NEW METHOD: Get severity and remediation for results screen
+  // ── Public API ─────────────────────────────────────────────────────────────
+
   Future<Map<String, dynamic>?> getSeverityAndRemediation({
     required String diseaseName,
     required String plantName,
@@ -418,252 +260,128 @@ class SeverityIdService {
     String? imageBase64,
   }) async {
     try {
-      if (!_isInitialized) {
-        await initialize();
-      }
-      
+      if (!_isInitialized) await initialize();
       debugPrint('🎯 Getting severity and remediation for: $plantName - $diseaseName');
-      
-      // Validate inputs
+
       if (diseaseName.isEmpty || diseaseName.toLowerCase() == 'healthy') {
-        debugPrint('⚠️ Plant is healthy, no severity assessment needed');
         return {
           'severity': 'None',
           'remediation': ['Continue regular plant care', 'Monitor for any changes'],
+          'remediation_ur': ['باقاعدہ پودوں کی دیکھ بھال جاری رکھیں', 'نگرانی کریں'],
         };
       }
-      
-      // Handle non-plant images
-      if (diseaseName == 'Image Not Recognized' || plantName == 'Non-Plant Image') {
+
+      if (diseaseName == 'Image Not Recognized' || plantName == 'Non-Plant Image' ||
+          diseaseName == 'Unable to Determine') {
         return {
           'severity': 'N/A',
           'remediation': ['Please upload a clear photo of a plant leaf'],
+          'remediation_ur': ['براہ کرم پودے کے پتے کی واضح تصویر اپ لوڈ کریں'],
         };
       }
-      
-      // Get image bytes
-      Uint8List? imageBytes;
-      
-      if (imageBase64 != null && imageBase64.isNotEmpty) {
-        try {
-          imageBytes = _base64ToBytes(imageBase64);
-        } catch (e) {
-          debugPrint('⚠️ Failed to decode base64: $e');
-        }
-      }
-      
-      if (imageBytes == null && imagePath != null) {
-        try {
-          final file = File(imagePath);
-          if (await file.exists()) {
-            imageBytes = await file.readAsBytes();
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to read image file: $e');
-        }
-      }
-      
-      // If no image available, use confidence-based fallback
-      if (imageBytes == null) {
-        debugPrint('⚠️ No image available for severity analysis, using confidence-based estimation');
-        return _getFallbackSeverity(diseaseName, plantName, confidence);
-      }
-      
-      // Run inference directly on imageBytes — no temp file needed.
-      final input = await _preprocessImage(imageBytes);
-      final probabilities = await _runInference(input);
 
-      final maxIndex = probabilities.indexOf(
-          probabilities.reduce((a, b) => a > b ? a : b));
-      final inferredConfidence = probabilities[maxIndex];
-      final severityLevel = _severityLevels[maxIndex];
+      // Use disease-name based severity — TFLite severity model outputs Low on everything
+      return _getDiseaseBasedSeverity(diseaseName, plantName, confidence);
 
-      // Construct disease key
-      final diseaseKey =
-          '${plantName.replaceAll(' ', '_')}___${diseaseName.replaceAll(' ', '_').toLowerCase()}';
-
-      final remediationInfo = _getRemediationInfo(diseaseKey, severityLevel);
-      final severityMetadata = _getSeverityMetadata(maxIndex);
-
-      List<String> remediationList = [];
-      final remStr = remediationInfo['remediation'] as String? ?? '';
-      if (remStr.isNotEmpty) {
-        remediationList = remStr
-            .split(RegExp(r'[.,;]'))
-            .map((s) => s.trim())
-            .where((s) => s.isNotEmpty)
-            .toList();
-      }
-      if (remediationList.isEmpty) {
-        remediationList = _getGeneralRemediations(severityLevel);
-      }
-
-      return {
-        'severity': severityMetadata['name'],
-        'severityLevel': severityLevel,
-        'confidence': inferredConfidence,
-        'remediation': remediationList,
-        'effect': remediationInfo['effect'],
-        'colorCode': severityMetadata['colorCode'],
-        'description': severityMetadata['description'],
-        'action': severityMetadata['action'],
-      };
-      
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error in getSeverityAndRemediation: $e');
-      debugPrint('Stack trace: $stackTrace');
-      
-      // Return fallback result
-      return _getFallbackSeverity(diseaseName, plantName, confidence);
+    } catch (e, st) {
+      debugPrint('❌ Error in getSeverityAndRemediation: $e\n$st');
+      return _getDiseaseBasedSeverity(diseaseName, plantName, confidence);
     }
   }
 
-  // Get fallback severity based on confidence
-  Map<String, dynamic> _getFallbackSeverity(String diseaseName, String plantName, double confidence) {
-    String severity;
-    List<String> remediation;
-    
-    if (confidence > 70) {
-      severity = 'High';
-      remediation = [
-        'Apply appropriate fungicide/pesticide immediately',
-        'Remove and destroy infected plant parts',
-        'Isolate plant to prevent spread',
-        'Consult agricultural expert'
-      ];
-    } else if (confidence > 40) {
-      severity = 'Medium';
-      remediation = [
-        'Apply recommended treatment',
-        'Improve plant growing conditions',
-        'Monitor plant health daily',
-        'Consider preventive measures'
-      ];
-    } else if (confidence > 20) {
-      severity = 'Low';
-      remediation = [
-        'Monitor plant closely',
-        'Apply preventive treatments',
-        'Improve air circulation',
-        'Adjust watering schedule'
-      ];
-    } else {
-      severity = 'None';
-      remediation = [
-        'Plant appears healthy',
-        'Continue regular care',
-        'Monitor for changes',
-        'Maintain optimal growing conditions'
-      ];
+  // ── Legacy assessSeverity (kept for compatibility) ─────────────────────────
+  Future<SeverityResult> assessSeverity(File imageFile, String diseaseKey) async {
+    try {
+      if (!_isInitialized) await initialize();
+      final parts = diseaseKey.split('___');
+      final plant = parts.isNotEmpty ? parts[0] : '';
+      final disease = parts.length > 1 ? parts[1].replaceAll('_', ' ') : diseaseKey;
+      final result = _getDiseaseBasedSeverity(disease, plant, 0.8);
+      final remList = result['remediation'] as List<String>? ?? [];
+      return SeverityResult(
+        severity: result['severity'] as String,
+        severityLevel: result['severityLevel'] as String,
+        confidence: result['confidence'] as double,
+        remediation: remList.isNotEmpty ? remList.first : 'Apply appropriate treatment.',
+        effect: result['effect'] as String? ?? '',
+        colorCode: result['colorCode'] as String,
+        description: result['description'] as String? ?? '',
+        action: result['action'] as String? ?? '',
+      );
+    } catch (e) {
+      debugPrint('❌ Error in assessSeverity: $e');
+      return SeverityResult(
+        severity: 'Medium', severityLevel: 'Medium', confidence: 0.5,
+        remediation: 'Consult an agricultural expert.',
+        effect: 'Expert consultation recommended.',
+        colorCode: '#FFC107',
+        description: 'Severity assessment could not be completed',
+        action: 'Consult with plant disease expert',
+      );
     }
-    
-    return {
-      'severity': severity,
-      'remediation': remediation,
-    };
   }
 
-  // Get general remediations based on severity level
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
   List<String> _getGeneralRemediations(String severityLevel) {
     switch (severityLevel.toLowerCase()) {
       case 'critical':
-        return [
-          'Immediate treatment required',
-          'Remove severely infected parts',
-          'Apply intensive care',
-          'Consult expert immediately'
-        ];
+        return ['Immediate treatment required', 'Remove severely infected parts',
+            'Apply intensive care', 'Consult expert immediately'];
       case 'high':
-        return [
-          'Apply strong treatment',
-          'Isolate plant',
-          'Remove infected leaves',
-          'Monitor daily'
-        ];
+        return ['Apply strong treatment', 'Isolate plant',
+            'Remove infected leaves', 'Monitor daily'];
       case 'medium':
-        return [
-          'Apply standard treatment',
-          'Improve growing conditions',
-          'Monitor regularly',
-          'Consider preventive measures'
-        ];
+        return ['Apply standard treatment', 'Improve growing conditions',
+            'Monitor regularly', 'Consider preventive measures'];
       case 'low':
-        return [
-          'Monitor plant health',
-          'Apply mild treatment',
-          'Improve plant care',
-          'Watch for progression'
-        ];
-      default: // 'None'
-        return [
-          'Continue regular care',
-          'Maintain optimal conditions',
-          'Monitor for changes',
-          'Apply preventive care'
-        ];
+        return ['Monitor plant health', 'Apply mild treatment',
+            'Improve plant care', 'Watch for progression'];
+      default:
+        return ['Continue regular care', 'Maintain optimal conditions',
+            'Monitor for changes', 'Apply preventive care'];
     }
   }
 
-  // Get general guidelines for a severity level
+  String _normalizePlantName(String name) {
+    const aliases = <String, String>{'corn': 'Maize', 'maize': 'Maize'};
+    return aliases[name.toLowerCase()] ?? name;
+  }
+
   String getGeneralGuideline(String severityLevel) {
     try {
-      final generalGuidelines = _remediationData['general_guidelines'] as Map<String, dynamic>;
-      final guidelineKey = 'severity_${severityLevel.toLowerCase()}';
-      return generalGuidelines[guidelineKey] ?? 'No guideline available.';
-    } catch (e) {
-      return 'Error retrieving guidelines.';
-    }
+      final gg = _remediationData['general_guidelines'] as Map<String, dynamic>;
+      return gg['severity_${severityLevel.toLowerCase()}'] ?? 'No guideline available.';
+    } catch (_) { return 'Error retrieving guidelines.'; }
   }
 
-  // Get important notes
   Map<String, String> getImportantNotes() {
     try {
-      final notes = _remediationData['important_notes'] as Map<String, dynamic>;
-      return Map<String, String>.from(notes);
-    } catch (e) {
-      return {'error': 'Could not load important notes'};
-    }
+      return Map<String, String>.from(
+          _remediationData['important_notes'] as Map<String, dynamic>);
+    } catch (_) { return {'error': 'Could not load important notes'}; }
   }
 
-  // Check if service is ready
-  bool isReady() {
-    return _isInitialized;
-  }
+  bool isReady() => _isInitialized;
 
-  // Dispose interpreter when done
   void dispose() {
     try {
       _interpreter.close();
       _isInitialized = false;
       debugPrint('✅ SeverityIdService disposed');
-    } catch (e) {
-      debugPrint('⚠️ Error disposing interpreter: $e');
-    }
+    } catch (e) { debugPrint('⚠️ Error disposing: $e'); }
   }
 }
 
-// Extension for reshaping lists
 extension ReshapeList on List<double> {
   List<List<double>> reshape(List<int> shape) {
-    if (shape.length != 2) {
-      throw ArgumentError('Only 2D reshaping is supported');
-    }
-    
-    final rows = shape[0];
-    final cols = shape[1];
-    
-    if (length != rows * cols) {
-      throw ArgumentError('List length does not match shape');
-    }
-    
+    if (shape.length != 2) throw ArgumentError('Only 2D reshaping supported');
+    final rows = shape[0], cols = shape[1];
+    if (length != rows * cols) throw ArgumentError('List length does not match shape');
     final result = List.generate(rows, (_) => List<double>.filled(cols, 0.0));
-    
-    for (var i = 0; i < rows; i++) {
-      for (var j = 0; j < cols; j++) {
+    for (var i = 0; i < rows; i++)
+      for (var j = 0; j < cols; j++)
         result[i][j] = this[i * cols + j];
-      }
-    }
-    
     return result;
   }
 }

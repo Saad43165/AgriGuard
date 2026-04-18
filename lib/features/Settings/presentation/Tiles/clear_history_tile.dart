@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/database/scan_database.dart';
+import '../../../../core/widgets/app_dialog.dart';
+import '../../../../core/widgets/app_themes.dart';
 
 class ClearHistoryTile extends StatefulWidget {
   final VoidCallback? onHistoryCleared;
@@ -206,42 +208,22 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
     showDialog(
       context: context,
       barrierDismissible: !_isClearing,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.warning_rounded, color: Colors.orange.shade700, size: 28),
-            ),
-            const SizedBox(width: 12),
-            const Text('Clear History?'),
-          ],
-        ),
+      builder: (ctx) => AppDialog(
+        icon: const Icon(Icons.warning_rounded, color: AppColors.warning, size: 20),
+        title: 'Clear History?',
         content: const Text(
           'This will permanently delete all your scan data from both cloud and device. This action cannot be undone.',
         ),
         actions: [
-          TextButton(
-            onPressed: _isClearing ? null : () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: _isClearing
-                ? null
-                : () {
-              Navigator.pop(context);
+          AppDialogActions.secondary(ctx, label: 'Cancel', onPressed: () => Navigator.pop(ctx)),
+          AppDialogActions.primary(
+            ctx,
+            label: 'Clear All',
+            icon: Icons.delete_sweep_rounded,
+            onPressed: () {
+              Navigator.pop(ctx);
               _clearScanHistory(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade600,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Clear All'),
           ),
         ],
       ),

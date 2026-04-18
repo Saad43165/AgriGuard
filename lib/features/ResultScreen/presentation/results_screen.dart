@@ -1,83 +1,53 @@
-import 'dart:async';
 import 'dart:convert';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/components/advanced_search_button.dart';
+import 'dart:io';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/components/image_section.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/components/loading_indicator.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/components/next_steps_card.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/components/pdf_floating_button.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/components/result_appbar.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/service/pdf_generation_service.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/service/scan_save_service.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/constants.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/data_parsers.dart';
 import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/disease_cause_extractor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../auth/Login_Screen/services/guest_service.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/repositories/scan_repository.dart';
 import '../../../../core/services/severity_id_service.dart';
+import '../../../../core/services/translation_service.dart';
 import '../../../../core/widgets/app_themes.dart';
-import '../../../core/widgets/floating_orb.dart';
-import 'components/diagnosis_card.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
-import 'components/analysis_details_Card.dart' show AnalysisDetailsCard;
 import 'components/disease_cause_card.dart' show DiseaseCausesCard;
-import 'components/floating_advance_search_banner.dart';
-import 'components/recommentations_card.dart' show RecommendationsCard;
 import 'models/diagnosis_result.dart';
 import 'models/leaf_analysis_result.dart';
 
 class ResultsScreen extends StatefulWidget {
   final Map<String, dynamic> scanData;
-
-  const ResultsScreen({
-    required this.scanData,
-    super.key,
-  });
-
+  const ResultsScreen({required this.scanData, super.key});
   @override
   State<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen>
-    with TickerProviderStateMixin {
-  // Animation Controllers
-  late final AnimationController _fadeController;
-  late final AnimationController _scaleController;
-  late final Animation<double> _scaleAnimation;
-
-  // State Variables
+class _ResultsScreenState extends State<ResultsScreen> {
   bool _isSaving = false;
   bool _isAlreadySaved = false;
-  bool _showAdvancedSearchBanner = false;
   bool _jsonLoaded = false;
-  bool _isGeneratingPdf = false;
-  Timer? _advancedSearchTimer;
 
-  // Analysis Results
   LeafAnalysisResult? _leafAnalysis;
-  bool get _isLeafImage =>
-      _leafAnalysis?.isLeaf ?? (widget.scanData['isLeaf'] as bool? ?? true);
+  bool get _isLeafImage => _leafAnalysis?.isLeaf ?? (widget.scanData['isLeaf'] as bool? ?? true);
 
-  // Data Variables
   final Map<String, dynamic> _diseaseCauses = {};
   final Map<String, dynamic> _diseaseMapping = {};
   List<dynamic> _diseaseCausesList = [];
 
-  // Severity and Remediation
-  // FIX 4: Default to 'None' not 'Medium' — a scan with no severity data
-  // should not show "Medium" which implies disease when plant may be healthy.
   String _severity = 'None';
   List<String> _remediation = [];
-  bool _isLoadingSeverityRemediation = false;
+  List<String> _remediationUr = [];
+  bool _isLoadingSeverity = false;
 
-  // Services
   late final ScanRepository _scanRepository;
   late final SeverityIdService _severityIdService;
   late final ScanSaveService _scanSaveService;
-  final PdfGenerationService _pdfService = PdfGenerationService();
   final GuestService _guestService = GuestService();
   bool _isGuestMode = false;
 
@@ -86,10 +56,8 @@ class _ResultsScreenState extends State<ResultsScreen>
     super.initState();
     _initializeGuestMode();
     _initializeServices();
-    _initializeAnimations();
     _loadJsonData();
-    _scheduleAdvancedSearchBanner();
-    _analyzeImageAndSave();
+    _analyzeAndSave();
   }
 
   Future<void> _initializeGuestMode() async {
@@ -97,88 +65,49 @@ class _ResultsScreenState extends State<ResultsScreen>
     if (mounted) setState(() => _isGuestMode = _guestService.isGuestMode);
   }
 
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    _scaleController.dispose();
-    _advancedSearchTimer?.cancel();
-    super.dispose();
-  }
-
   void _initializeServices() {
     _scanRepository = ScanRepository();
     _severityIdService = SeverityIdService();
-    _scanSaveService = ScanSaveService(
-      scanRepository: _scanRepository,
-    );
+    _scanSaveService = ScanSaveService(scanRepository: _scanRepository);
   }
 
-  void _initializeAnimations() {
-    _fadeController = AnimationController(
-      duration: ResultScreenConstants.animationDuration,
-      vsync: this,
-    )..forward();
-
-    _scaleController = AnimationController(
-      duration: ResultScreenConstants.scaleAnimationDuration,
-      vsync: this,
-    )..forward();
-
-    _scaleAnimation = Tween<double>(
-      begin: ResultScreenConstants.scaleBegin,
-      end: ResultScreenConstants.scaleEnd,
-    ).animate(
-      CurvedAnimation(
-        parent: _scaleController,
-        curve: ResultScreenConstants.scaleCurve,
-      ),
-    );
-  }
-
-  Future<void> _analyzeImageAndSave() async {
-    setState(() => _isLoadingSeverityRemediation = true);
-
+  Future<void> _analyzeAndSave() async {
+    setState(() => _isLoadingSeverity = true);
     try {
-      // Leaf decision is made upstream (capture/orchestrator). Do NOT rerun
-      // another heuristic leaf detector here, or it can contradict the scan.
       final leafFromScan = widget.scanData['leafAnalysis'];
       if (leafFromScan is Map<String, dynamic>) {
         _leafAnalysis = LeafAnalysisResult.fromJson(leafFromScan);
       } else {
         final isLeaf = widget.scanData['isLeaf'] as bool? ?? true;
-        final leafConfidence = (widget.scanData['leafConfidence'] as num?)?.toDouble() ?? 50.0;
+        final leafConf = (widget.scanData['leafConfidence'] as num?)?.toDouble() ?? 50.0;
         _leafAnalysis = LeafAnalysisResult(
-          isLeaf: isLeaf,
-          confidence: leafConfidence,
-          reasons: isLeaf
-              ? const ['Upstream analysis marked this as a leaf image']
-              : const ['Upstream analysis marked this as a non-leaf image'],
+          isLeaf: isLeaf, confidence: leafConf,
+          reasons: [isLeaf ? 'Leaf detected' : 'Not a leaf'],
           details: widget.scanData['leafDetectionDetails'] as Map<String, dynamic>?,
         );
       }
-
-      debugPrint('🍃 Leaf status from scanData:');
-      debugPrint('   Is Leaf: ${_leafAnalysis!.isLeaf}');
-      debugPrint('   Confidence: ${_leafAnalysis!.confidence.toStringAsFixed(1)}%');
-
       if (_leafAnalysis!.isLeaf) {
         await _getSeverityAndRemediation();
       } else {
-        // Non-leaf scans should already contain correct messaging + flags.
         _severity = 'N/A';
-        _remediation = DataParsers.parseStringToList(
-          widget.scanData['remediation'] ?? widget.scanData['treatment'],
-        );
+        _remediation = DataParsers.parseStringToList(widget.scanData['remediation'] ?? widget.scanData['treatment']);
       }
+      final shouldSave = widget.scanData['shouldSaveToHistory'] as bool? ?? true;
+      if (!shouldSave) { if (mounted) setState(() => _isAlreadySaved = true); return; }
 
-      // FIX 2: Check shouldSaveToHistory flag set by plant_analysis_service.
-      // Non-leaf images and failed analyses carry shouldSaveToHistory=false
-      // and must never be written to the database.
-      final shouldSaveToHistory =
-          widget.scanData['shouldSaveToHistory'] as bool? ?? true;
-
-      if (!shouldSaveToHistory) {
-        debugPrint('🚫 shouldSaveToHistory=false — skipping database save');
+      // Don't save non-leaf images or very low confidence scans to history
+      final confidence = DataParsers.parseConfidence(widget.scanData['confidence']);
+      final isLeafImage = _leafAnalysis?.isLeaf ?? true;
+      final isNonLeaf = !isLeafImage ||
+          widget.scanData['plantName']?.toString() == 'Non-Plant Image' ||
+          widget.scanData['diseaseName']?.toString() == 'Image Not Recognized';
+      if (isNonLeaf) {
+        debugPrint('⚠️ Not saving — non-leaf image');
+        if (mounted) setState(() => _isAlreadySaved = true);
+        return;
+      }
+      if (confidence < 40.0) {
+        debugPrint('⚠️ Not saving — confidence too low (${confidence.toStringAsFixed(1)}%)');
         if (mounted) setState(() => _isAlreadySaved = true);
         return;
       }
@@ -186,523 +115,579 @@ class _ResultsScreenState extends State<ResultsScreen>
       await _checkAndSaveScan();
     } catch (e) {
       debugPrint('Analysis error: $e');
-      _leafAnalysis = LeafAnalysisResult(
-        isLeaf: true,
-        confidence: 50.0,
-        reasons: ['Analysis error, defaulting to leaf'],
-      );
+      _leafAnalysis = LeafAnalysisResult(isLeaf: true, confidence: 50.0, reasons: ['Error']);
     } finally {
-      if (mounted) {
-        setState(() => _isLoadingSeverityRemediation = false);
-      }
+      if (mounted) setState(() => _isLoadingSeverity = false);
     }
   }
 
   Future<void> _getSeverityAndRemediation() async {
     try {
-      debugPrint('🔍 Getting severity and remediation from service...');
-
-      final severityResult = await _severityIdService.getSeverityAndRemediation(
+      final result = await _severityIdService.getSeverityAndRemediation(
         diseaseName: widget.scanData['diseaseName']?.toString() ?? '',
         plantName: widget.scanData['plantName']?.toString() ?? '',
         confidence: DataParsers.parseConfidence(widget.scanData['confidence']),
         imagePath: widget.scanData['imagePath'] as String?,
         imageBase64: widget.scanData['imageBase64'] as String?,
       );
-
-      if (severityResult != null) {
-        _severity = severityResult['severity']?.toString() ??
-            widget.scanData['severity']?.toString() ??
-            'None'; // FIX 4: fallback to None not Medium
-
-        final remediationData = severityResult['remediation'];
-        _remediation = DataParsers.parseStringToList(remediationData);
-
+      if (result != null) {
+        _severity = result['severity']?.toString() ?? widget.scanData['severity']?.toString() ?? 'None';
+        _remediation = DataParsers.parseStringToList(result['remediation']);
+        _remediationUr = DataParsers.parseStringToList(result['remediation_ur'] ?? result['remediation']);
         widget.scanData['severity'] = _severity;
         widget.scanData['remediation'] = _remediation;
-
-        debugPrint('✅ Severity: $_severity');
-        debugPrint('✅ Remediation count: ${_remediation.length}');
-      } else {
-        _useFallbackSeverityAndRemediation();
-      }
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error getting severity and remediation: $e');
-      debugPrint('Stack trace: $stackTrace');
-      _useFallbackSeverityAndRemediation();
-    }
+      } else { _useFallback(); }
+    } catch (_) { _useFallback(); }
   }
 
-  void _useFallbackSeverityAndRemediation() {
-    // FIX 4: fallback respects healthy plants — don't default to 'Medium'
+  void _useFallback() {
     final isHealthy = widget.scanData['isHealthy'] as bool? ?? false;
-    _severity = widget.scanData['severity']?.toString() ??
-        (isHealthy ? 'None' : 'Unknown');
-    _remediation = DataParsers.parseStringToList(
-      widget.scanData['remediation'] ?? widget.scanData['treatment'],
-    );
-    debugPrint('⚠️ Using fallback severity and remediation');
+    _severity = widget.scanData['severity']?.toString() ?? (isHealthy ? 'None' : 'Unknown');
+    _remediation = DataParsers.parseStringToList(widget.scanData['remediation'] ?? widget.scanData['treatment']);
   }
 
   Future<void> _loadJsonData() async {
     try {
-      debugPrint('📚 Loading JSON data...');
-
-      final causesFuture =
-      rootBundle.loadString('assets/data/disease_causes.json');
-      final mappingFuture =
-      rootBundle.loadString('assets/data/mapping.json');
-
-      final results = await Future.wait([causesFuture, mappingFuture]);
-
-      _diseaseCauses.addAll(json.decode(results[0]));
-      _diseaseMapping.addAll(json.decode(results[1]));
-
+      final r = await Future.wait([
+        rootBundle.loadString('assets/data/disease_causes.json'),
+        rootBundle.loadString('assets/data/mapping.json'),
+      ]);
+      _diseaseCauses.addAll(json.decode(r[0]));
+      _diseaseMapping.addAll(json.decode(r[1]));
       _extractDiseaseCauses();
-
-      if (mounted) {
-        setState(() => _jsonLoaded = true);
-      }
-    } catch (e) {
-      debugPrint('❌ Error loading JSON data: $e');
-      if (mounted) {
-        setState(() => _jsonLoaded = true);
-      }
-    }
+      if (mounted) setState(() => _jsonLoaded = true);
+    } catch (_) { if (mounted) setState(() => _jsonLoaded = true); }
   }
 
   void _extractDiseaseCauses() {
-    final extractor = DiseaseCauseExtractor(
-      diseaseCauses: _diseaseCauses,
-      diseaseMapping: _diseaseMapping,
+    _diseaseCausesList = DiseaseCauseExtractor(
+      diseaseCauses: _diseaseCauses, diseaseMapping: _diseaseMapping,
       isLeafImage: _isLeafImage,
       rawLabel: widget.scanData['rawLabel']?.toString(),
       diseaseName: widget.scanData['diseaseName']?.toString(),
       plantName: widget.scanData['plantName']?.toString(),
       confidence: DataParsers.parseConfidence(widget.scanData['confidence']),
       minimumConfidence: ResultScreenConstants.minimumConfidence,
-    );
-
-    _diseaseCausesList = extractor.extract();
+    ).extract();
   }
 
   Future<void> _checkAndSaveScan() async {
-    // FIX 3: Double-check skipSave flag before calling shouldSkipSave
-    if (widget.scanData['skipSave'] == true ||
-        widget.scanData['shouldSaveToHistory'] == false) {
-      debugPrint('📂 Skipping save — flagged as non-saveable');
-      if (mounted) setState(() => _isAlreadySaved = true);
-      return;
+    if (widget.scanData['skipSave'] == true || widget.scanData['shouldSaveToHistory'] == false) {
+      if (mounted) setState(() => _isAlreadySaved = true); return;
     }
-
-    final shouldSkip =
-    await _scanSaveService.shouldSkipSave(widget.scanData);
-
-    if (shouldSkip) {
-      debugPrint('📂 Skipping auto-save for existing/advanced scan');
-      if (mounted) setState(() => _isAlreadySaved = true);
-      return;
+    if (await _scanSaveService.shouldSkipSave(widget.scanData)) {
+      if (mounted) setState(() => _isAlreadySaved = true); return;
     }
-
-    if (_isAlreadySaved || _isSaving) {
-      debugPrint('✅ Scan already processed in this session');
-      return;
-    }
-
-    await _saveScanToDatabase();
+    if (_isAlreadySaved || _isSaving) return;
+    await _saveScan();
   }
 
-  Future<void> _saveScanToDatabase() async {
+  Future<void> _saveScan() async {
     setState(() => _isSaving = true);
-
     try {
       final scanId = _scanSaveService.generateScanId(widget.scanData);
-
-      if (await _scanSaveService.isScanAlreadySaved(scanId)) {
-        debugPrint('✅ Scan already exists in database');
-        _updateSaveState(false, true);
-        return;
-      }
-
-      final processedData = await _scanSaveService.processScanData(
-        widget.scanData,
-        scanId,
-        _leafAnalysis,
-        _severity,
-        _remediation,
-      );
-
-      await _scanSaveService.saveScan(
-        processedData,
-        widget.scanData['imagePath'] as String?,
-      );
-
-      debugPrint('✅ Scan saved successfully: $scanId');
+      if (await _scanSaveService.isScanAlreadySaved(scanId)) { _updateSaveState(false, true); return; }
+      final processed = await _scanSaveService.processScanData(widget.scanData, scanId, _leafAnalysis, _severity, _remediation);
+      await _scanSaveService.saveScan(processed, widget.scanData['imagePath'] as String?);
       _updateSaveState(false, true);
-    } catch (e, stackTrace) {
-      debugPrint('❌ Save error: $e\n$stackTrace');
+    } catch (e) {
+      debugPrint('Save error: $e');
       _updateSaveState(false, false);
-
-      if (!DataParsers.isDuplicateError(e)) {
-        _showSaveError();
-      }
+    } finally {
+      if (mounted && _isSaving) setState(() => _isSaving = false);
     }
   }
 
-  void _updateSaveState(bool isSaving, bool isSaved) {
-    if (mounted) {
-      setState(() {
-        _isSaving = isSaving;
-        _isAlreadySaved = isSaved;
-      });
-    }
+  void _updateSaveState(bool saving, bool saved) {
+    if (mounted) setState(() { _isSaving = saving; _isAlreadySaved = saved; });
   }
 
-  void _scheduleAdvancedSearchBanner() {
-    _advancedSearchTimer =
-        Timer(ResultScreenConstants.advancedSearchDelay, () {
-          if (!mounted || !_isLeafImage) return;
-
-          setState(() => _showAdvancedSearchBanner = true);
-
-          _advancedSearchTimer = Timer(
-            ResultScreenConstants.advancedSearchDuration,
-                () {
-              if (mounted) {
-                setState(() => _showAdvancedSearchBanner = false);
-              }
-            },
-          );
-        });
-  }
-
-  void _navigateToAdvancedSearch() {
-    setState(() => _showAdvancedSearchBanner = false);
+  void _goAdvanced() {
     HapticFeedback.mediumImpact();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AdvancedSearchScreen(
-          originalScanData: widget.scanData,
-        ),
-      ),
-    );
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => AdvancedSearchScreen(originalScanData: widget.scanData),
+    ));
   }
 
-  void _handleBackNavigation() {
+  void _handleBack() {
     if (_isSaving) return;
     HapticFeedback.lightImpact();
-
-    final previousRoute = widget.scanData['previousRoute'] as String?;
-    final fromCapture = widget.scanData['fromCapture'] as bool? ?? false;
-
-    if (fromCapture) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.scan,
-            (route) => false,
-      );
-    } else if (previousRoute != null) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        previousRoute,
-            (route) => false,
-      );
-    } else if (Navigator.of(context).canPop()) {
+    if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.home,
-            (route) => false,
-      );
+      Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false);
     }
   }
 
-  Future<void> _generatePdfReport() async {
-    if (_isGeneratingPdf) return;
-
-    setState(() => _isGeneratingPdf = true);
-
-    final pdfScanData = {
-      ...widget.scanData,
-      'severity': _severity,
-      'remediation': _remediation,
-      'symptoms': _diseaseCausesList,
-      // FIX 1: Use the already-reconciled plant name from scanData directly.
-      // Do NOT call _resolvePlantName() which re-parses rawLabel and can
-      // reintroduce the Tomato/Apple mismatch bug.
-      'plantName': widget.scanData['plantName']?.toString() ?? 'Unknown Plant',
-      'diseaseName': _getDiseaseName(),
-      'confidence': widget.scanData['confidence']?.toString() ?? '0',
-    };
-
-    await _pdfService.generateAndShowPdf(
-      context: context,
-      scanData: pdfScanData,
-      onError: (msg) {
-        if (mounted) {
-          setState(() => _isGeneratingPdf = false);
-          _showErrorSnackBar(msg);
-        }
-      },
-      onSuccess: (file) async {
-        if (!mounted) return;
-        setState(() => _isGeneratingPdf = false);
-        await _pdfService.showPdfSuccessDialog(context, file);
-      },
-    );
+  Future<void> _share() async {
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final plant = widget.scanData['plantName']?.toString() ?? 'Unknown Plant';
+    final disease = widget.scanData['diseaseName']?.toString() ?? (t.isUrdu ? 'صحت مند' : 'Healthy');
+    await Share.share('🌱 AgriGuard\nPlant: $plant\nDisease: $disease\nSeverity: $_severity\n\nScanned with AgriGuard');
   }
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 4),
-      ),
-    );
-  }
-
-  Future<void> _shareScanResult() async {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(children: [
-          Icon(Icons.share_rounded, color: Colors.white, size: 16),
-          SizedBox(width: 8),
-          Text('Sharing...'),
-        ]),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-    final plantName = widget.scanData['plantName']?.toString() ?? 'Unknown Plant';
-    final diseaseName = _getDiseaseName();
-    final confidence = widget.scanData['confidence']?.toString() ?? '0';
-    final treatment = _remediation.isNotEmpty ? _remediation.first : 'See app for details';
-    final shareText = '''🌱 AgriGuard Scan Result
-Plant: $plantName
-Disease: $diseaseName
-Severity: $_severity
-Confidence: $confidence%
-Treatment: $treatment
-
-Scanned with AgriGuard App''';
-    await Share.share(shareText);
-  }
-
-  void _showSaveError() {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Text('Failed to save scan'),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  DiagnosisResult _getDiagnosisResult() {
-    return DiagnosisResult.fromScanData({
-      ...widget.scanData,
-      'severity': _severity,
-      'remediation': _remediation,
-      // FIX 1: Use scanData's plantName directly — it was already reconciled
-      // by plant_analysis_service._reconcilePlantName(). Do not re-derive it
-      // from rawLabel here, which would reintroduce the cross-model mismatch.
-      'plantName': widget.scanData['plantName']?.toString() ?? 'Unknown Plant',
-    });
-  }
-
-  // FIX 1: Removed _resolvePlantName() entirely.
-  //
-  // OLD behaviour:
-  //   - Parsed rawLabel (e.g. "Tomato___healthy") → extracted "Tomato"
-  //   - Used that name when disease ≠ healthy, overriding the reconciled name
-  //   - For Apple with rawLabel="Tomato___healthy" this reverted to "Tomato"
-  //
-  // NEW behaviour:
-  //   - plant_analysis_service._reconcilePlantName() already stored the
-  //     correct name in scanData['plantName'] before this screen opens.
-  //   - We just read scanData['plantName'] directly everywhere.
-
-  String _getDiseaseName() {
-    return widget.scanData['diseaseName']?.toString() ??
-        widget.scanData['diagnosis']?.toString() ??
-        'Healthy';
-  }
+  DiagnosisResult _getDiagnosisResult() => DiagnosisResult.fromScanData({
+    ...widget.scanData, 'severity': _severity, 'remediation': _remediation,
+    'plantName': widget.scanData['plantName']?.toString() ?? 'Unknown Plant',
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoadingSeverityRemediation) {
-      return LoadingIndicator(
-        message: 'Getting recommendations...',
-        subtitle: 'Fetching severity and treatment data',
+    if (_isLoadingSeverity) {
+      return const LoadingIndicator(message: 'Analyzing results...', subtitle: 'Getting severity and treatment data');
+    }
+
+    // ── Non-plant image — show dedicated screen ────────────────────────────
+    if (!_isLeafImage) {
+      return _NonPlantScreen(
+        imagePath: widget.scanData['imagePath'] as String?,
+        isDark: Theme.of(context).brightness == Brightness.dark,
+        onBack: _handleBack,
+        onRetry: () => Navigator.of(context).pop(),
       );
     }
 
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final diagnosisResult = _getDiagnosisResult();
+    final t = Provider.of<TranslationService>(context);
+    final confidence = DataParsers.parseConfidence(widget.scanData['confidence']);
+    final isUnknown = widget.scanData['isUnknown'] as bool? ?? false;
+    final sheetBg = isDark ? AppColors.darkCard : Colors.white;
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) _handleBackNavigation();
-      },
+      canPop: !_isSaving,
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBarContent(
-          title: 'Analysis Results',
-          showBackButton: !_isSaving,
-          onBackPressed: _handleBackNavigation,
-          actions: [
-            GestureDetector(
-              onTap: _shareScanResult,
-              child: Container(
-                width: 38, height: 38,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.darkCard : AppColors.lightBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.darkBorder : AppColors.lightBorder,
-                    width: 1,
-                  ),
-                ),
-                child: const Icon(Icons.share_rounded, size: 18, color: AppColors.primary),
-              ),
-            ),
-          ],
-        ),
-        body: Container(
-          color: theme.brightness == Brightness.dark
-              ? const Color(0xFF0D1117)
-              : const Color(0xFFF0F7FF),
-          child: Stack(
-            children: [
-              ...List.generate(
-                8,
-                    (index) => FloatingOrb(
-                  index: index,
-                  maxWidth: MediaQuery.of(context).size.width,
-                  fadeController: _fadeController,
-                  scaleAnimation: _scaleAnimation,
-                ),
-              ),
-              SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(
-                      ResultScreenConstants.defaultPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ImageSection(
-                        imagePath: widget.scanData['imagePath'] as String?,
-                        imageUrl: widget.scanData['imageUrl'] as String?,
-                        imageBase64:
-                        widget.scanData['imageBase64'] as String?,
-                      ),
-                      const SizedBox(height: 20),
-                      DiagnosisCard(diagnosisResult: diagnosisResult),
-                      const SizedBox(height: 20),
-                      AnalysisDetailsCard(scanData: widget.scanData),
-                      const SizedBox(height: 20),
-                      if (_jsonLoaded)
-                        DiseaseCausesCard(causes: _diseaseCausesList),
-                      const SizedBox(height: 20),
-                      RecommendationsCard(
-                        recommendations: diagnosisResult.recommendations,
-                      ),
-                      const SizedBox(height: 20),
-                      if (_isLeafImage) ...[
-                        const NextStepsCard(),
-                        const SizedBox(height: 20),
-                      ],
-                      if (_isLeafImage && !_isGuestMode)
-                        AdvancedSearchButton(
-                          onTap: _navigateToAdvancedSearch,
+        backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+        body: Stack(
+          children: [
+            // ── Scrollable: image scrolls away, content stays ──────────
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Image as collapsible header — scrolls away
+                SliverAppBar(
+                  expandedHeight: MediaQuery.of(context).size.height * 0.45,
+                  pinned: false,
+                  floating: false,
+                  backgroundColor: Colors.black,
+                  automaticallyImplyLeading: false,
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ImageSection(
+                          imagePath: widget.scanData['imagePath'] as String?,
+                          imageUrl: widget.scanData['imageUrl'] as String?,
+                          imageBase64: widget.scanData['imageBase64'] as String?,
                         ),
-                      // Scan Again button
-                      if (_isLeafImage && !_isSaving) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              HapticFeedback.mediumImpact();
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                AppRoutes.scan,
-                                (route) => route.settings.name == AppRoutes.home,
-                              );
-                            },
-                            icon: const Icon(Icons.refresh_rounded, size: 18),
-                            label: const Text('Scan Again'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(color: AppColors.primary, width: 1.5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        // Fade into sheet at bottom
+                        Positioned(
+                          bottom: 0, left: 0, right: 0,
+                          child: Container(
+                            height: 60,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [sheetBg, Colors.transparent],
+                              ),
                             ),
                           ),
                         ),
+                        // Back button only — no duplicate close
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 12,
+                          left: 16,
+                          child: _CircleBtn(icon: Icons.arrow_back_ios_new_rounded, onTap: _handleBack),
+                        ),
+                        // Share only on right
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 12,
+                          right: 16,
+                          child: _CircleBtn(icon: Icons.share_rounded, onTap: _share),
+                        ),
                       ],
-                      const SizedBox(height:
-                      ResultScreenConstants.bottomButtonPadding),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              if (_showAdvancedSearchBanner && _isLeafImage && !_isGuestMode)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 80,
-                  child: FloatingAdvancedSearchBanner(
-                    onTap: _navigateToAdvancedSearch,
-                    onDismiss: () {
-                      if (mounted) {
-                        setState(
-                                () => _showAdvancedSearchBanner = false);
-                      }
+
+                // White content sheet
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: sheetBg,
+                    padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 90),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Plant name
+                        Text(
+                          t.translatePlant(diagnosisResult.plantName),
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800,
+                              color: textColor, letterSpacing: -0.5, height: 1.1),
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Type • disease
+                        Row(children: [
+                          Text(
+                            diagnosisResult.isHealthy ? 'Plant' : 'Disease',
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
+                          ),
+                          Text(
+                            diagnosisResult.scientificName != null
+                                ? '  •  ${diagnosisResult.scientificName}'
+                                : '  •  ${t.translateDisease(diagnosisResult.disease)}',
+                            style: TextStyle(fontSize: 14, color: captionColor),
+                          ),
+                        ]),
+                        const SizedBox(height: 8),
+
+                        // Not your plant
+                        if (!_isGuestMode)
+                          GestureDetector(
+                            onTap: _goAdvanced,
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Text(t.isUrdu ? 'آپ کا پودا نہیں؟' : 'Not your plant?',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+                                    color: Colors.red.shade600,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.red.shade600)),
+                            ),
+                          ),
+                        const SizedBox(height: 14),
+
+                        // Chips
+                        Wrap(spacing: 8, runSpacing: 8, children: [
+                          _Chip(icon: '🌿', label: diagnosisResult.isHealthy ? t.isUrdu ? 'صحت مند' : 'Healthy' : _severity, isDark: isDark),
+                          _Chip(icon: '📊', label: '${confidence.toStringAsFixed(0)}% Confidence', isDark: isDark),
+                          if (!diagnosisResult.isHealthy)
+                            _Chip(icon: '⚠️', label: t.translateDisease(diagnosisResult.disease), isDark: isDark),
+                          if (_remediation.isNotEmpty)
+                            _Chip(icon: '💊', label: t.isUrdu ? 'علاج دستیاب' : 'Treatment Available', isDark: isDark),
+                        ]),
+
+                        // Alerts
+                        if (isUnknown && _isLeafImage) ...[
+                          const SizedBox(height: 14),
+                          _AlertRow(icon: Icons.help_outline_rounded,
+                              message: t.isUrdu ? 'پودے کی شناخت نہیں ہوئی — بہتر نتائج کے لیے Advanced AI آزمائیں' : 'Plant not identified — try Advanced AI for better results',
+                              color: AppColors.info, isDark: isDark),
+                        ],
+
+                        // Treatment
+                        if (_isLeafImage && _remediation.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _SectionHeader(icon: Icons.healing_rounded, title: t.get('treatment_plan'), isDark: isDark),
+                          const SizedBox(height: 8),
+                          ...(() {
+                            final list = t.isUrdu && _remediationUr.isNotEmpty ? _remediationUr : _remediation;
+                            return list.take(3).map((r) => Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Container(margin: const EdgeInsets.only(top: 6), width: 6, height: 6,
+                                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(r, style: TextStyle(fontSize: 13,
+                                    color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568), height: 1.5))),
+                              ]),
+                            ));
+                          })(),
+                        ],
+
+                        // Disease causes
+                        if (_isLeafImage && _jsonLoaded && _diseaseCausesList.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _SectionHeader(icon: Icons.biotech_rounded, title: t.get('disease_causes'), isDark: isDark),
+                          const SizedBox(height: 8),
+                          DiseaseCausesCard(causes: _diseaseCausesList),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Fixed bottom bar ───────────────────────────────────────
+            Positioned(
+              left: 0, right: 0, bottom: 0,
+              child: Container(
+                padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+                decoration: BoxDecoration(
+                  color: sheetBg,
+                  border: Border(top: BorderSide(
+                      color: isDark ? AppColors.darkBorder : const Color(0xFFEEEEEE))),
+                ),
+                child: Row(children: [
+                  // Camera — opens camera to scan again
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.of(context).pop();
+                      // The parent will handle opening camera via navbar
                     },
+                    child: Container(
+                      width: 50, height: 50,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+                      ),
+                      child: Icon(Icons.camera_alt_outlined,
+                          color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E), size: 22),
+                    ),
                   ),
-                ),
-            ],
-          ),
+                  const SizedBox(width: 12),
+                  // Advanced AI
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _goAdvanced,
+                      child: Container(
+                        height: 50,
+                        decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(50)),
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
+                          const SizedBox(width: 8),
+                          Text(t.isUrdu ? 'ایڈوانسڈ AI' : 'Advanced AI', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+
+            if (false)
+              Container(
+                color: Colors.black.withValues(alpha: 0.55),
+                child: const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  CircularProgressIndicator(color: AppColors.primary),
+                  SizedBox(height: 16),
+                  Text('Generating PDF…', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                ])),
+              ),
+          ],
         ),
-        floatingActionButton:
-        _isLeafImage && !_isGeneratingPdf && !_isSaving
-            ? Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: PdfFloatingButton(
-            onPressed: _generatePdfReport,
-            isGenerating: _isGeneratingPdf,
-          ),
-        )
-            : null,
-        floatingActionButtonLocation:
-        FloatingActionButtonLocation.centerFloat,
       ),
     );
   }
+}
+
+class _CircleBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CircleBtn({required this.icon, required this.onTap});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 36, height: 36,
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+      child: Icon(icon, color: Colors.white, size: 18),
+    ),
+  );
+}
+
+class _Chip extends StatelessWidget {
+  final String icon, label;
+  final bool isDark;
+  const _Chip({required this.icon, required this.label, required this.isDark});
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    decoration: BoxDecoration(
+      color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
+      borderRadius: BorderRadius.circular(50),
+      border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Text(icon, style: const TextStyle(fontSize: 12)),
+      const SizedBox(width: 5),
+      Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568))),
+    ]),
+  );
+}
+
+class _AlertRow extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final Color color;
+  final bool isDark;
+  const _AlertRow({required this.icon, required this.message, required this.color, required this.isDark});
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color.withValues(alpha: 0.3)),
+    ),
+    child: Row(children: [
+      Icon(icon, color: color, size: 16),
+      const SizedBox(width: 10),
+      Expanded(child: Text(message, style: TextStyle(fontSize: 12,
+          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568), height: 1.4))),
+    ]),
+  );
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isDark;
+  const _SectionHeader({required this.icon, required this.title, required this.isDark});
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Icon(icon, color: AppColors.primary, size: 16),
+    const SizedBox(width: 8),
+    Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+        color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E))),
+  ]);
+}
+
+
+
+
+// ── Dedicated non-plant screen ────────────────────────────────────────────────
+class _NonPlantScreen extends StatelessWidget {
+  final String? imagePath;
+  final bool isDark;
+  final VoidCallback onBack;
+  final VoidCallback onRetry;
+  const _NonPlantScreen({this.imagePath, required this.isDark, required this.onBack, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final cardBg = isDark ? AppColors.darkCard : Colors.white;
+    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+
+    return Scaffold(
+      backgroundColor: bg,
+      body: SafeArea(
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(children: [
+              GestureDetector(
+                onTap: onBack,
+                child: Container(
+                  width: 38, height: 38,
+                  decoration: BoxDecoration(
+                    color: cardBg, shape: BoxShape.circle,
+                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
+                  child: Icon(Icons.arrow_back_ios_new_rounded, size: 16,
+                      color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
+              ),
+            ]),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (imagePath != null)
+                    Container(
+                      width: 160, height: 160,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 2)),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.file(File(imagePath!), fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: AppColors.error.withValues(alpha: 0.08),
+                              child: const Icon(Icons.image_not_supported_rounded, size: 48, color: AppColors.error))),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 120, height: 120,
+                      decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.08), shape: BoxShape.circle),
+                      child: const Icon(Icons.image_not_supported_rounded, size: 52, color: AppColors.error),
+                    ),
+                  const SizedBox(height: 28),
+                  Text(
+                    t.isUrdu ? 'پودے کا پتہ نہیں ملا' : 'No Plant Detected',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: textColor, letterSpacing: -0.5),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    t.isUrdu
+                        ? 'یہ تصویر پودے کے پتے کی نہیں لگتی۔ بہتر نتائج کے لیے نیچے دی گئی ہدایات پر عمل کریں۔'
+                        : 'This image doesn\'t appear to be a plant leaf. Follow the tips below for better results.',
+                    style: TextStyle(fontSize: 14, color: captionColor, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 28),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cardBg, borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
+                    child: Column(children: [
+                      _Tip(icon: Icons.center_focus_strong_rounded,
+                          text: t.isUrdu ? 'پتے کو فریم میں بھریں' : 'Fill the frame with a single leaf', isDark: isDark),
+                      const SizedBox(height: 10),
+                      _Tip(icon: Icons.wb_sunny_rounded,
+                          text: t.isUrdu ? 'اچھی روشنی میں تصویر لیں' : 'Use good natural lighting', isDark: isDark),
+                      const SizedBox(height: 10),
+                      _Tip(icon: Icons.blur_off_rounded,
+                          text: t.isUrdu ? 'واضح اور فوکس تصویر لیں' : 'Keep the image sharp and in focus', isDark: isDark),
+                      const SizedBox(height: 10),
+                      _Tip(icon: Icons.eco_rounded,
+                          text: t.isUrdu ? 'صرف پودوں کے پتوں کی تصویر لیں' : 'Only scan plant leaves', isDark: isDark),
+                    ]),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.camera_alt_rounded, size: 18),
+                      label: Text(t.isUrdu ? 'دوبارہ اسکین کریں' : 'Scan Again'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary, foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _Tip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final bool isDark;
+  const _Tip({required this.icon, required this.text, required this.isDark});
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Container(
+      width: 32, height: 32,
+      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+      child: Icon(icon, color: AppColors.primary, size: 16)),
+    const SizedBox(width: 12),
+    Expanded(child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
+        color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568)))),
+  ]);
 }

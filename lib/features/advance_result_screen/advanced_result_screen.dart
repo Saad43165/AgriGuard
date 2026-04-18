@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/translation_service.dart';
+import '../../core/widgets/app_bar.dart';
 import '../../core/widgets/app_themes.dart';
 import 'components/additional_info_card.dart';
 import 'components/image_preview_results.dart';
@@ -242,56 +243,41 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     final source =
         widget.analysisResult['source'] as String? ?? 'AI';
 
-    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF);
-    final surfaceColor =
-        isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    final textColor =
-        isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: surfaceColor,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         elevation: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: textColor),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
+          icon: Icon(Icons.arrow_back_rounded, color: textColor, size: 22),
+          onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
         ),
         title: Text(
           t.get('results.advanced_title'),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: textColor,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: borderColor),
+          child: Divider(height: 1, color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.share_rounded, color: AppColors.primary),
+          AppBarIconButton(
+            icon: Icons.share_rounded,
             tooltip: t.get('share'),
             onPressed: () => _handleShare(t, data),
           ),
-          // Language toggle
-          IconButton(
-            icon: Icon(
-              Icons.translate_rounded,
-              color: t.isUrdu ? AppColors.secondary : AppColors.primary,
-            ),
+          AppBarIconButton(
+            icon: Icons.translate_rounded,
+            color: t.isUrdu ? AppColors.secondary : AppColors.primary,
             tooltip: t.isUrdu
                 ? t.get('buttons.switch_to_english')
                 : t.get('buttons.switch_to_urdu'),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              t.toggleLanguage();
-            },
+            onPressed: () { HapticFeedback.lightImpact(); t.toggleLanguage(); },
           ),
         ],
       ),

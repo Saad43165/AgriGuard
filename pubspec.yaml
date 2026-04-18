@@ -25,9 +25,8 @@ dependencies:
 
   # Image & Media
   image_picker: ^1.1.2
-  flutter_colorpicker: ^1.1.0
+  camera: ^0.11.0+2
   image: ^4.1.4
-  flutter_image_filters: ^0.0.28
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.4.1
   lottie: ^3.3.1
@@ -63,7 +62,6 @@ dependencies:
   crypto: ^3.0.3
   flutter_dotenv: ^5.1.0
   flutter_typeahead: ^5.2.0
-  google_fonts: ^6.2.1
   printing: ^5.13.1   # provides PdfGoogleFonts
   file_picker: ^8.1.2
   csv: ^6.0.0
@@ -79,29 +77,38 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env   # NOTE: Use --dart-define or CI secrets for production; never commit real keys
-    - assets/logo.png
-    - assets/models/plant_species_final_quantized.tflite
-    - assets/models/labels.txt
+    - .env
+    - assets/diag.png
+    - assets/farm.png
+    - assets/adv.png
+    - assets/analytics.png
+    - assets/icon.png
+    - assets/library.png
     - assets/images/
     - assets/images/help/
-    - assets/models/plant_disease_dynamic_quant.tflite 
+    - assets/models/plant_species_final_quantized.tflite
+    - assets/models/labels.txt
+    - assets/models/plant_disease_dynamic_quant.tflite
     - assets/models/disease_labels.txt
     - assets/models/severity_dynamic_quant.tflite
     - assets/models/severity_labels.txt
     - assets/models/model_info.json
+    - assets/new_model/plantcity_52classes.tflite
+    - assets/new_model/plantcity_classes.txt
+    - assets/new_model/plantcity_classes.json
     - assets/data/remediation.json
     - assets/data/disease_causes.json
     - assets/data/mapping.json
-    - assets/data/cities.json
     - assets/translations/
     - assets/data/
 
 
 # Launcher Icon Configuration
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo.png"
-  adaptive_icon_background: "#ffffff" # dark background
-  adaptive_icon_foreground: "assets/logo.png"
+  image_path: "assets/icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#2D6A4F"
+  adaptive_icon_foreground: "assets/icon.png"
+

@@ -108,9 +108,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               )),
               const SizedBox(width: 10),
               Expanded(child: _MethodTile(
-                icon: Icons.cloud_rounded,
+                icon: Icons.auto_awesome_rounded,
                 label: 'Advanced AI',
-                sublabel: 'Cloud • Detailed',
+                sublabel: 'Cloud • Accurate',
                 color: AppColors.secondary,
                 isSelected: _selectedMethod == 'api',
                 isEnabled: widget.isAdvancedAllowed,
@@ -118,6 +118,63 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 onTap: widget.isAdvancedAllowed ? () => setState(() => _selectedMethod = 'api') : null,
               )),
             ],
+          ),
+
+          // Method hint
+          const SizedBox(height: 8),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: _selectedMethod == 'tflite'
+                ? Container(
+                    key: const ValueKey('ondevice_hint'),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: isDark ? 0.15 : 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 14),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            t.get('on_device_hint'),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Container(
+                    key: const ValueKey('advanced_hint'),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: isDark ? 0.15 : 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 14),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            t.get('advanced_hint'),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
 
           const SizedBox(height: 24),

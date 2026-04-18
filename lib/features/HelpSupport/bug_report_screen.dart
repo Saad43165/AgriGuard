@@ -109,7 +109,7 @@ class _BugReportScreenState extends State<BugReportScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0D1117) : const Color(0xFFF0F7FF);
+    final bgColor = isDark ? AppColors.darkBg : AppColors.lightBg;
     final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final textPrimary = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
@@ -120,12 +120,13 @@ class _BugReportScreenState extends State<BugReportScreen> {
       appBar: AppBar(
         backgroundColor: surfaceColor,
         elevation: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: textPrimary),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back_rounded, color: textPrimary, size: 22),
+          onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
         ),
         title: Text('Report a Bug',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: textPrimary)),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: borderColor),

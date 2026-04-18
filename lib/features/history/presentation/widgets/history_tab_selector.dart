@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import '../../../../../core/widgets/app_themes.dart';
 
 class HistoryTabSelector extends StatelessWidget {
   final String selectedTab;
@@ -17,142 +17,74 @@ class HistoryTabSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16),
-      padding: EdgeInsets.all(6),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark
-            ? Color(0xFF1E293B).withValues(alpha: 0.5)
-            : Colors.white.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _buildTab(
-              context,
-              'onDevice',
-              'On-Device',
-              Icons.phone_android_rounded,
-              onDeviceCount,
-              Colors.blue,
-            ),
-          ),
-          SizedBox(width: 6),
-          Expanded(
-            child: _buildTab(
-              context,
-              'advanced',
-              'Advanced AI',
-              Icons.auto_awesome_rounded,
-              advancedCount,
-              Colors.purple,
-            ),
-          ),
+          Expanded(child: _buildTab(context, 'onDevice', 'On-Device', Icons.phone_android_rounded, onDeviceCount, isDark)),
+          const SizedBox(width: 4),
+          Expanded(child: _buildTab(context, 'advanced', 'Advanced AI', Icons.auto_awesome_rounded, advancedCount, isDark)),
         ],
       ),
     );
   }
 
-  Widget _buildTab(
-      BuildContext context,
-      String value,
-      String label,
-      IconData icon,
-      int count,
-      Color color,
-      ) {
+  Widget _buildTab(BuildContext context, String value, String label, IconData icon, int count, bool isDark) {
     final isSelected = selectedTab == value;
-    final theme = Theme.of(context);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onTabChanged(value),
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-              colors: [
-                color.withValues(alpha: 0.2),
-                color.withValues(alpha: 0.1),
-              ],
-            )
-                : null,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? color.withValues(alpha: 0.3)
-                  : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected
-                    ? color
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+    return GestureDetector(
+      onTap: () => onTabChanged(value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: isSelected ? Colors.white : captionColor),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? Colors.white : captionColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(width: 8),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected
-                            ? color
-                            : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (isSelected) ...[
-                      SizedBox(height: 2),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '$count',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.white.withValues(alpha: 0.25) : AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppColors.primary,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

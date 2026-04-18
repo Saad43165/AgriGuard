@@ -4,6 +4,8 @@ import '../../../../../core/widgets/app_themes.dart';
 import '../../../../../core/services/translation_service.dart';
 import '../models/diagnosis_result.dart';
 
+/// Botanical-style diagnosis card — clean white card, large plant name,
+/// green subtitle, pill chips for severity/confidence.
 class DiagnosisCard extends StatelessWidget {
   final DiagnosisResult diagnosisResult;
   const DiagnosisCard({super.key, required this.diagnosisResult});
@@ -17,216 +19,177 @@ class DiagnosisCard extends StatelessWidget {
     final textPrimary = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final textSub = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
+    final severityColor = _severityColor(diagnosisResult.severity);
+    final confidenceValue = double.tryParse(diagnosisResult.confidence) ?? 0.0;
+    final isHealthy = diagnosisResult.isHealthy;
+
     return Container(
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 12, offset: const Offset(0, 3),
-          ),
-        ],
+        border: Border.all(color: borderColor),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.biotech_rounded, color: AppColors.primary, size: 18),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Diagnosis',
-                  style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w800,
-                    color: textPrimary, letterSpacing: -0.3,
-                  ),
-                ),
-              ],
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Plant name — large bold like reference app
+          Text(
+            t.translatePlant(diagnosisResult.plantName),
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: textPrimary,
+              letterSpacing: -0.5,
+              height: 1.1,
             ),
+          ),
+          const SizedBox(height: 4),
 
-            const SizedBox(height: 16),
-            Divider(color: borderColor, height: 1),
-            const SizedBox(height: 16),
-
-            // Plant name row
-            _InfoRow(
-              icon: Icons.eco_rounded,
-              iconColor: AppColors.success,
-              label: t.get('plant_name'),
-              value: t.translatePlant(diagnosisResult.plantName),
-              isDark: isDark,
-              textPrimary: textPrimary,
-              textSub: textSub,
-            ),
-
-            const SizedBox(height: 14),
-
-            // Disease row
-            _InfoRow(
-              icon: diagnosisResult.isHealthy ? Icons.check_circle_rounded : Icons.warning_rounded,
-              iconColor: diagnosisResult.isHealthy ? AppColors.success : AppColors.warning,
-              label: 'Status',
-              value: t.translateDisease(diagnosisResult.disease),
-              valueColor: diagnosisResult.isHealthy ? AppColors.success : AppColors.warning,
-              isDark: isDark,
-              textPrimary: textPrimary,
-              textSub: textSub,
-            ),
-
-            const SizedBox(height: 14),
-
-            // Severity + confidence row
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: _severityColor(diagnosisResult.severity).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.speed_rounded, color: _severityColor(diagnosisResult.severity), size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Severity', style: TextStyle(fontSize: 11, color: textSub, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _severityColor(diagnosisResult.severity),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              t.translateSeverity(diagnosisResult.severity),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${diagnosisResult.confidence}% confidence',
-                            style: TextStyle(fontSize: 12, color: textSub, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            if (diagnosisResult.description != null && diagnosisResult.description!.isNotEmpty) ...[
-              const SizedBox(height: 14),
+          // Disease — green if healthy, red if diseased
+          Row(
+            children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 8, height: 8,
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkBg : AppColors.lightBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: borderColor, width: 1),
+                  color: isHealthy ? AppColors.primary : severityColor,
+                  shape: BoxShape.circle,
                 ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
                 child: Text(
-                  diagnosisResult.description!,
-                  style: TextStyle(fontSize: 13, color: textSub, height: 1.5),
+                  t.translateDisease(diagnosisResult.disease),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isHealthy ? AppColors.primary : severityColor,
+                  ),
                 ),
               ),
             ],
+          ),
 
-            if (diagnosisResult.scientificName != null) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(Icons.science_rounded, size: 14, color: textSub),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      diagnosisResult.scientificName!,
-                      style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: textSub),
-                    ),
-                  ),
-                ],
+          const SizedBox(height: 16),
+
+          // Info chips — pill style like reference app
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // Severity chip
+              _InfoChip(
+                icon: isHealthy ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
+                label: t.translateSeverity(diagnosisResult.severity),
+                color: severityColor,
+                isDark: isDark,
               ),
+              // Confidence chip
+              _InfoChip(
+                icon: Icons.analytics_outlined,
+                label: '${confidenceValue.toStringAsFixed(0)}% ${t.get('ai_confidence')}',
+                color: _confidenceColor(confidenceValue),
+                isDark: isDark,
+              ),
+              // Scientific name chip if available
+              if (diagnosisResult.scientificName != null)
+                _InfoChip(
+                  icon: Icons.science_outlined,
+                  label: diagnosisResult.scientificName!,
+                  color: textSub,
+                  isDark: isDark,
+                  italic: true,
+                ),
             ],
+          ),
+
+          // Confidence bar
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (confidenceValue / 100).clamp(0.0, 1.0),
+              minHeight: 4,
+              backgroundColor: isDark ? AppColors.darkBorder : const Color(0xFFEEEEEE),
+              valueColor: AlwaysStoppedAnimation<Color>(_confidenceColor(confidenceValue)),
+            ),
+          ),
+
+          // Description
+          if (diagnosisResult.description != null &&
+              diagnosisResult.description!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              diagnosisResult.description!,
+              style: TextStyle(fontSize: 13, color: textSub, height: 1.5),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Color _severityColor(String s) {
     switch (s.toLowerCase()) {
-      case 'low': case 'mild':     return AppColors.info;
+      case 'low': case 'mild': return AppColors.secondary;
       case 'medium': case 'moderate': return AppColors.warning;
-      case 'high': case 'severe':  return AppColors.error;
-      case 'critical':             return const Color(0xFFDC2626);
-      case 'none': case 'healthy': return AppColors.success;
-      default:                     return AppColors.lightCaption;
+      case 'high': case 'severe': return AppColors.error;
+      case 'critical': return const Color(0xFFDC2626);
+      case 'none': case 'healthy': return AppColors.primary;
+      default: return AppColors.lightCaption;
     }
+  }
+
+  Color _confidenceColor(double v) {
+    if (v >= 70) return AppColors.primary;
+    if (v >= 45) return AppColors.warning;
+    return AppColors.error;
   }
 }
 
-class _InfoRow extends StatelessWidget {
+class _InfoChip extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final String label;
-  final String value;
-  final Color? valueColor;
+  final Color color;
   final bool isDark;
-  final Color textPrimary;
-  final Color textSub;
+  final bool italic;
 
-  const _InfoRow({
-    required this.icon, required this.iconColor,
-    required this.label, required this.value,
-    this.valueColor, required this.isDark,
-    required this.textPrimary, required this.textSub,
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isDark,
+    this.italic = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(7),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+    final bg = isDark ? AppColors.darkCard : Colors.white;
+    final border = isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color,
+              fontStyle: italic ? FontStyle.italic : FontStyle.normal,
+            ),
           ),
-          child: Icon(icon, color: iconColor, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 11, color: textSub, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w700,
-                  color: valueColor ?? textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

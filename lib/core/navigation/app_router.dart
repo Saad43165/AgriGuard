@@ -19,6 +19,8 @@ import '../../features/HelpSupport/bug_report_screen.dart';
 import '../../features/analytics/analytics_screen.dart';
 import '../../features/farm_diary/farm_diary_screen.dart';
 import '../../features/crop_calendar/crop_calendar_screen.dart';
+import '../../features/disease_library/disease_library_screen.dart';
+import '../../features/capture/presentations/capture_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -70,36 +72,44 @@ class AppRouter {
         }
         return buildLightRoute(const ForgotPasswordScreen());
 
-    // MAIN NAVIGATION ROUTES - All go to MainNavigationScreen with different tabs
+    // MAIN NAVIGATION ROUTES — always clear stack to prevent back-stack buildup
       case AppRoutes.home:
-        return buildLightRoute(
-          MainNavigationScreen(
-            initialIndex: 0,
-            userData: args ?? {},
-          ),
+        return PageRouteBuilder(
+          settings: settings,
+          pageBuilder: (_, __, ___) => MainNavigationScreen(initialIndex: 0, userData: args ?? {}),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         );
 
       case AppRoutes.scan:
-        return buildLightRoute(
-          MainNavigationScreen(
-            initialIndex: 1,
-            userData: args ?? {},
+        final startAdvanced = args?['startAdvanced'] as bool? ?? false;
+        final plantHint = args?['plantHint'] as String?;
+        if (startAdvanced || plantHint != null) {
+          return buildLightRoute(CaptureScreen(
+            startAdvanced: startAdvanced,
+            plantHint: plantHint,
+          ));
+        }
+        return PageRouteBuilder(
+          settings: settings,
+          pageBuilder: (_, __, ___) => MainNavigationScreen(
+            initialIndex: 0,
+            userData: {...(args ?? {}), 'openCamera': true},
           ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         );
 
       case AppRoutes.profile:
-        return buildLightRoute(
-          MainNavigationScreen(
-            initialIndex: 2,
-            userData: args ?? {},
-          ),
+        return PageRouteBuilder(
+          settings: settings,
+          pageBuilder: (_, __, ___) => MainNavigationScreen(initialIndex: 3, userData: args ?? {}),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         );
 
     // SEPARATE SCREENS (Not part of bottom navigation)
       case AppRoutes.history:
-        if (isGuest) {
-          return buildLightRoute(const HelpAndSupportScreen());
-        }
         return buildLightRoute(const HistoryScreen());
 
       case AppRoutes.results:
@@ -126,6 +136,9 @@ class AppRouter {
 
       case AppRoutes.cropCalendar:
         return buildLightRoute(const CropCalendarScreen());
+
+      case AppRoutes.diseaseLibrary:
+        return buildLightRoute(const DiseaseLibraryScreen());
 
       default:
         return buildLightRoute(
