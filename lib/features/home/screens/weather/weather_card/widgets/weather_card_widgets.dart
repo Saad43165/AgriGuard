@@ -185,9 +185,9 @@ class WeatherCardWidgets {
         children: [
           _buildMetric(Icons.water_drop_rounded, '${weatherData.humidity}%'),
           _buildDivider(),
-          _buildMetric(Icons.air_rounded, '${weatherData.windSpeed.toStringAsFixed(0)}'),
+          _buildMetric(Icons.air_rounded, weatherData.windSpeed.toStringAsFixed(0)),
           _buildDivider(),
-          _buildMetric(Icons.wb_sunny_rounded, '${weatherData.uvIndex.toStringAsFixed(1)}'),
+          _buildMetric(Icons.wb_sunny_rounded, weatherData.uvIndex.toStringAsFixed(1)),
         ],
       ),
     );

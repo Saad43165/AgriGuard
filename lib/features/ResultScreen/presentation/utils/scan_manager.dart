@@ -4,7 +4,7 @@ import '../../../../core/services/scan_service.dart';
 
 /// Manages scan operations including saving, retrieving, and validating scans
 class ScanManager {
-  final ScanService _scanService = ScanService();
+  final dynamic _scanService = ScanService();
 
   /// Auto-save scan with duplicate detection
   Future<bool> autoSaveScan(Map<String, dynamic> scanData) async {

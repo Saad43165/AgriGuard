@@ -99,8 +99,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             icon: Icons.login_rounded,
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) Navigator.pushNamedAndRemoveUntil(
+              if (mounted) {
+                Navigator.pushNamedAndRemoveUntil(
                   context, AppRoutes.login, (_) => false);
+              }
             },
           ),
         ],

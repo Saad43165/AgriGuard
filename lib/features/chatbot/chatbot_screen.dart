@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/translation_service.dart';
-import '../../core/widgets/app_bar.dart';
 import '../../core/widgets/app_themes.dart';
 
 class ChatMessage {

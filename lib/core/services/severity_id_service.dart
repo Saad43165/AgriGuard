@@ -380,8 +380,9 @@ extension ReshapeList on List<double> {
     if (length != rows * cols) throw ArgumentError('List length does not match shape');
     final result = List.generate(rows, (_) => List<double>.filled(cols, 0.0));
     for (var i = 0; i < rows; i++)
-      for (var j = 0; j < cols; j++)
+      for (var j = 0; j < cols; j++) {
         result[i][j] = this[i * cols + j];
+      }
     return result;
   }
 }

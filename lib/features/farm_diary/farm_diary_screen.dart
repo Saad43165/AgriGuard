@@ -253,7 +253,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen> {
               value: '${_crops.length}', color: AppColors.primary, isDark: isDark),
           _statDivider(isDark),
           _statItem(icon: Icons.straighten_rounded, label: t.get('total_area'),
-              value: '${_totalArea.toStringAsFixed(1)}', color: AppColors.info, isDark: isDark),
+              value: _totalArea.toStringAsFixed(1), color: AppColors.info, isDark: isDark),
           _statDivider(isDark),
           _statItem(icon: Icons.check_circle_outline_rounded, label: t.get('healthy_crops'),
               value: '$_healthyCrops', color: AppColors.success, isDark: isDark),

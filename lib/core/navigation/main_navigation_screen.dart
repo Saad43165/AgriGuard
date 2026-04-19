@@ -7,7 +7,6 @@ import '../../features/Profile/presentation/profile_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../widgets/connectivity_banner.dart';
-import '../widgets/app_themes.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;

@@ -401,7 +401,7 @@ class _GuideStepCompactState extends State<GuideStepCompact>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

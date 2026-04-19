@@ -68,8 +68,9 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       final f = File(imagePath);
       final tag = _options[_selectedIndex].tag;
       Map<String, dynamic> result;
-      if (tag == 'HuggingFace') result = await _searchService.analyzeWithHuggingFace(f);
-      else if (tag == 'Plant.id') result = await _searchService.analyzeWithPlantId(f);
+      if (tag == 'HuggingFace') {
+        result = await _searchService.analyzeWithHuggingFace(f);
+      } else if (tag == 'Plant.id') result = await _searchService.analyzeWithPlantId(f);
       else result = await _searchService.analyzePlant(f);
       if (!mounted) return;
       setState(() => _isAnalyzing = false);

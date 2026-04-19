@@ -65,8 +65,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     super.didChangeDependencies();
     if (!_hasLoaded) {
       _hasLoaded = true;
-      if (!_guestService.isGuestMode) _loadAll();
-      else setState(() => _isLoading = false);
+      if (!_guestService.isGuestMode) {
+        _loadAll();
+      } else {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -188,7 +191,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       int h = 0, d = 0;
       for (final s in all) {
         final diag = (s['diagnosis']?.toString() ?? s['diseaseName']?.toString() ?? '').toLowerCase();
-        if (diag.contains('healthy') || diag.isEmpty) h++; else d++;
+        if (diag.contains('healthy') || diag.isEmpty) {
+          h++;
+        } else {
+          d++;
+        }
       }
       _healthyScans = h; _diseasedScans = d;
     } catch (e) { debugPrint('Stats load error: $e'); }

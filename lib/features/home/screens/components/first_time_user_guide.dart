@@ -134,8 +134,7 @@ class _FirstTimeUserGuideState extends State<FirstTimeUserGuide>
               ],
             ),
           ),
-        ),
-      );
+    );
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -225,50 +224,6 @@ class _FirstTimeUserGuideState extends State<FirstTimeUserGuide>
       ),
     );
   }
+ }
 
-  Widget _buildProgress() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.bar_chart_rounded, size: 18, color: AppColors.primary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Row(
-              children: List.generate(3, (i) {
-                return Expanded(
-                  child: Container(
-                    margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: i <= _currentStep ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '${_currentStep + 1}/3',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+  

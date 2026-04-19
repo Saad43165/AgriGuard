@@ -51,7 +51,7 @@ class DataParsers {
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     }).hashCode.abs();
 
-    return '${prefix}${hash}_${DateTime.now().millisecondsSinceEpoch}';
+    return '$prefix${hash}_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   static bool isDuplicateError(Object error) {

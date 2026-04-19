@@ -80,10 +80,6 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   String _generateScanId() {
     final dataHash = jsonEncode(widget.analysisResult).hashCode.abs();

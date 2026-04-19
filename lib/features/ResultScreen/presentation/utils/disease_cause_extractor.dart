@@ -333,8 +333,9 @@ class DiseaseCauseExtractor {
     final lowerDisease = diseaseName!.toLowerCase();
     String? causeType;
 
-    if (lowerDisease.contains('spot')) causeType = 'bacterial_spot';
-    else if (lowerDisease.contains('blight')) causeType = 'blight';
+    if (lowerDisease.contains('spot')) {
+      causeType = 'bacterial_spot';
+    } else if (lowerDisease.contains('blight')) causeType = 'blight';
     else if (lowerDisease.contains('rust')) causeType = 'rust_disease';
     else if (lowerDisease.contains('mildew')) causeType = 'powdery_mildew';
     else if (lowerDisease.contains('virus') || lowerDisease.contains('curl')) causeType = 'viral';

@@ -31,10 +31,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
       _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
       _hapticsEnabled = prefs.getBool('hapticsEnabled') ?? true;
     });
+    }
   }
 
   Future<void> _save() async {

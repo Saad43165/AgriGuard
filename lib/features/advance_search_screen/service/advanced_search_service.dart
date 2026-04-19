@@ -123,7 +123,7 @@ class AdvancedSearchService {
     // Build common key shape: Plant___Disease_with_underscores
     final p = plantName.replaceAll(' ', '_').trim();
     final d = diseaseName.replaceAll(' ', '_').trim();
-    return '${p}___${d}';
+    return '${p}___$d';
   }
 
   String _lookupCause(String canonicalKey, {required String diseaseName}) {

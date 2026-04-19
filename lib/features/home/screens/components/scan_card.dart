@@ -52,8 +52,9 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
     if (ts == null) return '';
     try {
       DateTime? dt;
-      if (ts is int)            dt = DateTime.fromMillisecondsSinceEpoch(ts);
-      else if (ts is Timestamp) dt = ts.toDate();
+      if (ts is int) {
+        dt = DateTime.fromMillisecondsSinceEpoch(ts);
+      } else if (ts is Timestamp) dt = ts.toDate();
       else if (ts is DateTime)  dt = ts;
       else if (ts is String)    dt = DateTime.tryParse(ts);
       return dt != null ? DateFormat('MMM d').format(dt) : '';

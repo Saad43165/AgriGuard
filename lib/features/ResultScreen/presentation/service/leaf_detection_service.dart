@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:flutter/foundation.dart';
 import '../models/leaf_analysis_result.dart';

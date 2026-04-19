@@ -396,8 +396,9 @@ class PlantIdService {
       if (isUnknown) debugPrint('\n   Reason: $reasoning');
 
       String confidenceLevel = 'Low';
-      if (topConfidence >= _highConfidenceThreshold)  confidenceLevel = 'High';
-      else if (topConfidence >= _baseConfidenceThreshold) confidenceLevel = 'Medium';
+      if (topConfidence >= _highConfidenceThreshold) {
+        confidenceLevel = 'High';
+      } else if (topConfidence >= _baseConfidenceThreshold) confidenceLevel = 'Medium';
 
       return {
         'success': true,
