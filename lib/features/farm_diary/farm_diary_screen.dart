@@ -928,7 +928,7 @@ class _CropInfoSheetState extends State<_CropInfoSheet> {
       final data = await CropInfoService.getCropInfo(widget.cropName, widget.plantType);
       if (mounted) setState(() { _info = data; _isLoading = false; });
     } catch (e) {
-      if (mounted) setState(() { _error = t.isUrdu ? 'معلومات لوڈ نہیں ہوئیں' : 'Failed to load info'; _isLoading = false; });
+      if (mounted) setState(() { _error = 'Failed to load info'; _isLoading = false; });
     }
   }
 
