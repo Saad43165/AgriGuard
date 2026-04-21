@@ -29,6 +29,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     _Option('AI Advisor', 'Get expert farming advice & treatment', CupertinoIcons.chat_bubble_text, 'Groq', '2–4s'),
   ];
 
+  List<_Option> _localizedOptions(TranslationService t) => t.isUrdu ? [
+    _Option('ڈیزیز اسکینر', 'تصویر سے پودوں کی بیماریاں شناخت کرتا ہے', CupertinoIcons.leaf_arrow_circlepath, 'HuggingFace', '3–6s'),
+    _Option('پلانٹ ایکسپرٹ', 'گہری پودوں اور بیماریوں کی شناخت', CupertinoIcons.tree, 'Plant.id', '3–5s'),
+    _Option('AI مشیر', 'ماہرانہ زرعی مشورہ اور علاج', CupertinoIcons.chat_bubble_text, 'Groq', '2–4s'),
+  ] : _options;
+
   @override
   void initState() {
     super.initState();
@@ -38,18 +44,29 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   Future<void> _checkApis() async {
     try {
       final s = await _searchService.testAllApis();
-      if (mounted) setState(() { _apiStatus = s; _isCheckingApis = false; });
+      if (mounted) {
+        setState(() {
+          _apiStatus = s;
+          _isCheckingApis = false;
+          // If currently selected option is offline, fall back to first available
+          if (!_available(_selectedIndex)) {
+            for (int i = 0; i < _options.length; i++) {
+              if (_available(i)) { _selectedIndex = i; break; }
+            }
+          }
+        });
+      }
     } catch (_) {
       if (mounted) setState(() { _apiStatus = {}; _isCheckingApis = false; });
     }
   }
 
   bool _available(int i) {
-    if (_apiStatus == null) return true;
+    // Index 0 (Disease Scanner / PlantNet) is always available — no key needed
+    if (i == 0) return true;
+    if (_apiStatus == null) return true; // still checking — optimistic
     final keys = ['huggingface', 'plantId', 'groq'];
     final v = _apiStatus![keys[i]];
-    // PlantNet (index 0) works without a token — always available
-    if (i == 0) return true;
     return v is Map ? (v['available'] == true) : false;
   }
 
@@ -57,10 +74,16 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     if (_isAnalyzing) return;
     final imagePath = widget.originalScanData['imagePath'] as String?;
     if (imagePath == null || !File(imagePath).existsSync()) {
-      _err('Image not found. Please go back and retake the photo.'); return;
+      _err(t.isUrdu
+          ? 'تصویر نہیں ملی۔ براہ کرم واپس جا کر دوبارہ تصویر لیں۔'
+          : 'Image not found. Please go back and retake the photo.');
+      return;
     }
     if (!_available(_selectedIndex)) {
-      _err('This service is offline. Please select another option.'); return;
+      _err(t.isUrdu
+          ? 'یہ سروس آف لائن ہے۔ براہ کرم دوسرا آپشن منتخب کریں۔'
+          : 'This service is offline. Please select another option.');
+      return;
     }
     HapticFeedback.mediumImpact();
     setState(() => _isAnalyzing = true);
@@ -70,10 +93,14 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       Map<String, dynamic> result;
       if (tag == 'HuggingFace') {
         result = await _searchService.analyzeWithHuggingFace(f);
-      } else if (tag == 'Plant.id') result = await _searchService.analyzeWithPlantId(f);
-      else result = await _searchService.analyzePlant(f);
+      } else if (tag == 'Plant.id') {
+        result = await _searchService.analyzeWithPlantId(f);
+      } else {
+        result = await _searchService.analyzePlant(f);
+      }
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
+
       if (result['success'] == true) {
         HapticFeedback.lightImpact();
         await Navigator.push(context, MaterialPageRoute(
@@ -82,13 +109,24 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
             originalScanData: widget.originalScanData,
           ),
         ));
+      } else if (result['isNonLeaf'] == true) {
+        // Non-leaf image — show friendly message and pop back
+        _err(t.isUrdu
+            ? 'یہ پودے کے پتے کی تصویر نہیں ہے۔ براہ کرم پتے کی واضح تصویر لیں۔'
+            : 'This doesn\'t appear to be a plant leaf. Please take a clear photo of a leaf.');
       } else {
-        _err(result['message'] ?? result['error'] ?? 'Analysis failed.');
+        _err(result['message'] ?? result['error'] ?? (t.isUrdu ? 'تجزیہ ناکام ہوا۔' : 'Analysis failed.'));
       }
     } catch (e) {
-      if (mounted) { setState(() => _isAnalyzing = false); _err('Error: $e'); }
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+        _err(t.isUrdu ? 'خرابی: $e' : 'Error: $e');
+      }
     }
   }
+
+  // cached translation reference for use in _start()
+  TranslationService get t => TranslationService();
 
   void _err(String msg) {
     HapticFeedback.heavyImpact();
@@ -180,7 +218,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                     Expanded(child: Column(children: List.generate(_options.length, (i) =>
                       Padding(padding: const EdgeInsets.only(bottom: 10),
                         child: _OptionCard(
-                          option: _options[i],
+                          option: _localizedOptions(t)[i],
                           isSelected: _selectedIndex == i,
                           isAvailable: _available(i),
                           isDark: isDark,
@@ -208,7 +246,9 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                           : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                               const Icon(CupertinoIcons.sparkles, size: 18),
                               const SizedBox(width: 8),
-                              Text('Analyze with ${_options[_selectedIndex].title}')]),
+                              Text(t.isUrdu
+                                  ? '${_options[_selectedIndex].title} سے تجزیہ کریں'
+                                  : 'Analyze with ${_options[_selectedIndex].title}')]),
                       )),
                   ],
                 ]),
@@ -228,7 +268,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
                   const SizedBox(height: 16),
-                  Text('Analyzing with ${_options[_selectedIndex].title}…',
+                  Text('${t.isUrdu ? '' : 'Analyzing with '}${_localizedOptions(t)[_selectedIndex].title}${t.isUrdu ? ' سے تجزیہ ہو رہا ہے…' : '…'}',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
                     textAlign: TextAlign.center),
                   const SizedBox(height: 6),

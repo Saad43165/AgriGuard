@@ -16,7 +16,7 @@ import 'components/image_preview_results.dart';
 import 'components/result_action_button.dart' show ResultActionButton;
 import 'components/section_card.dart';
 import '../../core/repositories/scan_repository.dart';
-import '../auth/Login_Screen/services/guest_service.dart';
+import '../auth/login/services/guest_service.dart';
 
 class AdvancedResultsScreen extends StatefulWidget {
   final Map<String, dynamic> analysisResult;
@@ -209,22 +209,33 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
       TranslationService t, Map<String, dynamic> data) async {
     HapticFeedback.lightImpact();
     final source = widget.analysisResult['source'] as String? ?? 'AI';
-    final plant = data['plantName'] as String? ?? data['plant'] as String? ?? '-';
-    final disease =
-        data['diseaseName'] as String? ?? data['disease'] as String? ?? '-';
-    final severity = data['severity'] as String? ?? '-';
+    final plantRaw = data['plantName'] as String? ?? data['plant'] as String? ?? '-';
+    final diseaseRaw = data['diseaseName'] as String? ?? data['disease'] as String? ?? '-';
+    final severityRaw = data['severity'] as String? ?? '-';
     final confidence = data['confidence'];
     final confText = confidence != null ? '$confidence%' : '-';
 
-    final text = '''
-🌿 AgriGuard ${t.get('results.advanced_title')}
+    final plant = t.translatePlant(plantRaw);
+    final disease = diseaseRaw.toLowerCase() == 'healthy'
+        ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+        : t.translateDisease(diseaseRaw);
+    final severity = t.translateSeverity(severityRaw);
 
-🔬 ${t.get('source.analyzed_by')}: $source
-🌱 ${t.get('results.plant_name')}: $plant
-🦠 ${t.get('results.disease')}: $disease
-⚠️ ${t.get('results.severity')}: $severity
-📊 ${t.get('results.confidence')}: $confText
-''';
+    final text = t.isUrdu
+        ? '''🌿 AgriGuard ایڈوانسڈ نتائج
+
+🔬 ذریعہ: $source
+🌱 پودا: $plant
+🦠 بیماری: $disease
+⚠️ شدت: $severity
+📊 اعتماد: $confText'''
+        : '''🌿 AgriGuard Advanced Results
+
+🔬 Source: $source
+🌱 Plant: $plant
+🦠 Disease: $disease
+⚠️ Severity: $severity
+📊 Confidence: $confText''';
 
     await Share.share(text.trim());
   }
@@ -307,7 +318,9 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
               title: t.get('results.symptoms_detected'),
               icon: Icons.visibility_outlined,
               color: AppColors.info,
-              items: (data['symptoms'] as List<dynamic>?)?.cast<String>() ?? [],
+              items: t.translateList(
+                (data['symptoms'] as List<dynamic>?)?.cast<String>() ?? [],
+              ),
               isExpanded: _symptomsExpanded,
               onToggle: () =>
                   setState(() => _symptomsExpanded = !_symptomsExpanded),
@@ -320,8 +333,9 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
               title: t.get('results.treatment_recommendations'),
               icon: Icons.medical_services_outlined,
               color: AppColors.success,
-              items:
-                  (data['remediation'] as List<dynamic>?)?.cast<String>() ?? [],
+              items: t.translateList(
+                (data['remediation'] as List<dynamic>?)?.cast<String>() ?? [],
+              ),
               isExpanded: _treatmentExpanded,
               onToggle: () =>
                   setState(() => _treatmentExpanded = !_treatmentExpanded),
@@ -334,8 +348,9 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
               title: t.get('results.preventive_measures'),
               icon: Icons.shield_outlined,
               color: AppColors.warning,
-              items:
-                  (data['precautions'] as List<dynamic>?)?.cast<String>() ?? [],
+              items: t.translateList(
+                (data['precautions'] as List<dynamic>?)?.cast<String>() ?? [],
+              ),
               isExpanded: _preventiveExpanded,
               onToggle: () =>
                   setState(() => _preventiveExpanded = !_preventiveExpanded),
@@ -419,11 +434,18 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
 
     final severity =
         data['severity'] as String? ?? data['severityLevel'] as String? ?? 'Unknown';
-    final plantName =
+    final plantNameRaw =
         data['plantName'] as String? ?? data['plant'] as String? ?? '-';
-    final diseaseName =
+    final diseaseNameRaw =
         data['diseaseName'] as String? ?? data['disease'] as String? ?? '-';
     final confidence = data['confidence'];
+
+    // Apply translations
+    final plantName = t.translatePlant(plantNameRaw);
+    final diseaseName = diseaseNameRaw.toLowerCase() == 'healthy'
+        ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+        : t.translateDisease(diseaseNameRaw);
+    final severityDisplay = t.translateSeverity(severity);
 
     String confText = '-';
     if (confidence is int) {
@@ -503,7 +525,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
               Expanded(
                 child: _buildInfoChip(
                   label: t.get('results.severity'),
-                  value: severity,
+                  value: severityDisplay,
                   color: severityColor,
                   icon: Icons.warning_amber_rounded,
                   isDark: isDark,

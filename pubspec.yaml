@@ -61,7 +61,6 @@ dependencies:
   package_info_plus: ^8.3.0
   crypto: ^3.0.3
   flutter_dotenv: ^5.1.0
-  flutter_typeahead: ^5.2.0
   printing: ^5.13.1   # provides PdfGoogleFonts
   file_picker: ^8.1.2
   csv: ^6.0.0
@@ -88,8 +87,6 @@ flutter:
     - assets/images/help/
     - assets/models/plant_species_final_quantized.tflite
     - assets/models/labels.txt
-    - assets/models/plant_disease_dynamic_quant.tflite
-    - assets/models/disease_labels.txt
     - assets/models/severity_dynamic_quant.tflite
     - assets/models/severity_labels.txt
     - assets/new_model/plantcity_52classes.tflite

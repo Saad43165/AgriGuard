@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import '../../../ResultScreen/presentation/results_screen.dart';
+import '../../../result_screen/presentation/results_screen.dart';
 import '../../../advance_result_screen/advanced_result_screen.dart';
 import 'delete_confirmation_dialoag_content.dart';
 

@@ -13,7 +13,7 @@ import '../../../core/models/scan_model.dart';
 import '../../../core/repositories/scan_repository.dart';
 import '../../../core/widgets/app_themes.dart';
 import '../../../core/constants/app_routes.dart';
-import '../../auth/Login_Screen/services/guest_service.dart';
+import '../../auth/login/services/guest_service.dart';
 import 'components/guest_mode_banner.dart';
 import 'species/species_grid_widget.dart';
 import 'weather/provider/weather_provider.dart';
@@ -110,9 +110,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return {
       'id': scan.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       'diagnosis': scan.diseaseName,
+      'diseaseName': scan.diseaseName,   // ← explicit key for ScanCard
       'severity': scan.severity,
       'confidence': scan.confidence.toString(),
       'treatment': scan.treatments.isNotEmpty ? scan.treatments.join('. ') : '',
+      'treatments': scan.treatments,
       'imagePath': scan.imagePath,
       'imageUrl': scan.imageUrl,
       'imageBase64': scan.imageBase64,
@@ -127,7 +129,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       'precautions': scan.precautions,
       'rawData': scan.rawData,
       'advancedData': scan.advancedData,
-      'diseaseName': scan.diseaseName,
       'createdAt': scan.createdAt,
     };
   }
@@ -536,6 +537,15 @@ class _ScanCard extends StatelessWidget {
     final isHealthy = diseaseName.toLowerCase().contains('healthy');
     final diseaseColor = isHealthy ? AppColors.primary : AppColors.error;
     final isAdvanced = scan['isAdvanced'] as bool? ?? false;
+    final t = Provider.of<TranslationService>(context, listen: false);
+
+    // Translated display values
+    final displayPlant = t.translatePlant(plantName);
+    final displayDisease = isHealthy
+        ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+        : t.translateDisease(diseaseName);
+    final severity = scan['severity']?.toString() ?? '';
+    final displaySeverity = t.translateSeverity(severity);
 
     final scanDate = scan['scanDate'];
     String dateStr = '';
@@ -543,11 +553,11 @@ class _ScanCard extends StatelessWidget {
       final now = DateTime.now();
       final diff = now.difference(scanDate);
       if (diff.inDays == 0) {
-        dateStr = 'Today';
+        dateStr = t.isUrdu ? 'آج' : 'Today';
       } else if (diff.inDays == 1) {
-        dateStr = 'Yesterday';
+        dateStr = t.isUrdu ? 'کل' : 'Yesterday';
       } else if (diff.inDays < 7) {
-        dateStr = '${diff.inDays}d ago';
+        dateStr = t.isUrdu ? '${diff.inDays} دن پہلے' : '${diff.inDays}d ago';
       } else {
         dateStr = '${scanDate.day}/${scanDate.month}/${scanDate.year}';
       }
@@ -579,7 +589,7 @@ class _ScanCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    plantName,
+                    displayPlant,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -601,7 +611,7 @@ class _ScanCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          diseaseName,
+                          displayDisease,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,

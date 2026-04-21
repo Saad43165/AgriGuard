@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/components/image_section.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/components/loading_indicator.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/service/scan_save_service.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/constants.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/data_parsers.dart';
-import 'package:agriguard_fyp/features/ResultScreen/presentation/utils/disease_cause_extractor.dart';
+import 'package:agriguard_fyp/features/result_screen/presentation/components/image_section.dart';
+import 'package:agriguard_fyp/features/result_screen/presentation/components/loading_indicator.dart';
+import 'package:agriguard_fyp/features/result_screen/presentation/service/scan_save_service.dart';
+import 'package:agriguard_fyp/features/result_screen/presentation/utils/constants.dart';
+import 'package:agriguard_fyp/features/result_screen/presentation/utils/data_parsers.dart';
+import 'package:agriguard_fyp/features/result_screen/presentation/utils/disease_cause_extractor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../auth/Login_Screen/services/guest_service.dart';
+import '../../auth/login/services/guest_service.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/repositories/scan_repository.dart';
 import '../../../../core/services/severity_id_service.dart';
@@ -221,9 +221,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   Future<void> _share() async {
     final t = Provider.of<TranslationService>(context, listen: false);
-    final plant = widget.scanData['plantName']?.toString() ?? 'Unknown Plant';
-    final disease = widget.scanData['diseaseName']?.toString() ?? (t.isUrdu ? 'صحت مند' : 'Healthy');
-    await Share.share('🌱 AgriGuard\nPlant: $plant\nDisease: $disease\nSeverity: $_severity\n\nScanned with AgriGuard');
+    final plant = t.translatePlant(widget.scanData['plantName']?.toString() ?? 'Unknown Plant');
+    final disease = t.translateDisease(widget.scanData['diseaseName']?.toString() ?? (t.isUrdu ? 'صحت مند' : 'Healthy'));
+    final severityLabel = t.translateSeverity(_severity);
+    await Share.share('🌱 AgriGuard\nPlant: $plant\nDisease: $disease\nSeverity: $severityLabel\n\nScanned with AgriGuard');
   }
 
   DiagnosisResult _getDiagnosisResult() => DiagnosisResult.fromScanData({
@@ -337,7 +338,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
                           ),
                           Text(
-                            diagnosisResult.scientificName != null
+                            (diagnosisResult.scientificName != null && diagnosisResult.scientificName!.isNotEmpty)
                                 ? '  •  ${diagnosisResult.scientificName}'
                                 : '  •  ${t.translateDisease(diagnosisResult.disease)}',
                             style: TextStyle(fontSize: 14, color: captionColor),
@@ -363,8 +364,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
                         // Chips
                         Wrap(spacing: 8, runSpacing: 8, children: [
-                          _Chip(icon: '🌿', label: diagnosisResult.isHealthy ? t.isUrdu ? 'صحت مند' : 'Healthy' : _severity, isDark: isDark),
-                          _Chip(icon: '📊', label: '${confidence.toStringAsFixed(0)}% Confidence', isDark: isDark),
+                          _Chip(icon: '🌿', label: diagnosisResult.isHealthy ? (t.isUrdu ? 'صحت مند' : 'Healthy') : t.translateSeverity(_severity), isDark: isDark),
+                          _Chip(icon: '📊', label: '${confidence.toStringAsFixed(0)}% ${t.isUrdu ? 'اعتماد' : 'Confidence'}', isDark: isDark),
                           if (!diagnosisResult.isHealthy)
                             _Chip(icon: '⚠️', label: t.translateDisease(diagnosisResult.disease), isDark: isDark),
                           if (_remediation.isNotEmpty)

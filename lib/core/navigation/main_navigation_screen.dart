@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../features/Navbar/presentation/nav_bar.dart';
+import '../../features/navbar/presentation/nav_bar.dart';
 import '../../features/home/screens/home_screen.dart';
-import '../../features/capture/presentations/capture_screen.dart';
-import '../../features/Profile/presentation/profile_screen.dart';
+import '../../features/capture/presentation/capture_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../widgets/connectivity_banner.dart';

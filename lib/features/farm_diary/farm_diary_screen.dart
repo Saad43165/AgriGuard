@@ -95,7 +95,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed: $e'),
+          content: Text(t.isUrdu ? 'ناکام: $e' : 'Failed: $e'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -158,7 +158,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen> {
           AppBarIconButton(
             icon: Icons.refresh_rounded,
             onPressed: _loadCrops,
-            tooltip: 'Refresh',
+            tooltip: t.isUrdu ? 'تازہ کریں' : 'Refresh',
           ),
         ],
       ),
@@ -443,7 +443,7 @@ class _CropCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(crop['name'] as String? ?? 'Unnamed',
+                          child: Text(crop['name'] as String? ?? (t.isUrdu ? 'بے نام' : 'Unnamed'),
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textColor)),
                         ),
                         Container(
@@ -477,7 +477,7 @@ class _CropCard extends StatelessWidget {
                             ? AppSpecies.allSpecies.firstWhere(
                                 (s) => s.nameEn == plantType,
                                 orElse: () => AppSpecies.allSpecies.first).nameUr
-                            : (plantType ?? 'Unknown'),
+                            : (plantType ?? (t.isUrdu ? 'نامعلوم' : 'Unknown')),
                             style: TextStyle(fontSize: 12, color: captionColor, fontWeight: FontWeight.w600)),
                         const SizedBox(width: 12),
                         Icon(Icons.straighten_rounded, size: 13, color: captionColor),
@@ -730,13 +730,13 @@ class _CropDetailSheetState extends State<_CropDetailSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.crop['name'] as String? ?? 'Unnamed',
+                      Text(widget.crop['name'] as String? ?? (t.isUrdu ? 'بے نام' : 'Unnamed'),
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor)),
                       Text(t.isUrdu
                           ? AppSpecies.allSpecies.firstWhere(
                               (s) => s.nameEn == plantType,
                               orElse: () => AppSpecies.allSpecies.first).nameUr
-                          : (plantType ?? 'Unknown'),
+                          : (plantType ?? (t.isUrdu ? 'نامعلوم' : 'Unknown')),
                           style: TextStyle(fontSize: 13, color: captionColor, fontWeight: FontWeight.w600)),
                     ],
                   ),
@@ -928,7 +928,7 @@ class _CropInfoSheetState extends State<_CropInfoSheet> {
       final data = await CropInfoService.getCropInfo(widget.cropName, widget.plantType);
       if (mounted) setState(() { _info = data; _isLoading = false; });
     } catch (e) {
-      if (mounted) setState(() { _error = 'Failed to load info'; _isLoading = false; });
+      if (mounted) setState(() { _error = t.isUrdu ? 'معلومات لوڈ نہیں ہوئیں' : 'Failed to load info'; _isLoading = false; });
     }
   }
 
@@ -1014,7 +1014,7 @@ class _CropInfoSheetState extends State<_CropInfoSheet> {
                       IconButton(
                         icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
                         onPressed: _fetchInfo,
-                        tooltip: 'Refresh',
+                        tooltip: t.isUrdu ? 'تازہ کریں' : 'Refresh',
                       ),
                     ],
                   ),
@@ -1039,7 +1039,7 @@ class _CropInfoSheetState extends State<_CropInfoSheet> {
                           const SizedBox(height: 12),
                           Text(_error!, style: TextStyle(color: captionColor)),
                           const SizedBox(height: 12),
-                          ElevatedButton(onPressed: _fetchInfo, child: const Text('Retry')),
+                          ElevatedButton(onPressed: _fetchInfo, child: Text(t.isUrdu ? 'دوبارہ کوشش کریں' : 'Retry')),
                         ]))
                       : _buildInfoContent(scrollCtrl, isDark, textColor, captionColor, border),
             ),
@@ -1066,11 +1066,11 @@ class _CropInfoSheetState extends State<_CropInfoSheet> {
 
         // Growing info grid
         _gridCard(isDark, border, [
-          ('🌱', 'Season', info['growingSeason']?.toString() ?? '-'),
-          ('💧', 'Water', info['waterNeeds']?.toString() ?? '-'),
-          ('🌍', 'Soil', info['soilType']?.toString() ?? '-'),
-          ('⏱️', 'Harvest', info['harvestTime']?.toString() ?? '-'),
-          ('📦', 'Yield/Acre', info['yieldPerAcre']?.toString() ?? '-'),
+          ('🌱', t.isUrdu ? 'موسم' : 'Season', info['growingSeason']?.toString() ?? '-'),
+          ('💧', t.isUrdu ? 'پانی' : 'Water', info['waterNeeds']?.toString() ?? '-'),
+          ('🌍', t.isUrdu ? 'مٹی' : 'Soil', info['soilType']?.toString() ?? '-'),
+          ('⏱️', t.isUrdu ? 'کٹائی' : 'Harvest', info['harvestTime']?.toString() ?? '-'),
+          ('📦', t.isUrdu ? 'پیداوار/ایکڑ' : 'Yield/Acre', info['yieldPerAcre']?.toString() ?? '-'),
         ], textColor, captionColor),
         const SizedBox(height: 12),
 

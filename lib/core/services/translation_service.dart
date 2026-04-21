@@ -117,6 +117,33 @@ class TranslationService extends ChangeNotifier {
     return _severityTranslations[normalized] ?? severity;
   }
 
+  // Translate a treatment/symptom/precaution string
+  // Uses the treatments map in ur.json for common strings
+  String translateTreatmentItem(String item) {
+    if (!_isUrdu) return item;
+    if (item.isEmpty) return item;
+    // Try exact match from asset translations map
+    final assetVal = _getFromAsset('treatments.$item');
+    if (assetVal != null) return assetVal;
+    // Try partial key match — find a key that the item starts with
+    final urMap = _urAsset['treatments'];
+    if (urMap is Map<String, dynamic>) {
+      for (final entry in urMap.entries) {
+        if (item.toLowerCase().contains(entry.key.toLowerCase()) ||
+            entry.key.toLowerCase().contains(item.toLowerCase())) {
+          return entry.value.toString();
+        }
+      }
+    }
+    return item; // return original if no translation found
+  }
+
+  // Translate a list of treatment/symptom items
+  List<String> translateList(List<String> items) {
+    if (!_isUrdu) return items;
+    return items.map(translateTreatmentItem).toList();
+  }
+
   // ==================== ENGLISH TRANSLATIONS ====================
   static const Map<String, String> _englishTranslations = {
     // App Basic
@@ -744,36 +771,55 @@ class TranslationService extends ChangeNotifier {
     'banana': {'en': 'Banana', 'ur': 'کیلا'},
     'guava': {'en': 'Guava', 'ur': 'امرود'},
     'soybean': {'en': 'Soybean', 'ur': 'سویابین'},
+    // PlantCity model additions
+    'blueberry': {'en': 'Blueberry', 'ur': 'بلیو بیری'},
+    'raspberry': {'en': 'Raspberry', 'ur': 'رسبری'},
+    'squash': {'en': 'Squash', 'ur': 'کدو'},
+    'walnut': {'en': 'Walnut', 'ur': 'اخروٹ'},
+    'fig': {'en': 'Fig', 'ur': 'انجیر'},
+    'pear': {'en': 'Pear', 'ur': 'ناشپاتی'},
+    'persimmon': {'en': 'Persimmon', 'ur': 'جاپانی پھل'},
+    'loquat': {'en': 'Loquat', 'ur': 'لوکاٹ'},
+    'apricot': {'en': 'Apricot', 'ur': 'خوبانی'},
+    'bean': {'en': 'Bean', 'ur': 'پھلی'},
+    'unknown plant': {'en': 'Unknown Plant', 'ur': 'نامعلوم پودا'},
   };
 
-  // Disease translations — all 38 PlantVillage classes
+  // Disease translations — all PlantVillage + PlantCity classes
   static const Map<String, Map<String, String>> _diseaseTranslations = {
     'healthy': {'en': 'Healthy', 'ur': 'صحت مند'},
+    'normal': {'en': 'Healthy', 'ur': 'صحت مند'},
     // Apple
     'apple scab': {'en': 'Apple Scab', 'ur': 'سیب کا خارش'},
     'black rot': {'en': 'Black Rot', 'ur': 'کالی سڑن'},
     'cedar apple rust': {'en': 'Cedar Apple Rust', 'ur': 'دیودار سیب کا زنگ'},
+    'brown spot': {'en': 'Brown Spot', 'ur': 'بھورا داغ'},
+    'fire blight': {'en': 'Fire Blight', 'ur': 'آگ کا جھلساؤ'},
     // Cherry
     'powdery mildew': {'en': 'Powdery Mildew', 'ur': 'سفید پھپھوندی'},
-    // Corn
+    'shot hole disease': {'en': 'Shot Hole Disease', 'ur': 'گولی کے سوراخ کی بیماری'},
+    'shot hole': {'en': 'Shot Hole', 'ur': 'گولی کا سوراخ'},
+    // Corn / Maize
     'cercospora leaf spot': {'en': 'Cercospora Leaf Spot', 'ur': 'سرکوسپورا پتوں کا داغ'},
     'gray leaf spot': {'en': 'Gray Leaf Spot', 'ur': 'سرمئی پتوں کا داغ'},
     'common rust': {'en': 'Common Rust', 'ur': 'عام زنگ'},
     'northern leaf blight': {'en': 'Northern Leaf Blight', 'ur': 'شمالی پتوں کا جھلساؤ'},
+    'holcus leaf spot': {'en': 'Holcus Leaf Spot', 'ur': 'ہولکس پتوں کا داغ'},
     // Grape
     'esca': {'en': 'Esca', 'ur': 'ایسکا'},
     'black measles': {'en': 'Black Measles', 'ur': 'کالا خسرہ'},
     'leaf blight': {'en': 'Leaf Blight', 'ur': 'پتوں کا جھلساؤ'},
-    // Orange
+    'downy mildew': {'en': 'Downy Mildew', 'ur': 'نیچے کی پھپھوندی'},
+    'anthracnose': {'en': 'Anthracnose', 'ur': 'انتھراکنوز'},
+    // Orange / Citrus
     'haunglongbing': {'en': 'Haunglongbing', 'ur': 'ہوانگلونگبنگ'},
     'citrus greening': {'en': 'Citrus Greening', 'ur': 'سٹرس گریننگ'},
     // Peach & Pepper
     'bacterial spot': {'en': 'Bacterial Spot', 'ur': 'بیکٹیریل داغ'},
-    // Potato
+    // Potato & Tomato
     'early blight': {'en': 'Early Blight', 'ur': 'ابتدائی جھلساؤ'},
     'late blight': {'en': 'Late Blight', 'ur': 'تاخیری جھلساؤ'},
-    // Squash
-    // Strawberry
+    // Strawberry / Tomato
     'leaf scorch': {'en': 'Leaf Scorch', 'ur': 'پتوں کا جھلساؤ'},
     // Tomato
     'leaf mold': {'en': 'Leaf Mold', 'ur': 'پتوں کی سڑن'},
@@ -783,8 +829,17 @@ class TranslationService extends ChangeNotifier {
     'target spot': {'en': 'Target Spot', 'ur': 'ہدف داغ'},
     'tomato yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
     'yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
+    'leaf curl': {'en': 'Leaf Curl', 'ur': 'پتوں کا مڑنا'},
     'tomato mosaic virus': {'en': 'Tomato Mosaic Virus', 'ur': 'ٹماٹر موزیک وائرس'},
     'mosaic virus': {'en': 'Mosaic Virus', 'ur': 'موزیک وائرس'},
+    // Wilt diseases
+    'fusarium wilt': {'en': 'Fusarium Wilt', 'ur': 'فیوزیریم مرجھاؤ'},
+    'verticillium wilt': {'en': 'Verticillium Wilt', 'ur': 'ورٹیسیلیم مرجھاؤ'},
+    // Fig / Walnut / Pear
+    'rust leaf': {'en': 'Rust', 'ur': 'زنگ'},
+    'leaf spot': {'en': 'Leaf Spot', 'ur': 'پتوں کا داغ'},
+    'blotch': {'en': 'Blotch', 'ur': 'دھبہ'},
+    'leaf miner': {'en': 'Leaf Miner', 'ur': 'پتوں کا کیڑا'},
     // Generic
     'rust': {'en': 'Rust', 'ur': 'زنگ'},
     'blight': {'en': 'Blight', 'ur': 'جھلساؤ'},
@@ -793,6 +848,11 @@ class TranslationService extends ChangeNotifier {
     'scorch': {'en': 'Scorch', 'ur': 'جھلساؤ'},
     'rot': {'en': 'Rot', 'ur': 'سڑن'},
     'virus': {'en': 'Virus', 'ur': 'وائرس'},
+    'wilt': {'en': 'Wilt', 'ur': 'مرجھاؤ'},
+    'canker': {'en': 'Canker', 'ur': 'کینکر'},
+    'scab': {'en': 'Scab', 'ur': 'خارش'},
+    'unable to determine': {'en': 'Unable to Determine', 'ur': 'تعین نہیں ہو سکا'},
+    'image not recognized': {'en': 'Image Not Recognized', 'ur': 'تصویر کی شناخت نہیں ہوئی'},
   };
 
   // Severity translations

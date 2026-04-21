@@ -10,13 +10,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/widgets/app_themes.dart';
 import '../../../../core/database/scan_database.dart';
-import '../../auth/Login_Screen/services/guest_service.dart';
-import '../Components/edit_profile_sheet.dart';
-import '../Components/guest_restriction_view.dart';
-import '../Components/logout_confirmation_dialog_content.dart';
-import '../Components/profile_image_helper.dart';
-import '../Components/profile_picture_option_sheet.dart';
+import '../../auth/login/services/guest_service.dart';
+import '../components/edit_profile_sheet.dart';
+import '../components/guest_restriction_view.dart';
+import '../components/logout_confirmation_dialog_content.dart';
+import '../components/profile_image_helper.dart';
+import '../components/profile_hero.dart';
+import '../components/profile_picture_option_sheet.dart';
 import '../utils/profile_image_manager.dart';
+
+// ─── Design constants ────────────────────────────────────────────────────────
+const _kAvatarRadius = 48.0;
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -282,149 +286,56 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildBody(bool isDark) {
     final t = Provider.of<TranslationService>(context, listen: false);
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
-    final surfaceBg = isDark ? AppColors.darkSurface : Colors.white;
+
+    void openEdit() => showEditProfileSheet(
+      context: context,
+      nameController: _nameCtrl,
+      phoneController: _phoneCtrl,
+      locationController: _locationCtrl,
+      farmSizeController: _farmCtrl,
+      onSave: () { _saveProfile(); Navigator.pop(context); },
+    );
 
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
-        // ── Top bar: title only (no settings icon — it's in the App section below) ──
-        SliverAppBar(
-          pinned: true,
-          backgroundColor: surfaceBg,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          title: Text(t.isUrdu ? 'پروفائل' : 'Profile',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor)),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Divider(height: 1, color: border),
-          ),
-        ),
 
-        // ── Avatar + name + stats ────────────────────────────────────────
+        // ── Hero header with cover gradient + floating avatar ─────────────
         SliverToBoxAdapter(
-          child: Container(
-            color: surfaceBg,
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-            child: Column(
-              children: [
-                // Avatar
-                GestureDetector(
-                  onTap: () => showProfilePictureOptionsSheet(
-                    context: context,
-                    profileImageFile: _profileImageFile,
-                    profileImageBase64: _profileImageBase64,
-                    onChangeImage: _pickImage,
-                  ),
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 88, height: 88,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primary, width: 2.5),
-                        ),
-                        padding: const EdgeInsets.all(3),
-                        child: ClipOval(child: _buildAvatarImage()),
-                      ),
-                      Positioned(
-                        bottom: 2, right: 2,
-                        child: Container(
-                          width: 26, height: 26,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: surfaceBg, width: 2),
-                          ),
-                          child: const Icon(CupertinoIcons.camera_fill, size: 12, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Name
-                Text(
-                  _profile['name']?.toString().isNotEmpty == true ? _profile['name'] : 'User',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
-                      color: textColor, letterSpacing: -0.3),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _profile['email'] ?? '',
-                  style: TextStyle(fontSize: 13, color: captionColor),
-                ),
-                if ((_profile['location'] as String?)?.isNotEmpty == true) ...[
-                  const SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(CupertinoIcons.location_fill, size: 11, color: AppColors.primary),
-                    const SizedBox(width: 3),
-                    Text(_profile['location'],
-                        style: const TextStyle(fontSize: 12, color: AppColors.primary,
-                            fontWeight: FontWeight.w600)),
-                  ]),
-                ],
-                const SizedBox(height: 16),
-
-                // Edit profile button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => showEditProfileSheet(
-                      context: context,
-                      nameController: _nameCtrl,
-                      phoneController: _phoneCtrl,
-                      locationController: _locationCtrl,
-                      farmSizeController: _farmCtrl,
-                      onSave: () { _saveProfile(); Navigator.pop(context); },
-                    ),
-                    icon: const Icon(CupertinoIcons.pencil, size: 15),
-                    label: const Text('Edit Profile'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: textColor,
-                      side: BorderSide(color: border, width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                      backgroundColor: isDark ? AppColors.darkBg : const Color(0xFFF8F8F8),
-                    ),
-                  ),
-                ),
-              ],
+          child: ProfileHeroSection(
+            isDark: isDark,
+            profile: _profile,
+            totalScans: _totalScans,
+            healthyScans: _healthyScans,
+            diseasedScans: _diseasedScans,
+            onAvatarTap: () => showProfilePictureOptionsSheet(
+              context: context,
+              profileImageFile: _profileImageFile,
+              profileImageBase64: _profileImageBase64,
+              onChangeImage: _pickImage,
             ),
+            onEditTap: openEdit,
+            buildAvatarImage: _buildAvatarImage,
+            t: t,
           ),
         ),
 
-        // ── Stats row ────────────────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border),
-            ),
-            child: Row(
-              children: [
-                _StatItem(value: '$_totalScans', label: t.isUrdu ? 'کل اسکینز' : 'Total Scans', isDark: isDark),
-                _Divider(isDark: isDark),
-                _StatItem(value: '$_healthyScans', label: t.isUrdu ? 'صحت مند' : 'Healthy', isDark: isDark, color: AppColors.primary),
-                _Divider(isDark: isDark),
-                _StatItem(value: '$_diseasedScans', label: t.isUrdu ? 'بیمار' : 'Diseased', isDark: isDark, color: AppColors.error),
-              ],
-            ),
-          ),
-        ),
-
-        // ── Account section ──────────────────────────────────────────────
+        // ── Quick links row ───────────────────────────────────────────────
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: QuickLinksRow(isDark: isDark, t: t),
+          ),
+        ),
+
+        // ── Account section ───────────────────────────────────────────────
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
           sliver: SliverToBoxAdapter(
             child: _SectionLabel(label: t.isUrdu ? 'اکاؤنٹ' : 'Account', isDark: isDark),
           ),
@@ -438,64 +349,36 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 label: t.isUrdu ? 'ذاتی معلومات' : 'Personal Info',
                 subtitle: _profile['name']?.toString().isNotEmpty == true
                     ? _profile['name'] : 'Tap to fill in',
-                onTap: () => showEditProfileSheet(
-                  context: context,
-                  nameController: _nameCtrl,
-                  phoneController: _phoneCtrl,
-                  locationController: _locationCtrl,
-                  farmSizeController: _farmCtrl,
-                  onSave: () { _saveProfile(); Navigator.pop(context); },
-                ),
+                onTap: openEdit,
               ),
               _MenuItem(
                 icon: CupertinoIcons.phone,
                 label: t.isUrdu ? 'فون' : 'Phone',
                 subtitle: _profile['phone']?.toString().isNotEmpty == true
                     ? _profile['phone'] : 'Not set',
-                onTap: () => showEditProfileSheet(
-                  context: context,
-                  nameController: _nameCtrl,
-                  phoneController: _phoneCtrl,
-                  locationController: _locationCtrl,
-                  farmSizeController: _farmCtrl,
-                  onSave: () { _saveProfile(); Navigator.pop(context); },
-                ),
+                onTap: openEdit,
               ),
               _MenuItem(
                 icon: CupertinoIcons.location,
                 label: t.isUrdu ? 'مقام' : 'Location',
                 subtitle: _profile['location']?.toString().isNotEmpty == true
                     ? _profile['location'] : 'Not set',
-                onTap: () => showEditProfileSheet(
-                  context: context,
-                  nameController: _nameCtrl,
-                  phoneController: _phoneCtrl,
-                  locationController: _locationCtrl,
-                  farmSizeController: _farmCtrl,
-                  onSave: () { _saveProfile(); Navigator.pop(context); },
-                ),
+                onTap: openEdit,
               ),
               _MenuItem(
                 icon: CupertinoIcons.tree,
                 label: t.isUrdu ? 'فارم کا سائز' : 'Farm Size',
                 subtitle: _profile['farmSize']?.toString().isNotEmpty == true
                     ? '${_profile['farmSize']} acres' : 'Not set',
-                onTap: () => showEditProfileSheet(
-                  context: context,
-                  nameController: _nameCtrl,
-                  phoneController: _phoneCtrl,
-                  locationController: _locationCtrl,
-                  farmSizeController: _farmCtrl,
-                  onSave: () { _saveProfile(); Navigator.pop(context); },
-                ),
+                onTap: openEdit,
               ),
             ]),
           ),
         ),
 
-        // ── Danger zone ──────────────────────────────────────────────────
+        // ── Account actions ───────────────────────────────────────────────
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
           sliver: SliverToBoxAdapter(
             child: _SectionLabel(label: t.isUrdu ? 'اکاؤنٹ اقدامات' : 'Account Actions', isDark: isDark),
           ),
@@ -507,7 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               _MenuItem(
                 icon: CupertinoIcons.square_arrow_right,
                 label: t.isUrdu ? 'لاگ آؤٹ' : 'Log Out',
-                subtitle: 'Sign out of your account',
+                subtitle: t.isUrdu ? 'اپنے اکاؤنٹ سے سائن آؤٹ کریں' : 'Sign out of your account',
                 labelColor: AppColors.error,
                 iconColor: AppColors.error,
                 onTap: () => showLogoutConfirmationDialog(
@@ -517,45 +400,41 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
         ),
 
-        const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 110)),
       ],
     );
   }
 
   Widget _buildAvatarImage() {
-    // Google photoURL is an https:// URL
     if (_profileImageBase64 != null && _profileImageBase64!.isNotEmpty) {
       if (_profileImageBase64!.startsWith('http')) {
         return Image.network(
           _profileImageBase64!,
-          fit: BoxFit.cover, width: 82, height: 82,
+          fit: BoxFit.cover, width: _kAvatarRadius * 2, height: _kAvatarRadius * 2,
           loadingBuilder: (_, child, progress) =>
               progress == null ? child : _defaultAvatar(),
           errorBuilder: (_, __, ___) => _defaultAvatar(),
         );
       }
-      // Local file path
       if (_profileImageFile != null) {
         return Image.file(
           _profileImageFile!,
-          fit: BoxFit.cover, width: 82, height: 82,
+          fit: BoxFit.cover, width: _kAvatarRadius * 2, height: _kAvatarRadius * 2,
           errorBuilder: (_, __, ___) => _defaultAvatar(),
         );
       }
-      // Base64 encoded
       try {
         return Image.memory(
           base64Decode(_profileImageBase64!),
-          fit: BoxFit.cover, width: 82, height: 82,
+          fit: BoxFit.cover, width: _kAvatarRadius * 2, height: _kAvatarRadius * 2,
           errorBuilder: (_, __, ___) => _defaultAvatar(),
         );
       } catch (_) {}
     }
-    // Local file (picked from gallery)
     if (_profileImageFile != null) {
       return Image.file(
         _profileImageFile!,
-        fit: BoxFit.cover, width: 82, height: 82,
+        fit: BoxFit.cover, width: _kAvatarRadius * 2, height: _kAvatarRadius * 2,
         errorBuilder: (_, __, ___) => _defaultAvatar(),
       );
     }
@@ -563,10 +442,9 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Widget _defaultAvatar() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: AppColors.primary.withValues(alpha: 0.1),
-      child: const Icon(CupertinoIcons.person_fill, size: 40, color: AppColors.primary),
+      color: AppColors.primary.withValues(alpha: 0.12),
+      child: const Icon(CupertinoIcons.person_fill, size: 44, color: AppColors.primary),
     );
   }
 }
@@ -579,13 +457,16 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label.toUpperCase(),
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
-        letterSpacing: 0.8,
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+          letterSpacing: 1.0,
+        ),
       ),
     );
   }
@@ -695,44 +576,5 @@ class _MenuRow extends StatelessWidget {
     );
   }
 }
-
-// ── Stat item ─────────────────────────────────────────────────────────────────
-class _StatItem extends StatelessWidget {
-  final String value;
-  final String label;
-  final bool isDark;
-  final Color? color;
-  const _StatItem({required this.value, required this.label, required this.isDark, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = color ?? (isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E));
-    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
-    return Expanded(
-      child: Column(
-        children: [
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: c)),
-          const SizedBox(height: 3),
-          Text(label, style: TextStyle(fontSize: 11, color: captionColor, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  final bool isDark;
-  const _Divider({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1, height: 36,
-      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-    );
-  }
-}
-
-
 
 

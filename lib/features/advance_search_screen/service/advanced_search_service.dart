@@ -6,7 +6,7 @@ import '../../../../core/services/ai_analysis_service.dart';
 import '../../../../core/services/severity_id_service.dart';
 import 'groq_service.dart';
 import 'plantnet_api_service.dart';
-import 'plant_id_service.dart';
+import 'plant_id_api_service.dart';
 
 class AdvancedSearchService {
   final PlantNetApiService _plantNetApiService = PlantNetApiService();

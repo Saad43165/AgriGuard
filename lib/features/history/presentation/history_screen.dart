@@ -14,7 +14,7 @@ import 'package:provider/provider.dart';
 import '../../../../../core/services/translation_service.dart';
 import 'package:flutter/services.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../../ResultScreen/presentation/results_screen.dart';
+import '../../result_screen/presentation/results_screen.dart';
 import '../../advance_result_screen/advanced_result_screen.dart';
 import '../../../../core/repositories/scan_repository.dart';
 

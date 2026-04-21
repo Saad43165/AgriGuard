@@ -7,9 +7,9 @@ import '../../../core/widgets/app_bar.dart';
 import '../../../core/widgets/app_themes.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/translation_service.dart';
-import 'Tiles/app_version_tile.dart';
-import 'Tiles/clear_history_tile.dart';
-import 'Tiles/delete_acount_tile.dart';
+import 'tiles/app_version_tile.dart';
+import 'tiles/clear_history_tile.dart';
+import 'tiles/delete_account_tile.dart';
 import 'components/notification_schedule_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {

@@ -42,14 +42,12 @@ class SeverityResult {
 
 class SeverityIdService {
   late Interpreter _interpreter;
-  Map<String, dynamic> _modelInfo = {};
   Map<String, dynamic> _remediationData = {};
   bool _isInitialized = false;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
     try {
-      await _loadModelInfo();
       await _loadRemediationData();
       await _loadModel();
       _isInitialized = true;
@@ -57,17 +55,6 @@ class SeverityIdService {
     } catch (e) {
       debugPrint('❌ Error initializing SeverityIdService: $e');
       rethrow;
-    }
-  }
-
-  Future<void> _loadModelInfo() async {
-    try {
-      final s = await rootBundle.loadString('assets/models/model_info.json');
-      _modelInfo = json.decode(s);
-      debugPrint('✅ Model info loaded');
-    } catch (e) {
-      debugPrint('❌ Error loading model info: $e');
-      _modelInfo = {};
     }
   }
 

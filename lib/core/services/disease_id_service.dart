@@ -34,11 +34,6 @@ class DiseaseIdService {
   static const String _modelPath  = 'assets/new_model/plantcity_52classes.tflite';
   static const String _labelsPath = 'assets/new_model/plantcity_classes.txt';
 
-  static const String _legacyModelPath  = 'assets/models/plant_disease_dynamic_quant.tflite';
-  static const String _legacyLabelsPath = 'assets/models/disease_labels.txt';
-  static const String _akshayModelPath  = 'assets/models/akshay_plant_disease.tflite';
-  static const String _akshayLabelsPath = 'assets/models/akshay_disease_labels.txt';
-
   static const double _lowConfidenceThreshold = 5.0;
   static const int _minImageSize = 100;
   static const int _minImageBytes = 10240;
@@ -339,23 +334,6 @@ class DiseaseIdService {
     return exps.map((v) => v / sum).toList();
   }
 
-  // ── Flat Float32List preprocessing — kept for reference ─────────────────────
-  // NOTE: Do NOT use this for the PlantCity model — it has baked-in SUB/MUL nodes
-  // that require a 4D [1,300,300,3] input, not a flat buffer.
-  Float32List _preprocessToFloat32Flat(img.Image image) {
-    final buffer = Float32List(1 * image.height * image.width * 3);
-    var index = 0;
-    for (var y = 0; y < image.height; y++) {
-      for (var x = 0; x < image.width; x++) {
-        final pixel = image.getPixel(x, y);
-        buffer[index++] = pixel.r.toDouble();
-        buffer[index++] = pixel.g.toDouble();
-        buffer[index++] = pixel.b.toDouble();
-      }
-    }
-    return buffer;
-  }
-
   // ── 4D nested list preprocessing — required for PlantCity model ──────────────
   // PlantCity EfficientNetB3 has SUB/MUL preprocessing baked in.
   // TFLite expects shape [1, 300, 300, 3] as a nested list with raw 0-255 values.
@@ -373,131 +351,6 @@ class DiseaseIdService {
         })
       )
     );
-  }
-
-  // ── Nested list version — kept for compatibility ──────────────────────────
-  List<List<List<List<double>>>> _imageToInputArrayFloat32(img.Image image) {
-    final h = image.height, w = image.width;
-    return List.generate(1, (_) =>
-      List.generate(h, (y) =>
-        List.generate(w, (x) {
-          final pixel = image.getPixel(x, y);
-          return [pixel.r.toDouble(), pixel.g.toDouble(), pixel.b.toDouble()];
-        })
-      )
-    );
-  }
-
-  // ── Convert img.Image to uint8 [1, H, W, 3] — kept for legacy models ──────
-  List<List<List<List<int>>>> _imageToInputArrayUint8(img.Image image) {
-    final h = image.height, w = image.width;
-    return List.generate(1, (_) =>
-      List.generate(h, (y) =>
-        List.generate(w, (x) {
-          final pixel = image.getPixel(x, y);
-          return [
-            pixel.r.toInt().clamp(0, 255),
-            pixel.g.toInt().clamp(0, 255),
-            pixel.b.toInt().clamp(0, 255),
-          ];
-        })
-      )
-    );
-  }
-
-  // Float32 version kept for fallback / other models
-  List<List<List<List<double>>>> _imageToInputArray(img.Image image) {
-    final h = image.height, w = image.width;
-    return List.generate(1, (_) =>
-      List.generate(h, (y) =>
-        List.generate(w, (x) {
-          final pixel = image.getPixel(x, y);
-          return [
-            pixel.r.toDouble() / 255.0,
-            pixel.g.toDouble() / 255.0,
-            pixel.b.toDouble() / 255.0,
-          ];
-        })
-      )
-    );
-  }
-
-  // ── FIX 1: Apply penalty to all "healthy" label indices ──────────────────
-  List<double> _applyHealthyPenalty(
-      List<double> output, double penalty) {
-    final penalised = List<double>.from(output);
-    for (int i = 0; i < _labels.length && i < penalised.length; i++) {
-      if (_labels[i].toLowerCase().contains('healthy')) {
-        final original = penalised[i];
-        penalised[i] = original * penalty;
-        debugPrint(
-            '🔻 Penalised "${_labels[i]}": '
-                '${(original * 100).toStringAsFixed(1)}% → '
-                '${(penalised[i] * 100).toStringAsFixed(1)}%');
-      }
-    }
-    return penalised;
-  }
-
-  // ── FIX 4: Second-opinion check ───────────────────────────────────────────
-  Map<String, dynamic>? _secondOpinionCheck(List<double> output) {
-    double top1Score = 0.0;
-    int top1Index = 0;
-    for (int i = 0; i < output.length; i++) {
-      if (output[i] > top1Score) {
-        top1Score = output[i];
-        top1Index = i;
-      }
-    }
-
-    final top1Label = top1Index < _labels.length ? _labels[top1Index] : '';
-    final top1IsHealthy = top1Label.toLowerCase().contains('healthy');
-    if (!top1IsHealthy) return null;
-
-    // Parse plant name from top-1 label using the unified parser
-    final top1Parsed = _parseDiseaseLabel(top1Label);
-    final top1Plant = (top1Parsed['plantName'] as String).toLowerCase();
-
-    // Collect all non-healthy predictions for the same plant
-    final samePlantDiseases = <Map<String, dynamic>>[];
-    for (int i = 0; i < output.length && i < _labels.length; i++) {
-      if (i == top1Index) continue;
-      final label = _labels[i];
-      final parsed = _parseDiseaseLabel(label);
-      final plant = (parsed['plantName'] as String).toLowerCase();
-      final isH = parsed['isHealthy'] as bool;
-      if (plant == top1Plant && !isH) {
-        samePlantDiseases.add({'index': i, 'label': label, 'score': output[i]});
-      }
-    }
-
-    if (samePlantDiseases.isEmpty) return null;
-
-    samePlantDiseases.sort(
-        (a, b) => (b['score'] as double).compareTo(a['score'] as double));
-
-    final bestDisease = samePlantDiseases.first;
-    final bestDiseaseScore = bestDisease['score'] as double;
-    final gap = top1Score - bestDiseaseScore;
-
-    debugPrint('🔬 Second-opinion check:');
-    debugPrint('   Top-1 healthy: "$top1Label" = ${(top1Score * 100).toStringAsFixed(1)}%');
-    debugPrint('   Best disease:  "${bestDisease['label']}" = ${(bestDiseaseScore * 100).toStringAsFixed(1)}%');
-    debugPrint('   Gap: ${(gap * 100).toStringAsFixed(1)}pp');
-
-    if (gap < 0.20 && bestDiseaseScore > 0.10) {
-      debugPrint('⚠️ Gap < 20pp with strong disease signal — distrusting healthy.');
-      return {
-        'overrideIndex': bestDisease['index'] as int,
-        'overrideLabel': bestDisease['label'] as String,
-        'overrideScore': bestDiseaseScore,
-        'originalHealthyScore': top1Score,
-        'gap': gap,
-      };
-    }
-
-    debugPrint('✅ Gap ≥ 20pp or weak disease signal — healthy prediction stands.');
-    return null;
   }
 
   // ── Image quality check ────────────────────────────────────────────────────
@@ -573,66 +426,6 @@ class DiseaseIdService {
 
     return (stdDev(redValues) + stdDev(greenValues) + stdDev(blueValues)) /
         3.0;
-  }
-
-  // ── Preprocessing ──────────────────────────────────────────────────────────
-  Future<List<List<List<List<double>>>>> _preprocessImageToFloatArray(
-      File imageFile) async {
-    try {
-      final imageBytes = await imageFile.readAsBytes();
-      var originalImage = img.decodeImage(imageBytes);
-      if (originalImage == null) throw Exception('Failed to decode image');
-
-      // ⚠️ CRITICAL: Fix EXIF orientation — Android photos are often rotated
-      originalImage = img.bakeOrientation(originalImage);
-
-      final inputShape = _interpreter!.getInputTensor(0).shape;
-      final targetHeight = inputShape[1];
-      final targetWidth = inputShape[2];
-
-      debugPrint('📏 Target size: $targetWidth x $targetHeight');
-
-      final resizedImage = img.copyResize(originalImage,
-          width: targetWidth, height: targetHeight,
-          interpolation: img.Interpolation.linear);
-
-      // Convert to RGB (strip alpha if present)
-      img.Image rgbImage;
-      if (resizedImage.numChannels == 4) {
-        rgbImage = img.Image(
-            width: resizedImage.width,
-            height: resizedImage.height,
-            numChannels: 3);
-        for (int y = 0; y < resizedImage.height; y++) {
-          for (int x = 0; x < resizedImage.width; x++) {
-            final pixel = resizedImage.getPixel(x, y);
-            rgbImage.setPixelRgb(x, y, pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-          }
-        }
-      } else {
-        rgbImage = resizedImage;
-      }
-
-      // pixel/255.0 normalization — matches akshay model training (Keras rescale=1/255)
-      final array4d = List.generate(1, (_) =>
-          List.generate(targetHeight, (_) =>
-              List.generate(targetWidth, (_) => List<double>.filled(3, 0.0))));
-
-      for (int y = 0; y < targetHeight; y++) {
-        for (int x = 0; x < targetWidth; x++) {
-          final pixel = rgbImage.getPixel(x, y);
-          array4d[0][y][x][0] = pixel.r.toDouble() / 255.0;
-          array4d[0][y][x][1] = pixel.g.toDouble() / 255.0;
-          array4d[0][y][x][2] = pixel.b.toDouble() / 255.0;
-        }
-      }
-
-      debugPrint('✅ Disease model: [0,1] normalization (pixel/255.0)');
-      return array4d;
-    } catch (e) {
-      debugPrint('❌ Image preprocessing error: $e');
-      rethrow;
-    }
   }
 
   // ── Output processing ──────────────────────────────────────────────────────

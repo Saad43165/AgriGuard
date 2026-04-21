@@ -13,7 +13,7 @@ import '../../../core/widgets/app_themes.dart';
 import '../../../core/services/disease_id_service.dart';
 import '../../../core/services/plant_id_service.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
-import '../../auth/Login_Screen/services/guest_service.dart';
+import '../../auth/login/services/guest_service.dart';
 import 'components/processing_overlay.dart';
 
 // Scan mode: 0 = On-Device (offline), 1 = Advanced AI (cloud)
@@ -44,6 +44,17 @@ class _CaptureScreenState extends State<CaptureScreen>
   List<CameraDescription> _cameras = [];
   bool _cameraReady = false;
   bool _isFrontCamera = false;
+  int _currentCameraIndex = 0;
+
+  // Zoom
+  double _currentZoom = 1.0;
+  double _minZoom = 1.0;
+  double _maxZoom = 1.0;
+  double _baseZoom = 1.0; // zoom at start of pinch
+
+  // Focus
+  Offset? _focusPoint;
+  bool _showFocusCircle = false;
 
   // State
   XFile? _imageFile;
@@ -55,6 +66,8 @@ class _CaptureScreenState extends State<CaptureScreen>
   // Animations
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  late AnimationController _focusAnimCtrl;
+  late Animation<double> _focusAnim;
   late PageController _modePageController;
 
   // Services
@@ -71,6 +84,12 @@ class _CaptureScreenState extends State<CaptureScreen>
       ..repeat(reverse: true);
     _pulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+
+    _focusAnimCtrl = AnimationController(
+        duration: const Duration(milliseconds: 400), vsync: this);
+    _focusAnim = Tween<double>(begin: 1.3, end: 1.0).animate(
+        CurvedAnimation(parent: _focusAnimCtrl, curve: Curves.easeOut));
+
     _modePageController = PageController(initialPage: 0, viewportFraction: 0.4);
 
     _analysisService = PlantAnalysisService(
@@ -101,7 +120,9 @@ class _CaptureScreenState extends State<CaptureScreen>
     try {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) return;
-      await _startCamera(_isFrontCamera ? 1 : 0);
+      _currentCameraIndex = 0;
+      _isFrontCamera = false;
+      await _startCamera(_currentCameraIndex);
     } catch (e) {
       debugPrint('Camera init error: $e');
     }
@@ -109,6 +130,12 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   Future<void> _startCamera(int index) async {
     if (_cameras.isEmpty || index >= _cameras.length) return;
+
+    // Dispose old controller first
+    final oldController = _cameraController;
+    if (mounted) setState(() { _cameraReady = false; _cameraController = null; });
+    await oldController?.dispose();
+
     final controller = CameraController(
       _cameras[index],
       ResolutionPreset.high,
@@ -117,41 +144,80 @@ class _CaptureScreenState extends State<CaptureScreen>
     );
     try {
       await controller.initialize();
+      // Get zoom range
+      final minZoom = await controller.getMinZoomLevel();
+      final maxZoom = await controller.getMaxZoomLevel();
       if (mounted) {
         setState(() {
-          _cameraController?.dispose();
           _cameraController = controller;
           _cameraReady = true;
+          _minZoom = minZoom;
+          _maxZoom = maxZoom;
+          _currentZoom = 1.0;
         });
       }
     } catch (e) {
       debugPrint('Camera start error: $e');
+      await controller.dispose();
     }
   }
 
   Future<void> _flipCamera() async {
-    if (_cameras.length < 2) return;
+    if (_cameras.length < 2 || _isProcessing) return;
     HapticFeedback.lightImpact();
-    setState(() { _cameraReady = false; _isFrontCamera = !_isFrontCamera; });
-    await _startCamera(_isFrontCamera ? 1 : 0);
+    _isFrontCamera = !_isFrontCamera;
+    _currentCameraIndex = _isFrontCamera ? 1 : 0;
+    // Clamp to available cameras
+    if (_currentCameraIndex >= _cameras.length) {
+      _currentCameraIndex = 0;
+      _isFrontCamera = false;
+    }
+    await _startCamera(_currentCameraIndex);
   }
 
   Future<void> _toggleFlash() async {
     if (_cameraController == null || !_cameraReady) return;
     HapticFeedback.selectionClick();
-    final next = _flashMode == FlashMode.off
-        ? FlashMode.torch
-        : FlashMode.off;
+    final next = _flashMode == FlashMode.off ? FlashMode.torch : FlashMode.off;
     try {
       await _cameraController!.setFlashMode(next);
-      setState(() => _flashMode = next);
+      if (mounted) setState(() => _flashMode = next);
     } catch (e) {
       debugPrint('Flash error: $e');
     }
   }
 
-  Future<void> _takePicture() async {
+  Future<void> _handleTapToFocus(TapDownDetails details, BoxConstraints constraints) async {
     if (_cameraController == null || !_cameraReady) return;
+    final x = details.localPosition.dx / constraints.maxWidth;
+    final y = details.localPosition.dy / constraints.maxHeight;
+    final offset = Offset(x.clamp(0.0, 1.0), y.clamp(0.0, 1.0));
+    try {
+      await _cameraController!.setFocusPoint(offset);
+      await _cameraController!.setExposurePoint(offset);
+      if (mounted) {
+        setState(() {
+          _focusPoint = details.localPosition;
+          _showFocusCircle = true;
+        });
+        _focusAnimCtrl.forward(from: 0);
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted) setState(() => _showFocusCircle = false);
+      }
+    } catch (e) {
+      debugPrint('Focus error: $e');
+    }
+  }
+
+  void _handlePinchZoom(ScaleUpdateDetails details) {
+    if (_cameraController == null || !_cameraReady) return;
+    final newZoom = (_baseZoom * details.scale).clamp(_minZoom, _maxZoom);
+    _cameraController!.setZoomLevel(newZoom).catchError((_) {});
+    if (mounted) setState(() => _currentZoom = newZoom);
+  }
+
+  Future<void> _takePicture() async {
+    if (_cameraController == null || !_cameraReady || _isProcessing) return;
     if (_guestService.isGuestMode && !_guestService.hasScansRemaining) {
       _showGuestLimitDialog(); return;
     }
@@ -160,7 +226,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       final photo = await _cameraController!.takePicture();
       if (mounted) {
         setState(() => _imageFile = photo);
-        // Immediately start scan with selected mode — no second asking
         await _startScan();
       }
     } catch (e) {
@@ -179,7 +244,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       );
       if (picked != null && mounted) {
         setState(() => _imageFile = picked);
-        // Immediately start scan with selected mode
         await _startScan();
       }
     } catch (e) {
@@ -454,6 +518,7 @@ class _CaptureScreenState extends State<CaptureScreen>
     _plantService.dispose();
     _diseaseService.dispose();
     _pulseController.dispose();
+    _focusAnimCtrl.dispose();
     _modePageController.dispose();
     super.dispose();
   }
@@ -491,36 +556,94 @@ class _CaptureScreenState extends State<CaptureScreen>
 
   // ── Live camera viewfinder ────────────────────────────────────────────────
   Widget _buildCameraView() {
+    final t = Provider.of<TranslationService>(context, listen: false);
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Camera preview
-        _cameraReady && _cameraController != null
-            ? CameraPreview(_cameraController!)
-            : Container(color: Colors.black,
-                child: const Center(child: CircularProgressIndicator(color: AppColors.primary))),
+        // ── Camera preview with tap-to-focus + pinch-to-zoom ──────────────
+        if (_cameraReady && _cameraController != null)
+          LayoutBuilder(
+            builder: (context, constraints) => GestureDetector(
+              onTapDown: (d) => _handleTapToFocus(d, constraints),
+              onScaleStart: (_) => _baseZoom = _currentZoom,
+              onScaleUpdate: _handlePinchZoom,
+              child: CameraPreview(_cameraController!),
+            ),
+          )
+        else
+          Container(
+            color: Colors.black,
+            child: const Center(
+              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+            ),
+          ),
 
-        // Corner brackets overlay
+        // ── Focus circle ──────────────────────────────────────────────────
+        if (_showFocusCircle && _focusPoint != null)
+          Positioned(
+            left: _focusPoint!.dx - 30,
+            top: _focusPoint!.dy - 30,
+            child: AnimatedBuilder(
+              animation: _focusAnim,
+              builder: (_, __) => Transform.scale(
+                scale: _focusAnim.value,
+                child: Container(
+                  width: 60, height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.yellow, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // ── Corner brackets overlay ───────────────────────────────────────
         Center(
           child: SizedBox(
-            width: 260, height: 260,
+            width: 240, height: 240,
             child: CustomPaint(painter: _BracketsPainter()),
           ),
         ),
 
-        // Hint text
-        const Positioned(
-          bottom: 220,
+        // ── Hint text ─────────────────────────────────────────────────────
+        Positioned(
+          bottom: 230,
           left: 0, right: 0,
-          child: Text('Point at a plant leaf',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+          child: Text(
+            t.isUrdu ? 'پودے کے پتے پر نشانہ لگائیں' : 'Point at a plant leaf',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500,
+              shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+            ),
+          ),
         ),
 
-        // Plant hint banner — shown when scanning from species grid
+        // ── Zoom indicator ────────────────────────────────────────────────
+        if (_currentZoom > 1.05)
+          Positioned(
+            bottom: 210,
+            left: 0, right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_currentZoom.toStringAsFixed(1)}×',
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+
+        // ── Plant hint banner ─────────────────────────────────────────────
         if (widget.plantHint != null)
           Positioned(
-            bottom: 245,
+            top: MediaQuery.of(context).padding.top + 60,
             left: 0, right: 0,
             child: Center(
               child: Container(
@@ -532,14 +655,16 @@ class _CaptureScreenState extends State<CaptureScreen>
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.eco_rounded, color: Colors.white, size: 14),
                   const SizedBox(width: 6),
-                  Text('Scanning as ${widget.plantHint}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                  Text(
+                    t.isUrdu ? '${widget.plantHint} کے طور پر اسکین' : 'Scanning as ${widget.plantHint}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
                 ]),
               ),
             ),
           ),
 
-        // Top bar: close + flash + flip
+        // ── Top bar: close + flash + flip ─────────────────────────────────
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
           left: 0, right: 0,
@@ -553,10 +678,10 @@ class _CaptureScreenState extends State<CaptureScreen>
                 GestureDetector(
                   onTap: _toggleFlash,
                   child: Container(
-                    width: 38, height: 38,
+                    width: 40, height: 40,
                     decoration: BoxDecoration(
                       color: _flashMode == FlashMode.torch
-                          ? Colors.yellow.withValues(alpha: 0.8)
+                          ? Colors.yellow.withValues(alpha: 0.9)
                           : Colors.black.withValues(alpha: 0.45),
                       shape: BoxShape.circle,
                     ),
@@ -569,39 +694,57 @@ class _CaptureScreenState extends State<CaptureScreen>
                     ),
                   ),
                 ),
-                _overlayBtn(Icons.flip_camera_ios_rounded, _cameras.length > 1 ? _flipCamera : null),
+                // Flip camera — only show if multiple cameras available
+                _cameras.length > 1
+                    ? GestureDetector(
+                        onTap: _flipCamera,
+                        child: Container(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white, size: 20),
+                        ),
+                      )
+                    : const SizedBox(width: 40),
               ],
             ),
           ),
         ),
 
-        // Bottom controls
+        // ── Bottom controls ───────────────────────────────────────────────
         Positioned(
           left: 0, right: 0, bottom: 0,
           child: Container(
             padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 20),
-            decoration: const BoxDecoration(
-              color: Colors.black54,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Scan mode selector — swipeable tabs
+                // Scan mode selector
                 _buildModeSelector(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // Camera controls row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Gallery
                     GestureDetector(
                       onTap: _pickFromGallery,
                       child: Container(
-                        width: 52, height: 52,
+                        width: 54, height: 54,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Colors.white30),
                         ),
                         child: const Icon(Icons.photo_library_outlined, color: Colors.white, size: 24),
@@ -612,7 +755,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                     GestureDetector(
                       onTap: _takePicture,
                       child: Container(
-                        width: 72, height: 72,
+                        width: 76, height: 76,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
@@ -627,8 +770,26 @@ class _CaptureScreenState extends State<CaptureScreen>
                       ),
                     ),
 
-                    // Spacer (balanced layout)
-                    const SizedBox(width: 52),
+                    // Zoom reset button — shows when zoomed in
+                    GestureDetector(
+                      onTap: _currentZoom > 1.05 ? () {
+                        _cameraController?.setZoomLevel(1.0).catchError((_) {});
+                        setState(() => _currentZoom = 1.0);
+                      } : null,
+                      child: AnimatedOpacity(
+                        opacity: _currentZoom > 1.05 ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Container(
+                          width: 54, height: 54,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white30),
+                          ),
+                          child: const Icon(Icons.zoom_out_rounded, color: Colors.white, size: 24),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ],

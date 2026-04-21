@@ -2,25 +2,25 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../features/HelpSupport/help_support_screen.dart';
-import '../../features/ResultScreen/presentation/results_screen.dart';
-import '../../features/Settings/presentation/settings_screen.dart';
-import '../../features/auth/Login_Screen/login_screens.dart';
-import '../../features/auth/Registration_screen/register_screen.dart';
-import '../../features/auth/Forget_Pass_Screen/forgot_password_screen.dart';
+import '../../features/help_support/help_support_screen.dart';
+import '../../features/result_screen/presentation/results_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/auth/login/login_screen.dart';
+import '../../features/auth/register/register_screen.dart';
+import '../../features/auth/forgot_password/forgot_password_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/onboarding/screens/onboarding_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 import '../navigation/main_navigation_screen.dart';
-import '../../features/auth/Login_Screen/services/guest_service.dart';
+import '../../features/auth/login/services/guest_service.dart';
 import '../../features/chatbot/chatbot_screen.dart';
-import '../../features/HelpSupport/bug_report_screen.dart';
+import '../../features/help_support/bug_report_screen.dart';
 import '../../features/analytics/analytics_screen.dart';
 import '../../features/farm_diary/farm_diary_screen.dart';
 import '../../features/crop_calendar/crop_calendar_screen.dart';
 import '../../features/disease_library/disease_library_screen.dart';
-import '../../features/capture/presentations/capture_screen.dart';
+import '../../features/capture/presentation/capture_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

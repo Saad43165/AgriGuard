@@ -1,10 +1,10 @@
-import 'package:agriguard_fyp/features/auth/Login_Screen/services/guest_service.dart';
+import 'package:agriguard_fyp/features/auth/login/services/guest_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_themes.dart';
-import '/auth_services.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

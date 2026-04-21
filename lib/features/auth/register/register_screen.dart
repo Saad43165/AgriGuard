@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_themes.dart';
-import '../../Profile/utils/profile_image_manager.dart';
+import '../../profile/utils/profile_image_manager.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

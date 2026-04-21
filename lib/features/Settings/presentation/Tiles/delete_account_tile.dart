@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../../../auth_services.dart';
+import '../../../../features/auth/services/auth_service.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_themes.dart';
 

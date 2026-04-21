@@ -6,7 +6,7 @@ import '../../../../core/services/translation_service.dart';
 import '../../../advance_search_screen/service/advanced_search_service.dart';
 import '../../../advance_search_screen/service/groq_service.dart';
 import '../../../advance_search_screen/service/huggingface_vision_service.dart';
-import '../../../advance_search_screen/service/plant_id_service.dart';
+import '../../../advance_search_screen/service/plant_id_api_service.dart';
 
 class DiagnosticsScreen extends StatefulWidget {
   const DiagnosticsScreen({super.key});

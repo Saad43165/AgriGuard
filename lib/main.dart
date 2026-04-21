@@ -8,7 +8,7 @@ import 'core/widgets/app_themes.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/translation_service.dart';
 import 'core/services/localization_service.dart';
-import 'features/auth/Login_Screen/services/guest_service.dart';
+import 'features/auth/login/services/guest_service.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'firebase_options.dart';
 

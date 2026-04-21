@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../../../../core/services/translation_service.dart';
 import '../../../../../core/widgets/app_themes.dart';
-import '../../../ResultScreen/presentation/results_screen.dart';
+import '../../../result_screen/presentation/results_screen.dart';
 import '../../../advance_result_screen/advanced_result_screen.dart';
 
 class ScanCard extends StatefulWidget {
@@ -218,12 +220,19 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
               // Info — intrinsic height, no Expanded/Flexible
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
-                child: Column(
+                child: Builder(builder: (context) {
+                  final t = Provider.of<TranslationService>(context, listen: false);
+                  final displayPlant = t.translatePlant(_plantName);
+                  final displayDisease = _isHealthy
+                      ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+                      : t.translateDisease(_disease);
+                  final displaySeverity = t.translateSeverity(_severity);
+                  return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Plant name
-                    Text(_plantName,
+                    Text(displayPlant,
                       style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800,
                         color: textPrimary, height: 1.2),
                       maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -247,7 +256,7 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
                           ),
                           const SizedBox(width: 3),
                           Flexible(
-                            child: Text(_disease,
+                            child: Text(displayDisease,
                               style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700,
                                 color: _statusColor, height: 1.2),
                               maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -267,15 +276,16 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
                             decoration: BoxDecoration(color: _severityColor, shape: BoxShape.circle),
                           ),
                           const SizedBox(width: 4),
-                          Text(_severity,
+                          Text(displaySeverity,
                             style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _severityColor)),
                           const SizedBox(width: 4),
-                          Text('severity', style: TextStyle(fontSize: 8, color: textSub)),
+                          Text(t.isUrdu ? 'شدت' : 'severity', style: TextStyle(fontSize: 8, color: textSub)),
                         ],
                       ),
                     ],
                   ],
-                ),
+                );
+                }),
               ),
             ],
           ),

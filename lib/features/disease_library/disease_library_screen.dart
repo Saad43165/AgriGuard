@@ -39,6 +39,26 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
   List<String> get _plants =>
       DiseaseLibrary.all.map((e) => e.plant).toSet().toList()..sort();
 
+  // Translate plant name for display
+  String _translatePlant(String plant, TranslationService t) =>
+      t.translatePlant(plant);
+
+  // Translate severity for display
+  String _translateSeverity(String severity, TranslationService t) {
+    if (!t.isUrdu) return severity;
+    switch (severity.toLowerCase()) {
+      case 'high': return 'زیادہ';
+      case 'medium': return 'درمیانہ';
+      case 'low': return 'کم';
+      case 'critical': return 'انتہائی';
+      case 'fast': return 'تیز';
+      case 'moderate': return 'درمیانہ';
+      case 'slow': return 'سست';
+      case 'none': return 'کوئی نہیں';
+      default: return severity;
+    }
+  }
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -161,11 +181,16 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
                     const SizedBox(width: 8),
                     ..._plants.map((p) => Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: _Chip(label: p, selected: _selectedPlant == p,
-                          isDark: isDark, onTap: () => setState(() {
-                            _selectedPlant = _selectedPlant == p ? null : p;
-                            _filter = 'all';
-                          })))),
+                      child: _Chip(
+                        label: _translatePlant(p, t),
+                        selected: _selectedPlant == p,
+                        isDark: isDark,
+                        onTap: () => setState(() {
+                          _selectedPlant = _selectedPlant == p ? null : p;
+                          _filter = 'all';
+                        }),
+                      ),
+                    )),
                   ],
                 ),
               ),
@@ -267,6 +292,15 @@ class _DiseaseCard extends StatelessWidget {
     final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final displayPlant = t.translatePlant(entry.plant);
+    final displayCondition = entry.isHealthy
+        ? (t.isUrdu ? 'صحت مند' : entry.condition)
+        : t.translateDisease(entry.condition);
+    final displaySeverity = entry.isHealthy
+        ? (t.isUrdu ? 'صحت مند' : '✓')
+        : _translateSeverityStatic(entry.severity, t);
+    final displaySpread = _translateSeverityStatic(entry.spreadRate, t);
 
     return GestureDetector(
       onTap: onTap,
@@ -314,7 +348,7 @@ class _DiseaseCard extends StatelessWidget {
                       color: entry.isHealthy ? AppColors.primary : _severityColor,
                       borderRadius: BorderRadius.circular(20)),
                     child: Text(
-                      entry.isHealthy ? '✓' : entry.severity,
+                      entry.isHealthy ? '✓' : displaySeverity,
                       style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)))),
               ]),
             ),
@@ -328,17 +362,17 @@ class _DiseaseCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(entry.plant,
+                  Text(displayPlant,
                     style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary)),
                   const SizedBox(height: 2),
-                  Text(entry.condition,
+                  Text(displayCondition,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: textColor),
                     maxLines: 2, overflow: TextOverflow.ellipsis),
                 ]),
                 Row(children: [
                   Icon(Icons.speed_rounded, size: 10, color: captionColor),
                   const SizedBox(width: 3),
-                  Text(entry.spreadRate,
+                  Text(displaySpread,
                     style: TextStyle(fontSize: 10, color: captionColor)),
                 ]),
               ]),
@@ -347,6 +381,21 @@ class _DiseaseCard extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  static String _translateSeverityStatic(String s, TranslationService t) {
+    if (!t.isUrdu) return s;
+    switch (s.toLowerCase()) {
+      case 'high': return 'زیادہ';
+      case 'medium': return 'درمیانہ';
+      case 'low': return 'کم';
+      case 'critical': return 'انتہائی';
+      case 'fast': return 'تیز';
+      case 'moderate': return 'درمیانہ';
+      case 'slow': return 'سست';
+      case 'none': return 'کوئی نہیں';
+      default: return s;
+    }
   }
 }
 
@@ -364,6 +413,21 @@ class _DiseaseDetailSheetState extends State<_DiseaseDetailSheet> {
   bool _loadingLive = false;
   String? _liveInfo;
   bool _liveLoaded = false;
+
+  static String _translateSeverityBadge(String s, TranslationService t) {
+    if (!t.isUrdu) return s;
+    switch (s.toLowerCase()) {
+      case 'high': return 'زیادہ';
+      case 'medium': return 'درمیانہ';
+      case 'low': return 'کم';
+      case 'critical': return 'انتہائی';
+      case 'fast': return 'تیز';
+      case 'moderate': return 'درمیانہ';
+      case 'slow': return 'سست';
+      case 'none': return 'کوئی نہیں';
+      default: return s;
+    }
+  }
 
   Future<void> _fetchLiveInfo() async {
     if (_liveLoaded || _loadingLive) return;
@@ -472,10 +536,14 @@ class _DiseaseDetailSheetState extends State<_DiseaseDetailSheet> {
                   const SizedBox(height: 4),
                   Wrap(spacing: 6, children: [
                     _Badge(
-                      label: e.isHealthy ? 'Healthy' : e.severity,
+                      label: e.isHealthy
+                          ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+                          : _translateSeverityBadge(e.severity, t),
                       color: e.isHealthy ? AppColors.primary : AppColors.error),
                     if (!e.isHealthy)
-                      _Badge(label: '${e.spreadRate} spread', color: AppColors.warning),
+                      _Badge(
+                        label: '${_translateSeverityBadge(e.spreadRate, t)} ${t.isUrdu ? 'پھیلاؤ' : 'spread'}',
+                        color: AppColors.warning),
                   ]),
                 ])),
               ]),
@@ -488,15 +556,16 @@ class _DiseaseDetailSheetState extends State<_DiseaseDetailSheet> {
                   const SizedBox(width: 16, height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
                   const SizedBox(width: 10),
-                  Text('Getting AI insights...', style: TextStyle(fontSize: 12, color: captionColor)),
+                  Text(t.isUrdu ? 'AI بصیرت حاصل ہو رہی ہے...' : 'Getting AI insights...',
+                      style: TextStyle(fontSize: 12, color: captionColor)),
                 ]))
               else if (_liveInfo != null)
                 _AiCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Row(children: [
-                    Icon(Icons.auto_awesome_rounded, size: 13, color: AppColors.primary),
-                    SizedBox(width: 6),
-                    Text('Live AI Insight', style: TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                  Row(children: [
+                    const Icon(Icons.auto_awesome_rounded, size: 13, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(t.isUrdu ? 'AI بصیرت' : 'Live AI Insight',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                   ]),
                   const SizedBox(height: 6),
                   Text(_liveInfo!, style: TextStyle(fontSize: 12, color: subtext, height: 1.5)),
@@ -540,9 +609,12 @@ class _DiseaseDetailSheetState extends State<_DiseaseDetailSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () { Navigator.pop(ctx); Navigator.pushNamed(ctx, '/capture'); },
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pushNamed(ctx, '/capture');
+                  },
                   icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                  label: Text(t.isUrdu ? 'اس پودے کو اسکین کریں' : 'Scan This Plant'),
+                  label: Text(t.isUrdu ? 'اسکین کریں' : 'Scan a Plant'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

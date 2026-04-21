@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/widgets/app_themes.dart';
-import '../../auth/Login_Screen/services/guest_service.dart';
+import '../../auth/login/services/guest_service.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/services/translation_service.dart';
 

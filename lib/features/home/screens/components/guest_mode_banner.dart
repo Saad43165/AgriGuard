@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_measurements.dart';
 import '../../../../core/constants/app_routes.dart';
-import '../../../auth/Login_Screen/services/guest_service.dart';
+import '../../../auth/login/services/guest_service.dart';
 
 /// Simple language service for guest banner
 class GuestBannerLanguage {

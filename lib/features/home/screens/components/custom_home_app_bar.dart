@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../core/constants/app_routes.dart';
 import '../../../../../core/widgets/app_themes.dart';
-import '../../../Profile/utils/profile_image_manager.dart';
+import '../../../profile/utils/profile_image_manager.dart';
 import '../../../chatbot/chatbot_screen.dart';
 
 class CustomHomeAppBar extends StatefulWidget implements PreferredSizeWidget {

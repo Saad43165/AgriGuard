@@ -234,22 +234,7 @@ class _SpeciesChip extends StatelessWidget {
                       const SizedBox(height: 12),
                       _sheetSection(context, Icons.bug_report_rounded, 'Common Diseases', species.getCommonDiseases(t.isUrdu), isDark),
                       const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () { Navigator.pop(ctx); Navigator.pushNamed(ctx, '/capture', arguments: {'plantHint': species.nameEn}); },
-                          icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                          label: const Text('Scan This Plant'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
+                      // No "Scan This Plant" button — user can close and use the camera directly
                     ],
                   ),
                 ),
