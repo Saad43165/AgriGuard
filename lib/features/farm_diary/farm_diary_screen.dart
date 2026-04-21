@@ -1037,7 +1037,7 @@ class _CropInfoSheetState extends State<_CropInfoSheet> {
                       ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                           const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 40),
                           const SizedBox(height: 12),
-                          Text(_error!, style: TextStyle(color: captionColor)),
+                          Text(t.isUrdu ? 'معلومات لوڈ نہیں ہوئیں' : _error!, style: TextStyle(color: captionColor)),
                           const SizedBox(height: 12),
                           ElevatedButton(onPressed: _fetchInfo, child: Text(t.isUrdu ? 'دوبارہ کوشش کریں' : 'Retry')),
                         ]))
