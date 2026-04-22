@@ -1,4 +1,3 @@
-// lib/features/history/presentation/screens/history_screen.dart
 import 'package:agriguard_fyp/features/history/presentation/utils/history_csv_generator.dart';
 import 'package:agriguard_fyp/features/history/presentation/utils/history_pdf_generator.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/export_option_dialog.dart';
@@ -13,7 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../../core/services/translation_service.dart';
 import 'package:flutter/services.dart';
+import '../../../core/constants/app_routes.dart';
 import '../../../core/widgets/app_themes.dart';
+import '../../auth/login/services/guest_service.dart';
 import '../../result_screen/presentation/results_screen.dart';
 import '../../advance_result_screen/advanced_result_screen.dart';
 import '../../../../core/repositories/scan_repository.dart';
@@ -44,12 +45,24 @@ class _HistoryScreenState extends State<HistoryScreen>
   String _activeFilter = 'all'; // 'all', 'healthy', 'diseased', 'high'
   final TextEditingController _searchController = TextEditingController();
 
+  // Guest mode
+  final GuestService _guestService = GuestService();
+  bool _isGuestMode = false;
+
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     _scanRepository = ScanRepository();
-    _loadUserScans();
+    _initGuest();
+  }
+
+  Future<void> _initGuest() async {
+    await _guestService.initialize();
+    if (mounted) {
+      setState(() => _isGuestMode = _guestService.isGuestMode);
+      if (!_isGuestMode) _loadUserScans();
+    }
   }
 
   void _initializeAnimations() {
@@ -368,6 +381,11 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final t = Provider.of<TranslationService>(context, listen: false);
+
+    // ── Guest mode — show lock screen ─────────────────────────────────────
+    if (_isGuestMode) {
+      return _GuestHistoryBlock(isDark: isDark, t: t);
+    }
 
     return Scaffold(
       extendBodyBehindAppBar: false,
@@ -1164,5 +1182,88 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 }
 
+class _GuestHistoryBlock extends StatelessWidget {
+  final bool isDark;
+  final TranslationService t;
 
+  const _GuestHistoryBlock({required this.isDark, required this.t});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(t.isUrdu ? 'اسکین ہسٹری' : 'Scan History'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                t.isUrdu ? 'ہسٹری دستیاب نہیں' : 'History Unavailable',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                t.isUrdu
+                    ? 'اپنی اسکین ہسٹری دیکھنے کے لیے براہ کرم لاگ ان کریں'
+                    : 'Please log in to view your scan history',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.5,
+                  color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.login,
+                    (route) => false,
+                  ),
+                  icon: const Icon(Icons.login_rounded),
+                  label: Text(
+                    t.isUrdu ? 'لاگ ان کریں' : 'Log In',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 

@@ -88,11 +88,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final allScans = await _scanRepository.getUserScans(limit: 3);
+      // Load more than 3 so we can filter low-confidence ones
+      final allScans = await _scanRepository.getUserScans(limit: 20);
       if (!mounted) return;
+
+      // Filter: only show scans with confidence ≥ 40% and valid plant name
+      final validScans = allScans.where((scan) {
+        final conf = scan.confidence;
+        final plant = scan.plantName.trim();
+        final isNonLeaf = plant == 'Non-Plant Image' ||
+            scan.diseaseName == 'Image Not Recognized';
+        return conf >= 40 && plant.isNotEmpty && plant != 'Unknown Plant' && !isNonLeaf;
+      }).take(3).toList();
+
       setState(() {
         _recentScans.clear();
-        for (final scan in allScans) {
+        for (final scan in validScans) {
           _recentScans.add(_convertScanToMap(scan));
         }
         _recentScans.sort((a, b) => (b['scanDate'] as DateTime).compareTo(a['scanDate'] as DateTime));

@@ -27,13 +27,18 @@ class GroqService {
     required String diseaseName,
     required String severity,
     required num confidencePercent,
+    bool inUrdu = false,
   }) async {
     try {
       final apiKey = _requireApiKey();
 
+      final langInstruction = inUrdu
+          ? '\nIMPORTANT: Respond ENTIRELY in Urdu script (اردو). All field values must be in Urdu.'
+          : '';
+
       final system = '''
 You are an expert agronomist assistant for a farmer-facing mobile app called AgriGuard.
-Your job is to provide accurate, practical plant disease advice.
+Your job is to provide accurate, practical plant disease advice.$langInstruction
 
 Return ONLY a single valid JSON object (no markdown, no explanation) with these exact fields:
 {
@@ -60,7 +65,7 @@ Rules:
       final body = {
         'model': dotenv.env['GROQ_MODEL']?.trim().isNotEmpty == true
             ? dotenv.env['GROQ_MODEL']!.trim()
-            : 'llama-3.1-8b-instant',  // fast + accurate for structured JSON
+            : 'llama-3.1-8b-instant',
         'temperature': 0.2,
         'max_tokens': 900,
         'messages': [

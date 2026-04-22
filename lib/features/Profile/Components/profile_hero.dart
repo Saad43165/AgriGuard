@@ -5,19 +5,9 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../../../core/widgets/app_themes.dart';
 
-const _kAvatarSize = 88.0; // diameter
-const _kCoverHeight = 140.0;
-const _kAvatarOverlap = 44.0; // how much avatar sticks below cover
+const _kAvatarSize = 80.0; // diameter
+const _kCoverHeight = 120.0;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ProfileHeroSection
-// Layout:
-//   [Cover banner with title + edit button]
-//   [Avatar left-aligned, overlapping cover bottom]
-//   [Name + email to the right of avatar, vertically centered]
-//   [Location / farm chips below]
-//   [Stats row]
-// ═══════════════════════════════════════════════════════════════════════════
 class ProfileHeroSection extends StatelessWidget {
   final bool isDark;
   final Map<String, dynamic> profile;
@@ -48,8 +38,7 @@ class ProfileHeroSection extends StatelessWidget {
     final surfaceBg = isDark ? AppColors.darkSurface : Colors.white;
 
     final name = profile['name']?.toString().isNotEmpty == true
-        ? profile['name'].toString()
-        : 'User';
+        ? profile['name'].toString() : 'User';
     final email = profile['email']?.toString() ?? '';
     final location = profile['location']?.toString() ?? '';
     final farmSize = profile['farmSize']?.toString() ?? '';
@@ -57,129 +46,114 @@ class ProfileHeroSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Cover + floating avatar ──────────────────────────────────────
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Cover
-            Container(
-              height: _kCoverHeight,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [const Color(0xFF1B4332), const Color(0xFF2D6A4F), const Color(0xFF40916C)]
-                      : [const Color(0xFF2D6A4F), const Color(0xFF40916C), const Color(0xFF52B788)],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned.fill(child: CustomPaint(painter: _HexPatternPainter())),
-                  SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            t.isUrdu ? 'پروفائل' : 'Profile',
-                            style: const TextStyle(
-                              color: Colors.white, fontSize: 20,
-                              fontWeight: FontWeight.w800, letterSpacing: -0.3,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () { HapticFeedback.lightImpact(); onEditTap(); },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(CupertinoIcons.pencil, size: 13, color: Colors.white),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    t.isUrdu ? 'ترمیم' : 'Edit',
-                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        // ── Cover banner ─────────────────────────────────────────────────
+        Container(
+          height: _kCoverHeight,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [const Color(0xFF1B4332), const Color(0xFF2D6A4F), const Color(0xFF40916C)]
+                  : [const Color(0xFF2D6A4F), const Color(0xFF40916C), const Color(0xFF52B788)],
             ),
-
-            // Floating avatar — sits at bottom of cover, overlapping into white area
-            Positioned(
-              bottom: -_kAvatarOverlap,
-              left: 20,
-              child: GestureDetector(
-                onTap: () { HapticFeedback.lightImpact(); onAvatarTap(); },
-                child: Stack(
-                  children: [
-                    Container(
-                      width: _kAvatarSize + 6,
-                      height: _kAvatarSize + 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: surfaceBg,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.1),
-                            blurRadius: 12, offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(3),
-                      child: ClipOval(child: buildAvatarImage()),
-                    ),
-                    Positioned(
-                      bottom: 3, right: 3,
-                      child: Container(
-                        width: 26, height: 26,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary, shape: BoxShape.circle,
-                          border: Border.all(color: surfaceBg, width: 2),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(child: CustomPaint(painter: _HexPatternPainter())),
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        t.isUrdu ? 'پروفائل' : 'Profile',
+                        style: const TextStyle(
+                          color: Colors.white, fontSize: 20,
+                          fontWeight: FontWeight.w800, letterSpacing: -0.3,
                         ),
-                        child: const Icon(CupertinoIcons.camera_fill, size: 12, color: Colors.white),
                       ),
-                    ),
-                  ],
+                      GestureDetector(
+                        onTap: () { HapticFeedback.lightImpact(); onEditTap(); },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(CupertinoIcons.pencil, size: 13, color: Colors.white),
+                              const SizedBox(width: 5),
+                              Text(
+                                t.isUrdu ? 'ترمیم' : 'Edit',
+                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
 
-        // ── White content area ───────────────────────────────────────────
+        // ── White content area ────────────────────────────────────────────
         Container(
           color: surfaceBg,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Row: [avatar space] [name + email]
-              // The avatar overlaps by _kAvatarOverlap, so we need
-              // (_kAvatarSize + 6 - _kAvatarOverlap) of top padding to clear it
-              SizedBox(height: _kAvatarSize + 6 - _kAvatarOverlap + 8),
-
+              // Avatar + name side by side
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Spacer matching avatar width
-                  const SizedBox(width: _kAvatarSize + 6 + 12),
+                  // Avatar
+                  GestureDetector(
+                    onTap: () { HapticFeedback.lightImpact(); onAvatarTap(); },
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: _kAvatarSize + 6,
+                          height: _kAvatarSize + 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: surfaceBg,
+                            border: Border.all(color: AppColors.primary, width: 2.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                                blurRadius: 10, offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: ClipOval(child: buildAvatarImage()),
+                        ),
+                        Positioned(
+                          bottom: 2, right: 2,
+                          child: Container(
+                            width: 24, height: 24,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary, shape: BoxShape.circle,
+                              border: Border.all(color: surfaceBg, width: 2),
+                            ),
+                            child: const Icon(CupertinoIcons.camera_fill, size: 11, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
                   // Name + email
                   Expanded(
                     child: Column(
@@ -216,7 +190,11 @@ class ProfileHeroSection extends StatelessWidget {
                     if (location.isNotEmpty)
                       _InfoChip(icon: CupertinoIcons.location_fill, label: location, isDark: isDark),
                     if (farmSize.isNotEmpty)
-                      _InfoChip(icon: CupertinoIcons.tree, label: '$farmSize ${t.isUrdu ? 'ایکڑ' : 'acres'}', isDark: isDark),
+                      _InfoChip(
+                        icon: CupertinoIcons.tree,
+                        label: '$farmSize ${t.isUrdu ? 'ایکڑ' : 'acres'}',
+                        isDark: isDark,
+                      ),
                   ],
                 ),
               ],

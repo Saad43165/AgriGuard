@@ -106,8 +106,16 @@ class _ResultsScreenState extends State<ResultsScreen> {
         if (mounted) setState(() => _isAlreadySaved = true);
         return;
       }
-      if (confidence < 40.0) {
+      if (confidence < 50.0) {
         debugPrint('⚠️ Not saving — confidence too low (${confidence.toStringAsFixed(1)}%)');
+        if (mounted) setState(() => _isAlreadySaved = true);
+        return;
+      }
+
+      // Also block unknown plant scans
+      final plantName = widget.scanData['plantName']?.toString() ?? '';
+      if (plantName.isEmpty || plantName == 'Unknown Plant') {
+        debugPrint('⚠️ Not saving — unknown plant');
         if (mounted) setState(() => _isAlreadySaved = true);
         return;
       }

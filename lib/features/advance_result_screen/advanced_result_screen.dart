@@ -688,38 +688,41 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen>
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
               child: Column(
-                children: items
-                    .map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                margin: const EdgeInsets.only(top: 6),
-                                width: 6,
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  item,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? AppColors.darkSubtext
-                                        : AppColors.lightSubtext,
-                                    height: 1.5,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...items
+                      .map((item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.only(top: 6),
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ))
-                    .toList(),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    item,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: isDark
+                                          ? AppColors.darkSubtext
+                                          : AppColors.lightSubtext,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ))
+                      .toList(),
+                ],
               ),
             ),
           ],

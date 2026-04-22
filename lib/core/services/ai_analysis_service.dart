@@ -434,6 +434,18 @@ class PlantAnalysisService {
         'confidence': diseaseConfidence,
         'isHealthy': isHealthyPlant,
 
+        // ── Confidence tier — used by CaptureScreen to decide what to show ──
+        // LOW  (< 40%)  → show "unable to identify" dialog, don't navigate to results
+        // MEDIUM (40-60%) → show top-3 options dialog
+        // HIGH (≥ 60%)  → navigate directly to results
+        'confidenceTier': isUnknownPlant
+            ? 'low'
+            : diseaseConfidence < 40.0
+                ? 'low'
+                : diseaseConfidence < 60.0
+                    ? 'medium'
+                    : 'high',
+
         'hasDiseaseData': hasDiseaseData,
         'shouldShowDisease': !isUnknownPlant,
 

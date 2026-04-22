@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/services/ai_analysis_service.dart';
 import '../../../../core/services/severity_id_service.dart';
+import '../../../../core/services/translation_service.dart';
 import 'groq_service.dart';
 import 'plantnet_api_service.dart';
 import 'plant_id_api_service.dart';
@@ -309,6 +310,7 @@ class AdvancedSearchService {
         diseaseName: diseaseName,
         severity: severity,
         confidencePercent: confidence,
+        inUrdu: TranslationService().isUrdu,
       );
 
       if (groq['success'] == true) {

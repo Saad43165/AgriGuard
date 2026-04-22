@@ -378,45 +378,88 @@ class _CaptureScreenState extends State<CaptureScreen>
   void _showRetakeDialog(double confidence) {
     if (!mounted) return;
     HapticFeedback.heavyImpact();
+    final t = Provider.of<TranslationService>(context, listen: false);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVeryLow = confidence < 25.0;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? AppColors.darkCard : Colors.white,
-        title: const Row(children: [
-          Icon(Icons.photo_camera_rounded, color: AppColors.warning, size: 22),
-          SizedBox(width: 10),
-          Text('Better Photo Needed', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        title: Row(children: [
+          Icon(
+            isVeryLow ? Icons.help_outline_rounded : Icons.photo_camera_rounded,
+            color: AppColors.warning, size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Text(
+            t.isUrdu
+                ? (isVeryLow ? 'پودا شناخت نہیں ہوا' : 'بہتر تصویر درکار ہے')
+                : (isVeryLow ? 'Plant Not Identified' : 'Better Photo Needed'),
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+          )),
         ]),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('Confidence is ${confidence.toStringAsFixed(0)}% — too low for a reliable result.',
-              style: const TextStyle(fontSize: 14)),
-          const SizedBox(height: 8),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(
+            t.isUrdu
+                ? 'اعتماد ${confidence.toStringAsFixed(0)}% ہے — قابل اعتماد نتیجے کے لیے بہت کم ہے۔'
+                : 'Confidence is ${confidence.toStringAsFixed(0)}% — too low for a reliable result.',
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12)),
-            child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('📸 Tips for better results:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-              SizedBox(height: 6),
-              Text('• Fill frame with a single leaf', style: TextStyle(fontSize: 12)),
-              Text('• Use good natural lighting', style: TextStyle(fontSize: 12)),
-              Text('• Keep image sharp and in focus', style: TextStyle(fontSize: 12)),
-              Text('• Avoid shadows on the leaf', style: TextStyle(fontSize: 12)),
+              color: AppColors.warning.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                t.isUrdu ? '📸 بہتر نتائج کے لیے:' : '📸 Tips for better results:',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              _tip(t.isUrdu ? 'پتے کو فریم میں بھریں' : 'Fill frame with a single leaf'),
+              _tip(t.isUrdu ? 'اچھی قدرتی روشنی استعمال کریں' : 'Use good natural lighting'),
+              _tip(t.isUrdu ? 'تصویر واضح اور فوکس میں ہو' : 'Keep image sharp and in focus'),
+              _tip(t.isUrdu ? 'پتے پر سائے سے بچیں' : 'Avoid shadows on the leaf'),
+              _tip(t.isUrdu ? 'ایڈوانسڈ AI آزمائیں' : 'Try Advanced AI for better accuracy'),
             ]),
           ),
         ]),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Try Again', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+            child: Text(
+              t.isUrdu ? 'دوبارہ کوشش کریں' : 'Try Again',
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              // Switch to advanced AI and retry
+              setState(() => _scanMode = _ScanMode.advancedAI);
+            },
+            child: Text(
+              t.isUrdu ? 'ایڈوانسڈ AI' : 'Advanced AI',
+              style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _tip(String text) => Padding(
+    padding: const EdgeInsets.only(top: 4),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('• ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+      Expanded(child: Text(text, style: const TextStyle(fontSize: 12))),
+    ]),
+  );
 
   Future<void> _showTop3Dialog(List top3, Map<String, dynamic> result, User? user) async {
     if (!mounted) return;
