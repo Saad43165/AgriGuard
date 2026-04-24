@@ -85,8 +85,6 @@ flutter:
     - assets/library.png
     - assets/images/
     - assets/images/help/
-    - assets/models/plant_species_final_quantized.tflite
-    - assets/models/labels.txt
     - assets/models/severity_dynamic_quant.tflite
     - assets/models/severity_labels.txt
     - assets/new_model/plantcity_52classes.tflite

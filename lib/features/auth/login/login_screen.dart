@@ -2,9 +2,11 @@ import 'package:agriguard_fyp/features/auth/login/services/guest_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants/app_routes.dart';
-import '../../../core/widgets/app_themes.dart';
-import '../services/auth_service.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/widgets/app_logo.dart';
+import 'package:agriguard_fyp/features/auth/services/auth_service.dart';
+import 'widgets/login_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscure = true;
   final _guestService = GuestService();
 
@@ -59,8 +62,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _googleLogin() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
+    if (_isGoogleLoading || _isLoading) return;
+    setState(() => _isGoogleLoading = true);
     try {
       final user = await authService.value.signInWithGoogle();
       if (user != null) {
@@ -70,12 +73,20 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       _snack('Google sign-in failed.', isError: true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
   Future<void> _guestLogin() async {
     HapticFeedback.mediumImpact();
+    final bool? proceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => const GuestModeDialog(),
+    );
+
+    if (proceed != true) return;
+
     setState(() => _isLoading = true);
     try {
       await _guestService.enableGuestMode();
@@ -125,14 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Column(
                     children: [
-                      Container(
-                        width: 72, height: 72,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(Icons.eco_rounded, color: Colors.white, size: 40),
-                      ),
+                      const AppLogo(size: 80),
                       const SizedBox(height: 16),
                       const Text('Welcome back',
                           style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
@@ -146,23 +150,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
 
                 // Email
-                _label('Email'),
+                const LoginLabel('Email'),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDeco('Enter your email', Icons.email_outlined),
+                  decoration: buildLoginInputDeco('Enter your email', Icons.email_outlined),
                   validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
                 const SizedBox(height: 16),
 
                 // Password
-                _label('Password'),
+                const LoginLabel('Password'),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscure,
-                  decoration: _inputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
+                  decoration: buildLoginInputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                           color: const Color(0xFF9E9E9E), size: 20),
@@ -221,22 +225,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 52,
                   child: OutlinedButton(
-                    onPressed: _isLoading ? null : _googleLogin,
+                    onPressed: (_isLoading || _isGoogleLoading) ? null : _googleLogin,
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFFE8E8E8), width: 1.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       backgroundColor: Colors.white,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset('assets/images/google_g.png', width: 20, height: 20),
-                        const SizedBox(width: 10),
-                        const Text('Continue with Google',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
-                                color: Color(0xFF1B2B1E))),
-                      ],
-                    ),
+                    child: _isGoogleLoading
+                        ? const SizedBox(width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset('assets/images/google_g.png', width: 20, height: 20),
+                              const SizedBox(width: 10),
+                              const Text('Continue with Google',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1B2B1E))),
+                            ],
+                          ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -290,36 +297,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  Widget _label(String text) => Text(text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1B2B1E)));
-
-  InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
-    prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
-    filled: true,
-    fillColor: const Color(0xFFF9F9F9),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.error),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-  );
 }

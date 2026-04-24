@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -20,8 +20,6 @@ class GroqService {
     return key;
   }
 
-  /// Groq is used here for **text reasoning** on top of on-device detections.
-  /// It does NOT do image vision; the caller should provide detected fields.
   Future<Map<String, dynamic>> generateAgronomyAdvice({
     required String plantName,
     required String diseaseName,
@@ -60,7 +58,8 @@ Rules:
 - Do NOT include markdown, code blocks, or extra text
 ''';
 
-      final user = 'Plant: $plantName\nDisease: $diseaseName\nSeverity: $severity\nConfidence: $confidencePercent%\n\nGenerate the JSON.';
+      final user =
+          'Plant: $plantName\nDisease: $diseaseName\nSeverity: $severity\nConfidence: $confidencePercent%\n\nGenerate the JSON.';
 
       final body = {
         'model': dotenv.env['GROQ_MODEL']?.trim().isNotEmpty == true
@@ -79,13 +78,13 @@ Rules:
         final patched = Map<String, dynamic>.from(body)..['model'] = modelId;
         return http
             .post(
-              Uri.parse(_endpoint),
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer $apiKey',
-              },
-              body: jsonEncode(patched),
-            )
+          Uri.parse(_endpoint),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $apiKey',
+          },
+          body: jsonEncode(patched),
+        )
             .timeout(const Duration(seconds: 45));
       }
 
@@ -93,10 +92,9 @@ Rules:
       try {
         resp = await postWithModel(body['model'] as String);
       } on TimeoutException {
-        // one retry for slow networks
         resp = await postWithModel(body['model'] as String);
       }
-      // Auto-fallback if model is decommissioned
+
       if (resp.statusCode == 400 &&
           resp.body.toLowerCase().contains('decommissioned')) {
         resp = await postWithModel('llama-3.1-8b-instant');
@@ -114,6 +112,7 @@ Rules:
       final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
       final choices = decoded['choices'] as List<dynamic>? ?? const [];
       String? content;
+
       if (choices.isNotEmpty) {
         final first = choices.first;
         if (first is Map<String, dynamic>) {
@@ -157,26 +156,26 @@ Rules:
       final apiKey = _requireApiKey();
       final resp = await http
           .post(
-            Uri.parse(_endpoint),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $apiKey',
-            },
-            body: jsonEncode({
-              'model': 'llama-3.1-8b-instant',
-              'temperature': 0,
-              'max_tokens': 10,
-              'messages': [
-                {'role': 'user', 'content': 'Return {"ok":true} only.'},
-              ],
-              'response_format': {'type': 'json_object'},
-            }),
-          )
+        Uri.parse(_endpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          'model': 'llama-3.1-8b-instant',
+          'temperature': 0,
+          'max_tokens': 10,
+          'messages': [
+            {'role': 'user', 'content': 'Return {"ok":true} only.'},
+          ],
+          'response_format': {'type': 'json_object'},
+        }),
+      )
           .timeout(const Duration(seconds: 15));
+
       return resp.statusCode >= 200 && resp.statusCode < 300;
     } catch (_) {
       return false;
     }
   }
 }
-

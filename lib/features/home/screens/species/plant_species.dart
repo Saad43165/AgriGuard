@@ -112,7 +112,7 @@ class AppSpecies {
       growthInfoUr: 'ذیلی اشنکٹبندیی، 15-30°C۔ اچھی نکاسی والی مٹی، مکمل دھوپ۔',
       commonDiseasesEn: 'Leaf Spot',
       commonDiseasesUr: 'پتوں کے دھبے',
-      imagePath: 'assets/images/peach.png', color: Color(0xFFFF7043),
+      imagePath: 'assets/images/loquat.png', color: Color(0xFFFF7043),
     ),
     PlantSpecies(
       nameEn: 'Pear', nameUr: 'ناشپاتی',
@@ -157,6 +157,17 @@ class AppSpecies {
       commonDiseasesEn: 'Anthracnose, Blotch, Shot Hole, Leaf Gall Mite',
       commonDiseasesUr: 'اینتھراکنوز، دھبے، سوراخ دار پتے، پتوں کے گال ذرات',
       imagePath: 'assets/images/walnut.png', color: Color(0xFF6D4C41),
+    ),
+    PlantSpecies(
+      nameEn: 'Other', nameUr: 'دیگر',
+      scientificName: 'Various',
+      descriptionEn: 'Add any custom plant or species not listed here.',
+      descriptionUr: 'یہاں درج نہ ہونے والا کوئی بھی دوسرا پودا شامل کریں۔',
+      growthInfoEn: 'Varies by species.',
+      growthInfoUr: 'قسم کے لحاظ سے مختلف ہوتا ہے۔',
+      commonDiseasesEn: 'Varies by species.',
+      commonDiseasesUr: 'قسم کے لحاظ سے مختلف ہوتا ہے۔',
+      imagePath: 'assets/images/image.png', color: Color(0xFF607D8B),
     ),
   ];
 }

@@ -17,31 +17,24 @@
 
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'plant_id_service.dart';
 import 'disease_id_service.dart';
 import 'severity_id_service.dart';
 import 'leaf_detector.dart';
 
 class PlantAnalysisService {
-  final PlantIdService _speciesService;
   final DiseaseIdService _diseaseService;
   final SeverityIdService _severityService;
   bool _modelsLoaded = false;
 
   PlantAnalysisService({
-    PlantIdService? speciesService,
     DiseaseIdService? diseaseService,
     SeverityIdService? severityService,
-  })  : _speciesService = speciesService ?? PlantIdService(),
-        _diseaseService = diseaseService ?? DiseaseIdService(),
+  })  : _diseaseService = diseaseService ?? DiseaseIdService(),
         _severityService = severityService ?? SeverityIdService();
 
   Future<void> _ensureModelsLoaded() async {
     if (_modelsLoaded) return;
     try {
-      if (!_speciesService.isLoaded) {
-        await _speciesService.loadModel();
-      }
       if (!_diseaseService.isLoaded) {
         await _diseaseService.loadModel();
       }
@@ -266,17 +259,7 @@ class PlantAnalysisService {
       // Ensure models are loaded before any inference.
       await _ensureModelsLoaded();
 
-      // STEP 1: Plant species identification (kept for FYP demo — 3 models)
-      // NOTE: Plant ID model runs but its result is NOT used for plant name.
-      // The disease model identifies the plant through its label (e.g. Potato___Late_blight).
-      // This gives much better accuracy on real phone photos.
-      debugPrint('🌱 Running species identification (reference only)...');
-      final speciesResult = await _speciesService.predict(imageFile);
-      final speciesName = (speciesResult['label'] ?? 'Unknown Plant') as String;
-      final speciesConfidence = (speciesResult['confidence'] ?? 0.0) as double;
-      debugPrint('📊 PlantID result (not used for name): $speciesName ${(speciesConfidence*100).toStringAsFixed(0)}%');
-
-      // STEP 2: Disease detection — this is the primary model
+      // STEP 1: Disease detection — this is the primary model
       debugPrint('🩺 Running disease detection...');
       // Use plant hint if provided (e.g. user tapped a species chip)
       final diseaseResult = plantHint != null && plantHint.isNotEmpty
@@ -455,12 +438,10 @@ class PlantAnalysisService {
         'secondaryMessage': _getSecondaryMessage(
             isUnknownPlant, diseaseConfidence / 100.0, diseaseResult, finalSeverity),
 
-        '_rawSpecies': speciesResult,
         '_rawDisease': diseaseResult,
         '_leafAnalysis': leafAnalysis,
 
         'rawLabel': diseaseResult['rawLabel'],
-        '_plantIdName': speciesName,
         '_diseasePlantName': diseaseResult['plantName'],
         '_reconciledName': finalPlantName,
         'shouldSaveToHistory': true,

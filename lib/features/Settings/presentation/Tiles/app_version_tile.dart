@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../../../core/widgets/app_logo.dart';
 
 class AppVersionTile extends StatefulWidget {
   final EdgeInsets? padding;
@@ -63,7 +64,7 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
       SnackBar(
         content: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.info_outline_rounded,
               color: Colors.white,
               size: 20,
@@ -119,18 +120,7 @@ class _AppVersionTileState extends State<AppVersionTile> with SingleTickerProvid
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  ),
-                  child: Icon(
-                    Icons.info_outline_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 24,
-                  ),
-                ),
+                const AppLogo(size: 44, shadow: []),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(

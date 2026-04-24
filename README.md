@@ -1,52 +1,83 @@
-**AgriGuard - Flutter Application (In Development)**
-AgriGuard is a Flutter-based mobile application being developed as a Final Year Project (FYP) to support farmers and agricultural professionals. The app aims to simplify crop management by providing tools for scanning prescriptions, monitoring plant health, and managing farm operations. This project is actively under development, with new features and improvements being added regularly.
-Current Features
-**Prescription Scanning:** Capture or upload images of agricultural prescriptions (e.g., for pesticides or fertilizers) and extract medicine details using image processing and API integration.
-**Image Processing:** Compress and store images efficiently for seamless scanning and processing.
-**User-Friendly Navigation:** Includes a bottom navigation bar to switch between Home, Scan, and Profile screens.
-**Cross-Platform Support:** Built with Flutter to run on both Android and iOS devices.
-**Error Handling:** Robust handling for image picking, compression, and API errors with user-friendly feedback via snackbars.
-**Planned Features**
-**Plant Health Monitoring:** Analyze plant images to detect diseases or nutrient deficiencies.
-**User Profiles:** Store and display user-specific data, such as farm details and scan history.
-**Localization:** Support multiple languages for broader accessibility.
-**Enhanced UI/UX:** Add animations, glassmorphism effects, and consistent theming across all screens.
-**Offline Support:** Enable scanning and data storage without an internet connection.
+# 🌿 AgriGuard: Advanced Plant Intelligence
 
-## On-device (TFLite) plant analysis models
-The on-device scanning flow depends on three TensorFlow Lite model files that must be present in `assets/models/` and listed in `pubspec.yaml`.
+AgriGuard is a premium, AI-powered agricultural companion designed to empower farmers and home gardeners with real-time plant disease detection, smart farm management, and expert agricultural advice.
 
-### Required files
-- `assets/models/plant_species_final_quantized.tflite`
-- `assets/models/plant_disease_dynamic_quant.tflite`
-- `assets/models/severity_dynamic_quant.tflite`
+## 🚀 Key Features
 
-### Label/metadata files (committed)
-- `assets/models/labels.txt`
-- `assets/models/disease_labels.txt`
-- `assets/models/severity_labels.txt`
-- `assets/models/model_info.json`
+### 🔍 Precision AI Diagnosis
+* **Real-time Detection**: Identify over 52 classes of plant health conditions across 12+ species using optimized on-device TensorFlow Lite models.
+* **Hybrid Intelligence**: Combines Roboflow's cloud-based precision with local TFLite speed for the best possible accuracy.
+* **Dual-Layer Analysis**: Integrated Groq AI (Llama 3.3) provides detailed biological causes, treatment plans, and prevention strategies.
 
-### Notes
-- If the app shows “model loading” failures on first launch, verify the `.tflite` files exist at the paths above and run `flutter pub get` so assets are bundled correctly.
-- If you keep models out of git (size/licensing), ensure your team has a consistent way to obtain them and place them into `assets/models/` before running the app.
+### 🚜 Smart Farm Diary
+* **Custom Field Management**: Register and track any crop or plant species, including custom varieties not in the base model.
+* **Health Monitoring**: Track the scan history and health status of individual fields or garden plots.
+* **Localized Insights**: Get crop-specific growing tips, water needs, and soil recommendations entirely in Urdu or English.
 
-## Advanced Scan (Groq + Plant.id) setup
-This project uses environment variables for API keys via a local `.env` file (not committed).
+### 💬 Expert Agricultural Advisor
+* **AgriBot Assistant**: A specialized chatbot powered by Groq AI to answer complex agricultural questions, from pest control to seasonal planning.
+* **Deep Localization**: Full support for Urdu (اردو), making advanced agricultural tech accessible to everyone.
 
-Create a `.env` file in the project root:
+### 📚 Comprehensive Disease Library
+* **Knowledge Hub**: A detailed encyclopedia of common plant diseases with high-quality visual references.
+* **Offline Access**: Essential disease data is available even without an internet connection.
 
-```env
-# Hugging Face (free-tier vision detection)
-HF_API_TOKEN=your_token_here
-# Pick a plant-disease image classification model on HF
-HF_MODEL=dima806/plant-disease-classification
+## 🛠 Technical Stack
 
-# Groq (Cloud AI text assistant)
-GROQ_API_KEY=your_key_here
-# optional
-GROQ_MODEL=llama-3.1-70b-versatile
+* **Framework**: Flutter (Dart)
+* **AI/ML**: 
+  * TensorFlow Lite (On-device Inference)
+  * Roboflow API (Cloud-based Precision Scanning)
+  * Groq AI - Llama 3.3 (Agricultural Reasoning)
+* **Backend**: Firebase (Auth, Firestore, Cloud Storage)
+* **Architecture**: Feature-first layered architecture (Clean Architecture principles)
+* **State Management**: Provider
 
-# Plant.id (optional alternative)
-PLANTID_API_KEY=your_key_here
+## 🏗 Project Architecture
+
+AgriGuard follows a modular, feature-based structure for maximum scalability:
+
+```text
+lib/
+├── core/               # Shared utilities, services, and global widgets
+├── features/
+│   ├── auth/           # Login, Signup, and User Profile
+│   ├── capture/        # Camera interface and scan logic
+│   ├── chatbot/        # AI-powered chat interface
+│   ├── disease_library/ # Encyclopedia and plant data
+│   ├── farm_diary/     # Field management and crop tracking
+│   ├── history/        # Scan history and statistics
+│   └── splash/         # Premium entrance experience
+└── main.dart           # App entry point and theme configuration
 ```
+
+## 📦 Installation & Setup
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Saad43165/AgriGuard.git
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   flutter pub get
+   ```
+
+3. **Configure Environment Variables**:
+   Create a `.env` file in the root directory:
+   ```env
+   GROQ_API_KEY=your_groq_key
+   ROBOFLOW_API_KEY=your_roboflow_key
+   ```
+
+4. **Run the app**:
+   ```bash
+   flutter run
+   ```
+
+## 📄 License
+
+This project is developed as a Final Year Project. All rights reserved.
+
+---
+**Developed with ❤️ by the AgriGuard Team**

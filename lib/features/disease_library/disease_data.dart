@@ -534,7 +534,7 @@ class DiseaseLibrary {
     // ── LOQUAT ─────────────────────────────────────────────────────────────
     DiseaseEntry(
       id: 'loquat_healthy', plant: 'Loquat', condition: 'Healthy', isHealthy: true,
-      imageAsset: 'assets/images/peach.png',
+      imageAsset: 'assets/images/loquat.png',
       networkImage: null,
       description: 'Healthy loquat tree with large dark green glossy leaves.',
       symptoms: 'No visible symptoms — large dark green glossy leaves, vigorous growth',
@@ -550,7 +550,7 @@ class DiseaseLibrary {
     ),
     DiseaseEntry(
       id: 'loquat_leaf_spot', plant: 'Loquat', condition: 'Leaf Spot', isHealthy: false,
-      imageAsset: 'assets/images/peach.png',
+      imageAsset: 'assets/images/loquat.png',
       networkImage: null,
       description: 'Leaf spot on loquat caused by Cercospora eriobotryae produces brown spots.',
       symptoms: 'Brown circular spots on leaves, yellow halos, premature leaf drop',

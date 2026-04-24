@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/features/advance_search_screen/service/RoboflowApiService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../../advance_search_screen/service/advanced_search_service.dart';
 import '../../../advance_search_screen/service/groq_service.dart';
-import '../../../advance_search_screen/service/huggingface_vision_service.dart';
 import '../../../advance_search_screen/service/plant_id_api_service.dart';
 
 class DiagnosticsScreen extends StatefulWidget {
@@ -23,11 +23,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   Future<void> _runTests() async {
     if (_isTesting) return;
     HapticFeedback.mediumImpact();
+
     setState(() {
       _isTesting = true;
       _result = null;
       _error = null;
     });
+
     try {
       final service = AdvancedSearchService();
       final r = await service.testAllApis();
@@ -48,7 +50,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final t = Provider.of<TranslationService>(context);
 
     final groq = GroqService();
-    final hf = HuggingFaceVisionService();
+    final roboflow = RoboFlowApiService();
     final plantId = PlantIdService();
 
     return Scaffold(
@@ -59,41 +61,46 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SectionTitle(title: 'API Setup'),
+          const _SectionTitle(title: 'API Setup'),
           const SizedBox(height: 10),
+
           _StatusTile(
-            title: 'Groq API key',
-            subtitle: 'Used for advice text in advanced scan',
-            isOk: groq.hasApiKey(),
+            title: 'Roboflow API key',
+            subtitle: 'Used for cloud vision disease detection',
+            isOk: roboflow.hasApiKey,
           ),
           _StatusTile(
-            title: 'Hugging Face token',
-            subtitle: 'Used for cloud vision (if enabled)',
-            isOk: hf.hasToken(),
+            title: 'Groq API key',
+            subtitle: 'Used for agronomy advice text',
+            isOk: groq.hasApiKey(),
           ),
           _StatusTile(
             title: 'Plant.id key',
             subtitle: 'Fallback cloud vision (credits required)',
             isOk: plantId.hasApiKey(),
           ),
+
           const SizedBox(height: 16),
-          _SectionTitle(title: 'Connectivity test'),
+          const _SectionTitle(title: 'Connectivity test'),
           const SizedBox(height: 10),
+
           SizedBox(
             height: 48,
             child: ElevatedButton.icon(
               onPressed: _isTesting ? null : _runTests,
               icon: _isTesting
                   ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
                   : const Icon(Icons.play_arrow_rounded),
               label: Text(_isTesting ? t.get('analyzing') : 'Run API tests'),
             ),
           ),
+
           const SizedBox(height: 12),
+
           if (_error != null)
             _InfoBox(
               color: theme.colorScheme.errorContainer,
@@ -102,7 +109,8 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               title: 'Test failed',
               body: _error!,
             ),
-          if (_result != null) ...[
+
+          if (_result != null)
             _InfoBox(
               color: isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF),
               textColor: theme.colorScheme.onSurface,
@@ -110,25 +118,33 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               title: 'Results',
               body: _prettyResult(_result!),
             ),
-          ],
         ],
       ),
     );
   }
 
   String _prettyResult(Map<String, dynamic> r) {
-    final hf = r['huggingface'];
-    final groq = r['groq'];
-    final plant = r['plantId'];
+    final roboflow = r['roboflow'] as Map<String, dynamic>?;
+    final groq = r['groq'] as Map<String, dynamic>?;
+    final plant = r['plantId'] as Map<String, dynamic>?;
 
-    String ok(dynamic v) => v == true ? '✅' : '❌';
+    String ok(bool v) => v ? '✅' : '❌';
+
+    final roboflowOk = roboflow?['available'] == true;
+    final groqOk = groq?['available'] == true;
+    final plantOk = plant?['available'] == true;
+
     return [
-      'Hugging Face: ${ok(hf)}',
-      'Groq: ${ok(groq)}',
-      'Plant.id: ${ok(plant)}',
+      'Roboflow: ${ok(roboflowOk)}',
+      'Groq: ${ok(groqOk)}',
+      'Plant.id: ${ok(plantOk)}',
       '',
-      'Details:',
-      r.toString(),
+      'Roboflow status: ${roboflow?['status'] ?? 'N/A'}',
+      'Groq status: ${groq?['status'] ?? 'N/A'}',
+      'Plant.id status: ${plant?['status'] ?? 'N/A'}',
+      '',
+      'Message: ${r['message'] ?? 'N/A'}',
+      'Timestamp: ${r['timestamp'] ?? 'N/A'}',
     ].join('\n');
   }
 }
@@ -170,7 +186,9 @@ class _StatusTile extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: theme.colorScheme.surface,
-        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.10)),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.10),
+        ),
       ),
       child: Row(
         children: [
@@ -194,7 +212,9 @@ class _StatusTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -260,7 +280,10 @@ class _InfoBox extends StatelessWidget {
                 const SizedBox(height: 6),
                 SelectableText(
                   body,
-                  style: TextStyle(color: textColor.withValues(alpha: 0.90), height: 1.35),
+                  style: TextStyle(
+                    color: textColor.withValues(alpha: 0.90),
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -270,4 +293,3 @@ class _InfoBox extends StatelessWidget {
     );
   }
 }
-

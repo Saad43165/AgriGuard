@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/app_measurements.dart';
 
 /// A custom AppBar for the ForgotPasswordScreen.
@@ -63,7 +62,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     colors: _gradientColors(context),
                   ).createShader(bounds),
                   child: Icon(
-                    AppIcons.back,
+                    Icons.arrow_back,
                     size: 20,
                     color: Colors.white,
                   ),

@@ -444,6 +444,18 @@ class TranslationService extends ChangeNotifier {
     'faq_offline_a': 'Yes! PlantDetect works completely offline thanks to our optimized TensorFlow Lite model. All plant identification and disease detection happens on your device without needing internet connection.',
     'faq_best_photo_q': 'How do I take the best photo for scanning?',
     'faq_best_photo_a': 'For optimal results: 1) Use natural lighting, 2) Focus on leaves or affected areas, 3) Keep camera steady, 4) Fill frame with plant, 5) Take multiple angles if needed. Avoid shadows and blurry images.',
+
+    // Crop Info Sheet (NEW)
+    'overview': 'Overview',
+    'growing_season': 'Growing Season',
+    'harvest_time': 'Harvest Time',
+    'water_needs': 'Water Needs',
+    'soil_type': 'Soil Type',
+    'yield_per_acre': 'Expected Yield / Acre',
+    'pest_management_title': 'Pest Management',
+    'pro_farmer_tips': 'Pro Farmer Tips',
+    'symptoms': 'Symptoms',
+    'treatment': 'Treatment',
   };
 
   // ==================== URDU TRANSLATIONS ====================
@@ -746,6 +758,18 @@ class TranslationService extends ChangeNotifier {
     'faq_offline_a': 'جی ہاں! PlantDetect ہمارے بہتر شدہ TensorFlow Lite ماڈل کی بدولت مکمل طور پر آف لائن کام کرتا ہے۔ تمام پودوں کی شناخت اور بیماری کی تشخیص آپ کے ڈیوائس پر انٹرنیٹ کنکشن کی ضرورت کے بغیر ہوتی ہے۔',
     'faq_best_photo_q': 'اسکیننگ کے لیے بہترین تصویر کیسے لی جائے؟',
     'faq_best_photo_a': 'بہترین نتائج کے لیے: 1) قدرتی روشنی استعمال کریں، 2) پتوں یا متاثرہ علاقوں پر توجہ دیں، 3) کیمرہ کو مستحکم رکھیں، 4) فریم کو پودے سے بھریں، 5) ضرورت پڑنے پر مختلف زاویوں سے لیں۔ سائے اور دھندلی تصاویر سے بچیں۔',
+
+    // Crop Info Sheet (NEW)
+    'overview': 'جائزہ',
+    'growing_season': 'کاشت کا موسم',
+    'harvest_time': 'کٹائی کا وقت',
+    'water_needs': 'پانی کی ضروریات',
+    'soil_type': 'مٹی کی قسم',
+    'yield_per_acre': 'فی ایکڑ پیداوار',
+    'pest_management_title': 'کیڑوں کا کنٹرول',
+    'pro_farmer_tips': 'ماہر کسان کے مشورے',
+    'symptoms': 'علامات',
+    'treatment': 'علاج',
   };
 
   // Plant translations

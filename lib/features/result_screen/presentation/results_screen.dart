@@ -11,15 +11,17 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../auth/login/services/guest_service.dart';
-import '../../../../core/constants/app_routes.dart';
-import '../../../../core/repositories/scan_repository.dart';
-import '../../../../core/services/severity_id_service.dart';
-import '../../../../core/services/translation_service.dart';
-import '../../../../core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/repositories/scan_repository.dart';
+import 'package:agriguard_fyp/core/services/severity_id_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
 import 'components/disease_cause_card.dart' show DiseaseCausesCard;
+import 'components/non_plant_screen.dart';
 import 'models/diagnosis_result.dart';
 import 'models/leaf_analysis_result.dart';
+import 'widgets/result_widgets.dart';
 
 class ResultsScreen extends StatefulWidget {
   final Map<String, dynamic> scanData;
@@ -28,7 +30,7 @@ class ResultsScreen extends StatefulWidget {
   State<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen> {
+class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateMixin {
   bool _isSaving = false;
   bool _isAlreadySaved = false;
   bool _jsonLoaded = false;
@@ -51,13 +53,29 @@ class _ResultsScreenState extends State<ResultsScreen> {
   final GuestService _guestService = GuestService();
   bool _isGuestMode = false;
 
+  // Vibe: slide-up animation for content
+  late AnimationController _slideCtrl;
+  late Animation<Offset> _slideAnim;
+  late Animation<double> _fadeAnim;
+
   @override
   void initState() {
     super.initState();
+    _slideCtrl = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
+    _fadeAnim = CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOut);
     _initializeGuestMode();
     _initializeServices();
     _loadJsonData();
     _analyzeAndSave();
+  }
+
+  @override
+  void dispose() {
+    _slideCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeGuestMode() async {
@@ -125,7 +143,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
       debugPrint('Analysis error: $e');
       _leafAnalysis = LeafAnalysisResult(isLeaf: true, confidence: 50.0, reasons: ['Error']);
     } finally {
-      if (mounted) setState(() => _isLoadingSeverity = false);
+      if (mounted) {
+        setState(() => _isLoadingSeverity = false);
+        _slideCtrl.forward(); // trigger slide-up animation
+      }
     }
   }
 
@@ -248,7 +269,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
     // ── Non-plant image — show dedicated screen ────────────────────────────
     if (!_isLeafImage) {
-      return _NonPlantScreen(
+      return NonPlantScreen(
         imagePath: widget.scanData['imagePath'] as String?,
         isDark: Theme.of(context).brightness == Brightness.dark,
         onBack: _handleBack,
@@ -261,7 +282,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
     final t = Provider.of<TranslationService>(context);
     final confidence = DataParsers.parseConfidence(widget.scanData['confidence']);
     final isUnknown = widget.scanData['isUnknown'] as bool? ?? false;
-    final sheetBg = isDark ? AppColors.darkCard : Colors.white;
+
+    // ── Ambient color based on health status ──────────────────────────────
+    Color sheetBg;
+    if (isDark) {
+      sheetBg = AppColors.darkCard;
+    } else if (isUnknown) {
+      sheetBg = Colors.white;
+    } else if (diagnosisResult.isHealthy) {
+      sheetBg = const Color(0xFFF0FFF4); // subtle green tint
+    } else {
+      sheetBg = const Color(0xFFFFF8F8); // subtle red tint
+    }
+
     final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
@@ -310,13 +343,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         Positioned(
                           top: MediaQuery.of(context).padding.top + 12,
                           left: 16,
-                          child: _CircleBtn(icon: Icons.arrow_back_ios_new_rounded, onTap: _handleBack),
+                          child: ResultCircleBtn(icon: Icons.arrow_back_ios_new_rounded, onTap: _handleBack),
                         ),
                         // Share only on right
                         Positioned(
                           top: MediaQuery.of(context).padding.top + 12,
                           right: 16,
-                          child: _CircleBtn(icon: Icons.share_rounded, onTap: _share),
+                          child: ResultCircleBtn(icon: Icons.share_rounded, onTap: _share),
                         ),
                       ],
                     ),
@@ -325,7 +358,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
                 // White content sheet
                 SliverToBoxAdapter(
-                  child: Container(
+                  child: FadeTransition(
+                    opacity: _fadeAnim,
+                    child: SlideTransition(
+                      position: _slideAnim,
+                      child: Container(
                     color: sheetBg,
                     padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 90),
                     child: Column(
@@ -372,18 +409,18 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
                         // Chips
                         Wrap(spacing: 8, runSpacing: 8, children: [
-                          _Chip(icon: '🌿', label: diagnosisResult.isHealthy ? (t.isUrdu ? 'صحت مند' : 'Healthy') : t.translateSeverity(_severity), isDark: isDark),
-                          _Chip(icon: '📊', label: '${confidence.toStringAsFixed(0)}% ${t.isUrdu ? 'اعتماد' : 'Confidence'}', isDark: isDark),
+                          ResultChip(icon: '🌿', label: diagnosisResult.isHealthy ? (t.isUrdu ? 'صحت مند' : 'Healthy') : t.translateSeverity(_severity), isDark: isDark),
+                          ResultChip(icon: '📊', label: '${confidence.toStringAsFixed(0)}% ${t.isUrdu ? 'اعتماد' : 'Confidence'}', isDark: isDark),
                           if (!diagnosisResult.isHealthy)
-                            _Chip(icon: '⚠️', label: t.translateDisease(diagnosisResult.disease), isDark: isDark),
+                            ResultChip(icon: '⚠️', label: t.translateDisease(diagnosisResult.disease), isDark: isDark),
                           if (_remediation.isNotEmpty)
-                            _Chip(icon: '💊', label: t.isUrdu ? 'علاج دستیاب' : 'Treatment Available', isDark: isDark),
+                            ResultChip(icon: '💊', label: t.isUrdu ? 'علاج دستیاب' : 'Treatment Available', isDark: isDark),
                         ]),
 
                         // Alerts
                         if (isUnknown && _isLeafImage) ...[
                           const SizedBox(height: 14),
-                          _AlertRow(icon: Icons.help_outline_rounded,
+                          ResultAlertRow(icon: Icons.help_outline_rounded,
                               message: t.isUrdu ? 'پودے کی شناخت نہیں ہوئی — بہتر نتائج کے لیے Advanced AI آزمائیں' : 'Plant not identified — try Advanced AI for better results',
                               color: AppColors.info, isDark: isDark),
                         ],
@@ -391,7 +428,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         // Treatment
                         if (_isLeafImage && _remediation.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          _SectionHeader(icon: Icons.healing_rounded, title: t.get('treatment_plan'), isDark: isDark),
+                          ResultSectionHeader(icon: Icons.healing_rounded, title: t.get('treatment_plan'), isDark: isDark),
                           const SizedBox(height: 8),
                           ...(() {
                             final list = t.isUrdu && _remediationUr.isNotEmpty ? _remediationUr : _remediation;
@@ -411,13 +448,15 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         // Disease causes
                         if (_isLeafImage && _jsonLoaded && _diseaseCausesList.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          _SectionHeader(icon: Icons.biotech_rounded, title: t.get('disease_causes'), isDark: isDark),
+                          ResultSectionHeader(icon: Icons.biotech_rounded, title: t.get('disease_causes'), isDark: isDark),
                           const SizedBox(height: 8),
                           DiseaseCausesCard(causes: _diseaseCausesList),
                         ],
                       ],
                     ),
                   ),
+                    ), // SlideTransition
+                  ), // FadeTransition
                 ),
               ],
             ),
@@ -487,216 +526,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 }
 
-class _CircleBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _CircleBtn({required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: 36, height: 36,
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
-      child: Icon(icon, color: Colors.white, size: 18),
-    ),
-  );
-}
-
-class _Chip extends StatelessWidget {
-  final String icon, label;
-  final bool isDark;
-  const _Chip({required this.icon, required this.label, required this.isDark});
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-    decoration: BoxDecoration(
-      color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
-      borderRadius: BorderRadius.circular(50),
-      border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Text(icon, style: const TextStyle(fontSize: 12)),
-      const SizedBox(width: 5),
-      Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568))),
-    ]),
-  );
-}
-
-class _AlertRow extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  final Color color;
-  final bool isDark;
-  const _AlertRow({required this.icon, required this.message, required this.color, required this.isDark});
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: color.withValues(alpha: 0.3)),
-    ),
-    child: Row(children: [
-      Icon(icon, color: color, size: 16),
-      const SizedBox(width: 10),
-      Expanded(child: Text(message, style: TextStyle(fontSize: 12,
-          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568), height: 1.4))),
-    ]),
-  );
-}
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final bool isDark;
-  const _SectionHeader({required this.icon, required this.title, required this.isDark});
-  @override
-  Widget build(BuildContext context) => Row(children: [
-    Icon(icon, color: AppColors.primary, size: 16),
-    const SizedBox(width: 8),
-    Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E))),
-  ]);
-}
 
 
 
 
-// ── Dedicated non-plant screen ────────────────────────────────────────────────
-class _NonPlantScreen extends StatelessWidget {
-  final String? imagePath;
-  final bool isDark;
-  final VoidCallback onBack;
-  final VoidCallback onRetry;
-  const _NonPlantScreen({this.imagePath, required this.isDark, required this.onBack, required this.onRetry});
 
-  @override
-  Widget build(BuildContext context) {
-    final t = Provider.of<TranslationService>(context, listen: false);
-    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
-    final cardBg = isDark ? AppColors.darkCard : Colors.white;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
-    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(children: [
-              GestureDetector(
-                onTap: onBack,
-                child: Container(
-                  width: 38, height: 38,
-                  decoration: BoxDecoration(
-                    color: cardBg, shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
-                  child: Icon(Icons.arrow_back_ios_new_rounded, size: 16,
-                      color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
-              ),
-            ]),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (imagePath != null)
-                    Container(
-                      width: 160, height: 160,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 2)),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: Image.file(File(imagePath!), fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: AppColors.error.withValues(alpha: 0.08),
-                              child: const Icon(Icons.image_not_supported_rounded, size: 48, color: AppColors.error))),
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 120, height: 120,
-                      decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.08), shape: BoxShape.circle),
-                      child: const Icon(Icons.image_not_supported_rounded, size: 52, color: AppColors.error),
-                    ),
-                  const SizedBox(height: 28),
-                  Text(
-                    t.isUrdu ? 'پودے کا پتہ نہیں ملا' : 'No Plant Detected',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: textColor, letterSpacing: -0.5),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    t.isUrdu
-                        ? 'یہ تصویر پودے کے پتے کی نہیں لگتی۔ بہتر نتائج کے لیے نیچے دی گئی ہدایات پر عمل کریں۔'
-                        : 'This image doesn\'t appear to be a plant leaf. Follow the tips below for better results.',
-                    style: TextStyle(fontSize: 14, color: captionColor, height: 1.5),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 28),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cardBg, borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
-                    child: Column(children: [
-                      _Tip(icon: Icons.center_focus_strong_rounded,
-                          text: t.isUrdu ? 'پتے کو فریم میں بھریں' : 'Fill the frame with a single leaf', isDark: isDark),
-                      const SizedBox(height: 10),
-                      _Tip(icon: Icons.wb_sunny_rounded,
-                          text: t.isUrdu ? 'اچھی روشنی میں تصویر لیں' : 'Use good natural lighting', isDark: isDark),
-                      const SizedBox(height: 10),
-                      _Tip(icon: Icons.blur_off_rounded,
-                          text: t.isUrdu ? 'واضح اور فوکس تصویر لیں' : 'Keep the image sharp and in focus', isDark: isDark),
-                      const SizedBox(height: 10),
-                      _Tip(icon: Icons.eco_rounded,
-                          text: t.isUrdu ? 'صرف پودوں کے پتوں کی تصویر لیں' : 'Only scan plant leaves', isDark: isDark),
-                    ]),
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: onRetry,
-                      icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                      label: Text(t.isUrdu ? 'دوبارہ اسکین کریں' : 'Scan Again'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary, foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
-class _Tip extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final bool isDark;
-  const _Tip({required this.icon, required this.text, required this.isDark});
-  @override
-  Widget build(BuildContext context) => Row(children: [
-    Container(
-      width: 32, height: 32,
-      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-      child: Icon(icon, color: AppColors.primary, size: 16)),
-    const SizedBox(width: 12),
-    Expanded(child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-        color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568)))),
-  ]);
-}

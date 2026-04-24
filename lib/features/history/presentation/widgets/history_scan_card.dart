@@ -36,115 +36,6 @@ class HistoryScanCard extends StatelessWidget {
     }
   }
 
-  // Image widget builder
-  Widget _buildImageWidget(double size) {
-    // 1. Try base64 image first
-    final imageBase64 = scan['imageBase64']?.toString();
-    if (imageBase64 != null && imageBase64.isNotEmpty) {
-      try {
-        final bytes = base64Decode(imageBase64);
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            bytes,
-            fit: BoxFit.cover,
-            width: size,
-            height: size,
-            errorBuilder: (_, __, ___) => _buildImagePlaceholder(size),
-          ),
-        );
-      } catch (e) {
-        debugPrint('Error decoding base64 image: $e');
-        // Fall through to other methods
-      }
-    }
-
-    // 2. Try local image path
-    final imagePath = scan['imagePath']?.toString();
-    if (imagePath != null && imagePath.isNotEmpty) {
-      try {
-        final file = File(imagePath);
-        if (file.existsSync()) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              file,
-              fit: BoxFit.cover,
-              width: size,
-              height: size,
-              errorBuilder: (_, __, ___) => _buildImagePlaceholder(size),
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Error loading local image: $e');
-      }
-    }
-
-    // 3. Try network URL
-    final imageUrl = scan['imageUrl']?.toString();
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          width: size,
-          height: size,
-          loadingBuilder: (c, child, progress) {
-            if (progress == null) return child;
-            return Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: progress.expectedTotalBytes != null
-                      ? progress.cumulativeBytesLoaded /
-                      progress.expectedTotalBytes!
-                      : null,
-                  strokeWidth: 2,
-                ),
-              ),
-            );
-          },
-          errorBuilder: (_, __, ___) => _buildImagePlaceholder(size),
-        ),
-      );
-    }
-
-    // 4. Fallback to placeholder
-    return _buildImagePlaceholder(size);
-  }
-
-  Widget _buildImagePlaceholder(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.blue.withValues(alpha: 0.1),
-            Colors.purple.withValues(alpha: 0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.photo_library_rounded,
-          size: size * 0.3,
-          color: Colors.blue.withValues(alpha: 0.3),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -154,7 +45,7 @@ class HistoryScanCard extends StatelessWidget {
     final confidence = scan['confidence']?.toString() ?? '0';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: theme.colorScheme.surface,
@@ -168,7 +59,7 @@ class HistoryScanCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -178,39 +69,27 @@ class HistoryScanCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Row - Compact layout
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Image Container
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 3,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: _buildImageWidget(50),
+                    // Thumbnail — extracted to its own widget
+                    ScanThumbnail(
+                      imageBase64: scan['imageBase64']?.toString(),
+                      imagePath: scan['imagePath']?.toString(),
+                      imageUrl: scan['imageUrl']?.toString(),
+                      size: 50,
                     ),
 
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
-                    // Main content - more compact
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // First row: Plant name and confidence
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -220,43 +99,39 @@ class HistoryScanCard extends StatelessWidget {
                                     Flexible(
                                       child: Text(
                                         plantName,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     if (_isAdvanced)
                                       Container(
-                                        margin: EdgeInsets.only(left: 6),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
+                                        margin:
+                                        const EdgeInsets.only(left: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: theme.colorScheme.primary,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                          BorderRadius.circular(8),
                                         ),
-                                        child: Text(
+                                        child: const Text(
                                           'AI',
                                           style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                   ],
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: _getSeverityColor(severity)
                                       .withValues(alpha: 0.1),
@@ -279,9 +154,8 @@ class HistoryScanCard extends StatelessWidget {
                             ],
                           ),
 
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
 
-                          // Second row: Scan type and timestamp
                           Row(
                             children: [
                               Text(
@@ -295,14 +169,14 @@ class HistoryScanCard extends StatelessWidget {
                                       .withValues(alpha: 0.6),
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Icon(
                                 Icons.circle,
                                 size: 4,
-                                color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.3),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _formatDate(
@@ -317,49 +191,43 @@ class HistoryScanCard extends StatelessWidget {
                             ],
                           ),
 
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
                   ],
                 ),
 
-                // Diagnosis row - more compact
                 Row(
                   children: [
                     Expanded(
                       child: Container(
-                        padding: EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color:
-                          theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.health_and_safety,
-                              size: 16,
-                              color: _getSeverityColor(severity),
-                            ),
-                            SizedBox(width: 8),
+                            Icon(Icons.health_and_safety,
+                                size: 16,
+                                color: _getSeverityColor(severity)),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 diagnosis,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: _getSeverityColor(severity)
                                     .withValues(alpha: 0.15),
@@ -379,25 +247,28 @@ class HistoryScanCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Delete button - positioned at end of diagnosis row
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
+
                     GestureDetector(
                       onTap: onDelete,
                       child: Container(
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.error.withValues(alpha: 0.08),
+                          color: theme.colorScheme.error
+                              .withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: theme.colorScheme.error.withValues(alpha: 0.2),
+                            color: theme.colorScheme.error
+                                .withValues(alpha: 0.2),
                             width: 1,
                           ),
                         ),
                         child: Icon(
                           Icons.delete_outline_rounded,
                           size: 18,
-                          color: theme.colorScheme.error.withValues(alpha: 0.7),
+                          color: theme.colorScheme.error
+                              .withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -422,11 +293,8 @@ class HistoryScanCard extends StatelessWidget {
       } else if (date is DateTime) {
         dt = date;
       }
-
       if (dt != null) {
-        final now = DateTime.now();
-        final diff = now.difference(dt);
-
+        final diff = DateTime.now().difference(dt);
         if (diff.inDays == 0) return 'Today';
         if (diff.inDays == 1) return 'Yesterday';
         if (diff.inDays < 7) return '${diff.inDays} days ago';
@@ -434,5 +302,132 @@ class HistoryScanCard extends StatelessWidget {
       }
     } catch (_) {}
     return 'Invalid';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ScanThumbnail
+// Resolves image from base64 → local file → network URL, with a placeholder
+// fallback. Extracted from HistoryScanCard so it can be tested independently.
+// ---------------------------------------------------------------------------
+class ScanThumbnail extends StatelessWidget {
+  final String? imageBase64;
+  final String? imagePath;
+  final String? imageUrl;
+  final double size;
+
+  const ScanThumbnail({
+    super.key,
+    this.imageBase64,
+    this.imagePath,
+    this.imageUrl,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: _resolveImage(),
+      ),
+    );
+  }
+
+  Widget _resolveImage() {
+    // 1. Base64
+    if (imageBase64 != null && imageBase64!.isNotEmpty) {
+      try {
+        final bytes = base64Decode(imageBase64!);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (_, __, ___) => _placeholder(),
+        );
+      } catch (_) {
+        // fall through
+      }
+    }
+
+    // 2. Local file
+    if (imagePath != null && imagePath!.isNotEmpty) {
+      final file = File(imagePath!);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          width: size,
+          height: size,
+          errorBuilder: (_, __, ___) => _placeholder(),
+        );
+      }
+    }
+
+    // 3. Network URL
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        width: size,
+        height: size,
+        loadingBuilder: (_, child, progress) {
+          if (progress == null) return child;
+          return SizedBox(
+            width: size,
+            height: size,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: progress.expectedTotalBytes != null
+                    ? progress.cumulativeBytesLoaded /
+                    progress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+        errorBuilder: (_, __, ___) => _placeholder(),
+      );
+    }
+
+    return _placeholder();
+  }
+
+  Widget _placeholder() {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.withValues(alpha: 0.1),
+            Colors.purple.withValues(alpha: 0.1),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.photo_library_rounded,
+          size: size * 0.3,
+          color: Colors.blue.withValues(alpha: 0.3),
+        ),
+      ),
+    );
   }
 }

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/weather_model.dart';
-import '../models/air_quality_model.dart';
 
 class WeatherService {
   static const String _apiKey = '5ccb6e1680064a169e5113329251608';
@@ -144,27 +143,6 @@ class WeatherService {
     }
   }
 
-  /// Get air quality data
-  Future<AirQualityModel?> getAirQuality(double lat, double lon) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/current.json?key=$_apiKey&q=$lat,$lon&aqi=yes'),
-      ).timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        if (jsonData['current']['air_quality'] != null) {
-          return AirQualityModel.fromJson(jsonData['current']['air_quality']);
-        }
-      }
-      return null;
-    } catch (e) {
-      if (kDebugMode) {
-        print('Failed to fetch air quality: $e');
-      }
-      return null;
-    }
-  }
 
   WeatherForecast _parseForecastResponse(http.Response response) {
     if (response.statusCode == 200) {

@@ -8,16 +8,22 @@ class CropInfoService {
   static const _groqUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
   // ── Fetch live crop info ──────────────────────────────────────────────────
-  static Future<Map<String, dynamic>> getCropInfo(String cropName, String plantType) async {
+  static Future<Map<String, dynamic>> getCropInfo(String cropName, String plantType, {String language = 'en'}) async {
     try {
       final key = dotenv.env['GROQ_API_KEY'] ?? '';
       if (key.isEmpty) return _fallback(plantType);
 
+      final langPrompt = language == 'ur' 
+          ? 'Respond ONLY in Urdu language (اردو). Translate all descriptive text, labels, and list items into clear, agricultural Urdu. All values in the JSON MUST be in Urdu.' 
+          : 'Respond ONLY in English language. All values in the JSON must be in English.';
+
       final prompt = '''
+$langPrompt
 You are an agricultural expert. Provide accurate, practical information about "$plantType" crop in JSON format.
+Your entire response must be in Urdu if requested.
 Return ONLY valid JSON with this exact structure:
 {
-  "description": "Brief description of the plant (2 sentences)",
+  "description": "Brief description of the plant (2-3 sentences)",
   "growingSeason": "Best growing season/months",
   "waterNeeds": "Water requirements",
   "soilType": "Best soil type",
@@ -41,29 +47,42 @@ Provide exactly 3 common diseases. Keep all text concise and practical for farme
         body: jsonEncode({
           'model': dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile',
           'messages': [
-            {'role': 'system', 'content': 'You are an agricultural expert. Always respond with valid JSON only.'},
+            {'role': 'system', 'content': 'You are an agricultural expert. Ensure your response is valid JSON. Do not include markdown code blocks or additional text. $langPrompt'},
             {'role': 'user', 'content': prompt},
           ],
-          'max_tokens': 800,
-          'temperature': 0.3,
+          'response_format': {'type': 'json_object'},
+          'max_tokens': 1500,
+          'temperature': 0.2,
         }),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'] as String;
-        // Extract JSON from response
-        final jsonStart = content.indexOf('{');
-        final jsonEnd = content.lastIndexOf('}') + 1;
-        if (jsonStart >= 0 && jsonEnd > jsonStart) {
-          final jsonStr = content.substring(jsonStart, jsonEnd);
-          final result = jsonDecode(jsonStr) as Map<String, dynamic>;
+        
+        try {
+          // Attempt direct JSON parse since we enforced json_object
+          final result = jsonDecode(content) as Map<String, dynamic>;
           result['source'] = 'live';
           result['plantType'] = plantType;
           return result;
+        } catch (e) {
+          // Fallback parsing just in case model appended something
+          final jsonStart = content.indexOf('{');
+          final jsonEnd = content.lastIndexOf('}') + 1;
+          if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            final jsonStr = content.substring(jsonStart, jsonEnd);
+            final result = jsonDecode(jsonStr) as Map<String, dynamic>;
+            result['source'] = 'live';
+            result['plantType'] = plantType;
+            return result;
+          }
         }
+      } else {
+        print('Groq Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('CropInfoService Exception: $e');
       // Fall through to offline data
     }
     return _fallback(plantType);

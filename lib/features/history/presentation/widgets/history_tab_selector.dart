@@ -25,28 +25,35 @@ class HistoryTabSelector extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+        border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: Row(
         children: [
-          Expanded(child: _buildTab(context, 'onDevice', 'On-Device', Icons.phone_android_rounded, onDeviceCount, isDark)),
+          Expanded(
+              child: _buildTab(context, 'onDevice', 'On-Device',
+                  Icons.phone_android_rounded, onDeviceCount, isDark)),
           const SizedBox(width: 4),
-          Expanded(child: _buildTab(context, 'advanced', 'Advanced AI', Icons.auto_awesome_rounded, advancedCount, isDark)),
+          Expanded(
+              child: _buildTab(context, 'advanced', 'Advanced AI',
+                  Icons.auto_awesome_rounded, advancedCount, isDark)),
         ],
       ),
     );
   }
 
-  Widget _buildTab(BuildContext context, String value, String label, IconData icon, int count, bool isDark) {
+  Widget _buildTab(BuildContext context, String value, String label,
+      IconData icon, int count, bool isDark) {
     final isSelected = selectedTab == value;
-    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
-    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
+    final captionColor =
+    isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return GestureDetector(
       onTap: () => onTabChanged(value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        padding:
+        const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -54,14 +61,17 @@ class HistoryTabSelector extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: isSelected ? Colors.white : captionColor),
+            Icon(icon,
+                size: 16,
+                color: isSelected ? Colors.white : captionColor),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight:
+                  isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected ? Colors.white : captionColor,
                 ),
                 maxLines: 1,
@@ -70,9 +80,12 @@ class HistoryTabSelector extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withValues(alpha: 0.25) : AppColors.primary.withValues(alpha: 0.1),
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

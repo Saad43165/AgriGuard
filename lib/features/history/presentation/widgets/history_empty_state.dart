@@ -3,12 +3,16 @@ import 'package:flutter/services.dart';
 
 class HistoryEmptyStateWidget extends StatelessWidget {
   final bool isAdvanced;
-  final VoidCallback? onNavigateToScan;
+
+  /// Called when the user taps "Start Scanning".
+  /// Navigation is handled by the parent screen, not this widget,
+  /// so it never touches the Navigator stack directly.
+  final VoidCallback? onScanPressed;
 
   const HistoryEmptyStateWidget({
     super.key,
     required this.isAdvanced,
-    this.onNavigateToScan,
+    this.onScanPressed,
   });
 
   @override
@@ -20,12 +24,11 @@ class HistoryEmptyStateWidget extends StatelessWidget {
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: IntrinsicHeight(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -37,7 +40,8 @@ class HistoryEmptyStateWidget extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             theme.colorScheme.primary.withValues(alpha: 0.1),
-                            theme.colorScheme.secondary.withValues(alpha: 0.05),
+                            theme.colorScheme.secondary
+                                .withValues(alpha: 0.05),
                           ],
                         ),
                         shape: BoxShape.circle,
@@ -47,7 +51,8 @@ class HistoryEmptyStateWidget extends StatelessWidget {
                             ? Icons.cloud_off_rounded
                             : Icons.phonelink_off_rounded,
                         size: 40,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                        color:
+                        theme.colorScheme.primary.withValues(alpha: 0.5),
                       ),
                     ),
 
@@ -58,9 +63,7 @@ class HistoryEmptyStateWidget extends StatelessWidget {
                           ? 'No Advanced AI Scans'
                           : 'No On-Device Scans',
                       style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          fontSize: 22, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
 
@@ -74,7 +77,8 @@ class HistoryEmptyStateWidget extends StatelessWidget {
                             : 'On-device scans use local AI models for quick plant identification',
                         style: TextStyle(
                           fontSize: 14,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                           height: 1.5,
                         ),
                         textAlign: TextAlign.center,
@@ -85,7 +89,6 @@ class HistoryEmptyStateWidget extends StatelessWidget {
 
                     const SizedBox(height: 28),
 
-                    // Modern Action Button (same style as species grid)
                     Container(
                       width: double.infinity,
                       height: 54,
@@ -99,7 +102,8 @@ class HistoryEmptyStateWidget extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -110,21 +114,15 @@ class HistoryEmptyStateWidget extends StatelessWidget {
                         child: InkWell(
                           onTap: () {
                             HapticFeedback.mediumImpact();
-
-                            // Same navigation as species grid
-                            Navigator.pop(context);
-                            Navigator.pushNamed(context, '/capture');
+                            onScanPressed?.call();
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: const Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.camera_alt_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
+                                Icon(Icons.camera_alt_rounded,
+                                    color: Colors.white, size: 20),
                                 SizedBox(width: 10),
                                 Text(
                                   'Start Scanning',
@@ -144,8 +142,8 @@ class HistoryEmptyStateWidget extends StatelessWidget {
 
                     const Spacer(),
 
-                    // Bottom safe area padding
-                    SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+                    SizedBox(
+                        height: MediaQuery.of(context).padding.bottom + 16),
                   ],
                 ),
               ),
