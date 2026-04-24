@@ -2,9 +2,10 @@ import 'package:agriguard_fyp/features/auth/login/services/guest_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants/app_routes.dart';
-import '../../../core/widgets/app_themes.dart';
-import '../services/auth_service.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/features/auth/services/auth_service.dart';
+import 'widgets/login_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,6 +77,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _guestLogin() async {
     HapticFeedback.mediumImpact();
+    final bool? proceed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => const GuestModeDialog(),
+    );
+
+    if (proceed != true) return;
+
     setState(() => _isLoading = true);
     try {
       await _guestService.enableGuestMode();
@@ -86,6 +95,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+
+
 
   String _authError(String code) {
     switch (code) {
@@ -146,23 +157,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 40),
 
                 // Email
-                _label('Email'),
+                const LoginLabel('Email'),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: _inputDeco('Enter your email', Icons.email_outlined),
+                  decoration: buildLoginInputDeco('Enter your email', Icons.email_outlined),
                   validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
                 const SizedBox(height: 16),
 
                 // Password
-                _label('Password'),
+                const LoginLabel('Password'),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscure,
-                  decoration: _inputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
+                  decoration: buildLoginInputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                           color: const Color(0xFF9E9E9E), size: 20),
@@ -290,36 +301,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  Widget _label(String text) => Text(text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1B2B1E)));
-
-  InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
-    prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
-    filled: true,
-    fillColor: const Color(0xFFF9F9F9),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.error),
-    ),
-    focusedErrorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-  );
 }

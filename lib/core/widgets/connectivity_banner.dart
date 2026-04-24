@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'app_themes.dart';
 
 class ConnectivityBanner extends StatefulWidget {
@@ -15,6 +15,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
     with SingleTickerProviderStateMixin {
   bool _isOnline = true;
   bool _showBanner = false;
+  int _failCount = 0;          // require 2 consecutive failures before showing
   Timer? _timer;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -28,8 +29,9 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
 
-    _checkConnectivity();
-    _timer = Timer.periodic(const Duration(seconds: 10), (_) => _checkConnectivity());
+    // Don't check immediately on startup — wait for the first interval
+    // to avoid false positives during app boot / Wi-Fi association delay.
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _checkConnectivity());
   }
 
   @override
@@ -42,36 +44,51 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
   Future<void> _checkConnectivity() async {
     bool online;
     try {
-      final response = await http
-          .get(Uri.parse('https://www.google.com'))
-          .timeout(const Duration(seconds: 3));
-      online = response.statusCode == 200;
+      // DNS lookup is faster, uses no data, and works even when
+      // google.com redirects or blocks HTTP (captive portals, etc.)
+      final result = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 4));
+      online = result.isNotEmpty && result.first.rawAddress.isNotEmpty;
     } catch (_) {
       online = false;
     }
+
     if (!mounted) return;
-    if (online != _isOnline) {
-      setState(() => _isOnline = online);
-      if (!online) {
-        setState(() => _showBanner = true);
-        _animController.forward();
-      } else {
-        _animController.reverse().then((_) {
-          if (mounted) setState(() => _showBanner = false);
-        });
+
+    if (!online) {
+      _failCount++;
+      // Only treat as truly offline after 2 consecutive failures
+      if (_failCount >= 2 && _isOnline) {
+        setState(() => _isOnline = false);
+        _showBannerAnimated();
+      }
+    } else {
+      _failCount = 0;
+      if (!_isOnline) {
+        setState(() => _isOnline = true);
+        _hideBannerAnimated();
       }
     }
   }
 
+  void _showBannerAnimated() {
+    setState(() => _showBanner = true);
+    _animController.forward();
+  }
+
+  void _hideBannerAnimated() {
+    _animController.reverse().then((_) {
+      if (mounted) setState(() => _showBanner = false);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Use Stack so the banner overlays content without pushing it down
     return Stack(
       children: [
         widget.child,
         if (_showBanner)
           Positioned(
-            // Place below status bar + app bar height (kToolbarHeight = 56)
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 4,
             left: 16,
             right: 16,
@@ -89,7 +106,8 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.warning.withValues(alpha: 0.4),
-                        blurRadius: 8, offset: const Offset(0, 3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
@@ -111,11 +129,7 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
-                        onTap: () {
-                          _animController.reverse().then((_) {
-                            if (mounted) setState(() => _showBanner = false);
-                          });
-                        },
+                        onTap: _hideBannerAnimated,
                         child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
                       ),
                     ],

@@ -9,15 +9,16 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../core/models/scan_model.dart';
-import '../../../core/repositories/scan_repository.dart';
-import '../../../core/widgets/app_themes.dart';
-import '../../../core/constants/app_routes.dart';
-import '../../auth/login/services/guest_service.dart';
+import 'package:agriguard_fyp/core/models/scan_model.dart';
+import 'package:agriguard_fyp/core/repositories/scan_repository.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/features/auth/login/services/guest_service.dart';
 import 'components/guest_mode_banner.dart';
+import 'components/home_header.dart';
 import 'species/species_grid_widget.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'weather/provider/weather_provider.dart';
-import '../../../core/services/translation_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -203,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 SliverToBoxAdapter(
                   child: FadeTransition(
                     opacity: _fadeController,
-                    child: _HomeHeader(isDark: isDark),
+                    child: HomeHeader(isDark: isDark),
                   ),
                 ),
 
@@ -257,176 +258,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-// ── Home header with weather in top bar ──────────────────────────────────────
-class _HomeHeader extends StatelessWidget {
-  final bool isDark;
-  const _HomeHeader({required this.isDark});
-
-  Stream<Map<String, String>> _userStream() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return Stream.value({'name': 'User'});
-    return FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .snapshots()
-        .map((d) => {
-              'name': d.exists ? ((d.data() as Map)['fullName'] ?? 'User') : 'User',
-            });
-  }
-
-  @override
-  @override
-  Widget build(BuildContext context) {
-    final t = Provider.of<TranslationService>(context, listen: false);
-    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
-    final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
-
-    return Column(
-      children: [
-        // ── Top bar: weather left, settings right ──────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          child: Row(
-            children: [
-              // Weather inline
-              Expanded(child: Consumer<WeatherProvider>(
-                builder: (_, provider, __) {
-                  if (provider.hasData) {
-                    final w = provider.currentWeather!;
-                    final icon = _weatherEmoji(w.conditionText, w.isDay == 1);
-                    return Row(
-                      children: [
-                        Text(icon, style: const TextStyle(fontSize: 22)),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${w.temperature.toStringAsFixed(0)}°C  ${w.conditionText}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: textColor,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Icon(CupertinoIcons.location_fill,
-                                    size: 10, color: AppColors.primary),
-                                const SizedBox(width: 3),
-                                Text(
-                                  w.cityName,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  }
-                  if (provider.isLoading) {
-                    return Row(children: [
-                      const SizedBox(width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
-                      const SizedBox(width: 8),
-                      Text(t.isUrdu ? 'موسم لوڈ ہو رہا ہے…' : 'Loading weather…',
-                          style: TextStyle(fontSize: 12, color: captionColor)),
-                    ]);
-                  }
-                  return Row(children: [
-                    Icon(CupertinoIcons.cloud, size: 18, color: captionColor),
-                    const SizedBox(width: 6),
-                    Text(t.isUrdu ? 'موسم دستیاب نہیں' : 'Weather unavailable',
-                        style: TextStyle(fontSize: 12, color: captionColor)),
-                  ]);
-                },
-              )),
-              // Settings button
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
-                child: Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
-                  child: Icon(CupertinoIcons.settings,
-                      size: 17,
-                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Report Bug button
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, AppRoutes.bugReport),
-                child: Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
-                  child: Icon(CupertinoIcons.ant,
-                      size: 17,
-                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // ── Greeting ───────────────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: StreamBuilder<Map<String, String>>(
-            stream: _userStream(),
-            builder: (context, snap) {
-              final firstName = (snap.data?['name'] ?? 'User').split(' ').first;
-              final h = DateTime.now().hour;
-              final t = Provider.of<TranslationService>(context, listen: false);
-              final greeting = h < 12 ? t.get('good_morning') : h < 17 ? t.get('good_afternoon') : t.get('good_evening');
-              return Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '$greeting, $firstName 👋',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: textColor,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _weatherEmoji(String condition, bool isDay) {
-    final c = condition.toLowerCase();
-    if (c.contains('sunny') || c.contains('clear')) return isDay ? '☀️' : '🌙';
-    if (c.contains('partly') || c.contains('cloudy')) return isDay ? '⛅' : '🌤️';
-    if (c.contains('overcast')) return '☁️';
-    if (c.contains('rain') || c.contains('drizzle')) return '🌧️';
-    if (c.contains('thunder') || c.contains('storm')) return '⛈️';
-    if (c.contains('snow') || c.contains('sleet')) return '❄️';
-    if (c.contains('fog') || c.contains('mist')) return '🌫️';
-    return isDay ? '🌤️' : '🌙';
-  }
-}
 
 // ── Recent scans section ──────────────────────────────────────────────────────
 class _RecentScansSection extends StatelessWidget {
@@ -449,7 +280,7 @@ class _RecentScansSection extends StatelessWidget {
   @override
   @override
   Widget build(BuildContext context) {
-    final t = Provider.of<TranslationService>(context, listen: false);
+    final t = Provider.of<TranslationService>(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -481,11 +312,8 @@ class _RecentScansSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (isLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
-            ),
+          Column(
+            children: List.generate(3, (i) => const _SkeletonScanCard()),
           )
         else if (scans.isEmpty)
           _EmptyScansState(isDark: isDark, onScanFirst: onScanFirst)
@@ -548,7 +376,7 @@ class _ScanCard extends StatelessWidget {
     final isHealthy = diseaseName.toLowerCase().contains('healthy');
     final diseaseColor = isHealthy ? AppColors.primary : AppColors.error;
     final isAdvanced = scan['isAdvanced'] as bool? ?? false;
-    final t = Provider.of<TranslationService>(context, listen: false);
+    final t = Provider.of<TranslationService>(context);
 
     // Translated display values
     final displayPlant = t.translatePlant(plantName);
@@ -691,7 +519,7 @@ class _EmptyScansState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = Provider.of<TranslationService>(context, listen: false);
+    final t = Provider.of<TranslationService>(context);
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
@@ -802,6 +630,93 @@ class _EmptyScansState extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Skeleton scan card ────────────────────────────────────────────────────────
+class _SkeletonScanCard extends StatefulWidget {
+  const _SkeletonScanCard();
+  @override
+  State<_SkeletonScanCard> createState() => _SkeletonScanCardState();
+}
+
+class _SkeletonScanCardState extends State<_SkeletonScanCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(duration: const Duration(milliseconds: 900), vsync: this)
+      ..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 0.7).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? AppColors.darkCard : Colors.white;
+    final shimmer = isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8);
+
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 64, height: 64,
+              decoration: BoxDecoration(
+                color: shimmer.withValues(alpha: _anim.value),
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 14, width: 120,
+                    decoration: BoxDecoration(
+                      color: shimmer.withValues(alpha: _anim.value),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 12, width: 80,
+                    decoration: BoxDecoration(
+                      color: shimmer.withValues(alpha: _anim.value * 0.7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    height: 10, width: 60,
+                    decoration: BoxDecoration(
+                      color: shimmer.withValues(alpha: _anim.value * 0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

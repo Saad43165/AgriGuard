@@ -2,10 +2,14 @@ import 'package:agriguard_fyp/features/history/presentation/utils/history_csv_ge
 import 'package:agriguard_fyp/features/history/presentation/utils/history_pdf_generator.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/export_option_dialog.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/export_success_dialog.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/guest_history_block.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_delete_dialog.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_appbar_actions.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_empty_state.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_filter_bar.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_scan_card.dart';
+import 'package:agriguard_fyp/features/history/presentation/widgets/history_states.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_stats_card.dart';
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_tab_selector.dart';
 import 'package:flutter/material.dart';
@@ -337,21 +341,65 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   void _openAdvancedScan(Map<String, dynamic> scan) {
+    // Build the data map — try advancedData first, then rawData['data'], then reconstruct
+    Map<String, dynamic> data;
+
+    final advancedData = scan['advancedData'];
+    final rawData = scan['rawData'];
+
+    if (advancedData is Map<String, dynamic> && advancedData.isNotEmpty) {
+      data = Map<String, dynamic>.from(advancedData);
+    } else if (rawData is Map<String, dynamic> && rawData['data'] is Map<String, dynamic>) {
+      data = Map<String, dynamic>.from(rawData['data'] as Map<String, dynamic>);
+    } else {
+      // Reconstruct from flat scan fields
+      data = {};
+    }
+
+    // Ensure all required keys exist — fill from flat scan fields if missing
+    final plantName = scan['plantName']?.toString() ?? 'Unknown Plant';
+    final diseaseName = scan['diseaseName']?.toString() ??
+        scan['diagnosis']?.toString() ?? 'Unknown';
+    final confidence = scan['confidence']?.toString() ?? '0';
+    final severity = scan['severity']?.toString() ?? 'Unknown';
+
+    // Normalize treatments — stored as 'treatments' in toHistoryMap
+    List<String> remediation = [];
+    final remRaw = data['remediation'] ?? scan['treatments'] ?? scan['remediation'] ?? [];
+    if (remRaw is List) {
+      remediation = List<String>.from(remRaw.map((e) => e.toString()));
+    } else if (remRaw is String && remRaw.isNotEmpty) {
+      remediation = remRaw.split(RegExp(r'[;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    }
+
+    List<String> symptoms = [];
+    final symRaw = data['symptoms'] ?? scan['symptoms'] ?? [];
+    if (symRaw is List) symptoms = List<String>.from(symRaw.map((e) => e.toString()));
+
+    List<String> precautions = [];
+    final preRaw = data['precautions'] ?? scan['precautions'] ?? [];
+    if (preRaw is List) precautions = List<String>.from(preRaw.map((e) => e.toString()));
+
+    // Build final data map with all keys both screens expect
+    final finalData = {
+      ...data,
+      'plantName': data['plantName'] ?? data['plant'] ?? plantName,
+      'plant': data['plant'] ?? data['plantName'] ?? plantName,
+      'diseaseName': data['diseaseName'] ?? data['disease'] ?? diseaseName,
+      'disease': data['disease'] ?? data['diseaseName'] ?? diseaseName,
+      'confidence': data['confidence'] ?? confidence,
+      'severity': data['severity'] ?? severity,
+      'symptoms': symptoms,
+      'remediation': remediation,
+      'precautions': precautions,
+      'cause': data['cause'] ?? 'Saved scan from history',
+    };
+
     final analysisResult = {
-      'source': scan['analysisSource']?.toString() ?? 'Groq',
-      'data': scan['advancedData'] ??
-          scan['rawData']?['data'] ??
-          {
-            'plant': scan['plantName'] ?? 'Unknown Plant',
-            'disease': scan['diseaseName'] ?? scan['diagnosis'] ?? 'Unknown Disease',
-            'confidence': scan['confidence'] ?? '0',
-            'severity': scan['severity'] ?? 'Medium',
-            'symptoms': scan['symptoms'] ?? [],
-            'remediation': scan['treatments'] ?? scan['remediation'] ?? [],
-            'precautions': scan['precautions'] ?? [],
-          },
+      'source': scan['analysisSource']?.toString() ?? 'Groq AI',
+      'data': finalData,
       'success': true,
-      'hasDiseaseInfo': true,
+      'hasDiseaseInfo': diseaseName.toLowerCase() != 'healthy',
       'scanId': scan['id'],
     };
 
@@ -363,7 +411,6 @@ class _HistoryScreenState extends State<HistoryScreen>
       'skipSave': true,
       'alreadySaved': true,
       'id': scan['id'],
-      'originalId': scan['id'],
     };
 
     Navigator.push(
@@ -380,19 +427,17 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t = Provider.of<TranslationService>(context, listen: false);
+    final t = Provider.of<TranslationService>(context);
 
     // ── Guest mode — show lock screen ─────────────────────────────────────
     if (_isGuestMode) {
-      return _GuestHistoryBlock(isDark: isDark, t: t);
+      return GuestHistoryBlock(isDark: isDark, t: t);
     }
 
     return Scaffold(
       extendBodyBehindAppBar: false,
       appBar: HistoryAppBar(
         title: t.isUrdu ? 'اسکین ہسٹری' : 'Scan History',
-        showBackButton: true,
-        onBackPressed: () => Navigator.pop(context),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 5),
@@ -445,12 +490,24 @@ class _HistoryScreenState extends State<HistoryScreen>
                     const SizedBox(height: 12),
 
                     // Search Bar
-                    _buildSearchBar(isDark),
+                    HistorySearchBar(
+                      isDark: isDark,
+                      searchQuery: _searchQuery,
+                      controller: _searchController,
+                      onChanged: (v) {
+                        _searchController.text = v;
+                        setState(() => _searchQuery = v);
+                      },
+                    ),
 
                     const SizedBox(height: 8),
 
                     // Filter Chips
-                    _buildFilterChips(isDark),
+                    HistoryFilterChips(
+                      isDark: isDark,
+                      activeFilter: _activeFilter,
+                      onFilterChanged: (f) => setState(() => _activeFilter = f),
+                    ),
 
                     const SizedBox(height: 4),
 
@@ -487,24 +544,17 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildContent(BuildContext context) {
-    if (_isLoading) {
-      return _buildLoadingState();
-    }
-
-    if (_hasError) {
-      return _buildErrorState();
-    }
-
+    if (_isLoading) return const HistoryLoadingState();
+    if (_hasError) return HistoryErrorState(onRetry: _loadUserScans);
     if (_currentScans.isEmpty) {
-      return HistoryEmptyStateWidget(
-        isAdvanced: _selectedTab == 'advanced',
-      );
+      return HistoryEmptyStateWidget(isAdvanced: _selectedTab == 'advanced');
     }
-
     if (_filteredScans.isEmpty) {
-      return _buildNoResultsState();
+      return HistoryNoResultsState(onClearFilters: () {
+        _searchController.clear();
+        setState(() { _searchQuery = ''; _activeFilter = 'all'; });
+      });
     }
-
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -529,291 +579,12 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
   }
 
-  Widget _buildSearchBar(bool isDark) {
-    final t = Provider.of<TranslationService>(context, listen: false);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCard : AppColors.lightCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-            width: 1.5,
-          ),
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (v) => setState(() => _searchQuery = v),
-          style: TextStyle(
-            color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            hintText: t.isUrdu ? 'پودے یا بیماری سے تلاش کریں...' : 'Search by plant or disease...',
-            hintStyle: TextStyle(
-              color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
-              fontSize: 14,
-            ),
-            prefixIcon: Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? GestureDetector(
-                    onTap: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                    child: Icon(Icons.close_rounded,
-                        color: isDark ? AppColors.darkCaption : AppColors.lightCaption, size: 18),
-                  )
-                : null,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChips(bool isDark) {
-    final t = Provider.of<TranslationService>(context, listen: false);
-    final filters = [
-      ('all', t.isUrdu ? 'سب' : 'All'),
-      ('healthy', t.isUrdu ? 'صحت مند' : 'Healthy'),
-      ('diseased', t.isUrdu ? 'بیمار' : 'Diseased'),
-      ('high', t.isUrdu ? 'زیادہ شدت' : 'High Severity'),
-    ];
-    return SizedBox(
-      height: 36,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: filters.map((f) {
-          final isSelected = _activeFilter == f.$1;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _activeFilter = f.$1);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : (isDark ? AppColors.darkCard : AppColors.lightCard),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                    width: 1.5,
-                  ),
-                ),
-                child: Text(
-                  f.$2,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? Colors.white : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildNoResultsState() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t = Provider.of<TranslationService>(context, listen: false);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.search_off_rounded, size: 48, color: AppColors.primary),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              t.isUrdu ? 'کوئی نتیجہ نہیں ملا' : 'No results found',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              t.isUrdu ? 'اپنی تلاش یا فلٹر تبدیل کریں' : 'Try adjusting your search or filter',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton.icon(
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  _searchQuery = '';
-                  _activeFilter = 'all';
-                });
-              },
-              icon: const Icon(Icons.clear_rounded, size: 16),
-              label: Text(t.isUrdu ? 'فلٹر صاف کریں' : 'Clear filters'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary, width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    final t = Provider.of<TranslationService>(context, listen: false);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            t.isUrdu ? 'آپ کے اسکینز لوڈ ہو رہے ہیں...' : 'Loading your scans...',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    final t = Provider.of<TranslationService>(context, listen: false);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              t.isUrdu ? 'اسکینز لوڈ کرنے میں ناکامی' : 'Failed to load scans',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Please check your connection and try again',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: _loadUserScans,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(t.isUrdu ? 'دوبارہ کوشش کریں' : 'Try Again', style: const TextStyle(fontSize: 16)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // State widgets extracted to history_states.dart
 
   // ==================== DIALOG BUILDERS ====================
 
-  Widget _buildLoadingDialog(String message) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCard : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
-            const SizedBox(height: 20),
-            Text(
-              message,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Please wait...',
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildLoadingDialog(String message) =>
+      HistoryLoadingDialog(message: message);
 
   void _showErrorDialog(String title, String message) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -907,82 +678,15 @@ class _HistoryScreenState extends State<HistoryScreen>
   Future<void> _showDeleteConfirmationDialogForScan(Map<String, dynamic> scan) async {
     final diagnosis = scan['diagnosis']?.toString() ?? 'this scan';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : AppColors.lightCard,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.delete_outline_rounded, size: 40, color: AppColors.error),
-              ),
-              const SizedBox(height: 20),
-              Text('Delete Scan?',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20,
-                      color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
-              const SizedBox(height: 10),
-              Text('Are you sure you want to delete "$diagnosis"? This cannot be undone.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14,
-                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption)),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        Navigator.pop(context);
-                        _deleteScanById(scan['id'] as String?);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      builder: (context) => HistoryDeleteDialog(
+        diagnosis: diagnosis,
+        isDark: isDark,
+        onConfirm: () => _deleteScanById(scan['id'] as String?),
       ),
     );
   }
@@ -1036,83 +740,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.delete_outline_rounded, size: 32, color: AppColors.error),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Delete Scan?',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Are you sure you want to delete "$diagnosis"? This cannot be undone.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
-                        side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                      ),
-                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        Navigator.pop(context);
-                        _deleteScan(index);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                      ),
-                      child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+      builder: (context) => HistoryDeleteDialog(
+        diagnosis: diagnosis,
+        isDark: isDark,
+        onConfirm: () => _deleteScan(index),
       ),
     );
   }
@@ -1181,89 +812,3 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
   }
 }
-
-class _GuestHistoryBlock extends StatelessWidget {
-  final bool isDark;
-  final TranslationService t;
-
-  const _GuestHistoryBlock({required this.isDark, required this.t});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(t.isUrdu ? 'اسکین ہسٹری' : 'Scan History'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.lock_outline_rounded,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                t.isUrdu ? 'ہسٹری دستیاب نہیں' : 'History Unavailable',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                t.isUrdu
-                    ? 'اپنی اسکین ہسٹری دیکھنے کے لیے براہ کرم لاگ ان کریں'
-                    : 'Please log in to view your scan history',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                  color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.login,
-                    (route) => false,
-                  ),
-                  icon: const Icon(Icons.login_rounded),
-                  label: Text(
-                    t.isUrdu ? 'لاگ ان کریں' : 'Log In',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-

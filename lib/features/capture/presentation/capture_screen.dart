@@ -1,20 +1,24 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_routes.dart';
-import '../../../core/services/ai_analysis_service.dart';
-import '../../../core/services/translation_service.dart';
-import '../../../core/widgets/app_dialog.dart';
-import '../../../core/widgets/app_themes.dart';
-import '../../../core/services/disease_id_service.dart';
-import '../../../core/services/plant_id_service.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/services/ai_analysis_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/widgets/app_dialog.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/services/disease_id_service.dart';
+import 'package:agriguard_fyp/core/services/plant_id_service.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
 import '../../auth/login/services/guest_service.dart';
 import 'components/processing_overlay.dart';
+import 'widgets/animated_shutter_button.dart';
+import 'widgets/brackets_painter.dart';
+import 'widgets/capture_dialogs.dart';
 
 // Scan mode: 0 = On-Device (offline), 1 = Advanced AI (cloud)
 enum _ScanMode { onDevice, advancedAI }
@@ -380,86 +384,23 @@ class _CaptureScreenState extends State<CaptureScreen>
     HapticFeedback.heavyImpact();
     final t = Provider.of<TranslationService>(context, listen: false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isVeryLow = confidence < 25.0;
-
+    
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
-        title: Row(children: [
-          Icon(
-            isVeryLow ? Icons.help_outline_rounded : Icons.photo_camera_rounded,
-            color: AppColors.warning, size: 22,
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(
-            t.isUrdu
-                ? (isVeryLow ? 'پودا شناخت نہیں ہوا' : 'بہتر تصویر درکار ہے')
-                : (isVeryLow ? 'Plant Not Identified' : 'Better Photo Needed'),
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-          )),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(
-            t.isUrdu
-                ? 'اعتماد ${confidence.toStringAsFixed(0)}% ہے — قابل اعتماد نتیجے کے لیے بہت کم ہے۔'
-                : 'Confidence is ${confidence.toStringAsFixed(0)}% — too low for a reliable result.',
-            style: const TextStyle(fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                t.isUrdu ? '📸 بہتر نتائج کے لیے:' : '📸 Tips for better results:',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              _tip(t.isUrdu ? 'پتے کو فریم میں بھریں' : 'Fill frame with a single leaf'),
-              _tip(t.isUrdu ? 'اچھی قدرتی روشنی استعمال کریں' : 'Use good natural lighting'),
-              _tip(t.isUrdu ? 'تصویر واضح اور فوکس میں ہو' : 'Keep image sharp and in focus'),
-              _tip(t.isUrdu ? 'پتے پر سائے سے بچیں' : 'Avoid shadows on the leaf'),
-              _tip(t.isUrdu ? 'ایڈوانسڈ AI آزمائیں' : 'Try Advanced AI for better accuracy'),
-            ]),
-          ),
-        ]),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              t.isUrdu ? 'دوبارہ کوشش کریں' : 'Try Again',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              // Switch to advanced AI and retry
-              setState(() => _scanMode = _ScanMode.advancedAI);
-            },
-            child: Text(
-              t.isUrdu ? 'ایڈوانسڈ AI' : 'Advanced AI',
-              style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
+      builder: (ctx) => CaptureRetakeDialog(
+        confidence: confidence,
+        t: t,
+        isDark: isDark,
+        onRetry: () => Navigator.pop(ctx),
+        onAdvanced: () {
+          Navigator.pop(ctx);
+          setState(() => _scanMode = _ScanMode.advancedAI);
+        },
       ),
     );
   }
 
-  Widget _tip(String text) => Padding(
-    padding: const EdgeInsets.only(top: 4),
-    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('• ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-      Expanded(child: Text(text, style: const TextStyle(fontSize: 12))),
-    ]),
-  );
+
 
   Future<void> _showTop3Dialog(List top3, Map<String, dynamic> result, User? user) async {
     if (!mounted) return;
@@ -469,90 +410,29 @@ class _CaptureScreenState extends State<CaptureScreen>
 
     await showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
-        title: Row(children: [
-          const Icon(Icons.help_outline_rounded, color: AppColors.warning, size: 22),
-          const SizedBox(width: 10),
-          Expanded(child: Text(
-            "I'm ${confidence.toStringAsFixed(0)}% sure",
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Which one looks correct?',
-              style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkCaption : AppColors.lightCaption)),
-          const SizedBox(height: 12),
-          ...top3.asMap().entries.map((entry) {
-            final pred = entry.value as Map;
-            final pConf = double.tryParse(pred['confidence']?.toString() ?? '0') ?? 0.0;
-            final pPlant = pred['plantName']?.toString() ?? '';
-            final pDisease = pred['diseaseName']?.toString() ?? '';
-            return GestureDetector(
-              onTap: () {
-                Navigator.pop(ctx);
-                // Build scan data with selected prediction
-                final overridden = Map<String, dynamic>.from(result);
-                overridden['plantName'] = pPlant;
-                overridden['diseaseName'] = pDisease;
-                overridden['confidence'] = pConf.toStringAsFixed(1);
-                overridden['isHealthy'] = pred['isHealthy'] ?? false;
-                overridden['rawLabel'] = pred['label'] ?? '';
-                final scanData = _buildScanData(overridden, user);
-                Navigator.pushNamed(context, AppRoutes.results, arguments: {'scanData': scanData});
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkBg : const Color(0xFFF8F8F8),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
-                child: Row(children: [
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(pPlant, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                    Text(pDisease, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-                        color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E))),
-                  ])),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20)),
-                    child: Text('${pConf.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary))),
-                ]),
-              ),
-            );
-          }),
-          const SizedBox(height: 4),
-          TextButton.icon(
-            onPressed: () => Navigator.pop(ctx),
-            icon: const Icon(Icons.camera_alt_rounded, size: 16),
-            label: const Text('Retake Photo'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.lightCaption),
-          ),
-        ]),
+      builder: (ctx) => CaptureTop3Dialog(
+        top3: top3,
+        confidence: confidence,
+        isDark: isDark,
+        onRetake: () => Navigator.pop(ctx),
+        onSelect: (pred) {
+          Navigator.pop(ctx);
+          final overridden = Map<String, dynamic>.from(result);
+          overridden['plantName'] = pred['plantName']?.toString() ?? '';
+          overridden['diseaseName'] = pred['diseaseName']?.toString() ?? '';
+          overridden['confidence'] = (double.tryParse(pred['confidence']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
+          overridden['isHealthy'] = pred['isHealthy'] ?? false;
+          overridden['rawLabel'] = pred['label'] ?? '';
+          final scanData = _buildScanData(overridden, user);
+          Navigator.pushNamed(context, AppRoutes.results, arguments: {'scanData': scanData});
+        },
       ),
     );
   }
 
   void _showGuestLimitDialog() {
     final t = Provider.of<TranslationService>(context, listen: false);
-    showDialog(context: context, builder: (ctx) => AppDialog(
-      icon: Icon(Icons.block_rounded, color: Theme.of(ctx).colorScheme.error),
-      title: t.get('limit_reached'),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text(t.get('limit_message')),
-        const SizedBox(height: 8),
-        Text(t.get('limit_benefit')),
-      ]),
-      actions: [
-        AppDialogActions.secondary(ctx, label: t.get('cancel'), onPressed: () => Navigator.pop(ctx)),
-        AppDialogActions.primary(ctx, label: t.get('sign_in_now'), icon: Icons.login_rounded,
-            onPressed: () => Navigator.pushNamedAndRemoveUntil(ctx, AppRoutes.login, (_) => false)),
-      ],
-    ));
+    showDialog(context: context, builder: (ctx) => GuestLimitDialog(t: t));
   }
 
   @override
@@ -606,12 +486,20 @@ class _CaptureScreenState extends State<CaptureScreen>
         // ── Camera preview with tap-to-focus + pinch-to-zoom ──────────────
         if (_cameraReady && _cameraController != null)
           LayoutBuilder(
-            builder: (context, constraints) => GestureDetector(
-              onTapDown: (d) => _handleTapToFocus(d, constraints),
-              onScaleStart: (_) => _baseZoom = _currentZoom,
-              onScaleUpdate: _handlePinchZoom,
-              child: CameraPreview(_cameraController!),
-            ),
+            builder: (context, constraints) {
+              final scale = 1 / (_cameraController!.value.aspectRatio * MediaQuery.of(context).size.aspectRatio);
+              return Transform.scale(
+                scale: scale < 1 ? 1 / scale : scale,
+                child: Center(
+                  child: GestureDetector(
+                    onTapDown: (d) => _handleTapToFocus(d, constraints),
+                    onScaleStart: (_) => _baseZoom = _currentZoom,
+                    onScaleUpdate: _handlePinchZoom,
+                    child: CameraPreview(_cameraController!),
+                  ),
+                ),
+              );
+            },
           )
         else
           Container(
@@ -645,7 +533,7 @@ class _CaptureScreenState extends State<CaptureScreen>
         Center(
           child: SizedBox(
             width: 240, height: 240,
-            child: CustomPaint(painter: _BracketsPainter()),
+            child: CustomPaint(painter: BracketsPainter()),
           ),
         ),
 
@@ -759,15 +647,15 @@ class _CaptureScreenState extends State<CaptureScreen>
         // ── Bottom controls ───────────────────────────────────────────────
         Positioned(
           left: 0, right: 0, bottom: 0,
-          child: Container(
-            padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [Colors.black.withValues(alpha: 0.85), Colors.transparent],
-              ),
-            ),
+          child: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).padding.bottom + 24),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -794,24 +682,8 @@ class _CaptureScreenState extends State<CaptureScreen>
                       ),
                     ),
 
-                    // Shutter button
-                    GestureDetector(
-                      onTap: _takePicture,
-                      child: Container(
-                        width: 76, height: 76,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Shutter button — animated press
+                    AnimatedShutterButton(onTap: _takePicture),
 
                     // Zoom reset button — shows when zoomed in
                     GestureDetector(
@@ -839,55 +711,65 @@ class _CaptureScreenState extends State<CaptureScreen>
             ),
           ),
         ),
-      ],
-    );
+      ),
+    ),
+  ],
+);
   }
 
   // ── Scan mode selector ────────────────────────────────────────────────────
   Widget _buildModeSelector() {
     final modes = [
-      (_ScanMode.onDevice, '⚡ Quick Scan', 'Offline · Fast'),
-      (_ScanMode.advancedAI, '🤖 Advanced AI', 'Cloud · Detailed'),
+      (_ScanMode.onDevice, 'Fast Scan', Icons.bolt_rounded),
+      (_ScanMode.advancedAI, 'Deep AI', Icons.auto_awesome_rounded),
     ];
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: modes.map((m) {
-        final isSelected = _scanMode == m.$1;
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() => _scanMode = m.$1);
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.white30,
-                width: 1.5,
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: modes.map((m) {
+          final isSelected = _scanMode == m.$1;
+          return GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _scanMode = m.$1);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ] : [],
+              ),
+              child: Row(
+                children: [
+                  Icon(m.$3, color: isSelected ? Colors.white : Colors.white60, size: 16),
+                  const SizedBox(width: 6),
+                  Text(m.$2, style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white60,
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  )),
+                ],
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(m.$2, style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                )),
-                Text(m.$3, style: TextStyle(
-                  color: Colors.white.withValues(alpha: isSelected ? 0.9 : 0.6),
-                  fontSize: 10,
-                )),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -904,34 +786,6 @@ class _CaptureScreenState extends State<CaptureScreen>
       ),
     );
   }
-}
-
-// ── Corner brackets painter ───────────────────────────────────────────────────
-class _BracketsPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    const len = 30.0;
-    // Top-left
-    canvas.drawLine(Offset.zero, const Offset(len, 0), paint);
-    canvas.drawLine(Offset.zero, const Offset(0, len), paint);
-    // Top-right
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - len, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, len), paint);
-    // Bottom-left
-    canvas.drawLine(Offset(0, size.height), Offset(len, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - len), paint);
-    // Bottom-right
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - len, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - len), paint);
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
 }
 
 

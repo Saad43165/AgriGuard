@@ -41,29 +41,42 @@ Provide exactly 3 common diseases. Keep all text concise and practical for farme
         body: jsonEncode({
           'model': dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile',
           'messages': [
-            {'role': 'system', 'content': 'You are an agricultural expert. Always respond with valid JSON only.'},
+            {'role': 'system', 'content': 'You are an agricultural expert. Ensure your response is valid JSON. Do not include markdown code blocks or additional text.'},
             {'role': 'user', 'content': prompt},
           ],
-          'max_tokens': 800,
-          'temperature': 0.3,
+          'response_format': {'type': 'json_object'},
+          'max_tokens': 1500,
+          'temperature': 0.2,
         }),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'] as String;
-        // Extract JSON from response
-        final jsonStart = content.indexOf('{');
-        final jsonEnd = content.lastIndexOf('}') + 1;
-        if (jsonStart >= 0 && jsonEnd > jsonStart) {
-          final jsonStr = content.substring(jsonStart, jsonEnd);
-          final result = jsonDecode(jsonStr) as Map<String, dynamic>;
+        
+        try {
+          // Attempt direct JSON parse since we enforced json_object
+          final result = jsonDecode(content) as Map<String, dynamic>;
           result['source'] = 'live';
           result['plantType'] = plantType;
           return result;
+        } catch (e) {
+          // Fallback parsing just in case model appended something
+          final jsonStart = content.indexOf('{');
+          final jsonEnd = content.lastIndexOf('}') + 1;
+          if (jsonStart >= 0 && jsonEnd > jsonStart) {
+            final jsonStr = content.substring(jsonStart, jsonEnd);
+            final result = jsonDecode(jsonStr) as Map<String, dynamic>;
+            result['source'] = 'live';
+            result['plantType'] = plantType;
+            return result;
+          }
         }
+      } else {
+        print('Groq Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('CropInfoService Exception: $e');
       // Fall through to offline data
     }
     return _fallback(plantType);

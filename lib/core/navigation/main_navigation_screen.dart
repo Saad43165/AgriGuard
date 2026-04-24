@@ -22,17 +22,20 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  // Tab indices: 0=Home, 1=History, 2=AI Chat, 3=Profile
+class _MainNavigationScreenState extends State<MainNavigationScreen> with TickerProviderStateMixin {
   late int _currentIndex;
+  late AnimationController _fadeCtrl;
+  late Animation<double> _fadeAnim;
 
   @override
   void initState() {
     super.initState();
-    // Clamp to valid range 0-3
     _currentIndex = widget.initialIndex.clamp(0, 3);
+    _fadeCtrl = AnimationController(
+        duration: const Duration(milliseconds: 180), vsync: this)
+      ..value = 1.0;
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
-    // If openCamera flag is set, open capture screen after first frame
     if (widget.userData?['openCamera'] == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _openCaptureScreen();
@@ -40,16 +43,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
   void _onTabTapped(int navIndex) {
     if (navIndex == 2) {
-      // Camera — directly open CaptureScreen (no dialog)
       _openCaptureScreen();
       return;
     }
     final screenIndex = navIndex <= 1 ? navIndex : navIndex - 1;
     if (_currentIndex == screenIndex) return;
     HapticFeedback.lightImpact();
-    setState(() => _currentIndex = screenIndex);
+    // Fade out then switch
+    _fadeCtrl.reverse().then((_) {
+      if (mounted) {
+        setState(() => _currentIndex = screenIndex);
+        _fadeCtrl.forward();
+      }
+    });
   }
 
   void _openCaptureScreen({bool startAdvanced = false}) {
@@ -83,14 +97,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       },
       child: Scaffold(
         body: ConnectivityBanner(
-          child: IndexedStack(
-            index: _currentIndex,
-            children: [
-              HomeScreen(userData: widget.userData),     // 0 = Home
-              const HistoryScreen(),                      // 1 = History
-              const ChatbotScreen(),                      // 2 = AI Chat
-              ProfileScreen(userData: widget.userData),   // 3 = Profile
-            ],
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                HomeScreen(userData: widget.userData),
+                const HistoryScreen(),
+                const ChatbotScreen(),
+                ProfileScreen(userData: widget.userData),
+              ],
+            ),
           ),
         ),
         bottomNavigationBar: BottomNavBar(

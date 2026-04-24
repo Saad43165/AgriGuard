@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/app_routes.dart';
-import '../../../../core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 
 class SplashScreen extends StatefulWidget {
   final bool isLoggedIn;

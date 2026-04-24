@@ -104,23 +104,59 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
   void _navigate() {
     HapticFeedback.lightImpact();
     if (_isAdvanced) {
+      // Reconstruct full data map from all available fields
+      final rawData = widget.scan['rawData'];
+      final advancedData = widget.scan['advancedData'];
+
+      Map<String, dynamic> data = {};
+      if (advancedData is Map<String, dynamic> && advancedData.isNotEmpty) {
+        data = Map<String, dynamic>.from(advancedData);
+      } else if (rawData is Map<String, dynamic> && rawData['data'] is Map<String, dynamic>) {
+        data = Map<String, dynamic>.from(rawData['data'] as Map<String, dynamic>);
+      }
+
+      List<String> remediation = [];
+      final remRaw = data['remediation'] ?? widget.scan['treatments'] ?? widget.scan['remediation'] ?? [];
+      if (remRaw is List) remediation = List<String>.from(remRaw.map((e) => e.toString()));
+
+      List<String> symptoms = [];
+      final symRaw = data['symptoms'] ?? widget.scan['symptoms'] ?? [];
+      if (symRaw is List) symptoms = List<String>.from(symRaw.map((e) => e.toString()));
+
+      List<String> precautions = [];
+      final preRaw = data['precautions'] ?? widget.scan['precautions'] ?? [];
+      if (preRaw is List) precautions = List<String>.from(preRaw.map((e) => e.toString()));
+
+      final finalData = {
+        ...data,
+        'plantName': data['plantName'] ?? data['plant'] ?? _plantName,
+        'plant': data['plant'] ?? data['plantName'] ?? _plantName,
+        'diseaseName': data['diseaseName'] ?? data['disease'] ?? _disease,
+        'disease': data['disease'] ?? data['diseaseName'] ?? _disease,
+        'confidence': data['confidence'] ?? widget.scan['confidence']?.toString() ?? '0',
+        'severity': data['severity'] ?? _severity,
+        'symptoms': symptoms,
+        'remediation': remediation,
+        'precautions': precautions,
+        'cause': data['cause'] ?? 'Saved scan from history',
+      };
+
       Navigator.push(context, MaterialPageRoute(builder: (_) => AdvancedResultsScreen(
         analysisResult: {
-          'source': widget.scan['analysisSource']?.toString() ?? 'Groq',
-          'data': {
-            'plant': _plantName, 'disease': _disease,
-            'confidence': widget.scan['confidence']?.toString() ?? '0',
-            'severity': _severity,
-            'symptoms': widget.scan['symptoms'] is List ? List<String>.from(widget.scan['symptoms']) : [],
-            'remediation': widget.scan['treatment'] is List ? List<String>.from(widget.scan['treatment']) : [],
-            'precautions': widget.scan['precautions'] is List ? List<String>.from(widget.scan['precautions']) : [],
-          },
-          'success': true, 'hasDiseaseInfo': !_isHealthy, 'scanId': widget.scan['id'],
+          'source': widget.scan['analysisSource']?.toString() ?? 'Groq AI',
+          'data': finalData,
+          'success': true,
+          'hasDiseaseInfo': !_isHealthy,
+          'scanId': widget.scan['id'],
         },
         originalScanData: {
-          'imagePath': widget.scan['imagePath'], 'imageUrl': widget.scan['imageUrl'],
-          'imageBase64': widget.scan['imageBase64'], 'isFromHistory': true,
-          'skipSave': true, 'alreadySaved': true, 'id': widget.scan['id'],
+          'imagePath': widget.scan['imagePath'],
+          'imageUrl': widget.scan['imageUrl'],
+          'imageBase64': widget.scan['imageBase64'],
+          'isFromHistory': true,
+          'skipSave': true,
+          'alreadySaved': true,
+          'id': widget.scan['id'],
         },
       )));
     } else {
@@ -221,7 +257,7 @@ class _ScanCardState extends State<ScanCard> with SingleTickerProviderStateMixin
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
                 child: Builder(builder: (context) {
-                  final t = Provider.of<TranslationService>(context, listen: false);
+                  final t = Provider.of<TranslationService>(context);
                   final displayPlant = t.translatePlant(_plantName);
                   final displayDisease = _isHealthy
                       ? (t.isUrdu ? 'صحت مند' : 'Healthy')

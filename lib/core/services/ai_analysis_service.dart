@@ -266,7 +266,7 @@ class PlantAnalysisService {
       // Ensure models are loaded before any inference.
       await _ensureModelsLoaded();
 
-      // STEP 1: Plant species identification (kept for FYP demo — 3 models)
+      // STEP 1: Plant species identification 
       // NOTE: Plant ID model runs but its result is NOT used for plant name.
       // The disease model identifies the plant through its label (e.g. Potato___Late_blight).
       // This gives much better accuracy on real phone photos.

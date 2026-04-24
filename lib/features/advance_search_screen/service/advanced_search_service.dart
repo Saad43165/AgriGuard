@@ -460,12 +460,12 @@ class AdvancedSearchService {
 
   Map<String, dynamic> getApiRecommendations() {
     return {
-      'primary': 'Hugging Face',
-      'status': 'Free-tier vision model (✅ if HF_API_TOKEN is valid)',
+      'primary': 'Roboflow',
+      'status': 'Free-tier vision model (✅ if ROBOFLOW_INFER_API_KEY is valid)',
       'secondary': 'Plant.id',
       'secondary_status': '✅ Working',
-      'credits': 'Hugging Face has a free tier with usage limits',
-      'action_required': 'Ensure HF_API_TOKEN + HF_MODEL are set',
+      'credits': 'Roboflow has a free tier with usage limits',
+      'action_required': 'Ensure ROBOFLOW_INFER_API_KEY is set',
       'documentation': 'https://huggingface.co/docs/api-inference/',
     };
   }
