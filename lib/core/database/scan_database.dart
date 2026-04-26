@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/scan_model.dart';
@@ -22,7 +21,7 @@ class ScanDatabase {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5, // ✅ bumped from 4 to 5
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
       onDowngrade: onDatabaseDowngradeDelete,
@@ -42,6 +41,9 @@ class ScanDatabase {
           break;
         case 3:
           await _migrateV3ToV4(db);
+          break;
+        case 4:
+          await _migrateV4ToV5(db);
           break;
       }
     }
@@ -120,6 +122,22 @@ class ScanDatabase {
     }
   }
 
+  /// ✅ New migration: HuggingFace -> Roboflow
+  Future<void> _migrateV4ToV5(Database db) async {
+    print('📊 Migrating from v4 to v5 (analysisSource cleanup)');
+
+    try {
+      await db.rawUpdate('''
+        UPDATE scans
+        SET analysisSource = 'roboflow'
+        WHERE LOWER(analysisSource) IN ('huggingface', 'hugging face', 'hf')
+      ''');
+      print('✅ Migrated old huggingface sources to roboflow');
+    } catch (e) {
+      print('⚠️ Error migrating analysisSource: $e');
+    }
+  }
+
   Future<void> _createDB(Database db, int version) async {
     await db.execute('''
       CREATE TABLE scans (
@@ -159,9 +177,9 @@ class ScanDatabase {
       Database db,
       String tableName,
       String columnName,
-      String columnType,
-      [String? defaultValue]
-      ) async {
+      String columnType, [
+        String? defaultValue,
+      ]) async {
     try {
       final columns = await db.rawQuery('PRAGMA table_info($tableName)');
       final exists = columns.any((col) => col['name'] == columnName);
@@ -169,7 +187,8 @@ class ScanDatabase {
       if (!exists) {
         String sql;
         if (defaultValue != null) {
-          sql = 'ALTER TABLE $tableName ADD COLUMN $columnName $columnType DEFAULT $defaultValue';
+          sql =
+          'ALTER TABLE $tableName ADD COLUMN $columnName $columnType DEFAULT $defaultValue';
         } else {
           sql = 'ALTER TABLE $tableName ADD COLUMN $columnName $columnType';
         }
@@ -222,7 +241,6 @@ class ScanDatabase {
   // READ OPERATIONS
   // ============================================
 
-  /// Get scans by user with optional limit
   Future<List<ScanModel>> getScansByUser(String userId, {int limit = 50}) async {
     final db = await database;
     final results = await db.query(
@@ -236,7 +254,6 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get ALL scans for a user (no limit) - returns raw maps
   Future<List<Map<String, dynamic>>> getAllScans(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -245,11 +262,9 @@ class ScanDatabase {
       whereArgs: [userId],
       orderBy: 'scanDate DESC',
     );
-
     return results;
   }
 
-  /// Get ALL scans for a user as ScanModel objects
   Future<List<ScanModel>> getAllScanModels(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -262,7 +277,6 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get on-device scans only
   Future<List<ScanModel>> getOnDeviceScans(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -275,7 +289,6 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get advanced scans only
   Future<List<ScanModel>> getAdvancedScans(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -288,7 +301,6 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get scans by analysis source (onDeviceML, groq, plantid)
   Future<List<ScanModel>> getScansBySource(String userId, String source) async {
     final db = await database;
     final results = await db.query(
@@ -301,7 +313,6 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get a single scan by ID
   Future<ScanModel?> getScanById(String id) async {
     final db = await database;
     final results = await db.query(
@@ -310,13 +321,10 @@ class ScanDatabase {
       whereArgs: [id],
     );
 
-    if (results.isNotEmpty) {
-      return ScanModel.fromSqliteMap(results.first);
-    }
+    if (results.isNotEmpty) return ScanModel.fromSqliteMap(results.first);
     return null;
   }
 
-  /// Get unsynced scans
   Future<List<ScanModel>> getUnsyncedScans(String userId) async {
     final db = await database;
     final results = await db.query(
@@ -329,7 +337,6 @@ class ScanDatabase {
     return results.map((map) => ScanModel.fromSqliteMap(map)).toList();
   }
 
-  /// Get recent scans (last N days)
   Future<List<ScanModel>> getRecentScans(String userId, {int days = 7}) async {
     final db = await database;
     final cutoffDate = DateTime.now().subtract(Duration(days: days)).toIso8601String();
@@ -348,7 +355,6 @@ class ScanDatabase {
   // UPDATE OPERATIONS
   // ============================================
 
-  /// Update an existing scan
   Future<void> updateScan(ScanModel scan) async {
     if (scan.id == null) {
       throw Exception('Cannot update scan without ID');
@@ -363,7 +369,6 @@ class ScanDatabase {
     );
   }
 
-  /// Mark a scan as synced
   Future<void> markAsSynced(String id) async {
     final db = await database;
     await db.update(
@@ -378,7 +383,6 @@ class ScanDatabase {
   // DELETE OPERATIONS
   // ============================================
 
-  /// Delete a single scan
   Future<void> deleteScan(String id) async {
     final db = await database;
     await db.delete(
@@ -388,13 +392,11 @@ class ScanDatabase {
     );
   }
 
-  /// Clear all scans
   Future<void> clearAllScans() async {
     final db = await database;
     await db.delete('scans');
   }
 
-  /// Delete scans older than N days
   Future<int> deleteOldScans(String userId, {int days = 30}) async {
     final db = await database;
     final cutoffDate = DateTime.now().subtract(Duration(days: days)).toIso8601String();
@@ -410,7 +412,6 @@ class ScanDatabase {
   // STATISTICS & COUNTS
   // ============================================
 
-  /// Get basic scan counts
   Future<Map<String, int>> getScanCounts(String userId) async {
     final db = await database;
 
@@ -436,7 +437,6 @@ class ScanDatabase {
     };
   }
 
-  /// Get healthy scans count
   Future<int> getHealthyScansCount(String userId) async {
     final db = await database;
     final results = await db.rawQuery('''
@@ -448,7 +448,6 @@ class ScanDatabase {
     return results.first['count'] as int;
   }
 
-  /// Get diseased scans count
   Future<int> getDiseasedScansCount(String userId) async {
     final db = await database;
     final results = await db.rawQuery('''
@@ -461,7 +460,6 @@ class ScanDatabase {
     return results.first['count'] as int;
   }
 
-  /// Get detailed statistics (all-in-one)
   Future<Map<String, int>> getDetailedStats(String userId) async {
     final db = await database;
 
@@ -508,7 +506,6 @@ class ScanDatabase {
     };
   }
 
-  /// Get scans grouped by disease
   Future<Map<String, int>> getDiseaseBreakdown(String userId) async {
     final db = await database;
     final results = await db.rawQuery('''
@@ -519,20 +516,17 @@ class ScanDatabase {
       ORDER BY count DESC
     ''', [userId]);
 
-    Map<String, int> breakdown = {};
+    final breakdown = <String, int>{};
     for (var row in results) {
-      final disease = row['diseaseName'] as String;
-      final count = row['count'] as int;
-      breakdown[disease] = count;
+      breakdown[row['diseaseName'] as String] = row['count'] as int;
     }
-
     return breakdown;
   }
 
-  /// Get scans per month for charts
   Future<Map<String, int>> getScansPerMonth(String userId, {int months = 6}) async {
     final db = await database;
-    final cutoffDate = DateTime.now().subtract(Duration(days: months * 30)).toIso8601String();
+    final cutoffDate =
+    DateTime.now().subtract(Duration(days: months * 30)).toIso8601String();
 
     final results = await db.rawQuery('''
       SELECT 
@@ -544,13 +538,10 @@ class ScanDatabase {
       ORDER BY month DESC
     ''', [userId, cutoffDate]);
 
-    Map<String, int> monthlyData = {};
+    final monthlyData = <String, int>{};
     for (var row in results) {
-      final month = row['month'] as String;
-      final count = row['count'] as int;
-      monthlyData[month] = count;
+      monthlyData[row['month'] as String] = row['count'] as int;
     }
-
     return monthlyData;
   }
 
@@ -558,7 +549,6 @@ class ScanDatabase {
   // UTILITY OPERATIONS
   // ============================================
 
-  /// Get database information
   Future<Map<String, dynamic>> getDatabaseInfo() async {
     final db = await database;
 
@@ -574,7 +564,6 @@ class ScanDatabase {
     };
   }
 
-  /// Get database size in bytes
   Future<int> getDatabaseSize() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'scans.db');
@@ -588,27 +577,22 @@ class ScanDatabase {
     }
   }
 
-  /// Compact/vacuum database
   Future<void> compactDatabase() async {
     final db = await database;
     await db.execute('VACUUM');
     print('✅ Database compacted');
   }
 
-  /// Export all scans for backup
   Future<List<Map<String, dynamic>>> exportAllScans(String userId) async {
     final db = await database;
-    final results = await db.query(
+    return db.query(
       'scans',
       where: 'userId = ?',
       whereArgs: [userId],
       orderBy: 'scanDate DESC',
     );
-
-    return results;
   }
 
-  /// Import scans from backup
   Future<int> importScans(List<Map<String, dynamic>> scans) async {
     final db = await database;
     int imported = 0;
@@ -630,7 +614,6 @@ class ScanDatabase {
     return imported;
   }
 
-  /// Close database connection
   Future<void> close() async {
     final db = await database;
     await db.close();

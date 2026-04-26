@@ -45,7 +45,6 @@ class AppRouter {
     // AUTH GUARD
     final user = FirebaseAuth.instance.currentUser;
     final isLoggedIn = user != null;
-    final isGuest = GuestService().isGuestMode;
 
     switch (settings.name) {
       case AppRoutes.splash:

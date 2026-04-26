@@ -1,8 +1,10 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+
 import '../database/scan_database.dart';
 import '../models/scan_model.dart';
 
@@ -11,49 +13,48 @@ class ScanRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Helper method to generate content-based hash for duplicate detection
-// In ScanRepository.dart, update the _generateContentHash method:
+  /// Generate content-based hash for duplicate detection
+  /// NOTE: includes scan source + imagePath hash + minute bucket
   String _generateContentHash(Map<String, dynamic> data, String? imagePath) {
-    // Extract key data points
     final plantName = data['plantName']?.toString() ??
         data['plant']?.toString() ??
-        data['data']?['plant']?.toString() ?? '';
+        (data['data'] is Map ? (data['data']['plant']?.toString()) : null) ??
+        '';
 
     final diseaseName = data['diseaseName']?.toString() ??
         data['diagnosis']?.toString() ??
-        data['data']?['disease']?.toString() ?? '';
+        (data['data'] is Map ? (data['data']['disease']?.toString()) : null) ??
+        '';
 
     final confidence = data['confidence']?.toString() ??
-        data['data']?['confidence']?.toString() ?? '0';
+        (data['data'] is Map ? (data['data']['confidence']?.toString()) : null) ??
+        '0';
 
     // For advanced scans, include source
-    final source = data['source']?.toString() ??
-        data['analysisSource']?.toString() ?? '';
+    final source = data['source']?.toString() ?? data['analysisSource']?.toString() ?? '';
 
-    // Create a fingerprint for duplicate detection
     final fingerprint = {
       'plant': plantName.toLowerCase().trim(),
       'disease': diseaseName.toLowerCase().trim(),
       'confidence': confidence,
       'source': source.toLowerCase().trim(),
       'imageHash': imagePath?.hashCode ?? 0,
-      'timestamp': (DateTime.now().millisecondsSinceEpoch ~/ 60000), // Round to nearest minute
+      // Round to nearest minute so quick repeats become duplicates
+      'timestamp': (DateTime.now().millisecondsSinceEpoch ~/ 60000),
     };
 
-    final jsonString = jsonEncode(fingerprint);
-    final hash = jsonString.hashCode.abs();
+    final hash = jsonEncode(fingerprint).hashCode.abs();
 
-    // Include source in ID to differentiate between on-device and advanced scans
-    if (source.contains('groq') ||
-        source.contains('plantid') ||
-        source.contains('hugging') ||
-        source.contains('hf') ||
-        source.contains('advanced')) {
-      return 'advanced_$hash';
-    } else {
-      return 'ondevice_$hash';
-    }
+    final src = source.toLowerCase();
+    final isAdvancedSource = src.contains('groq') ||
+        src.contains('plantid') ||
+        src.contains('plant.id') ||
+        src.contains('roboflow') ||
+        src.contains('advanced');
+
+    return isAdvancedSource ? 'advanced_$hash' : 'ondevice_$hash';
   }
+
   Future<ScanModel> saveOnDeviceScan({
     required Map<String, dynamic> scanData,
     String? imagePath,
@@ -62,18 +63,14 @@ class ScanRepository {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      // Use provided ID or generate new one
-      final scanId = scanData['id'] as String? ??
-          _generateContentHash(scanData, imagePath);
+      final scanId = scanData['id'] as String? ?? _generateContentHash(scanData, imagePath);
 
-      // Check if scan already exists
       final existingScan = await _database.getScanById(scanId);
       if (existingScan != null) {
         debugPrint('✅ On-device scan already exists, returning existing: $scanId');
         return existingScan;
       }
 
-      // Convert image to base64
       String? imageBase64;
       if (imagePath != null) {
         try {
@@ -88,32 +85,26 @@ class ScanRepository {
         }
       }
 
-      // Create scan model with the ID
       final scan = ScanModel.fromOnDeviceScan(
         userId: user.uid,
         scanData: scanData,
         imagePath: imagePath,
       ).copyWith(
         imageBase64: imageBase64,
-        id: scanId, // Use the provided/generated ID
+        id: scanId,
       );
 
-      // Save to SQLite
       final savedScanId = await _database.createScan(scan);
       final savedScan = scan.copyWith(id: savedScanId);
 
-      // Sync to Firebase in background
       _syncOnDeviceScanToFirebase(savedScan);
 
       debugPrint('✅ On-device scan saved: $savedScanId');
       return savedScan;
     } catch (e) {
-      // Handle duplicate constraint errors gracefully
-      if (e.toString().contains('UNIQUE constraint failed') ||
-          e.toString().contains('Duplicate')) {
+      if (e.toString().contains('UNIQUE constraint failed') || e.toString().contains('Duplicate')) {
         debugPrint('⚠️ Duplicate scan detected, fetching existing');
-        final scanId = scanData['id'] as String? ??
-            _generateContentHash(scanData, imagePath);
+        final scanId = scanData['id'] as String? ?? _generateContentHash(scanData, imagePath);
         final existing = await _database.getScanById(scanId);
         if (existing != null) return existing;
       }
@@ -121,7 +112,8 @@ class ScanRepository {
       rethrow;
     }
   }
-// Add this to ScanRepository
+
+  /// Utility: clean duplicates in SQLite
   Future<void> cleanDuplicateScans() async {
     try {
       final user = _auth.currentUser;
@@ -135,7 +127,6 @@ class ScanRepository {
         if (!uniqueScans.containsKey(key)) {
           uniqueScans[key] = scan;
         } else {
-          // Delete duplicate
           await _database.deleteScan(scan.id!);
           debugPrint('🗑️ Deleted duplicate scan: ${scan.id}');
         }
@@ -146,6 +137,7 @@ class ScanRepository {
       debugPrint('❌ Error cleaning duplicates: $e');
     }
   }
+
   Future<ScanModel> saveGroqScan({
     required Map<String, dynamic> analysisResult,
     String? imagePath,
@@ -154,33 +146,27 @@ class ScanRepository {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      // Extract data for hash generation
       final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-      final scanId = analysisResult['scanId'] as String? ??
-          _generateContentHash(data, imagePath);
+      final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
 
-      // Check if scan already exists
       final existingScan = await _database.getScanById(scanId);
       if (existingScan != null) {
         debugPrint('✅ Groq scan already exists, returning existing: $scanId');
         return existingScan;
       }
 
-      // Convert image to base64
       String? imageBase64;
       if (imagePath != null) {
         try {
           final file = File(imagePath);
           if (await file.exists()) {
-            final bytes = await file.readAsBytes();
-            imageBase64 = base64Encode(bytes);
+            imageBase64 = base64Encode(await file.readAsBytes());
           }
         } catch (e) {
           debugPrint('⚠️ Failed to convert image to base64: $e');
         }
       }
 
-      // Create scan model
       final scan = ScanModel.fromGroqScan(
         userId: user.uid,
         analysisResult: analysisResult,
@@ -190,22 +176,18 @@ class ScanRepository {
         id: scanId,
       );
 
-      // Save to SQLite
       final savedScanId = await _database.createScan(scan);
       final savedScan = scan.copyWith(id: savedScanId);
 
-      // Sync to Firebase in background
       _syncAdvancedScanToFirebase(savedScan);
 
       debugPrint('✅ Groq scan saved: $savedScanId');
       return savedScan;
     } catch (e) {
-      if (e.toString().contains('UNIQUE constraint failed') ||
-          e.toString().contains('Duplicate')) {
+      if (e.toString().contains('UNIQUE constraint failed') || e.toString().contains('Duplicate')) {
         debugPrint('⚠️ Duplicate Groq scan detected');
         final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-        final scanId = analysisResult['scanId'] as String? ??
-            _generateContentHash(data, imagePath);
+        final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
         final existing = await _database.getScanById(scanId);
         if (existing != null) return existing;
       }
@@ -222,33 +204,27 @@ class ScanRepository {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not logged in');
 
-      // Extract data for hash generation
       final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-      final scanId = analysisResult['scanId'] as String? ??
-          _generateContentHash(data, imagePath);
+      final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
 
-      // Check if scan already exists
       final existingScan = await _database.getScanById(scanId);
       if (existingScan != null) {
         debugPrint('✅ Plant.id scan already exists, returning existing: $scanId');
         return existingScan;
       }
 
-      // Convert image to base64
       String? imageBase64;
       if (imagePath != null) {
         try {
           final file = File(imagePath);
           if (await file.exists()) {
-            final bytes = await file.readAsBytes();
-            imageBase64 = base64Encode(bytes);
+            imageBase64 = base64Encode(await file.readAsBytes());
           }
         } catch (e) {
           debugPrint('⚠️ Failed to convert image to base64: $e');
         }
       }
 
-      // Create scan model
       final scan = ScanModel.fromPlantIdScan(
         userId: user.uid,
         analysisResult: analysisResult,
@@ -258,22 +234,18 @@ class ScanRepository {
         id: scanId,
       );
 
-      // Save to SQLite
       final savedScanId = await _database.createScan(scan);
       final savedScan = scan.copyWith(id: savedScanId);
 
-      // Sync to Firebase in background
       _syncAdvancedScanToFirebase(savedScan);
 
       debugPrint('✅ Plant.id scan saved: $savedScanId');
       return savedScan;
     } catch (e) {
-      if (e.toString().contains('UNIQUE constraint failed') ||
-          e.toString().contains('Duplicate')) {
+      if (e.toString().contains('UNIQUE constraint failed') || e.toString().contains('Duplicate')) {
         debugPrint('⚠️ Duplicate Plant.id scan detected');
         final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-        final scanId = analysisResult['scanId'] as String? ??
-            _generateContentHash(data, imagePath);
+        final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
         final existing = await _database.getScanById(scanId);
         if (existing != null) return existing;
       }
@@ -282,7 +254,8 @@ class ScanRepository {
     }
   }
 
-  Future<ScanModel> saveHuggingFaceScan({
+  /// NEW: Roboflow advanced scan save (replaces Hugging Face)
+  Future<ScanModel> saveRoboflowScan({
     required Map<String, dynamic> analysisResult,
     String? imagePath,
   }) async {
@@ -291,12 +264,11 @@ class ScanRepository {
       if (user == null) throw Exception('User not logged in');
 
       final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-      final scanId = analysisResult['scanId'] as String? ??
-          _generateContentHash(data, imagePath);
+      final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
 
       final existingScan = await _database.getScanById(scanId);
       if (existingScan != null) {
-        debugPrint('✅ Hugging Face scan already exists, returning existing: $scanId');
+        debugPrint('✅ Roboflow scan already exists, returning existing: $scanId');
         return existingScan;
       }
 
@@ -305,15 +277,14 @@ class ScanRepository {
         try {
           final file = File(imagePath);
           if (await file.exists()) {
-            final bytes = await file.readAsBytes();
-            imageBase64 = base64Encode(bytes);
+            imageBase64 = base64Encode(await file.readAsBytes());
           }
         } catch (e) {
           debugPrint('⚠️ Failed to convert image to base64: $e');
         }
       }
 
-      final scan = ScanModel.fromHuggingFaceScan(
+      final scan = ScanModel.fromRoboflowScan(
         userId: user.uid,
         analysisResult: analysisResult,
         imagePath: imagePath,
@@ -327,22 +298,21 @@ class ScanRepository {
 
       _syncAdvancedScanToFirebase(savedScan);
 
-      debugPrint('✅ Hugging Face scan saved: $savedScanId');
+      debugPrint('✅ Roboflow scan saved: $savedScanId');
       return savedScan;
     } catch (e) {
-      if (e.toString().contains('UNIQUE constraint failed') ||
-          e.toString().contains('Duplicate')) {
-        debugPrint('⚠️ Duplicate Hugging Face scan detected');
+      if (e.toString().contains('UNIQUE constraint failed') || e.toString().contains('Duplicate')) {
+        debugPrint('⚠️ Duplicate Roboflow scan detected');
         final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-        final scanId = analysisResult['scanId'] as String? ??
-            _generateContentHash(data, imagePath);
+        final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
         final existing = await _database.getScanById(scanId);
         if (existing != null) return existing;
       }
-      debugPrint('❌ Error saving Hugging Face scan: $e');
+      debugPrint('❌ Error saving Roboflow scan: $e');
       rethrow;
     }
   }
+
   Future<void> checkForDuplicates() async {
     try {
       final user = _auth.currentUser;
@@ -355,9 +325,7 @@ class ScanRepository {
 
       for (final scan in allScans) {
         final key = '${scan.plantName}_${scan.diseaseName}_${scan.scanDate.millisecondsSinceEpoch}';
-        if (!duplicates.containsKey(key)) {
-          duplicates[key] = [];
-        }
+        duplicates.putIfAbsent(key, () => []);
         duplicates[key]!.add(scan);
       }
 
@@ -373,12 +341,11 @@ class ScanRepository {
       });
 
       debugPrint('📊 Total duplicates found: $duplicateCount');
-
     } catch (e) {
       debugPrint('❌ Error checking duplicates: $e');
     }
   }
-  // Get a scan by ID - with improved error handling
+
   Future<ScanModel?> getScanById(String id) async {
     try {
       return await _database.getScanById(id);
@@ -388,7 +355,6 @@ class ScanRepository {
     }
   }
 
-  // Check if scan already exists
   Future<bool> scanExists(String scanId) async {
     try {
       final scan = await _database.getScanById(scanId);
@@ -404,7 +370,6 @@ class ScanRepository {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Check if already synced
       if (scan.isSynced) {
         debugPrint('✅ Scan already synced to Firestore: ${scan.id}');
         return;
@@ -412,11 +377,7 @@ class ScanRepository {
 
       final updatedScan = scan.copyWith(imageUrl: '');
 
-      await _firestore
-          .collection('onDeviceScans')
-          .doc(scan.id)
-          .set(updatedScan.toFirestore());
-
+      await _firestore.collection('onDeviceScans').doc(scan.id).set(updatedScan.toFirestore());
       await _database.markAsSynced(scan.id!);
 
       debugPrint('✅ On-Device scan synced to Firestore: ${scan.id}');
@@ -430,7 +391,6 @@ class ScanRepository {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Check if already synced
       if (scan.isSynced) {
         debugPrint('✅ Advanced scan already synced to Firestore: ${scan.id}');
         return;
@@ -438,11 +398,7 @@ class ScanRepository {
 
       final updatedScan = scan.copyWith(imageUrl: '');
 
-      await _firestore
-          .collection('advancedScans')
-          .doc(scan.id)
-          .set(updatedScan.toFirestore());
-
+      await _firestore.collection('advancedScans').doc(scan.id).set(updatedScan.toFirestore());
       await _database.markAsSynced(scan.id!);
 
       debugPrint('✅ Advanced scan synced to Firestore: ${scan.id}');
@@ -455,7 +411,6 @@ class ScanRepository {
     try {
       final user = _auth.currentUser;
       if (user == null) return [];
-
       return await _database.getScansByUser(user.uid, limit: limit);
     } catch (e) {
       debugPrint('❌ Error getting user scans: $e');
@@ -467,7 +422,6 @@ class ScanRepository {
     try {
       final user = _auth.currentUser;
       if (user == null) return [];
-
       return await _database.getOnDeviceScans(user.uid);
     } catch (e) {
       debugPrint('❌ Error getting on-device scans: $e');
@@ -479,7 +433,6 @@ class ScanRepository {
     try {
       final user = _auth.currentUser;
       if (user == null) return [];
-
       return await _database.getAdvancedScans(user.uid);
     } catch (e) {
       debugPrint('❌ Error getting advanced scans: $e');
@@ -491,7 +444,6 @@ class ScanRepository {
     try {
       final user = _auth.currentUser;
       if (user == null) return [];
-
       return await _database.getScansBySource(user.uid, source.name);
     } catch (e) {
       debugPrint('❌ Error getting scans by source: $e');
@@ -509,18 +461,13 @@ class ScanRepository {
       if (scan != null) {
         final collection = scan.scanType == ScanType.onDevice ? 'onDeviceScans' : 'advancedScans';
 
-        // Delete from Firestore
         try {
-          await _firestore
-              .collection(collection)
-              .doc(scanId)
-              .delete();
+          await _firestore.collection(collection).doc(scanId).delete();
           debugPrint('✅ Scan deleted from Firestore: $scanId');
         } catch (e) {
           debugPrint('⚠️ Error deleting from Firestore (might not exist): $e');
         }
 
-        // Delete from SQLite
         await _database.deleteScan(scanId);
         debugPrint('✅ Scan deleted from SQLite: $scanId');
       } else {
@@ -595,12 +542,9 @@ class ScanRepository {
 
     if (diseaseCounts.isEmpty) return 'Healthy';
 
-    return diseaseCounts.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
+    return diseaseCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
 
-  // Additional utility method: Clear all local scans (for debugging)
   Future<void> clearAllLocalScans() async {
     try {
       await _database.clearAllScans();
@@ -611,7 +555,6 @@ class ScanRepository {
     }
   }
 
-  // Get database info for debugging
   Future<Map<String, dynamic>> getDatabaseInfo() async {
     try {
       return await _database.getDatabaseInfo();
@@ -621,7 +564,6 @@ class ScanRepository {
     }
   }
 
-  // Close database connection (call when app closes)
   Future<void> close() async {
     try {
       await _database.close();

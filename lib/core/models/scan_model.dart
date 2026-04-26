@@ -10,7 +10,7 @@ enum AnalysisSource {
   onDeviceML('On-Device ML'),
   groq('Groq AI'),
   plantId('Plant.id'),
-  huggingface('Hugging Face');
+  roboflow('Roboflow');
 
   final String displayName;
   const AnalysisSource(this.displayName);
@@ -77,92 +77,66 @@ class ScanModel {
 
   bool get isAdvanced => scanType == ScanType.advanced;
 
-  // Update the ScanModel constructors to handle confidence properly:
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  static int _parseConfidence(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final d = double.tryParse(value.replaceAll('%', '').trim());
+      return d?.toInt() ?? 0;
+    }
+    return 0;
+  }
 
+  static List<String> _parseStringList(dynamic value) {
+    if (value == null) return <String>[];
+    if (value is List) {
+      return value.map((e) => e.toString()).where((s) => s.trim().isNotEmpty).toList();
+    }
+    if (value is String) {
+      final s = value.trim();
+      if (s.isEmpty) return <String>[];
+
+      // If string looks like JSON array -> try decode
+      if (s.startsWith('[') && s.endsWith(']')) {
+        try {
+          final parsed = jsonDecode(s);
+          if (parsed is List) {
+            return parsed.map((e) => e.toString()).where((x) => x.trim().isNotEmpty).toList();
+          }
+        } catch (_) {}
+      }
+
+      // fallback split
+      return s
+          .split(RegExp(r'[,;\n]'))
+          .map((x) => x.trim())
+          .where((x) => x.isNotEmpty)
+          .toList();
+    }
+    return <String>[];
+  }
+
+  // -----------------------------
+  // Constructors
+  // -----------------------------
   factory ScanModel.fromOnDeviceScan({
     required String userId,
     required Map<String, dynamic> scanData,
     String? imagePath,
     String? imageUrl,
   }) {
-    // Safely parse confidence
-    int confidence = 0;
-    final confidenceValue = scanData['confidence'];
-    if (confidenceValue != null) {
-      if (confidenceValue is num) {
-        confidence = confidenceValue.toInt();
-      } else if (confidenceValue is String) {
-        // Try to parse string to int
-        final parsed = double.tryParse(confidenceValue);
-        confidence = parsed?.toInt() ?? 0;
-      }
-    }
+    final confidence = _parseConfidence(scanData['confidence']);
+    final symptomsList = _parseStringList(scanData['symptoms']);
 
-    // SAFELY parse symptoms - handle both String and List
-    List<String> symptomsList = [];
-    final symptomsValue = scanData['symptoms'];
-    if (symptomsValue != null) {
-      if (symptomsValue is List) {
-        symptomsList = List<String>.from(symptomsValue.map((item) => item.toString()));
-      } else if (symptomsValue is String) {
-        if (symptomsValue.contains('[')) {
-          // Try to parse JSON array
-          try {
-            final parsed = jsonDecode(symptomsValue) as List;
-            symptomsList = List<String>.from(parsed.map((item) => item.toString()));
-          } catch (e) {
-            // If JSON parsing fails, split by commas or newlines
-            symptomsList = symptomsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-          }
-        } else {
-          // Split by commas or newlines
-          symptomsList = symptomsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-        }
-      }
-    }
-
-    // SAFELY parse treatments/remediation
-    List<String> treatmentsList = [];
     final remediationValue = scanData['remediation'];
     final treatmentValue = scanData['treatment'];
+    final treatmentsList = _parseStringList(remediationValue ?? treatmentValue);
 
-    final treatmentsSource = remediationValue ?? treatmentValue;
-    if (treatmentsSource != null) {
-      if (treatmentsSource is List) {
-        treatmentsList = List<String>.from(treatmentsSource.map((item) => item.toString()));
-      } else if (treatmentsSource is String) {
-        if (treatmentsSource.contains('[')) {
-          try {
-            final parsed = jsonDecode(treatmentsSource) as List;
-            treatmentsList = List<String>.from(parsed.map((item) => item.toString()));
-          } catch (e) {
-            treatmentsList = treatmentsSource.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-          }
-        } else {
-          treatmentsList = treatmentsSource.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-        }
-      }
-    }
-
-    // SAFELY parse precautions
-    List<String> precautionsList = [];
-    final precautionsValue = scanData['precautions'];
-    if (precautionsValue != null) {
-      if (precautionsValue is List) {
-        precautionsList = List<String>.from(precautionsValue.map((item) => item.toString()));
-      } else if (precautionsValue is String) {
-        if (precautionsValue.contains('[')) {
-          try {
-            final parsed = jsonDecode(precautionsValue) as List;
-            precautionsList = List<String>.from(parsed.map((item) => item.toString()));
-          } catch (e) {
-            precautionsList = precautionsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-          }
-        } else {
-          precautionsList = precautionsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-        }
-      }
-    }
+    final precautionsList = _parseStringList(scanData['precautions']);
 
     return ScanModel(
       userId: userId,
@@ -192,60 +166,18 @@ class ScanModel {
   }) {
     final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
 
-    // Safely parse confidence
-    int confidence = 0;
-    final confidenceValue = data['confidence'];
-    if (confidenceValue != null) {
-      if (confidenceValue is num) {
-        confidence = confidenceValue.toInt();
-      } else if (confidenceValue is String) {
-        final parsed = double.tryParse(confidenceValue);
-        confidence = parsed?.toInt() ?? 0;
-      }
-    }
-
-    // SAFELY parse symptoms
-    List<String> symptomsList = [];
-    final symptomsValue = data['symptoms'];
-    if (symptomsValue != null) {
-      if (symptomsValue is List) {
-        symptomsList = List<String>.from(symptomsValue.map((item) => item.toString()));
-      } else if (symptomsValue is String) {
-        symptomsList = symptomsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      }
-    }
-
-    // SAFELY parse treatments
-    List<String> treatmentsList = [];
-    final treatmentsValue = data['remediation'];
-    if (treatmentsValue != null) {
-      if (treatmentsValue is List) {
-        treatmentsList = List<String>.from(treatmentsValue.map((item) => item.toString()));
-      } else if (treatmentsValue is String) {
-        treatmentsList = treatmentsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      }
-    }
-
-    // SAFELY parse precautions
-    List<String> precautionsList = [];
-    final precautionsValue = data['precautions'];
-    if (precautionsValue != null) {
-      if (precautionsValue is List) {
-        precautionsList = List<String>.from(precautionsValue.map((item) => item.toString()));
-      } else if (precautionsValue is String) {
-        precautionsList = precautionsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      }
-    }
+    final confidence = _parseConfidence(data['confidence']);
+    final symptomsList = _parseStringList(data['symptoms']);
+    final treatmentsList = _parseStringList(data['remediation']);
+    final precautionsList = _parseStringList(data['precautions']);
 
     return ScanModel(
       userId: userId,
       scanType: ScanType.advanced,
       analysisSource: AnalysisSource.groq,
-      plantName: data['plant']?.toString() ??
-          data['plantName']?.toString() ?? 'Unknown Plant',
+      plantName: data['plant']?.toString() ?? data['plantName']?.toString() ?? 'Unknown Plant',
       scientificName: data['scientificName']?.toString() ?? '',
-      diseaseName: data['disease']?.toString() ??
-          data['diseaseName']?.toString() ?? 'Healthy',
+      diseaseName: data['disease']?.toString() ?? data['diseaseName']?.toString() ?? 'Healthy',
       severity: data['severity']?.toString() ?? 'Medium',
       confidence: confidence,
       symptoms: symptomsList,
@@ -268,108 +200,18 @@ class ScanModel {
   }) {
     final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
 
-    // Safely parse confidence
-    int confidence = 0;
-    final confidenceValue = data['confidence'];
-    if (confidenceValue != null) {
-      if (confidenceValue is num) {
-        confidence = confidenceValue.toInt();
-      } else if (confidenceValue is String) {
-        final parsed = double.tryParse(confidenceValue);
-        confidence = parsed?.toInt() ?? 0;
-      }
-    }
-
-    // SAFELY parse symptoms
-    List<String> symptomsList = [];
-    final symptomsValue = data['symptoms'];
-    if (symptomsValue != null) {
-      if (symptomsValue is List) {
-        symptomsList = List<String>.from(symptomsValue.map((item) => item.toString()));
-      } else if (symptomsValue is String) {
-        if (symptomsValue.contains('[')) {
-          // Try to parse JSON array
-          try {
-            final parsed = jsonDecode(symptomsValue) as List;
-            symptomsList = List<String>.from(parsed.map((item) => item.toString()));
-          } catch (e) {
-            // If JSON parsing fails, split by commas or newlines
-            symptomsList = symptomsValue.split(RegExp(r'[,;\n]'))
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList();
-          }
-        } else {
-          // Split by commas or newlines
-          symptomsList = symptomsValue.split(RegExp(r'[,;\n]'))
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty)
-              .toList();
-        }
-      }
-    }
-
-    // SAFELY parse treatments/remediation
-    List<String> treatmentsList = [];
-    final treatmentsValue = data['remediation'];
-    if (treatmentsValue != null) {
-      if (treatmentsValue is List) {
-        treatmentsList = List<String>.from(treatmentsValue.map((item) => item.toString()));
-      } else if (treatmentsValue is String) {
-        if (treatmentsValue.contains('[')) {
-          try {
-            final parsed = jsonDecode(treatmentsValue) as List;
-            treatmentsList = List<String>.from(parsed.map((item) => item.toString()));
-          } catch (e) {
-            treatmentsList = treatmentsValue.split(RegExp(r'[,;\n]'))
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList();
-          }
-        } else {
-          treatmentsList = treatmentsValue.split(RegExp(r'[,;\n]'))
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty)
-              .toList();
-        }
-      }
-    }
-
-    // SAFELY parse precautions
-    List<String> precautionsList = [];
-    final precautionsValue = data['precautions'];
-    if (precautionsValue != null) {
-      if (precautionsValue is List) {
-        precautionsList = List<String>.from(precautionsValue.map((item) => item.toString()));
-      } else if (precautionsValue is String) {
-        if (precautionsValue.contains('[')) {
-          try {
-            final parsed = jsonDecode(precautionsValue) as List;
-            precautionsList = List<String>.from(parsed.map((item) => item.toString()));
-          } catch (e) {
-            precautionsList = precautionsValue.split(RegExp(r'[,;\n]'))
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList();
-          }
-        } else {
-          precautionsList = precautionsValue.split(RegExp(r'[,;\n]'))
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty)
-              .toList();
-        }
-      }
-    }
+    final confidence = _parseConfidence(data['confidence']);
+    final symptomsList = _parseStringList(data['symptoms']);
+    final treatmentsList = _parseStringList(data['remediation']);
+    final precautionsList = _parseStringList(data['precautions']);
 
     return ScanModel(
       userId: userId,
       scanType: ScanType.advanced,
       analysisSource: AnalysisSource.plantId,
-      plantName: data['plant']?.toString() ??
-          data['plantName']?.toString() ?? 'Unknown Plant',
+      plantName: data['plant']?.toString() ?? data['plantName']?.toString() ?? 'Unknown Plant',
       scientificName: data['scientificName']?.toString() ?? '',
-      diseaseName: data['disease']?.toString() ??
-          data['diseaseName']?.toString() ?? 'Healthy',
+      diseaseName: data['disease']?.toString() ?? data['diseaseName']?.toString() ?? 'Healthy',
       severity: data['severity']?.toString() ?? 'Medium',
       confidence: confidence,
       symptoms: symptomsList,
@@ -384,65 +226,27 @@ class ScanModel {
     );
   }
 
-  factory ScanModel.fromHuggingFaceScan({
+  /// Replaces the old HuggingFace constructor.
+  factory ScanModel.fromRoboflowScan({
     required String userId,
     required Map<String, dynamic> analysisResult,
     String? imagePath,
     String? imageUrl,
   }) {
-    // Same schema shape as other advanced scans: analysisResult['data']
     final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
 
-    int confidence = 0;
-    final confidenceValue = data['confidence'];
-    if (confidenceValue != null) {
-      if (confidenceValue is num) {
-        confidence = confidenceValue.toInt();
-      } else if (confidenceValue is String) {
-        final parsed = double.tryParse(confidenceValue);
-        confidence = parsed?.toInt() ?? 0;
-      }
-    }
-
-    List<String> symptomsList = [];
-    final symptomsValue = data['symptoms'];
-    if (symptomsValue != null) {
-      if (symptomsValue is List) {
-        symptomsList = List<String>.from(symptomsValue.map((item) => item.toString()));
-      } else if (symptomsValue is String) {
-        symptomsList = symptomsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      }
-    }
-
-    List<String> treatmentsList = [];
-    final treatmentsValue = data['remediation'];
-    if (treatmentsValue != null) {
-      if (treatmentsValue is List) {
-        treatmentsList = List<String>.from(treatmentsValue.map((item) => item.toString()));
-      } else if (treatmentsValue is String) {
-        treatmentsList = treatmentsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      }
-    }
-
-    List<String> precautionsList = [];
-    final precautionsValue = data['precautions'];
-    if (precautionsValue != null) {
-      if (precautionsValue is List) {
-        precautionsList = List<String>.from(precautionsValue.map((item) => item.toString()));
-      } else if (precautionsValue is String) {
-        precautionsList = precautionsValue.split(RegExp(r'[,;\n]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      }
-    }
+    final confidence = _parseConfidence(data['confidence']);
+    final symptomsList = _parseStringList(data['symptoms']);
+    final treatmentsList = _parseStringList(data['remediation']);
+    final precautionsList = _parseStringList(data['precautions']);
 
     return ScanModel(
       userId: userId,
       scanType: ScanType.advanced,
-      analysisSource: AnalysisSource.huggingface,
-      plantName: data['plant']?.toString() ??
-          data['plantName']?.toString() ?? 'Unknown Plant',
+      analysisSource: AnalysisSource.roboflow,
+      plantName: data['plant']?.toString() ?? data['plantName']?.toString() ?? 'Unknown Plant',
       scientificName: data['scientificName']?.toString() ?? '',
-      diseaseName: data['disease']?.toString() ??
-          data['diseaseName']?.toString() ?? 'Healthy',
+      diseaseName: data['disease']?.toString() ?? data['diseaseName']?.toString() ?? 'Healthy',
       severity: data['severity']?.toString() ?? 'Medium',
       confidence: confidence,
       symptoms: symptomsList,
@@ -457,6 +261,9 @@ class ScanModel {
     );
   }
 
+  // -----------------------------
+  // Copy / Serialization
+  // -----------------------------
   ScanModel copyWith({
     String? id,
     String? userId,
@@ -533,6 +340,30 @@ class ScanModel {
   factory ScanModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
+    AnalysisSource resolveSource() {
+      // Normal path if enum name exists
+      final raw = data['analysisSource'];
+      if (raw == null) return AnalysisSource.onDeviceML;
+
+      final normalized = raw.toString().toLowerCase().trim();
+
+      // Legacy mappings
+      if (normalized == 'gemini') return AnalysisSource.groq;
+      if (normalized == 'huggingface' || normalized == 'hugging face' || normalized == 'hf') {
+        return AnalysisSource.roboflow; // migrate legacy hf -> roboflow
+      }
+      if (normalized == 'roboflow') return AnalysisSource.roboflow;
+      if (normalized == 'plantid' || normalized == 'plant.id') return AnalysisSource.plantId;
+      if (normalized == 'groq') return AnalysisSource.groq;
+      if (normalized == 'ondeviceml' || normalized == 'on_device_ml') return AnalysisSource.onDeviceML;
+
+      // Try enum name match (for safety)
+      return AnalysisSource.values.firstWhere(
+            (e) => e.name.toLowerCase() == normalized,
+        orElse: () => AnalysisSource.onDeviceML,
+      );
+    }
+
     return ScanModel(
       id: doc.id,
       userId: data['userId'] ?? '',
@@ -540,18 +371,7 @@ class ScanModel {
             (e) => e.name == data['scanType'],
         orElse: () => ScanType.onDevice,
       ),
-      analysisSource: AnalysisSource.values.firstWhere(
-            (e) => e.name == data['analysisSource'],
-        // Legacy support: old saved scans may contain prior source strings
-        orElse: () {
-          final src = data['analysisSource']?.toString().toLowerCase();
-          if (src == 'gemini') return AnalysisSource.groq;
-          if (src == 'huggingface' || src == 'hugging face' || src == 'hf') {
-            return AnalysisSource.huggingface;
-          }
-          return AnalysisSource.onDeviceML;
-        },
-      ),
+      analysisSource: resolveSource(),
       plantName: data['plantName'] ?? '',
       scientificName: data['scientificName'] ?? '',
       diseaseName: data['diseaseName'] ?? '',
@@ -598,25 +418,39 @@ class ScanModel {
       'isAdvanced': isAdvanced ? 1 : 0,
     };
   }
+
   factory ScanModel.fromSqliteMap(Map<String, dynamic> map) {
-    // Safely parse confidence from SQLite
     int confidence = 0;
     final confidenceValue = map['confidence'];
     if (confidenceValue != null) {
-      if (confidenceValue is int) {
-        confidence = confidenceValue;
-      } else if (confidenceValue is num) {
-        confidence = confidenceValue.toInt();
-      } else if (confidenceValue is String) {
-        final parsed = int.tryParse(confidenceValue);
-        confidence = parsed ?? 0;
-      }
+      if (confidenceValue is int) confidence = confidenceValue;
+      if (confidenceValue is num) confidence = confidenceValue.toInt();
+      if (confidenceValue is String) confidence = int.tryParse(confidenceValue) ?? 0;
     }
 
-    // Safely parse lists from SQLite
     List<String> parseList(String? listString) {
       if (listString == null || listString.isEmpty) return [];
       return listString.split('|||').where((item) => item.isNotEmpty).toList();
+    }
+
+    AnalysisSource resolveSource() {
+      final raw = map['analysisSource'];
+      if (raw == null) return AnalysisSource.onDeviceML;
+      final normalized = raw.toString().toLowerCase().trim();
+
+      // Legacy mappings
+      if (normalized == 'gemini') return AnalysisSource.groq;
+      if (normalized == 'huggingface' || normalized == 'hugging face' || normalized == 'hf') {
+        return AnalysisSource.roboflow; // migrate legacy hf -> roboflow
+      }
+      if (normalized == 'roboflow') return AnalysisSource.roboflow;
+      if (normalized == 'plantid' || normalized == 'plant.id') return AnalysisSource.plantId;
+      if (normalized == 'groq') return AnalysisSource.groq;
+
+      return AnalysisSource.values.firstWhere(
+            (e) => e.name.toLowerCase() == normalized,
+        orElse: () => AnalysisSource.onDeviceML,
+      );
     }
 
     return ScanModel(
@@ -626,18 +460,7 @@ class ScanModel {
             (e) => e.name == map['scanType'],
         orElse: () => ScanType.onDevice,
       ),
-      analysisSource: AnalysisSource.values.firstWhere(
-            (e) => e.name == map['analysisSource'],
-        // Legacy support: old saved scans may contain prior source strings
-        orElse: () {
-          final src = map['analysisSource']?.toString().toLowerCase();
-          if (src == 'gemini') return AnalysisSource.groq;
-          if (src == 'huggingface' || src == 'hugging face' || src == 'hf') {
-            return AnalysisSource.huggingface;
-          }
-          return AnalysisSource.onDeviceML;
-        },
-      ),
+      analysisSource: resolveSource(),
       plantName: map['plantName'] ?? '',
       scientificName: map['scientificName'] ?? '',
       diseaseName: map['diseaseName'] ?? '',
@@ -654,18 +477,19 @@ class ScanModel {
           ? DateTime.parse(map['createdAt'] as String)
           : DateTime.parse(map['scanDate'] ?? DateTime.now().toIso8601String()),
       rawData: jsonDecode(map['rawData'] ?? '{}'),
-      advancedData: map['advancedData'] != null &&
-          (map['advancedData'] as String).isNotEmpty
+      advancedData: map['advancedData'] != null && (map['advancedData'] as String).isNotEmpty
           ? jsonDecode(map['advancedData'] as String)
           : null,
       isSynced: (map['isSynced'] as int? ?? 0) == 1,
     );
-  }  Map<String, dynamic> toHistoryMap() {
+  }
+
+  Map<String, dynamic> toHistoryMap() {
     return {
       'id': id,
       'diagnosis': diseaseName,
       'severity': severity,
-      'confidence': confidence.toString(),  // Keep as string for compatibility
+      'confidence': confidence.toString(),
       'plantName': plantName,
       'scientificName': scientificName,
       'imagePath': imagePath,
@@ -681,14 +505,15 @@ class ScanModel {
       'scanDate': scanDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'rawData': rawData,
-      // IMPORTANT: Add all fields needed by ResultsScreen
       'diseaseName': diseaseName,
       'remediation': treatments,
       'treatment': treatments,
       'cause': 'Saved scan from history',
-      'isFromHistory': true, // This flag prevents auto-save
+      'isFromHistory': true,
     };
-  }  @override
+  }
+
+  @override
   String toString() {
     return 'ScanModel(id: $id, plant: $plantName, disease: $diseaseName, isAdvanced: $isAdvanced, createdAt: $createdAt)';
   }

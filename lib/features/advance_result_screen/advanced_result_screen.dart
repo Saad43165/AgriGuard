@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/AdvancedResultHeaderActions.dart';
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/AdvancedResultSections.dart';
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/result_action_button.dart';
@@ -9,10 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-
 import '../../core/repositories/scan_repository.dart';
 import '../../core/services/translation_service.dart';
-import '../../core/widgets/app_bar.dart';
 import '../../core/widgets/app_themes.dart';
 import '../auth/login/services/guest_service.dart';
 
@@ -81,13 +78,25 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
     return 'advanced_${dataHash}_${imagePathHash}_$timestamp';
   }
 
-  Future<void> _checkAndAutoSaveScan() async {
-    final isFromHistory = widget.originalScanData['isFromHistory'] == true ||
+  bool _isFromHistory() {
+    return widget.originalScanData['isFromHistory'] == true ||
         widget.originalScanData['skipSave'] == true ||
         widget.originalScanData['databaseId'] != null;
+  }
 
-    if (isFromHistory) {
-      setState(() => _isAlreadySaved = true);
+  String _detectSourceLower(Map<String, dynamic> updatedAnalysisResult) {
+    // your services sometimes store it in different keys
+    final s1 = updatedAnalysisResult['source']?.toString();
+    final s2 = updatedAnalysisResult['analysisSource']?.toString();
+    final s3 = (updatedAnalysisResult['data'] is Map)
+        ? (updatedAnalysisResult['data']['source']?.toString())
+        : null;
+    return (s1 ?? s2 ?? s3 ?? '').toLowerCase();
+  }
+
+  Future<void> _checkAndAutoSaveScan() async {
+    if (_isFromHistory()) {
+      if (mounted) setState(() => _isAlreadySaved = true);
       return;
     }
 
@@ -101,6 +110,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
 
       final existing = await _scanRepository.getScanById(scanId);
       if (existing != null) {
+        if (!mounted) return;
         setState(() {
           _isAlreadySaved = true;
           _isProcessing = false;
@@ -113,21 +123,19 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
         'scanId': scanId,
       };
 
-      final source = updatedAnalysisResult['source']?.toString().toLowerCase() ?? '';
+      final source = _detectSourceLower(updatedAnalysisResult);
       final imagePath = widget.originalScanData['imagePath'] as String?;
 
       final isGroq = source.contains('groq');
       final isRoboflow = source.contains('roboflow');
-      // default fallback: Plant.id
+
       final savedScan = isGroq
           ? await _scanRepository.saveGroqScan(
         analysisResult: updatedAnalysisResult,
         imagePath: imagePath,
       )
           : isRoboflow
-          ? await _scanRepository.saveHuggingFaceScan(
-        // kept to avoid repo-wide break if method name still old
-        // if you renamed repository methods, switch this call too
+          ? await _scanRepository.saveRoboflowScan(
         analysisResult: updatedAnalysisResult,
         imagePath: imagePath,
       )
@@ -138,12 +146,11 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
 
       debugPrint('Advanced scan auto-saved → ID: ${savedScan.id}');
 
-      if (mounted) {
-        setState(() {
-          _isAlreadySaved = true;
-          _isProcessing = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _isAlreadySaved = true;
+        _isProcessing = false;
+      });
     } catch (e, stack) {
       debugPrint('Auto-save failed: $e\n$stack');
       if (mounted) setState(() => _isProcessing = false);
@@ -155,6 +162,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
       Map<String, dynamic> data,
       ) async {
     HapticFeedback.lightImpact();
+
     final source = widget.analysisResult['source'] as String? ?? 'AI';
     final plantRaw = data['plantName'] as String? ?? data['plant'] as String? ?? '-';
     final diseaseRaw = data['diseaseName'] as String? ?? data['disease'] as String? ?? '-';
@@ -214,7 +222,11 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
         ),
         title: Text(
           t.get('results.advanced_title'),
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: textColor,
+          ),
         ),
         actions: [
           AdvancedResultHeaderActions(
