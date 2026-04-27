@@ -31,42 +31,57 @@ class AdvancedBottomPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
 
-    return Expanded(
-      flex: 58,
-      child: Container(
-        color: cardBg,
-        padding: const EdgeInsets.all(16),
-        child: isCheckingApis
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  ...List.generate(
-                    options.length,
-                    (i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: AdvancedOptionCard(
-                        option: options[i],
-                        isSelected: selectedIndex == i,
-                        isAvailable: isOptionAvailable(i),
-                        isDark: isDark,
-                        index: i,
-                        onTap: isOptionAvailable(i) && !isAnalyzing
-                            ? () => onSelectOption(i)
-                            : null,
-                      ),
+    return Container(
+      color: cardBg,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Scrollable cards area
+          Expanded(
+            child: isCheckingApis
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 12),
+                        ...List.generate(
+                          options.length,
+                          (i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: AdvancedOptionCard(
+                              option: options[i],
+                              isSelected: selectedIndex == i,
+                              isAvailable: isOptionAvailable(i),
+                              isDark: isDark,
+                              index: i,
+                              onTap: isOptionAvailable(i) && !isAnalyzing
+                                  ? () => onSelectOption(i)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: isAnalyzing ? null : onAnalyze,
-                      child: Text(analyzeLabel),
-                    ),
-                  ),
-                ],
+          ),
+
+          // Pinned scan button at the bottom
+          SafeArea(
+            top: false,
+            minimum: const EdgeInsets.only(bottom: 12),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: isAnalyzing ? null : onAnalyze,
+                child: Text(analyzeLabel),
               ),
+            ),
+          ),
+        ],
       ),
     );
   }

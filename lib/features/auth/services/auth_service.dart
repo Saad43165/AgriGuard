@@ -116,6 +116,68 @@ class AuthService {
   }
 
   // -----------------------------------------------------------------
+  //  GET USER PROVIDER INFO
+  // -----------------------------------------------------------------
+  String? getUserProvider() {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    final providers = user.providerData;
+    if (providers.isEmpty) return null;
+    return providers.first.providerId;
+  }
+
+  bool isGoogleSignIn() {
+    return getUserProvider() == 'google.com';
+  }
+
+  bool canChangePassword() {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    final provider = getUserProvider();
+    return provider == 'password' || provider == 'email';
+  }
+
+  // -----------------------------------------------------------------
+  //  PASSWORD CHANGE (with current password verification)
+  // -----------------------------------------------------------------
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw AuthException('No user logged in.');
+    if (user.email == null) throw AuthException('No email associated with account.');
+
+    _validatePassword(currentPassword);
+    _validatePassword(newPassword);
+
+    if (currentPassword == newPassword) {
+      throw AuthException('New password must be different from current password.');
+    }
+
+    try {
+      // Re-authenticate user before changing password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      
+      // Update to new password
+      await user.updatePassword(newPassword);
+      debugPrint('Password changed successfully');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') {
+        throw AuthException('Current password is incorrect.');
+      }
+      if (e.code == 'requires-recent-login') {
+        throw AuthException('Please log in again to change password.');
+      }
+      throw _mapAuthError(e);
+    }
+  }
+
+  // -----------------------------------------------------------------
   //  PROFILE UPDATE
   // -----------------------------------------------------------------
   Future<void> updateProfile({

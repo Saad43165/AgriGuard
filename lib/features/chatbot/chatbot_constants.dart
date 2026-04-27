@@ -4,7 +4,8 @@ class ChatMessage {
   final String role;
   final String content;
   final DateTime timestamp;
-  ChatMessage({required this.role, required this.content, required this.timestamp});
+  final String? imagePath;
+  ChatMessage({required this.role, required this.content, required this.timestamp, this.imagePath});
 }
 
 class ChatbotConstants {

@@ -6,7 +6,7 @@ AgriGuard is a premium, AI-powered agricultural companion designed to empower fa
 
 ### 🔍 Precision AI Diagnosis
 * **Real-time Detection**: Identify over 52 classes of plant health conditions across 12+ species using optimized on-device TensorFlow Lite models.
-* **Hybrid Intelligence**: Combines Roboflow's cloud-based precision with local TFLite speed for the best possible accuracy.
+* **Hybrid Intelligence**: Combines PlantHealth's cloud-based precision with local TFLite speed for the best possible accuracy.
 * **Dual-Layer Analysis**: Integrated Groq AI (Llama 3.3) provides detailed biological causes, treatment plans, and prevention strategies.
 
 ### 🚜 Smart Farm Diary
@@ -27,7 +27,7 @@ AgriGuard is a premium, AI-powered agricultural companion designed to empower fa
 * **Framework**: Flutter (Dart)
 * **AI/ML**: 
   * TensorFlow Lite (On-device Inference)
-  * Roboflow API (Cloud-based Precision Scanning)
+  * PlantHealth API (Cloud-based Precision Scanning)
   * Groq AI - Llama 3.3 (Agricultural Reasoning)
 * **Backend**: Firebase (Auth, Firestore, Cloud Storage)
 * **Architecture**: Feature-first layered architecture (Clean Architecture principles)
@@ -67,7 +67,7 @@ lib/
    Create a `.env` file in the root directory:
    ```env
    GROQ_API_KEY=your_groq_key
-   ROBOFLOW_API_KEY=your_roboflow_key
+   PLANTHEALTH_API_KEY=your_planthealth_key
    ```
 
 4. **Run the app**:

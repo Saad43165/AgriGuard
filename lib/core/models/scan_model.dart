@@ -10,7 +10,7 @@ enum AnalysisSource {
   onDeviceML('On-Device ML'),
   groq('Groq AI'),
   plantId('Plant.id'),
-  roboflow('Roboflow');
+  plantHealth('PlantHealth');
 
   final String displayName;
   const AnalysisSource(this.displayName);
@@ -226,8 +226,8 @@ class ScanModel {
     );
   }
 
-  /// Replaces the old HuggingFace constructor.
-  factory ScanModel.fromRoboflowScan({
+  /// Replaces the old Roboflow constructor.
+  factory ScanModel.fromPlantHealthScan({
     required String userId,
     required Map<String, dynamic> analysisResult,
     String? imagePath,
@@ -243,7 +243,7 @@ class ScanModel {
     return ScanModel(
       userId: userId,
       scanType: ScanType.advanced,
-      analysisSource: AnalysisSource.roboflow,
+      analysisSource: AnalysisSource.plantHealth,
       plantName: data['plant']?.toString() ?? data['plantName']?.toString() ?? 'Unknown Plant',
       scientificName: data['scientificName']?.toString() ?? '',
       diseaseName: data['disease']?.toString() ?? data['diseaseName']?.toString() ?? 'Healthy',
@@ -350,9 +350,10 @@ class ScanModel {
       // Legacy mappings
       if (normalized == 'gemini') return AnalysisSource.groq;
       if (normalized == 'huggingface' || normalized == 'hugging face' || normalized == 'hf') {
-        return AnalysisSource.roboflow; // migrate legacy hf -> roboflow
+        return AnalysisSource.plantHealth; // migrate legacy hf -> plantHealth
       }
-      if (normalized == 'roboflow') return AnalysisSource.roboflow;
+      if (normalized == 'roboflow') return AnalysisSource.plantHealth; // migrate legacy roboflow -> plantHealth
+      if (normalized == 'planthealth') return AnalysisSource.plantHealth;
       if (normalized == 'plantid' || normalized == 'plant.id') return AnalysisSource.plantId;
       if (normalized == 'groq') return AnalysisSource.groq;
       if (normalized == 'ondeviceml' || normalized == 'on_device_ml') return AnalysisSource.onDeviceML;
@@ -441,9 +442,10 @@ class ScanModel {
       // Legacy mappings
       if (normalized == 'gemini') return AnalysisSource.groq;
       if (normalized == 'huggingface' || normalized == 'hugging face' || normalized == 'hf') {
-        return AnalysisSource.roboflow; // migrate legacy hf -> roboflow
+        return AnalysisSource.plantHealth; // migrate legacy hf -> plantHealth
       }
-      if (normalized == 'roboflow') return AnalysisSource.roboflow;
+      if (normalized == 'roboflow') return AnalysisSource.plantHealth; // migrate legacy roboflow -> plantHealth
+      if (normalized == 'planthealth') return AnalysisSource.plantHealth;
       if (normalized == 'plantid' || normalized == 'plant.id') return AnalysisSource.plantId;
       if (normalized == 'groq') return AnalysisSource.groq;
 

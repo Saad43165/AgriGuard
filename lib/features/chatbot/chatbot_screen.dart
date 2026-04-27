@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/features/advance_search_screen/service/plant_id_api_service.dart';
 import 'chatbot_constants.dart';
 import 'widgets/chatbot_widgets.dart';
 
@@ -16,12 +19,13 @@ class ChatbotScreen extends StatefulWidget {
 }
 
 class _ChatbotScreenState extends State<ChatbotScreen> with TickerProviderStateMixin {
-  // Static list — persists across widget rebuilds and navigation
   static final List<ChatMessage> _messages = [];
   static bool _guidanceDismissed = false;
 
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
+  final ImagePicker _imagePicker = ImagePicker();
+  final PlantIdService _plantIdService = PlantIdService();
   bool _isLoading = false;
   late AnimationController _fadeCtrl;
 
@@ -161,6 +165,183 @@ AgriGuard is a Flutter mobile app for plant disease detection using the PlantCit
   }
 
   List<({String text, IconData icon})> _getSuggestions(bool isUrdu) => ChatbotConstants.getSuggestions(isUrdu);
+
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<int>(context: context, builder: (ctx) => Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(ChatbotConstants.isUrdu('Select') ? 'تصویر کا انتخاب کریں' : 'Select Image Source',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 20),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          _imageSourceBtn(Icons.camera_alt_rounded, 
+            ChatbotConstants.isUrdu('Camera') ? 'کیمرہ' : 'Camera', 0),
+          _imageSourceBtn(Icons.photo_library_rounded, 
+            ChatbotConstants.isUrdu('Gallery') ? 'گیلری' : 'Gallery', 1),
+        ]),
+        const SizedBox(height: 10),
+      ]),
+    ));
+    
+    if (source == null) return;
+    
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: source == 0 ? ImageSource.camera : ImageSource.gallery,
+        maxWidth: 2000,
+        maxHeight: 2000,
+        imageQuality: 95,
+      );
+      
+      debugPrint('Picked image path: ${image?.path}');
+      debugPrint('Picked image exists: ${image != null && await File(image.path).exists()}');
+      
+      if (image != null) {
+        _analyzeImage(image.path);
+      }
+    } catch (e) {
+      debugPrint('Image picker error: $e');
+    }
+  }
+
+  Widget _imageSourceBtn(IconData icon, String label, int source) => GestureDetector(
+    onTap: () => Navigator.pop(context, source),
+    child: Column(children: [
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Icon(icon, color: AppColors.primary, size: 28),
+      ),
+      const SizedBox(height: 8),
+      Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+    ]),
+  );
+
+Future<void> _analyzeImage(String imagePath) async {
+    if (_isLoading) return;
+    
+    final isUrdu = ChatbotConstants.isUrdu(_inputCtrl.text) ||
+        _messages.any((m) => ChatbotConstants.isUrdu(m.content));
+    
+    setState(() {
+      _isLoading = true;
+      _messages.add(ChatMessage(
+        role: 'user', 
+        content: isUrdu ? 'پودے کی بیماری کا تجزیہ کر رہا ہوں...' : 'Analyzing plant disease...',
+        timestamp: DateTime.now(),
+        imagePath: imagePath,
+      ));
+    });
+    _scrollToBottom();
+
+    try {
+      if (!_plantIdService.hasApiKey()) {
+        _sendError(isUrdu ? 'API key missing!' : 'Plant.id API key not configured!');
+        return;
+      }
+      
+      final imageFile = File(imagePath);
+      debugPrint('Chatbot: Sending image to Plant.id, exists: ${await imageFile.exists()}');
+      
+      final result = await _plantIdService.analyzeWithPlantId(imageFile);
+      
+      debugPrint('Plant.id result: $result');
+      
+      if (result['success'] == true) {
+        _displayPlantIdResult(result, isUrdu);
+      } else {
+        final error = result['error'] ?? 'Unknown error';
+        debugPrint('Plant.id error: $error');
+        _sendError(isUrdu ? 'Error: $error' : 'Analysis failed: $error');
+      }
+    } catch (e) {
+      debugPrint('Analysis error: $e');
+      _sendError(isUrdu ? 'تجزیہ ناکام ہوا: $e' : 'Analysis failed: $e');
+    }
+  }
+
+  void _displayPlantIdResult(Map<String, dynamic> result, bool isUrdu) {
+    debugPrint('_displayPlantIdResult called with: $result');
+    
+    final data = result['data'] as Map<String, dynamic>? ?? result;
+    final plantName = data['plantName'] ?? 'Unknown';
+    final scientificName = data['scientificName'] ?? '';
+    final diseaseName = data['diseaseName'] ?? '';
+    final confidence = data['confidence'] ?? 0;
+    final diseaseConfidence = data['diseaseConfidence'] ?? 0;
+    final severity = data['severity'] ?? 'Unknown';
+    final symptoms = (data['symptoms'] as List<dynamic>?)?.cast<String>() ?? [];
+    final remediation = (data['remediation'] as List<dynamic>?)?.cast<String>() ?? [];
+    final precautions = (data['precautions'] as List<dynamic>?)?.cast<String>() ?? [];
+    
+    final isHealthy = diseaseName.isEmpty || diseaseName.toLowerCase() == 'healthy';
+    
+    final sb = StringBuffer();
+    sb.writeln('🌱 **$plantName**');
+    if (scientificName.isNotEmpty) {
+      sb.writeln('📖 $scientificName');
+    }
+    if (confidence > 0) {
+      sb.writeln('📊 ${isUrdu ? 'یقین:' : 'Confidence:'} $confidence%');
+    }
+    sb.writeln();
+    
+    if (isHealthy) {
+      sb.writeln('✅ **${isUrdu ? 'صحت مند - پودا صحت مند ہے' : 'Healthy - Your plant is healthy!'}**');
+    } else {
+      sb.writeln('⚠️ **${isUrdu ? 'بیماری' : 'Disease Detected'}: $diseaseName**');
+      if (diseaseConfidence > 0) {
+        sb.writeln('🦠 ${isUrdu ? 'بیماری کا یقین:' : 'Disease Confidence:'} $diseaseConfidence%');
+      }
+      if (severity.isNotEmpty && severity != 'Unknown') {
+        sb.writeln('📌 ${isUrdu ? 'شدت:' : 'Severity:'} $severity');
+      }
+      
+      if (symptoms.isNotEmpty) {
+        sb.writeln();
+        sb.writeln('📝 **${isUrdu ? 'علامات' : 'Symptoms'}:**');
+        for (final s in symptoms.take(3)) {
+          sb.writeln('• $s');
+        }
+      }
+      
+      if (remediation.isNotEmpty) {
+        sb.writeln();
+        sb.writeln('💊 **${isUrdu ? 'علاج' : 'Treatment'}:**');
+        for (int i = 0; i < remediation.length && i < 4; i++) {
+          sb.writeln('${i + 1}. ${remediation[i]}');
+        }
+      }
+      
+      if (precautions.isNotEmpty) {
+        sb.writeln();
+        sb.writeln('⚠️ **${isUrdu ? 'احتیاطات' : 'Precautions'}:**');
+        for (final p in precautions.take(3)) {
+          sb.writeln('• $p');
+        }
+      }
+    }
+    
+    final reply = sb.toString().trim();
+    debugPrint('Chatbot reply: $reply');
+    
+    setState(() {
+      _messages.add(ChatMessage(role: 'assistant', content: reply, timestamp: DateTime.now()));
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
+
+  void _sendError(String error) {
+    setState(() {
+      _messages.add(ChatMessage(role: 'assistant', content: error, timestamp: DateTime.now()));
+      _isLoading = false;
+    });
+    _scrollToBottom();
+  }
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty || _isLoading) return;
@@ -443,6 +624,7 @@ AgriGuard is a Flutter mobile app for plant disease detection using the PlantCit
             isDark: isDark,
             hintText: t.isUrdu ? t.get('chatbot_hint_ur') : t.get('chatbot_hint'),
             onSend: _sendMessage,
+            onImageTap: _pickImage,
           ),
         ],
       ),

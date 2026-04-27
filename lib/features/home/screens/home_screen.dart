@@ -200,7 +200,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 SliverToBoxAdapter(
                   child: FadeTransition(
                     opacity: _fadeController,
-                    child: HomeHeader(isDark: isDark),
+                    child: Consumer<WeatherProvider>(
+                      builder: (_, weatherProvider, __) => HomeHeader(
+                        isDark: isDark,
+                        onRefreshWeather: () {
+                          weatherProvider.refreshWeather();
+                        },
+                      ),
+                    ),
                   ),
                 ),
 

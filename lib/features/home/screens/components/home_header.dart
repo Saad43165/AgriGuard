@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,7 +12,8 @@ import '../weather/provider/weather_provider.dart';
 
 class HomeHeader extends StatelessWidget {
   final bool isDark;
-  const HomeHeader({super.key, required this.isDark});
+  final VoidCallback? onRefreshWeather;
+  const HomeHeader({super.key, required this.isDark, this.onRefreshWeather});
 
   Stream<Map<String, String>> _userStream() {
     final user = FirebaseAuth.instance.currentUser;
@@ -33,50 +35,57 @@ class HomeHeader extends StatelessWidget {
 
     return Column(
       children: [
-        // ── Top bar: weather left, settings right ──────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           child: Row(
             children: [
-              // Weather inline
               Expanded(child: Consumer<WeatherProvider>(
                 builder: (_, provider, __) {
                   if (provider.hasData) {
                     final w = provider.currentWeather!;
                     final icon = _weatherEmoji(w.conditionText, w.isDay == 1);
-                    return Row(
-                      children: [
-                        Text(icon, style: const TextStyle(fontSize: 22)),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${w.temperature.toStringAsFixed(0)}°C  ${w.conditionText}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: textColor,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Icon(CupertinoIcons.location_fill,
-                                    size: 10, color: AppColors.primary),
-                                const SizedBox(width: 3),
-                                Text(
-                                  w.cityName,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                    return GestureDetector(
+                      onTap: onRefreshWeather,
+                      child: Row(
+                        children: [
+                          Text(icon, style: const TextStyle(fontSize: 22)),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${w.temperature.toStringAsFixed(0)}°C  ${w.conditionText}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: textColor,
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                              ),
+                              Row(
+                                children: [
+                                  Icon(CupertinoIcons.location_fill,
+                                      size: 10, color: AppColors.primary),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    w.cityName,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: onRefreshWeather,
+                                    child: Icon(CupertinoIcons.refresh, 
+                                        size: 10, color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     );
                   }
                   if (provider.isLoading) {
@@ -88,45 +97,47 @@ class HomeHeader extends StatelessWidget {
                           style: TextStyle(fontSize: 12, color: captionColor)),
                     ]);
                   }
-                  return Row(children: [
-                    Icon(CupertinoIcons.cloud, size: 18, color: captionColor),
-                    const SizedBox(width: 6),
-                    Text(t.isUrdu ? 'موسم دستیاب نہیں' : 'Weather unavailable',
-                        style: TextStyle(fontSize: 12, color: captionColor)),
-                  ]);
+                  return GestureDetector(
+                    onTap: onRefreshWeather,
+                    child: Row(children: [
+                      Icon(CupertinoIcons.cloud, size: 18, color: captionColor),
+                      const SizedBox(width: 6),
+                      Text(t.isUrdu ? 'موسم دستیاب نہیں - ٹیپ کریں' : 'Weather unavailable - tap to refresh',
+                          style: TextStyle(fontSize: 12, color: captionColor)),
+                    ]),
+                  );
                 },
               )),
-              // Settings button
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : Colors.white,
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                        color: AppColors.primary.withValues(alpha: 0.3)),
                   ),
                   child: Icon(CupertinoIcons.settings,
                       size: 17,
-                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                      color: AppColors.primary),
                 ),
               ),
               const SizedBox(width: 8),
-              // Report Bug button
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, AppRoutes.bugReport),
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : Colors.white,
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
                   ),
-                  child: Icon(CupertinoIcons.ant,
+                  child: Icon(CupertinoIcons.ant_fill,
                       size: 17,
-                      color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+                      color: const Color(0xFFEF4444)),
                 ),
               ),
             ],

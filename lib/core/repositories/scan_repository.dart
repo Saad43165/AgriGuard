@@ -49,7 +49,7 @@ class ScanRepository {
     final isAdvancedSource = src.contains('groq') ||
         src.contains('plantid') ||
         src.contains('plant.id') ||
-        src.contains('roboflow') ||
+        src.contains('planthealth') ||
         src.contains('advanced');
 
     return isAdvancedSource ? 'advanced_$hash' : 'ondevice_$hash';
@@ -254,8 +254,8 @@ class ScanRepository {
     }
   }
 
-  /// NEW: Roboflow advanced scan save (replaces Hugging Face)
-  Future<ScanModel> saveRoboflowScan({
+  /// PlantHealth advanced scan save
+  Future<ScanModel> savePlantHealthScan({
     required Map<String, dynamic> analysisResult,
     String? imagePath,
   }) async {
@@ -268,7 +268,7 @@ class ScanRepository {
 
       final existingScan = await _database.getScanById(scanId);
       if (existingScan != null) {
-        debugPrint('✅ Roboflow scan already exists, returning existing: $scanId');
+        debugPrint('✅ PlantHealth scan already exists, returning existing: $scanId');
         return existingScan;
       }
 
@@ -284,7 +284,7 @@ class ScanRepository {
         }
       }
 
-      final scan = ScanModel.fromRoboflowScan(
+      final scan = ScanModel.fromPlantHealthScan(
         userId: user.uid,
         analysisResult: analysisResult,
         imagePath: imagePath,
@@ -298,17 +298,17 @@ class ScanRepository {
 
       _syncAdvancedScanToFirebase(savedScan);
 
-      debugPrint('✅ Roboflow scan saved: $savedScanId');
+      debugPrint('✅ PlantHealth scan saved: $savedScanId');
       return savedScan;
     } catch (e) {
       if (e.toString().contains('UNIQUE constraint failed') || e.toString().contains('Duplicate')) {
-        debugPrint('⚠️ Duplicate Roboflow scan detected');
+        debugPrint('⚠️ Duplicate PlantHealth scan detected');
         final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
         final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
         final existing = await _database.getScanById(scanId);
         if (existing != null) return existing;
       }
-      debugPrint('❌ Error saving Roboflow scan: $e');
+      debugPrint('❌ Error saving PlantHealth scan: $e');
       rethrow;
     }
   }

@@ -21,7 +21,7 @@ class ScanDatabase {
 
     return await openDatabase(
       path,
-      version: 5, // ✅ bumped from 4 to 5
+      version: 6, // ✅ bumped from 5 to 6
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
       onDowngrade: onDatabaseDowngradeDelete,
@@ -44,6 +44,9 @@ class ScanDatabase {
           break;
         case 4:
           await _migrateV4ToV5(db);
+          break;
+        case 5:
+          await _migrateV5ToV6(db);
           break;
       }
     }
@@ -133,6 +136,22 @@ class ScanDatabase {
         WHERE LOWER(analysisSource) IN ('huggingface', 'hugging face', 'hf')
       ''');
       print('✅ Migrated old huggingface sources to roboflow');
+    } catch (e) {
+      print('⚠️ Error migrating analysisSource: $e');
+    }
+  }
+
+  /// ✅ New migration: Roboflow -> PlantHealth
+  Future<void> _migrateV5ToV6(Database db) async {
+    print('📊 Migrating from v5 to v6 (analysisSource cleanup)');
+
+    try {
+      await db.rawUpdate('''
+        UPDATE scans
+        SET analysisSource = 'plantHealth'
+        WHERE LOWER(analysisSource) IN ('roboflow')
+      ''');
+      print('✅ Migrated old roboflow sources to plantHealth');
     } catch (e) {
       print('⚠️ Error migrating analysisSource: $e');
     }

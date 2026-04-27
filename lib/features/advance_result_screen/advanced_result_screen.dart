@@ -3,15 +3,16 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/AdvancedResultHeaderActions.dart';
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/AdvancedResultSections.dart';
-import 'package:agriguard_fyp/features/advance_result_screen/widgets/result_action_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../core/repositories/scan_repository.dart';
 import '../../core/services/translation_service.dart';
 import '../../core/widgets/app_themes.dart';
+import '../../features/home/screens/PdfDialogs/services/pdf_action_services.dart';
+import '../../features/home/screens/PdfDialogs/SuccessPdfDialog/pdf_success_dialog.dart';
 import '../auth/login/services/guest_service.dart';
+import '../advance_search_screen/service/groq_service.dart';
 
 class AdvancedResultsScreen extends StatefulWidget {
   final Map<String, dynamic> analysisResult;
@@ -30,6 +31,10 @@ class AdvancedResultsScreen extends StatefulWidget {
 class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
   late final ScanRepository _scanRepository;
   final GuestService _guestService = GuestService();
+  final GroqService _groqService = GroqService();
+
+  Map<String, dynamic>? _urduOverrideData;
+  bool _isTranslating = false;
 
   bool _isGuestMode = false;
   bool _isProcessing = false;
@@ -85,13 +90,45 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
   }
 
   String _detectSourceLower(Map<String, dynamic> updatedAnalysisResult) {
-    // your services sometimes store it in different keys
     final s1 = updatedAnalysisResult['source']?.toString();
     final s2 = updatedAnalysisResult['analysisSource']?.toString();
     final s3 = (updatedAnalysisResult['data'] is Map)
         ? (updatedAnalysisResult['data']['source']?.toString())
         : null;
     return (s1 ?? s2 ?? s3 ?? '').toLowerCase();
+  }
+
+  Future<void> _translateAllDataToUrduIfNeeded(TranslationService t) async {
+    if (!t.isUrdu) return;
+    if (_isTranslating || _urduOverrideData != null) return;
+
+    if (!_groqService.hasApiKey()) {
+      debugPrint('⚠️ GROQ_API_KEY missing, cannot translate dynamic text.');
+      return;
+    }
+
+    final data = widget.analysisResult['data'];
+    if (data is! Map) return;
+
+    setState(() => _isTranslating = true);
+    try {
+      final res = await _groqService.translateScanDataToUrdu(
+        data: Map<String, dynamic>.from(data as Map),
+      );
+
+      if (res['success'] == true && res['data'] is Map) {
+        if (!mounted) return;
+        setState(() {
+          _urduOverrideData = Map<String, dynamic>.from(res['data'] as Map);
+        });
+      } else {
+        debugPrint('⚠️ Translation failed: ${res['message'] ?? res}');
+      }
+    } catch (e, st) {
+      debugPrint('❌ Translation exception: $e\n$st');
+    } finally {
+      if (mounted) setState(() => _isTranslating = false);
+    }
   }
 
   Future<void> _checkAndAutoSaveScan() async {
@@ -127,15 +164,16 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
       final imagePath = widget.originalScanData['imagePath'] as String?;
 
       final isGroq = source.contains('groq');
-      final isRoboflow = source.contains('roboflow');
+      final isPlantHealth = source.contains('planthealth');
+      final isPlantId = source.contains('plantid') || source.contains('plant.id') || !isGroq && !isPlantHealth;
 
       final savedScan = isGroq
           ? await _scanRepository.saveGroqScan(
         analysisResult: updatedAnalysisResult,
         imagePath: imagePath,
       )
-          : isRoboflow
-          ? await _scanRepository.saveRoboflowScan(
+          : isPlantHealth
+          ? await _scanRepository.savePlantHealthScan(
         analysisResult: updatedAnalysisResult,
         imagePath: imagePath,
       )
@@ -144,7 +182,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
         imagePath: imagePath,
       );
 
-      debugPrint('Advanced scan auto-saved → ID: ${savedScan.id}');
+      debugPrint('Advanced scan auto-saved → ID: ${savedScan.id} (source: $source)');
 
       if (!mounted) return;
       setState(() {
@@ -163,36 +201,43 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
       ) async {
     HapticFeedback.lightImpact();
 
-    final source = widget.analysisResult['source'] as String? ?? 'AI';
-    final plantRaw = data['plantName'] as String? ?? data['plant'] as String? ?? '-';
-    final diseaseRaw = data['diseaseName'] as String? ?? data['disease'] as String? ?? '-';
-    final severityRaw = data['severity'] as String? ?? '-';
-    final confidence = data['confidence'];
-    final confText = confidence != null ? '$confidence%' : '-';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final scanDataForPdf = {
+      ...widget.analysisResult,
+      'data': _urduOverrideData ?? data,
+    };
 
-    final plant = t.translatePlant(plantRaw);
-    final disease = diseaseRaw.toLowerCase() == 'healthy'
-        ? (t.isUrdu ? 'صحت مند' : 'Healthy')
-        : t.translateDisease(diseaseRaw);
-    final severity = t.translateSeverity(severityRaw);
+    final pdfService = PdfActionsService();
+    
+    await pdfService.generateAndShowPdf(
+      context: context,
+      scan: scanDataForPdf,
+      onError: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      onSuccess: (pdfFile) async {
+        await _showPdfSuccessDialog(pdfFile);
+      },
+    );
+  }
 
-    final text = t.isUrdu
-        ? '''🌿 AgriGuard ایڈوانسڈ نتائج
-
-🔬 ذریعہ: $source
-🌱 پودا: $plant
-🦠 بیماری: $disease
-⚠️ شدت: $severity
-📊 اعتماد: $confText'''
-        : '''🌿 AgriGuard Advanced Results
-
-🔬 Source: $source
-🌱 Plant: $plant
-🦠 Disease: $disease
-⚠️ Severity: $severity
-📊 Confidence: $confText''';
-
-    await Share.share(text.trim());
+  Future<void> _showPdfSuccessDialog(File pdfFile) async {
+    final dialog = PdfSuccessDialog(pdfFile: pdfFile);
+    
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => dialog,
+    );
+    
+    if (result == null) return;
   }
 
   @override
@@ -200,9 +245,15 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final t = Provider.of<TranslationService>(context);
 
-    final data = widget.analysisResult['data'] as Map<String, dynamic>? ?? {};
-    final hasDiseaseInfo = widget.analysisResult['hasDiseaseInfo'] as bool? ?? false;
-    final source = widget.analysisResult['source'] as String? ?? 'AI';
+    // Apply override data when Urdu translation is ready
+    final effectiveResult = <String, dynamic>{
+      ...widget.analysisResult,
+      'data': _urduOverrideData ?? (widget.analysisResult['data'] ?? {}),
+    };
+
+    final data = effectiveResult['data'] as Map<String, dynamic>? ?? {};
+    final hasDiseaseInfo = effectiveResult['hasDiseaseInfo'] as bool? ?? false;
+    final source = effectiveResult['source'] as String? ?? 'AI';
 
     final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
     final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
@@ -222,34 +273,45 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
         ),
         title: Text(
           t.get('results.advanced_title'),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: textColor,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
         ),
         actions: [
           AdvancedResultHeaderActions(
             isUrdu: t.isUrdu,
             onShare: () => _handleShare(t, data),
-            onToggleLanguage: () {
+            onToggleLanguage: () async {
               HapticFeedback.lightImpact();
               t.toggleLanguage();
+
+              if (t.isUrdu) {
+                await _translateAllDataToUrduIfNeeded(t);
+              } else {
+                if (mounted) setState(() => _urduOverrideData = null);
+              }
             },
             shareTooltip: t.get('share'),
             languageTooltip: t.isUrdu
                 ? t.get('buttons.switch_to_english')
                 : t.get('buttons.switch_to_urdu'),
           ),
+          if (_isTranslating)
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: textColor.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
-      floatingActionButton: ResultActionButton(
-        analysisResult: widget.analysisResult,
-        originalScanData: widget.originalScanData,
-        plantImageBytes: _imageBytes,
-      ),
       body: AdvancedResultSections(
-        analysisResult: widget.analysisResult,
+        analysisResult: effectiveResult,
         originalScanData: widget.originalScanData,
         imageBytes: _imageBytes,
         hasDiseaseInfo: hasDiseaseInfo,

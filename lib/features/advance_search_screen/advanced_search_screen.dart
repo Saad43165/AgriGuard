@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:agriguard_fyp/features/advance_search_screen/widgets/AdvancedBottomPanel.dart';
 import 'package:agriguard_fyp/features/advance_search_screen/widgets/AdvancedTopImageSection.dart';
 import 'package:flutter/material.dart';
@@ -23,20 +24,13 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     with SingleTickerProviderStateMixin {
   bool _isAnalyzing = false;
   bool _isCheckingApis = true;
-  int _selectedIndex = 2;
+  int _selectedIndex = 0;
   Map<String, dynamic>? _apiStatus;
   final AdvancedSearchService _searchService = AdvancedSearchService();
 
-  static const _options = [
+static const _options = [
     AdvancedOption(
-      'Disease Scanner',
-      'Identifies plant diseases from photo',
-      Icons.eco_outlined,
-      'Roboflow',
-      '3–6s',
-    ),
-    AdvancedOption(
-      'Plant Expert',
+      'Plant.id',
       'Deep plant & disease identification',
       Icons.park_outlined,
       'Plant.id',
@@ -44,7 +38,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     ),
     AdvancedOption(
       'AI Advisor',
-      'Get expert farming advice & treatment',
+      'Expert agricultural advice & treatment',
       Icons.chat_bubble_outline_rounded,
       'Groq',
       '2–4s',
@@ -52,13 +46,6 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   ];
 
   static const _optionsUr = [
-    AdvancedOption(
-      'ڈیزیز اسکینر',
-      'تصویر سے پودوں کی بیماریاں شناخت کرتا ہے',
-      Icons.eco_outlined,
-      'Roboflow',
-      '3–6s',
-    ),
     AdvancedOption(
       'پلانٹ ایکسپرٹ',
       'گہری پودوں اور بیماریوں کی شناخت',
@@ -115,9 +102,9 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
 
   bool _available(int i) {
     if (_apiStatus == null) return true;
-    const keys = ['roboflow', 'plantId', 'groq'];
+    const keys = ['plantId', 'groq'];
     final v = _apiStatus![keys[i]];
-    return v is Map ? (v['available'] == true) : false;
+    return v is Map ? (v['available'] == true) : true;
   }
 
   Future<void> _start(TranslationService t) async {
@@ -149,13 +136,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       final tag = _options[_selectedIndex].tag;
       Map<String, dynamic> result;
 
-      if (tag == 'Roboflow') {
-        result = await _searchService.analyzeWithRoboflow(file);
+      if (tag == 'PlantHealth') {
+        result = await _searchService.analyzeWithPlantHealth(file);
       } else if (tag == 'Plant.id') {
         result = await _searchService.analyzeWithPlantId(file);
       } else {
-        result = await _searchService.analyzePlant(file);
-      }
+        result = await _searchService.analyzePlant(file, inUrdu: t.isUrdu);      }
 
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
@@ -200,6 +186,13 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     final imagePath = widget.originalScanData['imagePath'] as String?;
     final localOpts = _localizedOptions(t.isUrdu);
 
+    final sheetBg = isDark ? AppColors.darkSurface : Colors.white;
+    final sheetBorder = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+
+    // Fade overlay colors (image -> sheet)
+    final fadeStart = Colors.transparent;
+    final fadeEnd = sheetBg; // match exactly so it blends
+
     return PopScope(
       canPop: !_isAnalyzing,
       child: Scaffold(
@@ -208,26 +201,98 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           children: [
             Column(
               children: [
-                AdvancedTopImageSection(imagePath: imagePath),
-                AdvancedBottomPanel(
-                  isDark: isDark,
-                  isCheckingApis: _isCheckingApis,
-                  isAnalyzing: _isAnalyzing,
-                  selectedIndex: _selectedIndex,
-                  options: localOpts,
-                  isOptionAvailable: _available,
-                  onSelectOption: (i) => setState(() => _selectedIndex = i),
-                  onAnalyze: () => _start(t),
-                  analyzeLabel: _isAnalyzing
-                      ? (t.isUrdu ? 'تجزیہ ہو رہا ہے…' : 'Analyzing…')
-                      : (t.isUrdu
-                      ? '${localOpts[_selectedIndex].title} سے تجزیہ کریں'
-                      : 'Analyze with ${_options[_selectedIndex].title}'),
+                // ── Top image + subtle fade overlay ───────────────────────
+                Expanded(
+                  flex: 40,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: AdvancedTopImageSection(imagePath: imagePath),
+                      ),
+
+                      // Subtle gradient fade at the bottom of the image
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          child: Container(
+                            height: 90, // tweak 70-120 depending on taste
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  fadeStart,
+                                  fadeEnd.withValues(alpha: 0.90),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Bottom sheet panel ────────────────────────────────────
+                Expanded(
+                  flex: 60,
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: sheetBg,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                      border: Border.all(
+                        color: sheetBorder.withValues(alpha: 0.9),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                          blurRadius: 4,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 22),
+                        Container(
+                          width: 32,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: (isDark ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        Expanded(
+                          child: AdvancedBottomPanel(
+                            isDark: isDark,
+                            isCheckingApis: _isCheckingApis,
+                            isAnalyzing: _isAnalyzing,
+                            selectedIndex: _selectedIndex,
+                            options: localOpts,
+                            isOptionAvailable: _available,
+                            onSelectOption: (i) => setState(() => _selectedIndex = i),
+                            onAnalyze: () => _start(t),
+                            analyzeLabel: _isAnalyzing
+                                ? (t.isUrdu ? 'تجزیہ ہو رہا ہے…' : 'Analyzing…')
+                                : (t.isUrdu
+                                ? '${localOpts[_selectedIndex].title} سے تجزیہ کریں'
+                                : 'Analyze with ${_options[_selectedIndex].title}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
 
-            // Back button (always visible)
+            // ── Back button ─────────────────────────────────────────────
             Positioned(
               top: MediaQuery.of(context).padding.top + 12,
               left: 16,
@@ -252,6 +317,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               ),
             ),
 
+            // ── Processing overlay ──────────────────────────────────────
             if (_isAnalyzing)
               Positioned.fill(
                 child: ProcessingOverlay(

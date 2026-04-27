@@ -148,7 +148,7 @@ class AdvancedResultSections extends StatelessWidget {
   Color _getSourceColor(String source) {
     final s = source.toLowerCase();
     if (s.contains('groq')) return AppColors.secondary;
-    if (s.contains('roboflow')) return AppColors.info;
+    if (s.contains('planthealth')) return AppColors.info;
     if (s.contains('plant')) return AppColors.success;
     return AppColors.primary;
   }
@@ -156,7 +156,7 @@ class AdvancedResultSections extends StatelessWidget {
   IconData _getSourceIcon(String source) {
     final s = source.toLowerCase();
     if (s.contains('groq')) return Icons.psychology_rounded;
-    if (s.contains('roboflow')) return Icons.cloud_rounded;
+    if (s.contains('planthealth')) return Icons.cloud_rounded;
     if (s.contains('plant')) return Icons.local_florist_rounded;
     return Icons.auto_awesome_rounded;
   }
@@ -194,10 +194,20 @@ class AdvancedResultSections extends StatelessWidget {
 
     final severity = data['severity'] as String? ?? data['severityLevel'] as String? ?? 'Unknown';
     final plantNameRaw = data['plantName'] as String? ?? data['plant'] as String? ?? '-';
+    final scientificNameRaw = data['scientificName'] as String? ?? '';
+    final plantNameUrdu = data['plantNameUrdu'] as String? ?? '';
+    final plantDescription = data['plantDescription'] as String? ?? '';
     final diseaseNameRaw = data['diseaseName'] as String? ?? data['disease'] as String? ?? '-';
     final confidence = data['confidence'];
 
-    final plantName = t.translatePlant(plantNameRaw);
+    // Prefer common name over scientific name, and use Urdu name when available
+    final displayPlantRaw = plantNameRaw.isNotEmpty && plantNameRaw != '-' ? plantNameRaw : scientificNameRaw;
+    final bool hasMeaningfulPlantName = displayPlantRaw.isNotEmpty &&
+        displayPlantRaw != '-' &&
+        displayPlantRaw.toLowerCase() != 'unknown plant';
+
+    final plantName = hasMeaningfulPlantName ? t.translatePlant(displayPlantRaw) : '';
+    final plantNameFinal = t.isUrdu && plantNameUrdu.isNotEmpty ? plantNameUrdu : plantName;
     final diseaseName = diseaseNameRaw.toLowerCase() == 'healthy'
         ? (t.isUrdu ? 'صحت مند' : 'Healthy')
         : t.translateDisease(diseaseNameRaw);
@@ -234,11 +244,18 @@ class AdvancedResultSections extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(t.get('results.plant_name'),
-                        style: TextStyle(fontSize: 11, color: captionColor, fontWeight: FontWeight.w600)),
-                    Text(plantName,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textColor)),
-                    const SizedBox(height: 4),
+                    if (hasMeaningfulPlantName) ...[
+                      Text(t.get('results.plant_name'),
+                          style: TextStyle(fontSize: 11, color: captionColor, fontWeight: FontWeight.w600)),
+                      Text(plantNameFinal,
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: textColor)),
+                      if (plantDescription.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(plantDescription,
+                            style: TextStyle(fontSize: 12, color: captionColor, fontStyle: FontStyle.italic)),
+                      ],
+                      const SizedBox(height: 4),
+                    ],
                     Text(t.get('results.disease'),
                         style: TextStyle(fontSize: 11, color: captionColor, fontWeight: FontWeight.w600)),
                     Text(diseaseName,

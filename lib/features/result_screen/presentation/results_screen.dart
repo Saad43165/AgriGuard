@@ -9,19 +9,31 @@ import 'package:agriguard_fyp/features/result_screen/presentation/utils/disease_
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../auth/login/services/guest_service.dart';
 import 'package:agriguard_fyp/core/constants/app_routes.dart';
 import 'package:agriguard_fyp/core/repositories/scan_repository.dart';
 import 'package:agriguard_fyp/core/services/severity_id_service.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/features/home/screens/PdfDialogs/services/pdf_action_services.dart';
+import 'package:agriguard_fyp/features/home/screens/PdfDialogs/SuccessPdfDialog/pdf_success_dialog.dart';
 import '../../advance_search_screen/advanced_search_screen.dart';
 import 'components/disease_cause_card.dart' show DiseaseCausesCard;
 import 'components/non_plant_screen.dart';
 import 'models/diagnosis_result.dart';
 import 'models/leaf_analysis_result.dart';
 import 'widgets/result_widgets.dart';
+
+class ShowPdfSuccessDialog extends StatelessWidget {
+  final File pdfFile;
+
+  const ShowPdfSuccessDialog({super.key, required this.pdfFile});
+
+  @override
+  Widget build(BuildContext context) {
+    return PdfSuccessDialog(pdfFile: pdfFile);
+  }
+}
 
 class ResultsScreen extends StatefulWidget {
   final Map<String, dynamic> scanData;
@@ -250,10 +262,52 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
 
   Future<void> _share() async {
     final t = Provider.of<TranslationService>(context, listen: false);
-    final plant = t.translatePlant(widget.scanData['plantName']?.toString() ?? 'Unknown Plant');
-    final disease = t.translateDisease(widget.scanData['diseaseName']?.toString() ?? (t.isUrdu ? 'صحت مند' : 'Healthy'));
-    final severityLabel = t.translateSeverity(_severity);
-    await Share.share('🌱 AgriGuard\nPlant: $plant\nDisease: $disease\nSeverity: $severityLabel\n\nScanned with AgriGuard');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final scanDataForPdf = {
+      ...widget.scanData,
+      'severity': _severity,
+      'remediation': _remediation,
+      'plantName': widget.scanData['plantName']?.toString() ?? 'Unknown Plant',
+    };
+
+    final pdfService = PdfActionsService();
+    
+    await pdfService.generateAndShowPdf(
+      context: context,
+      scan: scanDataForPdf,
+      onError: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      onSuccess: (pdfFile) async {
+        await _showPdfSuccessDialog(pdfFile, t, isDark);
+      },
+    );
+  }
+
+  Future<void> _showPdfSuccessDialog(File pdfFile, TranslationService t, bool isDark) async {
+    final dialog = ShowPdfSuccessDialog(pdfFile: pdfFile);
+    
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => dialog,
+    );
+    
+    if (result == null) return;
+  }
+
+  void _toggleLanguage() async {
+    final t = Provider.of<TranslationService>(context, listen: false);
+    HapticFeedback.lightImpact();
+    await t.toggleLanguage();
+    if (mounted) setState(() {});
   }
 
   DiagnosisResult _getDiagnosisResult() => DiagnosisResult.fromScanData({
@@ -349,7 +403,20 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                         Positioned(
                           top: MediaQuery.of(context).padding.top + 12,
                           right: 16,
-                          child: ResultCircleBtn(icon: Icons.share_rounded, onTap: _share),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ResultCircleBtn(
+                                icon: Icons.translate_rounded,
+                                onTap: _toggleLanguage,
+                              ),
+                              const SizedBox(width: 12),
+                              ResultCircleBtn(
+                                icon: Icons.share_rounded,
+                                onTap: _share,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -95,15 +95,30 @@ class AppTheme {
     scaffoldBackgroundColor: AppColors.lightBg,
 
     colorScheme: const ColorScheme.light(
-      primary:          AppColors.primary,
-      onPrimary:        Colors.white,
-      secondary:        AppColors.secondary,
-      onSecondary:      Colors.white,
-      surface:          AppColors.lightSurface,
-      onSurface:        AppColors.lightOnSurface,
-      error:            AppColors.error,
-      onError:          Colors.white,
-      outline:          AppColors.lightBorder,
+      primary:                AppColors.primary,
+      onPrimary:              Colors.white,
+      primaryContainer:       AppColors.primaryLight,
+      onPrimaryContainer:     AppColors.primaryDark,
+      secondary:             AppColors.secondary,
+      onSecondary:           Colors.white,
+      secondaryContainer:    AppColors.primaryLight,
+      onSecondaryContainer: AppColors.primaryDark,
+      tertiary:              AppColors.secondary,
+      tertiaryContainer:    AppColors.primaryLight,
+      onTertiaryContainer:   AppColors.primaryDark,
+      surface:               AppColors.lightSurface,
+      onSurface:            AppColors.lightOnSurface,
+      onSurfaceVariant:     AppColors.lightCaption,
+      error:                AppColors.error,
+      onError:              Colors.white,
+      outline:              AppColors.lightBorder,
+      outlineVariant:       AppColors.lightBorder,
+      surfaceContainerLowest:  Color(0xFFFFFFFF),
+      surfaceContainerLow:   Color(0xFFF5F5F5),
+      surfaceContainer:      Color(0xFFFAFAFA),
+      surfaceContainerHigh: Color(0xFFEEEEEE),
+      surfaceContainerHighest: Color(0xFFE8E8E8),
+      surfaceTint:           AppColors.primary,
     ),
 
     textTheme: const TextTheme(
@@ -141,7 +156,7 @@ class AppTheme {
       color: AppColors.lightCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: AppColors.lightBorder, width: 1),
       ),
       margin: EdgeInsets.zero,
@@ -242,9 +257,9 @@ class AppTheme {
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.lightSurface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      elevation: 8,
+      elevation: 1,
     ),
 
     switchTheme: SwitchThemeData(
@@ -264,15 +279,30 @@ class AppTheme {
     scaffoldBackgroundColor: AppColors.darkBg,
 
     colorScheme: const ColorScheme.dark(
-      primary:     AppColors.primary,
-      onPrimary:   Colors.white,
-      secondary:   AppColors.secondary,
-      onSecondary: Colors.white,
-      surface:     AppColors.darkSurface,
-      onSurface:   AppColors.darkOnSurface,
-      error:       AppColors.error,
-      onError:     Colors.white,
-      outline:     AppColors.darkBorder,
+      primary:               AppColors.primary,
+      onPrimary:            Colors.white,
+      primaryContainer:      AppColors.primaryDark,
+      onPrimaryContainer:   Color(0xFFB5E6C4),
+      secondary:            AppColors.secondary,
+      onSecondary:         Colors.white,
+      secondaryContainer:   AppColors.primaryDark,
+      onSecondaryContainer: Color(0xFFB5E6C4),
+      tertiary:             AppColors.secondary,
+      tertiaryContainer:   AppColors.primaryDark,
+      onTertiaryContainer:  Color(0xFFB5E6C4),
+      surface:              AppColors.darkSurface,
+      onSurface:            AppColors.darkOnSurface,
+      onSurfaceVariant:    AppColors.darkCaption,
+      error:                AppColors.error,
+      onError:              Colors.white,
+      outline:              AppColors.darkBorder,
+      outlineVariant:      AppColors.darkBorder,
+      surfaceContainerLowest: Color(0xFF0D1117),
+      surfaceContainerLow:  Color(0xFF161B22),
+      surfaceContainer:     Color(0xFF1C2333),
+      surfaceContainerHigh: Color(0xFF21262D),
+      surfaceContainerHighest: Color(0xFF30363D),
+      surfaceTint:          AppColors.primary,
     ),
 
     textTheme: const TextTheme(
@@ -310,7 +340,7 @@ class AppTheme {
       color: AppColors.darkCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: AppColors.darkBorder, width: 1),
       ),
       margin: EdgeInsets.zero,
@@ -410,9 +440,9 @@ class AppTheme {
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.darkCard,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      elevation: 8,
+      elevation: 1,
     ),
 
     switchTheme: SwitchThemeData(

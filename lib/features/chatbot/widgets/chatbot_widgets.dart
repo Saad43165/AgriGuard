@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import '../chatbot_constants.dart';
@@ -26,28 +27,40 @@ class MessageBubble extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isUser ? AppColors.primary : (isDark ? AppColors.darkCard : AppColors.lightCard),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16), topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
+            child: Column(
+              crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (message.imagePath != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      File(message.imagePath!),
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                if (message.imagePath != null) const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isUser ? AppColors.primary : (isDark ? AppColors.darkCard : AppColors.lightCard),
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16), topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isUser ? 16 : 4),
+                      bottomRight: Radius.circular(isUser ? 4 : 16),
+                    ),
+                    border: isUser ? null : Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  ),
+                  child: SelectableText(
+                    message.content,
+                    style: TextStyle(
+                      fontSize: 14, height: 1.4,
+                      color: isUser ? Colors.white : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+                    ),
+                  ),
                 ),
-                border: isUser ? null : Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                boxShadow: [BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                    blurRadius: 6, offset: const Offset(0, 2))],
-              ),
-              child: SelectableText(
-                message.content,
-                style: TextStyle(
-                  fontSize: 14, height: 1.5,
-                  color: isUser ? Colors.white : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              ],
             ),
           ),
           if (isUser) const SizedBox(width: 8),
@@ -166,18 +179,31 @@ class ChatInputBar extends StatelessWidget {
   final bool isDark;
   final String hintText;
   final void Function(String) onSend;
+  final VoidCallback? onImageTap;
   const ChatInputBar({super.key, required this.controller, required this.isLoading, required this.isDark,
-      required this.hintText, required this.onSend});
+      required this.hintText, required this.onSend, this.onImageTap});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
+      padding: EdgeInsets.fromLTRB(8, 10, 16, MediaQuery.of(context).padding.bottom + 10),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         border: Border(top: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
       ),
       child: Row(children: [
+        if (onImageTap != null)
+          GestureDetector(
+            onTap: isLoading ? null : onImageTap,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              child: Icon(
+                Icons.add_photo_alternate_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
+          ),
         Expanded(
           child: Container(
             decoration: BoxDecoration(
@@ -201,24 +227,21 @@ class ChatInputBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         GestureDetector(
           onTap: isLoading ? null : () => onSend(controller.text),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 46, height: 46,
+          child: Container(
+            width: 42, height: 42,
             decoration: BoxDecoration(
               color: isLoading
                   ? (isDark ? AppColors.darkCard : AppColors.lightBg)
                   : AppColors.primary,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: isLoading ? null : [BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
+              borderRadius: BorderRadius.circular(21),
             ),
             child: isLoading
-                ? const Center(child: SizedBox(width: 20, height: 20,
+                ? const Center(child: SizedBox(width: 18, height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)))
-                : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                : Icon(Icons.send_rounded, color: Colors.white, size: 18),
           ),
         ),
       ]),

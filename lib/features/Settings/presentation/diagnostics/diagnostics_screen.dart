@@ -1,4 +1,4 @@
-import 'package:agriguard_fyp/features/advance_search_screen/service/RoboflowApiService.dart';
+import 'package:agriguard_fyp/features/advance_search_screen/service/plant_health_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +50,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final t = Provider.of<TranslationService>(context);
 
     final groq = GroqService();
-    final roboflow = RoboFlowApiService();
+    final plantHealth = PlantHealthApiService();
     final plantId = PlantIdService();
 
     return Scaffold(
@@ -65,9 +65,9 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           const SizedBox(height: 10),
 
           _StatusTile(
-            title: 'Roboflow API key',
+            title: 'PlantHealth API key',
             subtitle: 'Used for cloud vision disease detection',
-            isOk: roboflow.hasApiKey,
+            isOk: plantHealth.hasApiKey,
           ),
           _StatusTile(
             title: 'Groq API key',
@@ -124,22 +124,22 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   }
 
   String _prettyResult(Map<String, dynamic> r) {
-    final roboflow = r['roboflow'] as Map<String, dynamic>?;
+    final plantHealth = r['plantHealth'] as Map<String, dynamic>?;
     final groq = r['groq'] as Map<String, dynamic>?;
     final plant = r['plantId'] as Map<String, dynamic>?;
 
     String ok(bool v) => v ? '✅' : '❌';
 
-    final roboflowOk = roboflow?['available'] == true;
+    final plantHealthOk = plantHealth?['available'] == true;
     final groqOk = groq?['available'] == true;
     final plantOk = plant?['available'] == true;
 
     return [
-      'Roboflow: ${ok(roboflowOk)}',
+      'PlantHealth: ${ok(plantHealthOk)}',
       'Groq: ${ok(groqOk)}',
       'Plant.id: ${ok(plantOk)}',
       '',
-      'Roboflow status: ${roboflow?['status'] ?? 'N/A'}',
+      'PlantHealth status: ${plantHealth?['status'] ?? 'N/A'}',
       'Groq status: ${groq?['status'] ?? 'N/A'}',
       'Plant.id status: ${plant?['status'] ?? 'N/A'}',
       '',

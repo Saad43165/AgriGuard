@@ -1,14 +1,15 @@
 import 'dart:io';
-import 'package:agriguard_fyp/features/advance_search_screen/service/RoboflowApiService.dart';
+
 import 'package:flutter/foundation.dart';
+
 import '../../../../core/services/ai_analysis_service.dart';
 import '../../../../core/services/severity_id_service.dart';
-import '../../../../core/services/translation_service.dart';
 import 'groq_service.dart';
+import 'plant_health_api_service.dart';
 import 'plant_id_api_service.dart';
 
 class AdvancedSearchService {
-  final RoboFlowApiService _roboflowApiService = RoboFlowApiService();
+  final PlantHealthApiService _plantHealthApiService = PlantHealthApiService();
   final GroqService _groqService = GroqService();
   final PlantAnalysisService _onDeviceAnalysis = PlantAnalysisService();
   final SeverityIdService _severityService = SeverityIdService();
@@ -32,12 +33,22 @@ class AdvancedSearchService {
     }
   }
 
+  Future<bool> testPlantHealthApi() async {
+    try {
+      return await _plantHealthApiService.testApi();
+    } catch (e) {
+      debugPrint('❌ PlantHealth API test error: $e');
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>> testAllApis() async {
     debugPrint('🔍 Testing all APIs...');
 
     final groqKeyPresent = _groqService.hasApiKey();
     final groqTest = groqKeyPresent ? await testGroqApi() : false;
-    final roboflowAvailable = _roboflowApiService.hasApiKey;
+    final plantHealthAvailable = _plantHealthApiService.hasApiKey;
+    final plantHealthTest = plantHealthAvailable ? await testPlantHealthApi() : false;
 
     final plantIdKeyPresent = _plantIdService.hasApiKey();
     Map<String, dynamic>? plantIdStatus;
@@ -57,17 +68,17 @@ class AdvancedSearchService {
     }
 
     debugPrint(
-      '📊 API Status: Roboflow=${roboflowAvailable ? "✅" : "❌"}, Groq=${groqTest ? "✅" : "❌"}, Plant.id=${plantIdUsable ? "✅" : "❌"}',
+      '📊 API Status: PlantHealth=${plantHealthTest ? "✅" : "❌"}, Groq=${groqTest ? "✅" : "❌"}, Plant.id=${plantIdUsable ? "✅" : "❌"}',
     );
 
     return {
-      'success': roboflowAvailable || groqKeyPresent || plantIdUsable,
-      'roboflow': {
-        'available': roboflowAvailable,
-        'status': roboflowAvailable ? '✅ Ready' : '⚠️ No Roboflow key',
-        'message': roboflowAvailable
-            ? 'Roboflow AI ready'
-            : 'Set ROBOFLOW_INFER_API_KEY in .env',
+      'success': plantHealthAvailable || groqKeyPresent || plantIdUsable,
+      'plantHealth': {
+        'available': plantHealthAvailable && plantHealthTest,
+        'status': plantHealthTest ? '✅ Ready' : '⚠️ No PlantHealth key or offline',
+        'message': plantHealthAvailable
+            ? (plantHealthTest ? 'PlantHealth AI ready' : 'PlantHealth key set but connection failed')
+            : 'Set PLANTHEALTH_API_KEY in .env',
       },
       'groq': {
         'available': groqKeyPresent,
@@ -92,7 +103,7 @@ class AdvancedSearchService {
             : 'Set PLANTID_API_KEY in .env'),
         'details': plantIdStatus?['details'],
       },
-      'message': roboflowAvailable || groqKeyPresent || plantIdUsable
+      'message': plantHealthAvailable || groqKeyPresent || plantIdUsable
           ? 'At least one API is available'
           : 'No APIs are currently available',
       'timestamp': DateTime.now().toIso8601String(),
@@ -138,9 +149,9 @@ class AdvancedSearchService {
     return 'Environmental factors or pathogen infection';
   }
 
-  /// Roboflow official serverless API + on-device fallback
-  Future<Map<String, dynamic>> analyzeWithRoboflow(File imageFile) async {
-    debugPrint('🌿 Starting Roboflow API analysis...');
+  /// PlantHealth official API + on-device fallback
+  Future<Map<String, dynamic>> analyzeWithPlantHealth(File imageFile) async {
+    debugPrint('🌿 Starting PlantHealth API analysis...');
     try {
       final leafCheck = await _onDeviceAnalysis.checkIsLeaf(imageFile);
       if (leafCheck == false) {
@@ -150,39 +161,48 @@ class AdvancedSearchService {
           'error': 'Not a plant leaf',
           'message':
           'The image does not appear to be a plant leaf. Please take a clear photo of a plant leaf.',
-          'source': 'Roboflow AI',
+          'source': 'PlantHealth AI',
         };
       }
 
-      final roboflowResult = await _roboflowApiService.identify(imageFile);
+      final plantHealthResult = await _plantHealthApiService.identify(imageFile);
       final onDevice = await _onDeviceAnalysis.analyzePlant(imageFile);
+
+      debugPrint(
+          'PH: success=${plantHealthResult['success']} conf=${plantHealthResult['confidence']} plant=${plantHealthResult['plantName']} disease=${plantHealthResult['diseaseName']}');
+      debugPrint(
+          'OD: success=${onDevice['success']} conf=${onDevice['confidence']} plant=${onDevice['plantName']} disease=${onDevice['diseaseName']}');
 
       String plantName;
       String diseaseName;
-      const scientificName = '';
+      String scientificName;
       double confidence;
 
-      if (roboflowResult['success'] == true) {
-        final rfConf = (roboflowResult['confidence'] as num?)?.toDouble() ?? 0.0;
-        final rfPlant = roboflowResult['plantName']?.toString() ?? '';
-        final rfDisease = roboflowResult['diseaseName']?.toString() ?? '';
-        final odConf =
-            double.tryParse(onDevice['confidence']?.toString() ?? '0') ?? 0.0;
+      if (plantHealthResult['success'] == true) {
+        // Prefer PlantHealth when it succeeds
+        plantName = plantHealthResult['plantName']?.toString() ??
+            onDevice['plantName']?.toString() ??
+            'Unknown Plant';
 
-        if (rfConf >= odConf || rfPlant.isNotEmpty) {
-          plantName =
-          rfPlant.isNotEmpty ? rfPlant : (onDevice['plantName']?.toString() ?? 'Unknown Plant');
-          diseaseName =
-          rfDisease.isNotEmpty ? rfDisease : (onDevice['diseaseName']?.toString() ?? 'Healthy');
-          confidence = rfConf;
-        } else {
-          plantName = onDevice['plantName']?.toString() ?? 'Unknown Plant';
-          diseaseName = onDevice['diseaseName']?.toString() ?? 'Healthy';
+        diseaseName = plantHealthResult['diseaseName']?.toString() ??
+            onDevice['diseaseName']?.toString() ??
+            'Healthy';
+
+        scientificName = plantHealthResult['scientificName']?.toString() ?? '';
+
+        final phConf = (plantHealthResult['confidence'] as num?)?.toDouble() ?? 0.0;
+        confidence = phConf;
+
+        // If PlantHealth gives 0, fallback to on-device confidence
+        if (confidence <= 0) {
+          final odConf = double.tryParse(onDevice['confidence']?.toString() ?? '0') ?? 0.0;
           confidence = odConf;
         }
       } else {
+        // fallback to on-device
         plantName = onDevice['plantName']?.toString() ?? 'Unknown Plant';
         diseaseName = onDevice['diseaseName']?.toString() ?? 'Healthy';
+        scientificName = '';
         confidence = double.tryParse(onDevice['confidence']?.toString() ?? '0') ?? 0.0;
       }
 
@@ -201,9 +221,9 @@ class AdvancedSearchService {
           ? List<String>.from(severity!['remediation'])
           : <String>[];
 
-      final rfPredictions = roboflowResult['predictions'] as List? ?? [];
-      final allPredictions = rfPredictions.isNotEmpty
-          ? rfPredictions
+      final phPredictions = plantHealthResult['predictions'] as List? ?? [];
+      final allPredictions = phPredictions.isNotEmpty
+          ? phPredictions
           : (onDevice['allPredictions'] as List? ?? [])
           .take(5)
           .map((p) => {
@@ -214,7 +234,7 @@ class AdvancedSearchService {
 
       return {
         'success': true,
-        'source': 'Roboflow AI',
+        'source': 'PlantHealth AI',
         'isRealData': true,
         'hasDiseaseInfo': !isHealthy,
         'data': {
@@ -243,18 +263,21 @@ class AdvancedSearchService {
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
-      debugPrint('❌ Roboflow API analysis error: $e');
+      debugPrint('❌ PlantHealth API analysis error: $e');
       return {
         'success': false,
-        'error': 'Roboflow analysis failed',
+        'error': 'PlantHealth analysis failed',
         'message': e.toString(),
-        'source': 'Roboflow AI',
+        'source': 'PlantHealth AI',
       };
     }
   }
 
   /// Groq analysis on top of on-device ML
-  Future<Map<String, dynamic>> analyzePlant(File imageFile) async {
+  Future<Map<String, dynamic>> analyzePlant(
+      File imageFile, {
+        required bool inUrdu,
+      }) async {
     debugPrint('🌿 Starting Groq analysis (on top of on-device ML)...');
 
     try {
@@ -267,8 +290,7 @@ class AdvancedSearchService {
         return {
           'success': false,
           'error': 'On-device analysis failed',
-          'message':
-          onDevice['error']?.toString() ?? 'Unable to analyze image on-device',
+          'message': onDevice['error']?.toString() ?? 'Unable to analyze image on-device',
           'source': 'On-Device AI',
         };
       }
@@ -288,15 +310,14 @@ class AdvancedSearchService {
       final diseaseName = onDevice['diseaseName']?.toString() ?? 'Healthy';
       final severity = onDevice['severity']?.toString() ??
           (diseaseName.toLowerCase() == 'healthy' ? 'None' : 'Unknown');
-      final confidence =
-      onDevice['confidence'] is num ? (onDevice['confidence'] as num) : 0;
+      final confidence = onDevice['confidence'] is num ? (onDevice['confidence'] as num) : 0;
 
       final groq = await _groqService.generateAgronomyAdvice(
         plantName: plantName,
         diseaseName: diseaseName,
         severity: severity,
         confidencePercent: confidence,
-        inUrdu: TranslationService().isUrdu,
+        inUrdu: inUrdu,
       );
 
       if (groq['success'] == true) {
@@ -338,7 +359,6 @@ class AdvancedSearchService {
     }
   }
 
-  /// Plant.id analysis only
   Future<Map<String, dynamic>> analyzeWithPlantId(File imageFile) async {
     try {
       debugPrint('🌿 Starting Plant.id API analysis...');
@@ -369,9 +389,7 @@ class AdvancedSearchService {
   String _getGroqErrorMessage(Object error) {
     final errorStr = error.toString().toLowerCase();
 
-    if (errorStr.contains('groq_api_key') ||
-        errorStr.contains('401') ||
-        errorStr.contains('403')) {
+    if (errorStr.contains('groq_api_key') || errorStr.contains('401') || errorStr.contains('403')) {
       return 'Invalid Groq API key. Check GROQ_API_KEY.';
     }
     if (errorStr.contains('429')) {
@@ -391,7 +409,7 @@ class AdvancedSearchService {
     final errorStr = error.toString().toLowerCase();
 
     if (errorStr.contains('402') || errorStr.contains('credits exhausted')) {
-      return 'Plant.id credits exhausted. Please use Roboflow or Groq analysis instead.';
+      return 'Plant.id credits exhausted. Please use PlantHealth or Groq analysis instead.';
     }
     if (errorStr.contains('api_key') || errorStr.contains('401')) {
       return 'Invalid Plant.id API key.';
@@ -401,49 +419,5 @@ class AdvancedSearchService {
     }
 
     return 'Plant.id analysis failed: $errorStr';
-  }
-
-  Future<Map<String, dynamic>> getDetailedApiStatus() async {
-    try {
-      final plantIdStatus = await _plantIdService.getApiStatus();
-      final groqTest = await testGroqApi();
-
-      return {
-        'success': true,
-        'groq': {
-          'available': groqTest,
-          'status': groqTest ? '✅ Ready' : 'Unavailable',
-          'message': groqTest ? 'Groq AI active' : 'Check GROQ_API_KEY',
-        },
-        'plantId': plantIdStatus,
-        'recommendation': groqTest
-            ? 'Using Groq AI (text assistant on top of on-device detection)'
-            : 'Use Plant.id. ${plantIdStatus['remaining']?['total'] ?? 'Unknown'} credits left.',
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-    } catch (e) {
-      return {'success': false, 'error': e.toString()};
-    }
-  }
-
-  Future<bool> isAnyApiAvailable() async {
-    final roboflow = _roboflowApiService.hasApiKey;
-    final groq = await testGroqApi();
-    final plantId = _plantIdService.hasApiKey() ? await testPlantIdApi() : false;
-    return roboflow || groq || plantId;
-  }
-
-  Map<String, dynamic> getApiRecommendations() {
-    return {
-      'primary': 'Roboflow',
-      'status': 'Cloud vision model (requires ROBOFLOW_INFER_API_KEY)',
-      'secondary': 'Plant.id',
-      'secondary_status': 'Depends on key + credits',
-      'tertiary': 'Groq',
-      'tertiary_status': 'Text advisory on top of on-device detection',
-      'action_required':
-      'Ensure ROBOFLOW_INFER_API_KEY, PLANTID_API_KEY, and GROQ_API_KEY are set',
-      'documentation': 'https://docs.roboflow.com/deploy/serverless',
-    };
   }
 }

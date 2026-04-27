@@ -7,11 +7,18 @@ class AdvancedTopImageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: 42,
-      child: (imagePath != null && File(imagePath!).existsSync())
-          ? Image.file(File(imagePath!), fit: BoxFit.cover, width: double.infinity)
-          : Container(color: Colors.black12),
+    if (imagePath != null && File(imagePath!).existsSync()) {
+      return Image.file(
+        File(imagePath!),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    return Container(
+      color: Colors.black12,
+      width: double.infinity,
+      height: double.infinity,
     );
   }
 }
