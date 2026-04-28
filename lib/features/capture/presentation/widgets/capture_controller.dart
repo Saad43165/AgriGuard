@@ -293,18 +293,7 @@ class CaptureController extends ChangeNotifier {
       final tier = result['confidenceTier'] as String? ?? 'high';
       final confidence = double.tryParse(result['confidence']?.toString() ?? '0') ?? 0.0;
 
-      if (tier == 'low') {
-        isProcessing = false;
-        notifyListeners();
-        onShowRetakeDialog(confidence, () {
-          _scanMode = CaptureScanMode.advancedAI;
-          notifyListeners();
-        });
-        _reset();
-        return;
-      }
-
-      if (tier == 'medium') {
+      if (tier == 'low' || tier == 'medium') {
         isProcessing = false;
         notifyListeners();
         final top3 = result['top3Predictions'] as List? ?? [];

@@ -1,5 +1,5 @@
-// disease_data.dart — PlantCity 52-class dataset
-// Plants: Apple, Apricot, Bean, Cherry, Corn, Fig, Grape, Loquat, Pear, Persimmon, Tomato, Walnut
+// disease_data.dart — PlantCity 35-class dataset
+// Plants: Bean, Corn, Fig, Grape, Walnut, Tomato
 class DiseaseEntry {
   final String id;
   final String plant;

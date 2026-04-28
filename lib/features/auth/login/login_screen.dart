@@ -155,6 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Color(0xFF1B2B1E), fontSize: 14),
                   decoration: buildLoginInputDeco('Enter your email', Icons.email_outlined),
                   validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
@@ -166,6 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscure,
+                  style: const TextStyle(color: Color(0xFF1B2B1E), fontSize: 14),
                   decoration: buildLoginInputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,

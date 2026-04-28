@@ -6,7 +6,6 @@ import '../../features/capture/presentation/capture_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/history/presentation/history_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
-import '../widgets/connectivity_banner.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
@@ -96,18 +95,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Ticker
         }
       },
       child: Scaffold(
-        body: ConnectivityBanner(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: IndexedStack(
-              index: _currentIndex,
-              children: [
-                HomeScreen(userData: widget.userData),
-                const HistoryScreen(),
-                const ChatbotScreen(),
-                ProfileScreen(userData: widget.userData),
-              ],
-            ),
+        body: FadeTransition(
+          opacity: _fadeAnim,
+          child: IndexedStack(
+            index: _currentIndex,
+            children: [
+              HomeScreen(userData: widget.userData),
+              const HistoryScreen(),
+              const ChatbotScreen(),
+              ProfileScreen(userData: widget.userData),
+            ],
           ),
         ),
         bottomNavigationBar: BottomNavBar(

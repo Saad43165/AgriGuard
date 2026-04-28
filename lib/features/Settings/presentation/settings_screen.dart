@@ -113,14 +113,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           _sectionLabel('ACCOUNT', isDark),
           _card(isDark, [
-            _arrowTile(Icons.person_outline_rounded, 'Profile',
-                'Edit your personal information', isDark, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            }),
-            _divider(isDark),
             _arrowTile(Icons.lock_outline_rounded, 'Privacy & Security',
                 'Change password, reset link', isDark, () {
               Navigator.push(

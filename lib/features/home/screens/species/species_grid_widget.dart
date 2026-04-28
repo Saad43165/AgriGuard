@@ -91,7 +91,7 @@ class SpeciesGridWidget extends StatelessWidget {
           const SizedBox(height: 12),
           FeatureCard(
             title: t.isUrdu ? 'بیماری لائبریری' : 'Disease Library',
-            subtitle: t.isUrdu ? '38 بیماریاں' : '38 Diseases & Plants',
+            subtitle: t.isUrdu ? '35 بیماریاں اور پودے' : '35 Diseases & Plants',
             customIconPath: 'assets/library.png',
             imagePath: 'assets/library.png',
             isDark: isDark,

@@ -401,7 +401,7 @@ class AppTheme {
       ),
       labelStyle: const TextStyle(color: AppColors.darkSubtext, fontSize: 14, fontWeight: FontWeight.w500),
       hintStyle: const TextStyle(color: AppColors.darkCaption, fontSize: 14),
-      errorStyle: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
+errorStyle: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
     ),
 
     iconTheme: const IconThemeData(color: AppColors.darkOnSurface, size: 22),

@@ -100,6 +100,7 @@ InputDecoration buildLoginInputDeco(String hint, IconData icon) => InputDecorati
   prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
   filled: true,
   fillColor: const Color(0xFFF9F9F9),
+  labelStyle: const TextStyle(color: Color(0xFF4A5568), fontSize: 14),
   border: OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),
     borderSide: const BorderSide(color: Color(0xFFE8E8E8)),

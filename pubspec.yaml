@@ -57,6 +57,7 @@ dependencies:
   # ML & AI
   tflite_flutter: ^0.12.1
 
+
   # Other
   package_info_plus: ^8.3.0
   crypto: ^3.0.3
@@ -87,9 +88,8 @@ flutter:
     - assets/images/help/
     - assets/models/severity_dynamic_quant.tflite
     - assets/models/severity_labels.txt
-    - assets/new_model/plantcity_52classes.tflite
-    - assets/new_model/plantcity_classes.txt
-    - assets/new_model/plantcity_classes.json
+    - assets/new_model/plantcity_35classes.tflite
+    - assets/new_model/plantcity_35classes.json
     - assets/data/remediation.json
     - assets/data/disease_causes.json
     - assets/data/mapping.json

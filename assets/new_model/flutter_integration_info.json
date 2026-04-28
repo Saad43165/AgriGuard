@@ -1,0 +1,61 @@
+{
+  "model": "EfficientNetB3",
+  "input_shape": [
+    1,
+    300,
+    300,
+    3
+  ],
+  "input_dtype": "float32",
+  "output_shape": [
+    1,
+    35
+  ],
+  "output_dtype": "float32",
+  "num_classes": 35,
+  "tflite_size_mb": 13.3,
+  "preprocessing": {
+    "resize": "300x300",
+    "channels": "RGB",
+    "normalize": "divide by 255",
+    "efficientnet_scale": "(pixel - 0.5) * 2.0",
+    "input_range": "[-1, 1]"
+  },
+  "class_names": [
+    "Bean Fungal_leaf disease",
+    "Bean Normal leaf",
+    "Bean bean rust image",
+    "Bean shot_hole",
+    "Corn Fungal leaf",
+    "Corn Normal leaf",
+    "Corn gray leaf spot",
+    "Corn holcus_ leaf spot",
+    "Fig Blight_leaf disease",
+    "Fig Brown spot",
+    "Fig normal leaf",
+    "Fig_rust leaf",
+    "Grape Anthracnose leaf",
+    "Grape Brown spot leaf",
+    "Grape Downy mildew leaf",
+    "Grape Mites_leaf disease",
+    "Grape Normal_leaf",
+    "Grape Powdery_mildew leaf",
+    "Grape shot hole leaf disease",
+    "Walnut Anthracnose_leaf disease",
+    "Walnut Blotch_leaf disease",
+    "Walnut Normal_leaf",
+    "Walnut Shot_hole",
+    "Walnut leaf gall mite",
+    "tomato Fusarium Wilt",
+    "tomato spider mites",
+    "tomato verticillium wilt",
+    "tomato_bacterial_spot",
+    "tomato_early_blight",
+    "tomato_healthy_leaf",
+    "tomato_late_blight",
+    "tomato_leaf_curl",
+    "tomato_leaf_miner",
+    "tomato_leaf_mold",
+    "tomato_septoria_leaf"
+  ]
+}

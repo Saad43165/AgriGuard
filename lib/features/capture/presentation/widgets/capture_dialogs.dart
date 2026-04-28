@@ -114,59 +114,138 @@ class CaptureTop3Dialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    final topPick = top3.isNotEmpty ? top3[0] as Map : <String, dynamic>{};
+    final topPlant = topPick['plantName']?.toString() ?? 'this plant';
+    final topDisease = topPick['diseaseName']?.toString() ?? '';
+
+    return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: isDark ? AppColors.darkCard : Colors.white,
-      title: Row(children: [
-        const Icon(Icons.help_outline_rounded, color: AppColors.warning, size: 22),
-        const SizedBox(width: 10),
-        Expanded(child: Text(
-          "I'm ${confidence.toStringAsFixed(0)}% sure",
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800))),
-      ]),
-      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Which one looks correct?',
-            style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkCaption : AppColors.lightCaption)),
-        const SizedBox(height: 12),
-        ...top3.asMap().entries.map((entry) {
-          final pred = entry.value as Map;
-          final pConf = double.tryParse(pred['confidence']?.toString() ?? '0') ?? 0.0;
-          final pPlant = pred['plantName']?.toString() ?? '';
-          final pDisease = pred['diseaseName']?.toString() ?? '';
-          return GestureDetector(
-            onTap: () => onSelect(pred),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBg : const Color(0xFFF8F8F8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
-              child: Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(pPlant, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                  Text(pDisease, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-                      color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E))),
-                ])),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20)),
-                  child: Text('${pConf.toStringAsFixed(0)}%',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary))),
-              ]),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
             ),
-          );
-        }),
-        const SizedBox(height: 4),
-        TextButton.icon(
-          onPressed: onRetake,
-          icon: const Icon(Icons.camera_alt_rounded, size: 16),
-          label: const Text('Retake Photo'),
-          style: TextButton.styleFrom(foregroundColor: AppColors.lightCaption),
-        ),
-      ]),
+            child: Icon(Icons.help_outline_rounded, color: AppColors.warning, size: 28),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            topDisease.toLowerCase() == 'healthy'
+                ? (isDark ? 'یہ $topPlant صحت مند ہے' : 'This looks like Healthy $topPlant')
+                : (isDark ? '$topPlant میں $topDisease' : 'Possible: $topDisease on $topPlant'),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isDark
+                ? 'مجھے ${confidence.toStringAsFixed(0)}% یقین ہے۔ کیا یہ درست ہے؟'
+                : 'I\'m ${confidence.toStringAsFixed(0)}% confident. Is this correct?',
+            style: TextStyle(fontSize: 13,
+                color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+            textAlign: TextAlign.center,
+          ),
+          if (top3.length > 1) ...[
+            const SizedBox(height: 16),
+            Text(
+              isDark ? 'دوسرے نتائج:' : 'Other possibilities:',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkCaption : AppColors.lightCaption),
+            ),
+          ],
+          const SizedBox(height: 8),
+          ...top3.take(3).toList().asMap().entries.map((entry) {
+            final idx = entry.key;
+            final pred = entry.value as Map;
+            final pConf = double.tryParse(pred['confidence']?.toString() ?? '0') ?? 0.0;
+            final pPlant = pred['plantName']?.toString() ?? '';
+            final pDisease = pred['diseaseName']?.toString() ?? '';
+            final isFirst = idx == 0;
+            final isHealthy = pDisease.toLowerCase() == 'healthy';
+
+            return GestureDetector(
+              onTap: () => onSelect(pred),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isFirst
+                      ? AppColors.primary.withValues(alpha: 0.08)
+                      : (isDark ? AppColors.darkBg : const Color(0xFFF5F5F5)),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isFirst ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                    width: isFirst ? 2 : 1,
+                  ),
+                ),
+                child: Row(children: [
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: isFirst
+                          ? AppColors.primary
+                          : (isDark ? AppColors.darkCard : Colors.white),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(child: Text(
+                      '${idx + 1}',
+                      style: TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w800,
+                        color: isFirst ? Colors.white : (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface),
+                      ),
+                    )),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(pPlant, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        color: isFirst ? AppColors.primary : (isDark ? AppColors.darkCaption : AppColors.lightCaption))),
+                    Text(pDisease, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
+                  ])),
+                  const SizedBox(width: 8),
+                  Column( crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text('${pConf.toStringAsFixed(0)}%',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+                            color: isFirst ? AppColors.primary : (isDark ? AppColors.darkSubtext : AppColors.lightCaption))),
+                    if (isHealthy)
+                      Container(
+                        margin: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('✓',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.green)),
+                      ),
+                  ]),
+                ]),
+              ),
+            );
+          }),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onRetake,
+                icon: const Icon(Icons.camera_alt_rounded, size: 18),
+                label: Text(isDark ? 'دوبارہ تصویر لیں' : 'Retake Photo'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
+                  side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ]),
+        ]),
+      ),
     );
   }
 }

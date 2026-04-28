@@ -85,28 +85,38 @@ class TranslationService extends ChangeNotifier {
   String translateDisease(String diseaseName) {
     if (!_isUrdu) return diseaseName;
     if (diseaseName.isEmpty) return diseaseName;
-    
-    final normalized = diseaseName.toLowerCase().trim();
-    
+
+    final normalized = diseaseName.toLowerCase().trim().replaceAll('_', ' ');
+    final normalizedUnderscore = normalized.replaceAll(' ', '_');
+
     // 1. Exact match
     if (_diseaseTranslations.containsKey(normalized)) {
       return _diseaseTranslations[normalized]!['ur']!;
     }
-    
-    // 2. Try removing "tomato " prefix (model sometimes returns "Tomato Mosaic Virus")
-    final withoutPlant = normalized.replaceFirst(RegExp(r'^(tomato|apple|corn|grape|potato|strawberry|peach|pepper|cherry|orange|squash|soybean|raspberry|blueberry)\s+'), '');
-    if (_diseaseTranslations.containsKey(withoutPlant)) {
-      return _diseaseTranslations[withoutPlant]!['ur']!;
+    if (_diseaseTranslations.containsKey(normalizedUnderscore)) {
+      return _diseaseTranslations[normalizedUnderscore]!['ur']!;
     }
-    
-    // 3. Partial match — find key that is contained in the disease name
+
+    // 2. Try removing plant prefix
+    final withoutPlant = normalized.replaceFirst(
+        RegExp(r'^(bean|corn|fig|grape|walnut|tomato|apple|apricot|cherry|pear|loquat|persimmon)\s+'), '');
+    if (withoutPlant.isNotEmpty) {
+      final withoutPlantUs = withoutPlant.replaceAll(' ', '_');
+      if (_diseaseTranslations.containsKey(withoutPlant)) {
+        return _diseaseTranslations[withoutPlant]!['ur']!;
+      }
+      if (_diseaseTranslations.containsKey(withoutPlantUs)) {
+        return _diseaseTranslations[withoutPlantUs]!['ur']!;
+      }
+    }
+
+    // 3. Partial match — normalize input to underscores for proper comparison
     for (final entry in _diseaseTranslations.entries) {
-      if (normalized.contains(entry.key) && entry.key != 'healthy') {
+      if (normalizedUnderscore.contains(entry.key) && entry.key != 'healthy') {
         return entry.value['ur']!;
       }
     }
-    
-    // 4. Return original (English) — better than showing nothing
+
     return diseaseName;
   }
 
@@ -875,72 +885,34 @@ class TranslationService extends ChangeNotifier {
 
   // Disease translations — all PlantVillage + PlantCity classes
   static const Map<String, Map<String, String>> _diseaseTranslations = {
-    'healthy': {'en': 'Healthy', 'ur': 'صحت مند'},
-    'normal': {'en': 'Healthy', 'ur': 'صحت مند'},
-    // Apple
-    'apple scab': {'en': 'Apple Scab', 'ur': 'سیب کا خارش'},
-    'black rot': {'en': 'Black Rot', 'ur': 'کالی سڑن'},
-    'cedar apple rust': {'en': 'Cedar Apple Rust', 'ur': 'دیودار سیب کا زنگ'},
-    'brown spot': {'en': 'Brown Spot', 'ur': 'بھورا داغ'},
-    'fire blight': {'en': 'Fire Blight', 'ur': 'آگ کا جھلساؤ'},
-    // Cherry
-    'powdery mildew': {'en': 'Powdery Mildew', 'ur': 'سفید پھپھوندی'},
-    'shot hole disease': {'en': 'Shot Hole Disease', 'ur': 'گولی کے سوراخ کی بیماری'},
-    'shot hole': {'en': 'Shot Hole', 'ur': 'گولی کا سوراخ'},
-    // Corn / Maize
-    'cercospora leaf spot': {'en': 'Cercospora Leaf Spot', 'ur': 'سرکوسپورا پتوں کا داغ'},
-    'gray leaf spot': {'en': 'Gray Leaf Spot', 'ur': 'سرمئی پتوں کا داغ'},
-    'common rust': {'en': 'Common Rust', 'ur': 'عام زنگ'},
-    'northern leaf blight': {'en': 'Northern Leaf Blight', 'ur': 'شمالی پتوں کا جھلساؤ'},
-    'holcus leaf spot': {'en': 'Holcus Leaf Spot', 'ur': 'ہولکس پتوں کا داغ'},
-    // Grape
-    'esca': {'en': 'Esca', 'ur': 'ایسکا'},
-    'black measles': {'en': 'Black Measles', 'ur': 'کالا خسرہ'},
-    'leaf blight': {'en': 'Leaf Blight', 'ur': 'پتوں کا جھلساؤ'},
-    'downy mildew': {'en': 'Downy Mildew', 'ur': 'نیچے کی پھپھوندی'},
-    'anthracnose': {'en': 'Anthracnose', 'ur': 'انتھراکنوز'},
-    // Orange / Citrus
-    'haunglongbing': {'en': 'Haunglongbing', 'ur': 'ہوانگلونگبنگ'},
-    'citrus greening': {'en': 'Citrus Greening', 'ur': 'سٹرس گریننگ'},
-    // Peach & Pepper
-    'bacterial spot': {'en': 'Bacterial Spot', 'ur': 'بیکٹیریل داغ'},
-    // Potato & Tomato
-    'early blight': {'en': 'Early Blight', 'ur': 'ابتدائی جھلساؤ'},
-    'late blight': {'en': 'Late Blight', 'ur': 'تاخیری جھلساؤ'},
-    // Strawberry / Tomato
-    'leaf scorch': {'en': 'Leaf Scorch', 'ur': 'پتوں کا جھلساؤ'},
-    // Tomato
-    'leaf mold': {'en': 'Leaf Mold', 'ur': 'پتوں کی سڑن'},
-    'septoria leaf spot': {'en': 'Septoria Leaf Spot', 'ur': 'سیپٹوریا داغ'},
-    'spider mites': {'en': 'Spider Mites', 'ur': 'مکڑی کیڑے'},
-    'two spotted spider mite': {'en': 'Two-Spotted Spider Mite', 'ur': 'دو دھبوں والا مکڑی کیڑا'},
-    'target spot': {'en': 'Target Spot', 'ur': 'ہدف داغ'},
-    'tomato yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
-    'yellow leaf curl virus': {'en': 'Yellow Leaf Curl Virus', 'ur': 'یلو لیف کرل وائرس'},
-    'leaf curl': {'en': 'Leaf Curl', 'ur': 'پتوں کا مڑنا'},
-    'tomato mosaic virus': {'en': 'Tomato Mosaic Virus', 'ur': 'ٹماٹر موزیک وائرس'},
-    'mosaic virus': {'en': 'Mosaic Virus', 'ur': 'موزیک وائرس'},
-    // Wilt diseases
-    'fusarium wilt': {'en': 'Fusarium Wilt', 'ur': 'فیوزیریم مرجھاؤ'},
-    'verticillium wilt': {'en': 'Verticillium Wilt', 'ur': 'ورٹیسیلیم مرجھاؤ'},
-    // Fig / Walnut / Pear
-    'rust leaf': {'en': 'Rust', 'ur': 'زنگ'},
-    'leaf spot': {'en': 'Leaf Spot', 'ur': 'پتوں کا داغ'},
-    'blotch': {'en': 'Blotch', 'ur': 'دھبہ'},
-    'leaf miner': {'en': 'Leaf Miner', 'ur': 'پتوں کا کیڑا'},
-    // Generic
-    'rust': {'en': 'Rust', 'ur': 'زنگ'},
-    'blight': {'en': 'Blight', 'ur': 'جھلساؤ'},
-    'spot': {'en': 'Spot', 'ur': 'داغ'},
-    'mildew': {'en': 'Mildew', 'ur': 'پھپھوندی'},
-    'scorch': {'en': 'Scorch', 'ur': 'جھلساؤ'},
-    'rot': {'en': 'Rot', 'ur': 'سڑن'},
-    'virus': {'en': 'Virus', 'ur': 'وائرس'},
-    'wilt': {'en': 'Wilt', 'ur': 'مرجھاؤ'},
-    'canker': {'en': 'Canker', 'ur': 'کینکر'},
-    'scab': {'en': 'Scab', 'ur': 'خارش'},
-    'unable to determine': {'en': 'Unable to Determine', 'ur': 'تعین نہیں ہو سکا'},
-    'image not recognized': {'en': 'Image Not Recognized', 'ur': 'تصویر کی شناخت نہیں ہوئی'},
+'fungal_leaf_disease': {'en': 'Fungal Leaf Disease', 'ur': 'فنگل پتوں کی بیماری'},
+    'fungal_leaf': {'en': 'Fungal Leaf', 'ur': 'فنگل پتا'},
+    'normal_leaf': {'en': 'Healthy', 'ur': 'صحت مند'},
+    'healthy_leaf': {'en': 'Healthy', 'ur': 'صحت مند'},
+    'shot_hole': {'en': 'Shot Hole', 'ur': 'سوراخ دار پتا'},
+    'gray_leaf_spot': {'en': 'Gray Leaf Spot', 'ur': 'سرمئی پتوں کا داغ'},
+    'holcus_leaf_spot': {'en': 'Holcus Leaf Spot', 'ur': 'ہولکس پتوں کا داغ'},
+    'blight_leaf_disease': {'en': 'Blight Leaf Disease', 'ur': 'پتوں کا جھلساؤ'},
+    'anthracnose_leaf': {'en': 'Anthracnose', 'ur': 'اینتھراکنوز'},
+    'anthracnose_leaf_disease': {'en': 'Anthracnose Leaf Disease', 'ur': 'اینتھراکنوز پتوں کی بیماری'},
+    'downy_mildew_leaf': {'en': 'Downy Mildew', 'ur': 'نیچے کی پھپھوندی'},
+    'mites_leaf_disease': {'en': 'Mites Leaf Disease', 'ur': 'مائٹس کی بیماری'},
+    'powdery_mildew_leaf': {'en': 'Powdery Mildew', 'ur': 'سفید پھپھوندی'},
+    'shot_hole_leaf_disease': {'en': 'Shot Hole Leaf Disease', 'ur': 'سوراخ دار پتوں کی بیماری'},
+    'blotch_leaf_disease': {'en': 'Blotch Leaf Disease', 'ur': 'دھبے والی بیماری'},
+    'leaf_gall_mite': {'en': 'Leaf Gall Mite', 'ur': 'پتوں کے گال ذرات'},
+    'septoria_leaf': {'en': 'Septoria', 'ur': 'سیپٹوریا'},
+    'leaf_curl': {'en': 'Leaf Curl', 'ur': 'پتوں کا مڑنا'},
+    'leaf_miner': {'en': 'Leaf Miner', 'ur': 'پتوں کا کیڑا'},
+    'leaf_mold': {'en': 'Leaf Mold', 'ur': 'پتوں کی سڑن'},
+    'bacterial_spot': {'en': 'Bacterial Spot', 'ur': 'بیکٹیریل داغ'},
+    'spider_mites': {'en': 'Spider Mites', 'ur': 'مکڑی کے ذرات'},
+    'early_blight': {'en': 'Early Blight', 'ur': 'ابتدائی جھلساؤ'},
+    'late_blight': {'en': 'Late Blight', 'ur': 'تاخیری جھلساؤ'},
+    'fusarium_wilt': {'en': 'Fusarium Wilt', 'ur': 'فیوزیریم مرجھاؤ'},
+    'verticillium_wilt': {'en': 'Verticillium Wilt', 'ur': 'ورٹیسیلیم مرجھاؤ'},
+    'rust_leaf': {'en': 'Rust', 'ur': 'زنگ'},
+    'brown_spot_leaf': {'en': 'Brown Spot', 'ur': 'بھورے دھبے'},
   };
 
   // Severity translations

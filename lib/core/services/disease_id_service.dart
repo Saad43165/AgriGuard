@@ -21,6 +21,7 @@
 //          plant_analysis_service.dart fix (separate file) handles the final
 //          reconciliation at the orchestration layer.
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -30,9 +31,9 @@ import 'package:flutter/services.dart';
 import 'leaf_detector.dart';
 
 class DiseaseIdService {
-  // ── PlantCity model (EfficientNetB3, 99.23% accuracy, 52 classes) ──────────
-  static const String _modelPath  = 'assets/new_model/plantcity_52classes.tflite';
-  static const String _labelsPath = 'assets/new_model/plantcity_classes.txt';
+  // ── PlantCity model (EfficientNetB3, 35 classes) ──────────
+  static const String _modelPath  = 'assets/new_model/plantcity_35classes.tflite';
+  static const String _labelsPath = 'assets/new_model/plantcity_35classes.json';
 
   static const double _lowConfidenceThreshold = 5.0;
   static const int _minImageSize = 100;
@@ -111,7 +112,7 @@ class DiseaseIdService {
       await _loadLabels();
       debugPrint('✅ Labels loaded: ${_labels.length} classes');
 
-      final options = InterpreterOptions();
+      final options = InterpreterOptions()..threads = 4;
       _interpreter = await Interpreter.fromAsset(_modelPath, options: options);
 
       final inputShape = _interpreter!.getInputTensor(0).shape;
@@ -135,10 +136,15 @@ class DiseaseIdService {
   Future<void> _loadLabels() async {
     try {
       final labelData = await rootBundle.loadString(_labelsPath);
-      _labels = labelData
-          .split('\n')
-          .where((label) => label.trim().isNotEmpty)
-          .toList();
+      if (_labelsPath.endsWith('.json')) {
+        final List<dynamic> jsonList = jsonDecode(labelData);
+        _labels = jsonList.cast<String>();
+      } else {
+        _labels = labelData
+            .split('\n')
+            .where((label) => label.trim().isNotEmpty)
+            .toList();
+      }
     } catch (e) {
       debugPrint('❌ Failed to load labels: $e');
       _labels = [];
@@ -275,39 +281,35 @@ class DiseaseIdService {
       // Pass as nested list, NOT flat Float32List (flat causes shape broadcast error)
       final input4D = _preprocessToFloat32_4D(resized);
 
-      // Run inference using 4D nested list
       List<double> output;
       final out2D = List.generate(outputShape[0],
           (_) => List<double>.filled(outputShape[1], 0.0));
       _interpreter!.run(input4D, out2D);
       output = out2D.expand((r) => r).toList();
 
-      // Output is already softmax probabilities (sum≈1.0) — no softmax needed
+      stopwatch.stop();
+      debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
+
       final sumRaw = output.fold(0.0, (a, b) => a + b);
       final maxRaw = output.reduce((a, b) => a > b ? a : b);
       final alreadyProbabilities = (sumRaw > 0.95 && sumRaw < 1.05);
       if (!alreadyProbabilities) {
         output = _softmax(output);
-        debugPrint('🔢 Applied softmax (sum was ${sumRaw.toStringAsFixed(3)})');
+        debugPrint('🔢 Applied softmax (pre-sum=${sumRaw.toStringAsFixed(3)}, post-max=${(output.reduce((a,b) => a>b?a:b)*100).toStringAsFixed(1)}%)');
       } else {
         debugPrint('🔢 Probabilities ready (sum=${sumRaw.toStringAsFixed(3)}, max=${(maxRaw*100).toStringAsFixed(1)}%)');
       }
 
-      stopwatch.stop();
-      debugPrint('⏱️ Inference time: ${stopwatch.elapsedMilliseconds}ms');
-
-      // Log top-5
       final scored = <MapEntry<int, double>>[];
       for (int i = 0; i < output.length && i < _labels.length; i++) {
         scored.add(MapEntry(i, output[i]));
       }
       scored.sort((a, b) => b.value.compareTo(a.value));
-      debugPrint('🔬 Disease model top-5 (after TTA+softmax):');
+      debugPrint('🔬 Disease model top-5:');
       for (int i = 0; i < 5 && i < scored.length; i++) {
         debugPrint('   ${_labels[scored[i].key]}: ${(scored[i].value * 100).toStringAsFixed(2)}%');
       }
 
-      // STEP 5: Process results directly — trust the model's output
       final result = _processOutput(output);
       result['inferenceTime'] = stopwatch.elapsedMilliseconds;
       result['isLeaf'] = true;
@@ -316,7 +318,6 @@ class DiseaseIdService {
       debugPrint('✅ Disease detection completed');
       debugPrint('   Disease: ${result['diseaseName']}');
       debugPrint('   Confidence: ${result['confidence']}%');
-      debugPrint('   Severity: ${result['severity']}');
 
       return result;
     } catch (e) {
@@ -344,7 +345,7 @@ class DiseaseIdService {
         List.generate(w, (x) {
           final pixel = image.getPixel(x, y);
           return [
-            pixel.r.toDouble(),  // 0-255, model's SUB node handles normalization
+            pixel.r.toDouble(),
             pixel.g.toDouble(),
             pixel.b.toDouble(),
           ];
@@ -485,15 +486,15 @@ class DiseaseIdService {
 
       // ── 3-tier confidence logic ────────────────────────────────────────────
       // HIGH (≥60%): Show result directly
-      // MEDIUM (40-60%): Show top 3 options — let user decide
-      // LOW (<40%): Ask user to retake photo
+      // MEDIUM (30-60%): Show top 3 options — let user choose
+      // LOW (<30%): Show retake dialog (image quality issue)
       // Also block very low confidence healthy predictions (likely not a leaf)
       const double highConfidence   = 60.0;
-      const double mediumConfidence = 40.0;
-      const double minHealthyConf   = 30.0; // healthy below this = probably not a leaf
+      const double mediumConfidence = 30.0;
+      const double minHealthyConf   = 30.0;
 
-      // Block very low confidence — applies to both diseased AND healthy
-      if (confidencePercent < mediumConfidence && !isHealthy) {
+      // LOW confidence (<30%): Ask user to retake
+      if (confidencePercent < mediumConfidence) {
         debugPrint('⚠️ Low confidence ($confidencePercent%) — ask user to retake');
         return {
           'success': true,
@@ -515,29 +516,7 @@ class DiseaseIdService {
         };
       }
 
-      // Block very low confidence healthy predictions too
-      if (isHealthy && confidencePercent < minHealthyConf) {
-        debugPrint('⚠️ Low confidence healthy ($confidencePercent%) — ask user to retake');
-        return {
-          'success': true,
-          'plantName': plantName,
-          'diseaseName': diseaseName,
-          'confidence': confidencePercent.toStringAsFixed(1),
-          'severity': 'Unknown',
-          'cause': 'Low confidence prediction',
-          'isHealthy': false,
-          'symptoms': <String>[],
-          'remediation': <String>[],
-          'precautions': <String>[],
-          'allPredictions': predictions,
-          'top3Predictions': top3,
-          'rawLabel': diseaseLabel,
-          'confidenceTier': 'low',
-          'lowConfidence': true,
-          'confidenceBelowThreshold': true,
-        };
-      }
-
+      // MEDIUM confidence (30-60%): Show top 3 options
       if (confidencePercent < highConfidence && !isHealthy) {
         debugPrint('⚠️ Medium confidence ($confidencePercent%) — show top 3');
         return {
@@ -554,7 +533,7 @@ class DiseaseIdService {
           'allPredictions': predictions,
           'top3Predictions': top3,
           'rawLabel': diseaseLabel,
-          'confidenceTier': 'medium',  // triggers top-3 dialog in UI
+          'confidenceTier': 'medium',
           'originalConfidence': confidencePercent.toStringAsFixed(1),
         };
       }
@@ -616,10 +595,7 @@ class DiseaseIdService {
 
       // Known plant names (lowercase) — used to identify plant prefix
       const knownPlants = [
-        'apple', 'apricot', 'bean', 'cherry', 'corn', 'fig', 'grape',
-        'lokat', 'loquat', 'pear', 'walnut', 'persimmons', 'persimmon',
-        'tomato', 'potato', 'strawberry', 'blueberry', 'peach', 'orange',
-        'soybean', 'squash', 'raspberry', 'wheat',
+        'bean', 'corn', 'fig', 'grape', 'walnut', 'tomato',
       ];
 
       if (label.contains('___')) {
@@ -697,31 +673,13 @@ class DiseaseIdService {
   /// Normalise raw plant name from label to display name
   String _normalisePlantName(String raw) {
     const map = {
-      // PlantCity new classes
-      'apple': 'Apple',
-      'apricot': 'Apricot',
       'bean': 'Bean',
-      'cherry': 'Cherry',
       'corn': 'Corn',
       'maize': 'Corn',
       'fig': 'Fig',
       'grape': 'Grape',
-      'lokat': 'Loquat',
-      'loquat': 'Loquat',
-      'pear': 'Pear',
       'walnut': 'Walnut',
-      'persimmons': 'Persimmon',
-      'persimmon': 'Persimmon',
       'tomato': 'Tomato',
-      // Legacy formats
-      'Apple': 'Apple', 'Blueberry': 'Blueberry',
-      'Cherry_(including_sour)': 'Cherry', 'Cherry': 'Cherry',
-      'Corn_(maize)': 'Corn', 'Corn_(Maize)': 'Corn',
-      'Grape': 'Grape', 'Orange': 'Orange', 'Peach': 'Peach',
-      'Pepper,_bell': 'Bell Pepper', 'Bell_pepper': 'Bell Pepper',
-      'Potato': 'Potato', 'Raspberry': 'Raspberry',
-      'Soybean': 'Soybean', 'Squash': 'Squash',
-      'Strawberry': 'Strawberry', 'Tomato': 'Tomato', 'Wheat': 'Wheat',
     };
     return map[raw] ?? map[raw.toLowerCase()] ?? _titleCase(raw);
   }
@@ -765,7 +723,7 @@ class DiseaseIdService {
     return 'Low';
   }
 
-  // ── Content helpers — updated for all 38 PlantVillage classes ────────────────
+  // ── Content helpers — all 35 PlantCity classes ──────────────────────────────
   String _getCause(String diseaseName) {
     final l = diseaseName.toLowerCase();
     

@@ -189,19 +189,28 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       final db = ScanDatabase.instance;
-      final counts = await db.getScanCounts(uid);
-      _totalScans = counts['total'] ?? 0;
-      final all = await db.getAllScans(uid);
+      
+      // Get counts from each scan type separately - most reliable
+      final onDevice = await db.getOnDeviceScans(uid);
+      final advanced = await db.getAdvancedScans(uid);
+      
+      // Sum across all scan sources
+      _totalScans = onDevice.length + advanced.length;
+      
       int h = 0, d = 0;
+      
+      // Get all scans from SQLite to compute healthy/diseased  
+      final all = await db.getAllScans(uid);
       for (final s in all) {
-        final diag = (s['diagnosis']?.toString() ?? s['diseaseName']?.toString() ?? '').toLowerCase();
+        final diag = (s['diagnosis']?.toString() ?? s['diseaseName']?.toString() ?? s['disease']?.toString() ?? '').toLowerCase();
         if (diag.contains('healthy') || diag.isEmpty) {
           h++;
         } else {
           d++;
         }
       }
-      _healthyScans = h; _diseasedScans = d;
+      _healthyScans = h; 
+      _diseasedScans = d;
     } catch (e) { debugPrint('Stats load error: $e'); }
   }
 

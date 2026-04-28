@@ -371,11 +371,11 @@ Input JSON schema example:
       final lang = inUrdu ? 'اردو' : 'English';
 
       final system = '''
-You are an expert agronomist for farmers. Provide easy-to-understand information about plants.
+You are an expert agronomist for the AgriGuard app. Provide clear, practical information about plants for farmers.
 Respond in $lang with simple language that any farmer can understand.
 Return ONLY valid JSON (no markdown):
 {
-  "overview": "2-3 sentences about this plant",
+  "overview": "2-3 sentences about this plant including its importance to farmers",
   "uses": ["use1", "use2", "use3"],
   "growing": "simple growing instructions",
   "care": "basic care tips",

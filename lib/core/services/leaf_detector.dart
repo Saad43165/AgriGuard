@@ -37,8 +37,8 @@ import 'package:image/image.dart' as img;
 class LeafDetector {
   // ── Tuneable thresholds ──────────────────────────────────────────────────
   static const double _minPlantPct      = 8.0;   // % of green + warm pixels
-  static const double _minGradient      = 5.0;   // mean pixel-to-pixel delta
-  static const double _maxFlatBlockPct  = 75.0;  // % of near-uniform 8×8 blocks
+  static const double _minGradient      = 2.0;   // mean pixel-to-pixel delta
+  static const double _maxFlatBlockPct  = 80.0;  // % of near-uniform 8×8 blocks
   static const int    _blockSize        = 8;      // pixels per block side
   static const double _flatVarThresh    = 80.0;  // local variance threshold
   static const int    _edgeThreshold    = 15;    // gradient threshold for edge count
