@@ -51,17 +51,6 @@ class PlantAnalysisService {
   Future<Map<String, dynamic>> _performLeafDetection(File imageFile) =>
       LeafDetector.detect(imageFile);
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // ▶ FIX: Plant name reconciliation
-  //
-  // Parameters:
-  //   plantIdName       — species from plant_id_service   (e.g. "Apple")
-  //   plantIdConfidence — confidence from plant_id_service (e.g. 0.786)
-  //   diseasePlantName  — species embedded in disease label (e.g. "Tomato")
-  //   isHealthy         — whether disease model returned "Healthy"
-  //
-  // Returns the correct final plant name to display.
-  // ══════════════════════════════════════════════════════════════════════════
   String _reconcilePlantName({
     required String plantIdName,
     required double plantIdConfidence,
