@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 import '../../auth/login/services/guest_service.dart';
 import 'package:agriguard_fyp/core/constants/app_routes.dart';
 import 'package:agriguard_fyp/core/repositories/scan_repository.dart';
-import 'package:agriguard_fyp/core/services/severity_id_service.dart';
+import 'package:agriguard_fyp/core/services/severity/severity_id_service.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:agriguard_fyp/features/home/screens/PdfDialogs/services/pdf_action_services.dart';

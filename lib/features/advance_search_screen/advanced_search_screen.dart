@@ -136,9 +136,7 @@ static const _options = [
       final tag = _options[_selectedIndex].tag;
       Map<String, dynamic> result;
 
-      if (tag == 'PlantHealth') {
-        result = await _searchService.analyzeWithPlantHealth(file);
-      } else if (tag == 'Plant.id') {
+   if (tag == 'Plant.id') {
         result = await _searchService.analyzeWithPlantId(file);
       } else {
         result = await _searchService.analyzePlant(file, inUrdu: t.isUrdu);      }

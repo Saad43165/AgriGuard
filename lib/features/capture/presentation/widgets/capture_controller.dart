@@ -7,8 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_routes.dart';
-import '../../../../core/services/ai_analysis_service.dart';
-import '../../../../core/services/disease_id_service.dart';
+import '../../../../core/services/analysis/ai_analysis_service.dart';
+import '../../../../core/services/disease/disease_id_service.dart';
 import '../../../../core/services/translation_service.dart';
 import '../../../auth/login/services/guest_service.dart';
 

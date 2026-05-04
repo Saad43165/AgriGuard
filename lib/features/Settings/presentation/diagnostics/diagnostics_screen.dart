@@ -1,4 +1,3 @@
-import 'package:agriguard_fyp/features/advance_search_screen/service/plant_health_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +49,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final t = Provider.of<TranslationService>(context);
 
     final groq = GroqService();
-    final plantHealth = PlantHealthApiService();
     final plantId = PlantIdService();
 
     return Scaffold(
@@ -64,11 +62,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           const _SectionTitle(title: 'API Setup'),
           const SizedBox(height: 10),
 
-          _StatusTile(
-            title: 'PlantHealth API key',
-            subtitle: 'Used for cloud vision disease detection',
-            isOk: plantHealth.hasApiKey,
-          ),
+
           _StatusTile(
             title: 'Groq API key',
             subtitle: 'Used for agronomy advice text',
