@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/weather_model.dart';
 
 class WeatherService {
-  static const String _apiKey = '5ccb6e1680064a169e5113329251608';
+  static String get _apiKey => dotenv.env['WEATHER_API_KEY']?.trim() ?? '';
   static const String _baseUrl = 'https://api.weatherapi.com/v1';
   static const Duration _timeout = Duration(seconds: 15);
   static const Duration _cacheDuration = Duration(minutes: 10); // Cache for 10 minutes
@@ -69,7 +70,7 @@ class WeatherService {
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/forecast.json?key=$_apiKey&q=$city&days=$days&aqi=yes'),
+        Uri.parse('$_baseUrl/forecast.json?key=$_apiKey&q=${Uri.encodeQueryComponent(city)}&days=$days&aqi=yes'),
       ).timeout(_timeout);
 
       final forecast = _parseForecastResponse(response);

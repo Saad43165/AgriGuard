@@ -416,6 +416,11 @@ class ScanDatabase {
     await db.delete('scans');
   }
 
+  Future<int> deleteScansForUser(String userId) async {
+    final db = await database;
+    return db.delete('scans', where: 'userId = ?', whereArgs: [userId]);
+  }
+
   Future<int> deleteOldScans(String userId, {int days = 30}) async {
     final db = await database;
     final cutoffDate = DateTime.now().subtract(Duration(days: days)).toIso8601String();

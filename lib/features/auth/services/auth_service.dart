@@ -317,24 +317,77 @@ class AuthService {
   }
 
   Future<void> _upsertUserProfileFromAuth(User user, {required String provider}) async {
-    final displayName = user.displayName ?? '';
-    final email = user.email ?? '';
-    await _firestore.collection('users').doc(user.uid).set({
-      'fullName': displayName,
-      'email': email,
-      'profileImageUrl': user.photoURL ?? '',
+    final docRef = _firestore.collection('users').doc(user.uid);
+    final snap = await docRef.get();
+
+    if (!snap.exists) {
+      await docRef.set({
+        'fullName': user.displayName ?? '',
+        'email': user.email ?? '',
+        'phoneNumber': '',
+        'location': '',
+        'farmSize': '',
+        'profileImageUrl': user.photoURL ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+        'emailVerified': user.emailVerified,
+        'authProvider': provider,
+        'scanCount': 0,
+        'lastScan': null,
+        'crops': <String>[],
+      });
+      return;
+    }
+
+    // Returning user: never overwrite fields the user may have edited
+    // (name, photo, crops) or the original creation date.
+    final data = snap.data() ?? const <String, dynamic>{};
+    await docRef.set({
       'lastUpdated': FieldValue.serverTimestamp(),
-      'createdAt': FieldValue.serverTimestamp(),
       'emailVerified': user.emailVerified,
       'authProvider': provider,
-      'scanCount': FieldValue.increment(0),
-      'crops': <String>[],
+      if ((data['email'] as String? ?? '').isEmpty) 'email': user.email ?? '',
+      if ((data['fullName'] as String? ?? '').isEmpty) 'fullName': user.displayName ?? '',
+      if ((data['profileImageUrl'] as String? ?? '').isEmpty)
+        'profileImageUrl': user.photoURL ?? '',
     }, SetOptions(merge: true));
+  }
+
+  // -----------------------------------------------------------------
+  //  RE-AUTHENTICATION
+  // -----------------------------------------------------------------
+  /// Re-authenticates the current Google user (required by Firebase before
+  /// sensitive operations such as deleting the account).
+  /// Returns false if the user cancelled the Google account picker.
+  Future<bool> reauthenticateWithGoogle() async {
+    final user = _auth.currentUser;
+    if (user == null) throw AuthException('No user logged in.');
+
+    final account = await GoogleSignIn().signIn();
+    if (account == null) return false;
+
+    final auth = await account.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: auth.accessToken,
+      idToken: auth.idToken,
+    );
+    try {
+      await user.reauthenticateWithCredential(credential);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-mismatch') {
+        throw AuthException('Please choose the Google account you are signed in with.');
+      }
+      throw _mapAuthError(e);
+    }
   }
 
   // -----------------------------------------------------------------
   //  ACCOUNT DELETION
   // -----------------------------------------------------------------
+  /// Deletes the user's cloud data and then the auth account.
+  /// Callers must re-authenticate first; otherwise Firebase rejects the
+  /// final `user.delete()` with `requires-recent-login`.
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     if (user == null) throw AuthException('No user is currently logged in.');
@@ -342,6 +395,9 @@ class AuthService {
     try {
       await _deleteUserFirestoreData(user.uid);
       await user.delete();
+      try {
+        await GoogleSignIn().signOut();
+      } catch (_) {}
       debugPrint('Account ${user.uid} deleted');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
@@ -350,7 +406,10 @@ class AuthService {
         );
       }
       throw _mapAuthError(e);
+    } on AuthException {
+      rethrow;
     } catch (e) {
+      debugPrint('deleteAccount failed: $e');
       throw AuthException('Failed to delete account. Try again.');
     }
   }
@@ -359,25 +418,31 @@ class AuthService {
   //  PRIVATE: DELETE USER DATA
   // -----------------------------------------------------------------
   Future<void> _deleteUserFirestoreData(String uid) async {
-    final batch = _firestore.batch();
-    var ops = 0;
+    final userRef = _firestore.collection('users').doc(uid);
 
-    // Delete root user doc
-    batch.delete(_firestore.collection('users').doc(uid));
-    ops++;
-
-    // Delete scans
-    final scans = await _firestore.collection('users').doc(uid).collection('scans').get();
-    for (final doc in scans.docs) {
-      batch.delete(doc.reference);
-      ops++;
-      if (ops >= 499) {
-        await batch.commit();
-        ops = 0;
-      }
+    final refs = <DocumentReference>[];
+    for (final sub in const ['scans', 'crops']) {
+      final snap = await userRef.collection(sub).get();
+      refs.addAll(snap.docs.map((d) => d.reference));
     }
+    for (final coll in const ['onDeviceScans', 'advancedScans']) {
+      final snap = await _firestore
+          .collection(coll)
+          .where('userId', isEqualTo: uid)
+          .get();
+      refs.addAll(snap.docs.map((d) => d.reference));
+    }
+    refs.add(userRef);
 
-    if (ops > 0) await batch.commit();
+    // A WriteBatch can only be committed once and holds at most 500 writes,
+    // so use a fresh batch per chunk.
+    for (var i = 0; i < refs.length; i += 450) {
+      final batch = _firestore.batch();
+      for (final ref in refs.skip(i).take(450)) {
+        batch.delete(ref);
+      }
+      await batch.commit();
+    }
   }
 
   // -----------------------------------------------------------------
@@ -415,6 +480,7 @@ class AuthService {
       case 'wrong-password':
         return AuthException('Incorrect password. Please try again.');
       case 'invalid-credential':
+      case 'INVALID_LOGIN_CREDENTIALS':
         return AuthException('Invalid email or password.');
       case 'user-disabled':
         return AuthException('This account has been disabled.');

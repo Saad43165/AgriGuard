@@ -165,14 +165,12 @@
   "next_steps": "اگلے اقدامات",
   "recommended_actions": "تجویز کردہ اقدامات پر عمل کریں",
   "disease_causes": "بیماری کی وجوہات",
-
   "analytics_title": "تجزیات",
   "no_data_yet": "ابھی کوئی ڈیٹا نہیں",
   "scan_plants_to_see": "تجزیات دیکھنے کے لیے پودوں کو اسکین کریں",
   "total_scans": "کل اسکینز",
   "healthy_pct": "صحت مند",
   "diseased_this_month": "اس ماہ بیمار",
-  "top_diseases": "سرفہرست بیماریاں",
   "plant_health_breakdown": "پودوں کی صحت کی تفصیل",
   "monthly_activity_6": "ماہانہ سرگرمی (آخری 6 ماہ)",
   "most_affected_plant": "سب سے زیادہ متاثر پودا",
@@ -182,7 +180,6 @@
   "preventive_tips_for": "احتیاطی تجاویز",
   "location_based_advice": "مقام پر مبنی مشورہ",
   "set_location_profile": "علاقائی بیماری کے انتباہات کے لیے پروفائل میں اپنا مقام سیٹ کریں۔",
-  "crop_calendar": "فصل کیلنڈر",
   "season_spring": "بہار",
   "season_summer": "گرمی",
   "season_autumn": "خزاں",
@@ -229,7 +226,6 @@
   "total_scans_profile": "کل اسکینز",
   "healthy_scans": "صحت مند",
   "diseased_scans": "بیمار",
-
   "analytics_guidance": "بہتر زرعی فیصلے کرنے کے لیے اپنی اسکین ہسٹری، بیماری کے رجحانات اور پودوں کی صحت کو ٹریک کریں۔",
   "health_score": "صحت کا اسکور",
   "disease_rate": "بیماری کی شرح",
@@ -253,7 +249,6 @@
   "chatbot_guidance_examples": "پوچھیں: 'ٹماٹر بلائٹ کا علاج' یا 'سیب کی بیماریاں'",
   "ask_about_diseases": "بیماریوں کے بارے میں پوچھیں...",
   "chatbot_hint_ur": "پودوں کی بیماریوں کے بارے میں پوچھیں...",
-
   "treatments": {
     "Remove and destroy infected leaves": "متاثرہ پتوں کو ہٹائیں اور تلف کریں",
     "Improve air circulation around plant": "پودے کے گرد ہوا کی گردش بہتر کریں",
@@ -298,8 +293,7 @@
     "Try Advanced Scan for better accuracy": "بہتر درستگی کے لیے Advanced Scan آزمائیں",
     "Continue regular plant care": "باقاعدہ پودوں کی دیکھ بھال جاری رکھیں",
     "Monitor for any changes": "کسی بھی تبدیلی کی نگرانی کریں"
-  }
-,
+  },
   "selected": "منتخب",
   "seconds": "سیکنڈ",
   "step_choose": "تجزیہ کا طریقہ منتخب کریں",
@@ -315,7 +309,6 @@
   "treatment": "علاج",
   "prevention": "بچاؤ",
   "weather_conditions": "موسمی حالات",
-  "severity_level": "شدت کی سطح",
   "scan_this_plant": "اس پودے کو اسکین کریں",
   "camera_permission": "کیمرہ کی اجازت",
   "camera_permission_msg": "AgriGuard کو پودوں کو اسکین کرنے کے لیے کیمرہ تک رسائی درکار ہے",
@@ -345,5 +338,8 @@
   "pest_management": "کیڑوں کا انتظام",
   "farming_tips": "زرعی تجاویز",
   "retry": "دوبارہ کوشش کریں",
-  "refresh": "تازہ کریں"
+  "refresh": "تازہ کریں",
+  "faq_result_one": "نتیجہ",
+  "faq_result_many": "نتائج",
+  "clear_filters": "فلٹرز صاف کریں"
 }

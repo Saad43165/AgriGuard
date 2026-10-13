@@ -365,6 +365,20 @@ class ScanRepository {
     }
   }
 
+  /// Firestore documents are capped at 1 MiB. Full-resolution photos encoded
+  /// as base64 can exceed that and make the whole sync fail, so the embedded
+  /// image is dropped from the cloud copy when it is too large.
+  static const int _maxCloudImageChars = 700 * 1024;
+
+  Map<String, dynamic> _firestorePayload(ScanModel scan) {
+    final data = scan.toFirestore();
+    final image = data['imageBase64'] as String?;
+    if (image != null && image.length > _maxCloudImageChars) {
+      data.remove('imageBase64');
+    }
+    return data;
+  }
+
   Future<void> _syncOnDeviceScanToFirebase(ScanModel scan) async {
     try {
       final user = _auth.currentUser;
@@ -377,7 +391,7 @@ class ScanRepository {
 
       final updatedScan = scan.copyWith(imageUrl: '');
 
-      await _firestore.collection('onDeviceScans').doc(scan.id).set(updatedScan.toFirestore());
+      await _firestore.collection('onDeviceScans').doc(scan.id).set(_firestorePayload(updatedScan));
       await _database.markAsSynced(scan.id!);
 
       debugPrint('✅ On-Device scan synced to Firestore: ${scan.id}');
@@ -398,7 +412,7 @@ class ScanRepository {
 
       final updatedScan = scan.copyWith(imageUrl: '');
 
-      await _firestore.collection('advancedScans').doc(scan.id).set(updatedScan.toFirestore());
+      await _firestore.collection('advancedScans').doc(scan.id).set(_firestorePayload(updatedScan));
       await _database.markAsSynced(scan.id!);
 
       debugPrint('✅ Advanced scan synced to Firestore: ${scan.id}');

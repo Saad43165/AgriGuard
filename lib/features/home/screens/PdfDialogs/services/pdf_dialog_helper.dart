@@ -66,18 +66,22 @@ class PdfDialogHelper {
     );
 
     try {
-      // Request permissions
-      if (Platform.isAndroid) {
-        final status = await _requestStoragePermission();
-        if (!status && context.mounted) {
-          Navigator.pop(context);
-          showSnackBar(context, 'Storage permission required', isError: true);
+      // Android 10+ lets apps create files in Download/Documents without any
+      // permission. Only older devices need WRITE_EXTERNAL_STORAGE, so ask
+      // for it only when the first write attempt is refused.
+      String savedPath;
+      try {
+        savedPath = await _saveFile(pdfFile, fileName, location);
+      } on FileSystemException {
+        if (!Platform.isAndroid || !await _requestStoragePermission()) {
+          if (context.mounted) {
+            Navigator.pop(context);
+            showSnackBar(context, 'Storage permission required', isError: true);
+          }
           return;
         }
+        savedPath = await _saveFile(pdfFile, fileName, location);
       }
-
-      // Save file
-      final savedPath = await _saveFile(pdfFile, fileName, location);
 
       if (!context.mounted) return;
       Navigator.pop(context); // Close loading
@@ -94,20 +98,9 @@ class PdfDialogHelper {
     }
   }
 
-  // Request storage permission
+  // Request legacy storage permission (only needed on Android 9 and below)
   static Future<bool> _requestStoragePermission() async {
-    PermissionStatus status;
-    const androidVersion = 33;
-
-    if (androidVersion >= 30) {
-      status = await Permission.manageExternalStorage.request();
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
-      }
-    } else {
-      status = await Permission.storage.request();
-    }
-
+    final status = await Permission.storage.request();
     return status.isGranted || status.isLimited;
   }
 

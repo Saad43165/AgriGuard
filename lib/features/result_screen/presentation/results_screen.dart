@@ -265,10 +265,12 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
   }
 
   void _updateSaveState(bool saving, bool saved) {
-    if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
       _isSaving = saving;
       _isAlreadySaved = saved;
     });
+    }
   }
 
   void _goAdvanced() {

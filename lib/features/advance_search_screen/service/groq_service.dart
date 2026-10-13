@@ -315,7 +315,7 @@ Input JSON schema example:
 
       return {
         'success': true,
-        'data': Map<String, dynamic>.from(translated as Map),
+        'data': Map<String, dynamic>.from(translated),
       };
     } catch (e) {
       return {

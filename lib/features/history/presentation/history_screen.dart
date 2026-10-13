@@ -13,13 +13,13 @@ import 'package:agriguard_fyp/features/history/presentation/widgets/history_stat
 import 'package:agriguard_fyp/features/history/presentation/widgets/history_tab_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../../core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'package:flutter/services.dart';
 import '../../../core/widgets/app_themes.dart';
 import '../../auth/login/services/guest_service.dart';
 import '../../result_screen/presentation/results_screen.dart';
 import '../../advance_result_screen/advanced_result_screen.dart';
-import '../../../../core/repositories/scan_repository.dart';
+import 'package:agriguard_fyp/core/repositories/scan_repository.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

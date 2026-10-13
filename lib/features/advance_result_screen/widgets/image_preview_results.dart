@@ -2,7 +2,7 @@
 import 'dart:convert'; // ADD THIS
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../../../../core/constants/app_measurements.dart';
+import 'package:agriguard_fyp/core/constants/app_measurements.dart';
 
 class ImagePreviewResults extends StatelessWidget {
   final Map<String, dynamic> originalScanData;

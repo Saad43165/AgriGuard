@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 
 class FaqSearchBar extends StatefulWidget {
   final TextEditingController controller;

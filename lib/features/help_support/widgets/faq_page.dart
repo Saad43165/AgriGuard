@@ -1,7 +1,7 @@
 // lib/features/support/widgets/faq_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 import '../models/faq_category.dart';
 import '../models/faq_data.dart';
 import '../models/faq_items.dart';
@@ -139,7 +139,7 @@ class _FaqPageState extends State<FaqPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${_filteredFaqs.length} ${_filteredFaqs.length == 1 ? translation.get('result') : translation.get('results')}',
+                      '${_filteredFaqs.length} ${_filteredFaqs.length == 1 ? translation.get('faq_result_one') : translation.get('faq_result_many')}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .colorScheme

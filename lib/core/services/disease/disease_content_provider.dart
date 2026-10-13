@@ -70,12 +70,14 @@ class DiseaseContentProvider {
   }
 
   List<String> getRemediation(String diseaseName, String plantName, bool isHealthy) {
-    if (isHealthy) return [
+    if (isHealthy) {
+      return [
       'Continue current care regimen',
       'Maintain proper watering schedule',
       'Ensure adequate sunlight exposure',
       'Regular monitoring for early disease detection',
     ];
+    }
 
     final l = diseaseName.toLowerCase();
     final base = <String>[
@@ -85,41 +87,53 @@ class DiseaseContentProvider {
       'Clean and disinfect tools',
     ];
 
-    if (l.contains('haunglongbing')) return [
+    if (l.contains('haunglongbing')) {
+      return [
       'NO CURE — Remove infected trees immediately',
       'Control psyllid with systemic insecticides',
       'Use certified disease-free nursery stock',
     ];
+    }
 
-    if (l.contains('yellow leaf curl')) return [
+    if (l.contains('yellow leaf curl')) {
+      return [
       'NO CURE — Remove infected plants',
       'Control whitefly vectors',
       'Plant resistant varieties',
     ];
+    }
 
-    if (l.contains('late blight')) return [
+    if (l.contains('late blight')) {
+      return [
       ...base,
       'Apply metalaxyl or chlorothalonil IMMEDIATELY',
       'Destroy infected plants to prevent spread',
     ];
+    }
 
-    if (l.contains('early blight')) return [
+    if (l.contains('early blight')) {
+      return [
       ...base,
       'Apply chlorothalonil or mancozeb fungicides',
       'Mulch to prevent soil splash',
     ];
+    }
 
-    if (l.contains('powdery mildew')) return [
+    if (l.contains('powdery mildew')) {
+      return [
       ...base,
       'Apply sulfur or potassium bicarbonate',
       'Increase plant spacing for air flow',
     ];
+    }
 
-    if (l.contains('rust')) return [
+    if (l.contains('rust')) {
+      return [
       ...base,
       'Apply triazole or strobilurin fungicides',
       'Use resistant varieties',
     ];
+    }
 
     return [...base, 'Apply appropriate treatment', 'Consult agricultural expert if severe'];
   }

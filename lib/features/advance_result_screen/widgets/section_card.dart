@@ -1,6 +1,6 @@
 // lib/features/ResultScreen/presentation/widgets/results/section_card.dart
 import 'package:flutter/material.dart';
-import '../../../../../../core/constants/app_measurements.dart';
+import 'package:agriguard_fyp/core/constants/app_measurements.dart';
 
 class SectionCard extends StatelessWidget {
   final ThemeData theme;

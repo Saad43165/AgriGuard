@@ -1,5 +1,5 @@
 name: agriguard_fyp
-description: "A new Flutter project."
+description: "AgriGuard - AI-powered plant disease detection and farm management."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -33,6 +33,8 @@ dependencies:
 
   # Storage & Files
   path_provider: ^2.1.1
+  path: ^1.9.0
+  sqflite: ^2.4.1
   share_plus: ^7.2.2
   pdf: ^3.11.1
 

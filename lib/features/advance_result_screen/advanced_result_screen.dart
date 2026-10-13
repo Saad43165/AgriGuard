@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/AdvancedResultHeaderActions.dart';
 import 'package:agriguard_fyp/features/advance_result_screen/widgets/AdvancedResultSections.dart';
 import 'package:flutter/material.dart';
@@ -113,7 +112,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
     setState(() => _isTranslating = true);
     try {
       final res = await _groqService.translateScanDataToUrdu(
-        data: Map<String, dynamic>.from(data as Map),
+        data: Map<String, dynamic>.from(data),
       );
 
       if (res['success'] == true && res['data'] is Map) {

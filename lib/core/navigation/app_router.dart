@@ -13,7 +13,6 @@ import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../core/constants/app_routes.dart';
 import '../navigation/main_navigation_screen.dart';
-import '../../features/auth/login/services/guest_service.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../../features/help_support/bug_report_screen.dart';
 import '../../features/analytics/analytics_screen.dart';

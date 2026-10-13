@@ -26,7 +26,7 @@ class ChatMessage {
     MessageStatus? status,
   }) {
     return ChatMessage(
-      id: this.id,
+      id: id,
       role: role ?? this.role,
       content: content ?? this.content,
       timestamp: timestamp ?? this.timestamp,

@@ -1,8 +1,8 @@
 // lib/core/utils/snackbar_utils.dart
 import 'package:flutter/material.dart';
 
-import '../../../../../core/constants/app_measurements.dart';
-import '../../../../../core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/constants/app_measurements.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
 
 class SnackbarUtils {
   static void showSuccessSnackBar({

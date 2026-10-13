@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 
 class HistoryStatsCard extends StatelessWidget {
   final int totalScans;

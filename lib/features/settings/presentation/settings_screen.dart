@@ -11,7 +11,6 @@ import 'tiles/app_version_tile.dart';
 import 'tiles/clear_history_tile.dart';
 import 'tiles/delete_account_tile.dart';
 import 'components/notification_schedule_sheet.dart';
-import 'profile_screen.dart';
 import 'privacy_security_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -99,7 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               imageCache.clear();
               imageCache.clearLiveImages();
               await Future.delayed(const Duration(milliseconds: 500));
-              if (mounted) {
+              if (mounted && context.mounted) {
                 setState(() => _isClearingCache = false);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: const Text('Cache cleared'),
@@ -281,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       )),
       trailing: Switch(
         value: value, onChanged: onChanged,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
         activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
       ),
     );

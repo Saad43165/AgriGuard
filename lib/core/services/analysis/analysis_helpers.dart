@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 class ExtractedInfo {
   final String finalPlantName;

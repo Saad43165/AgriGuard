@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 
 class ContactFormCard extends StatefulWidget {
   const ContactFormCard({super.key});

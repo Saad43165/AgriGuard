@@ -306,6 +306,7 @@ class CaptureController extends ChangeNotifier {
           );
         } else {
           final scanData = _buildScanData(result, user);
+          if (!context.mounted) return;
           await Navigator.pushNamed(context, AppRoutes.results, arguments: {'scanData': scanData});
         }
         _reset();
@@ -323,6 +324,7 @@ class CaptureController extends ChangeNotifier {
       }
 
       final scanData = _buildScanData(result, user);
+      if (!context.mounted) return;
       await Navigator.pushNamed(context, AppRoutes.results, arguments: {'scanData': scanData});
       _reset();
     } catch (_) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_routes.dart';
-import '../../../../../core/widgets/app_themes.dart';
-import '../../../../../core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 
 class GuestHistoryBlock extends StatelessWidget {
   final bool isDark;

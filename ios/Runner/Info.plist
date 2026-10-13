@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>AgriGuard uses the camera to photograph plant leaves for disease diagnosis.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AgriGuard needs access to your photos so you can choose a leaf image to diagnose or set a profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>AgriGuard saves exported reports and images to your photo library.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>AgriGuard uses your location to show local weather and crop advice.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The camera plugin may request microphone access; AgriGuard does not record audio.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

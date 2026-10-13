@@ -99,8 +99,8 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
     try {
       final db = ScanDatabase.instance;
 
-      // Just use clearAllScans - it's simpler and works
-      await db.clearAllScans().timeout(const Duration(seconds: 10));
+      // Only remove this user's scans; other accounts on the device keep theirs.
+      await db.deleteScansForUser(userId).timeout(const Duration(seconds: 10));
 
       debugPrint('✅ SQLite cleared successfully');
     } catch (e) {
@@ -142,24 +142,30 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
   Future<void> _clearFirestoreSubcollections(String userId) async {
     final firestore = FirebaseFirestore.instance;
 
-    try {
-      // Clear users/{userId}/scans
-      final scansQuery = firestore
-          .collection('users')
-          .doc(userId)
-          .collection('scans')
-          .limit(500); // Limit to prevent hanging
+    // Scans live in the legacy users/{uid}/scans subcollection and in the
+    // top-level onDeviceScans / advancedScans backup collections.
+    final queries = <Query<Map<String, dynamic>>>[
+      firestore.collection('users').doc(userId).collection('scans'),
+      firestore.collection('onDeviceScans').where('userId', isEqualTo: userId),
+      firestore.collection('advancedScans').where('userId', isEqualTo: userId),
+    ];
 
-      final scansSnapshot = await scansQuery.get();
-      if (scansSnapshot.docs.isNotEmpty) {
-        final batch = firestore.batch();
-        for (final doc in scansSnapshot.docs) {
-          batch.delete(doc.reference);
+    for (final query in queries) {
+      try {
+        // Delete in pages so large histories are fully removed.
+        while (true) {
+          final snapshot = await query.limit(400).get();
+          if (snapshot.docs.isEmpty) break;
+          final batch = firestore.batch();
+          for (final doc in snapshot.docs) {
+            batch.delete(doc.reference);
+          }
+          await batch.commit();
+          if (snapshot.docs.length < 400) break;
         }
-        await batch.commit();
+      } catch (e) {
+        debugPrint('⚠️ Error clearing scans: $e');
       }
-    } catch (e) {
-      debugPrint('⚠️ Error clearing subcollections: $e');
     }
   }
 

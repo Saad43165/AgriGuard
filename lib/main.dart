@@ -7,7 +7,6 @@ import 'core/navigation/app_router.dart';
 import 'core/widgets/app_themes.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/translation_service.dart';
-import 'core/services/localization_service.dart';
 import 'features/auth/login/services/guest_service.dart';
 import 'features/splash/splash_screen.dart';
 import 'firebase_options.dart';
@@ -36,15 +35,12 @@ Future<void> main() async {
   final translationService = TranslationService();
   await translationService.loadLanguage();
 
-  final localizationService = LocalizationService();
-  await localizationService.init();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider.value(value: translationService),
-        ChangeNotifierProvider.value(value: localizationService),
       ],
       child: const AgriGuardApp(),
     ),
@@ -68,7 +64,11 @@ class AgriGuardApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: AppRouter.navigatorKey,
       title: 'AgriGuard',
-      theme: themeOverride ?? Provider.of<ThemeProvider>(context).currentTheme,
+      theme: themeOverride ?? AppTheme.lightTheme,
+      darkTheme: themeOverride == null ? AppTheme.darkTheme : null,
+      themeMode: themeOverride == null
+          ? Provider.of<ThemeProvider>(context).materialThemeMode
+          : ThemeMode.light,
       debugShowCheckedModeBanner: false,
       home: homeOverride ??
           StreamBuilder<User?>(

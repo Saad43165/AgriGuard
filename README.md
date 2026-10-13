@@ -5,8 +5,8 @@ AgriGuard is a premium, AI-powered agricultural companion designed to empower fa
 ## 🚀 Key Features
 
 ### 🔍 Precision AI Diagnosis
-* **Real-time Detection**: Identify over 52 classes of plant health conditions across 12+ species using optimized on-device TensorFlow Lite models.
-* **Hybrid Intelligence**: Combines PlantHealth's cloud-based precision with local TFLite speed for the best possible accuracy.
+* **Real-time Detection**: Identify 35 plant health conditions on-device with an EfficientNet-B3 TensorFlow Lite model, plus a severity model.
+* **Hybrid Intelligence**: Combines Plant.id's cloud-based precision with local TFLite speed for the best possible accuracy.
 * **Dual-Layer Analysis**: Integrated Groq AI (Llama 3.3) provides detailed biological causes, treatment plans, and prevention strategies.
 
 ### 🚜 Smart Farm Diary
@@ -27,9 +27,9 @@ AgriGuard is a premium, AI-powered agricultural companion designed to empower fa
 * **Framework**: Flutter (Dart)
 * **AI/ML**: 
   * TensorFlow Lite (On-device Inference)
-  * PlantHealth API (Cloud-based Precision Scanning)
+  * Plant.id API (Cloud-based Precision Scanning)
   * Groq AI - Llama 3.3 (Agricultural Reasoning)
-* **Backend**: Firebase (Auth, Firestore, Cloud Storage)
+* **Backend**: Firebase (Auth, Firestore) + local SQLite (sqflite)
 * **Architecture**: Feature-first layered architecture (Clean Architecture principles)
 * **State Management**: Provider
 
@@ -64,13 +64,19 @@ lib/
    ```
 
 3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory:
+   Copy `.env.example` to `.env` in the project root and fill in your keys:
    ```env
    GROQ_API_KEY=your_groq_key
-   PLANTHEALTH_API_KEY=your_planthealth_key
+   PLANTID_API_KEY=your_plantid_key
+   ```
+   `.env` is git-ignored — never commit it.
+
+4. **Deploy Firebase security rules** (once per Firebase project):
+   ```bash
+   firebase deploy --only firestore:rules,storage
    ```
 
-4. **Run the app**:
+5. **Run the app**:
    ```bash
    flutter run
    ```

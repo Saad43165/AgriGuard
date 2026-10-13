@@ -60,6 +60,18 @@ class ThemeProvider extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
   String get themeMode => _themeMode;
 
+  /// Used by MaterialApp so "system" follows the OS setting live.
+  ThemeMode get materialThemeMode {
+    switch (_themeMode) {
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.light;
+    }
+  }
+
   static ThemeProvider of(BuildContext context) =>
       Provider.of<ThemeProvider>(context, listen: false);
 

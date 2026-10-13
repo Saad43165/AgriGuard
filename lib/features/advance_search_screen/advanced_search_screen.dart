@@ -5,8 +5,8 @@ import 'package:agriguard_fyp/features/advance_search_screen/widgets/AdvancedTop
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/services/translation_service.dart';
-import '../../../core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import '../advance_result_screen/advanced_result_screen.dart';
 import '../capture/presentation/widgets/processing_overlay.dart';
 import 'models/advanced_option.dart';

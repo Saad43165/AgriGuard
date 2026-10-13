@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../core/widgets/app_dialog.dart';
-import '../../../../core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/widgets/app_dialog.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 
 void showLogoutConfirmationDialog({
   required BuildContext context,

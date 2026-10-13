@@ -1,7 +1,7 @@
 // lib/core/widgets/section_header.dart
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_measurements.dart';
+import 'package:agriguard_fyp/core/constants/app_measurements.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;

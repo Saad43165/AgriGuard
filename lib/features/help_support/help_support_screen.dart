@@ -11,9 +11,9 @@ import 'package:agriguard_fyp/features/chatbot/chatbot_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../../../core/services/translation_service.dart';
-import '../../../core/constants/app_routes.dart';
-import '../../../core/widgets/app_themes.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/constants/app_routes.dart';
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 
 class HelpAndSupportScreen extends StatefulWidget {
   const HelpAndSupportScreen({super.key});

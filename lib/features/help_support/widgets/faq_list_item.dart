@@ -1,7 +1,7 @@
 // lib/features/support/widgets/faq_list_item.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/services/translation_service.dart';
+import 'package:agriguard_fyp/core/services/translation_service.dart';
 import '../models/faq_category.dart';
 import '../models/faq_items.dart';
 

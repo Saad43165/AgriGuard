@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'analysis_helpers.dart';
 
 class AnalysisResultBuilder {

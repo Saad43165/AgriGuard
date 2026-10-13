@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../features/auth/services/auth_service.dart';
+import '../../../../core/database/scan_database.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_themes.dart';
 
@@ -21,14 +22,23 @@ class DeleteAccountTile extends StatelessWidget {
 
     HapticFeedback.heavyImpact();
 
-    final password = await _showPasswordDialog(context, user.email ?? '');
-    if (password == null) return;
-
     try {
-      final cred = EmailAuthProvider.credential(email: user.email!, password: password);
-      await user.reauthenticateWithCredential(cred);
+      if (auth.isGoogleSignIn()) {
+        final ok = await auth.reauthenticateWithGoogle();
+        if (!ok) return;
+      } else {
+        if (!context.mounted) return;
+        final password = await _showPasswordDialog(context, user.email ?? '');
+        if (password == null) return;
+        final cred = EmailAuthProvider.credential(email: user.email!, password: password);
+        await user.reauthenticateWithCredential(cred);
+      }
 
+      final uid = user.uid;
       await auth.deleteAccount();
+      try {
+        await ScanDatabase.instance.deleteScansForUser(uid);
+      } catch (_) {}
 
       if (!context.mounted) return;
 
@@ -52,13 +62,15 @@ class DeleteAccountTile extends StatelessWidget {
     } on FirebaseAuthException catch (e) {
       if (context.mounted) {
         String msg = 'Failed to delete account.';
-        if (e.code == 'wrong-password') {
+        if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
           msg = 'Incorrect password. Please try again.';
         } else if (e.code == 'too-many-requests') {
           msg = 'Too many attempts. Try again later.';
         }
         _showError(context, msg);
       }
+    } on AuthException catch (e) {
+      if (context.mounted) _showError(context, e.message);
     } catch (e) {
       if (context.mounted) {
         _showError(context, 'An unexpected error occurred.');

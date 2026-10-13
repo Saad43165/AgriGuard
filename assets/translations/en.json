@@ -141,14 +141,12 @@
   "next_steps": "Next Steps",
   "recommended_actions": "Follow recommended actions",
   "disease_causes": "Disease Causes",
-
   "analytics_title": "Analytics",
   "no_data_yet": "No data yet",
   "scan_plants_to_see": "Scan some plants to see analytics",
   "total_scans": "Total Scans",
   "healthy_pct": "Healthy",
   "diseased_this_month": "Diseased This Month",
-  "top_diseases": "Top Diseases",
   "plant_health_breakdown": "Plant Health Breakdown",
   "monthly_activity_6": "Monthly Activity (Last 6 Months)",
   "most_affected_plant": "Most Affected Plant",
@@ -158,7 +156,6 @@
   "preventive_tips_for": "Preventive Tips for",
   "location_based_advice": "Location-Based Advice",
   "set_location_profile": "Set your location in Profile for region-specific disease alerts and seasonal advice.",
-  "crop_calendar": "Crop Calendar",
   "season_spring": "Spring",
   "season_summer": "Summer",
   "season_autumn": "Autumn",
@@ -205,7 +202,6 @@
   "total_scans_profile": "Total Scans",
   "healthy_scans": "Healthy",
   "diseased_scans": "Diseased",
-
   "analytics_guidance": "Track your scan history, disease trends, and plant health over time to make better farming decisions.",
   "health_score": "Health Score",
   "disease_rate": "Disease Rate",
@@ -228,8 +224,7 @@
   "chatbot_guidance_desc": "Ask me anything about plant diseases, treatments, and farming advice. I support both English and Urdu.",
   "chatbot_guidance_examples": "Try asking: 'Tomato blight treatment' or 'Apple diseases'",
   "ask_about_diseases": "Ask about diseases...",
-  "chatbot_hint_ur": "پودوں کی بیماریوں کے بارے میں پوچھیں..."
-,
+  "chatbot_hint_ur": "پودوں کی بیماریوں کے بارے میں پوچھیں...",
   "selected": "Selected",
   "seconds": "seconds",
   "step_choose": "Choose Analysis Method",
@@ -275,5 +270,8 @@
   "pest_management": "Pest Management",
   "farming_tips": "Farming Tips",
   "retry": "Retry",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "faq_result_one": "result",
+  "faq_result_many": "results",
+  "clear_filters": "Clear filters"
 }

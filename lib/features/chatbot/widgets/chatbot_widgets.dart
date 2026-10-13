@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 
-import '../chatbot_constants.dart';
 import '../models/chatbot_models.dart';
 
 // ── Markdown cleaner ─────────────────────────────────────────────────────────
