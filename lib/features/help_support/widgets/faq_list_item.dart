@@ -1,4 +1,5 @@
 // lib/features/support/widgets/faq_list_item.dart
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
@@ -264,15 +265,15 @@ class _FaqListItemState extends State<FaqListItem>
   Color _getCategoryColor(FaqCategory category) {
     switch (category) {
       case FaqCategory.general:
-        return const Color(0xFF8B5CF6);
+        return AppColors.violet;
       case FaqCategory.scanning:
         return const Color(0xFF0EA5E9);
       case FaqCategory.database:
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       case FaqCategory.account:
-        return const Color(0xFF10B981);
+        return AppColors.emerald;
       case FaqCategory.technical:
-        return const Color(0xFFEF4444);
+        return AppColors.error;
       case FaqCategory.sharing:
         return const Color(0xFFEC4899);
     }

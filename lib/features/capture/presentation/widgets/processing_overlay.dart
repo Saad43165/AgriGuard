@@ -208,13 +208,13 @@ class _ProcessingOverlayState extends State<ProcessingOverlay>
                       _cyclingTexts[_currentTextIndex],
                       style: const TextStyle(
                         fontSize: 22, fontWeight: FontWeight.w800,
-                        color: Color(0xFF1B2B1E), letterSpacing: -0.5,
+                        color: AppColors.lightOnSurface, letterSpacing: -0.5,
                       ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   const Text('We are checking your plant, just wait a second 🌿',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF718096), height: 1.4)),
+                      style: TextStyle(fontSize: 13, color: AppColors.lightCaption, height: 1.4)),
                   const SizedBox(height: 18),
                   // Animated steps
                   ..._steps.asMap().entries.map((entry) {
@@ -253,8 +253,8 @@ class _ProcessingOverlayState extends State<ProcessingOverlay>
                             fontSize: 14,
                             fontWeight: isDone || isActive ? FontWeight.w600 : FontWeight.w400,
                             color: isDone || isActive
-                                ? const Color(0xFF1B2B1E)
-                                : const Color(0xFF9E9E9E),
+                                ? AppColors.lightOnSurface
+                                : AppColors.grey500,
                           )),
                         ],
                       ),
@@ -281,13 +281,13 @@ class _CornerBrackets extends StatelessWidget {
       child: Stack(
         children: [
           // Top-left
-          Positioned(top: 0, left: 0, child: _bracket(true, true)),
+          PositionedDirectional(top: 0, start: 0, child: _bracket(true, true)),
           // Top-right
-          Positioned(top: 0, right: 0, child: _bracket(true, false)),
+          PositionedDirectional(top: 0, end: 0, child: _bracket(true, false)),
           // Bottom-left
-          Positioned(bottom: 0, left: 0, child: _bracket(false, true)),
+          PositionedDirectional(bottom: 0, start: 0, child: _bracket(false, true)),
           // Bottom-right
-          Positioned(bottom: 0, right: 0, child: _bracket(false, false)),
+          PositionedDirectional(bottom: 0, end: 0, child: _bracket(false, false)),
         ],
       ),
     );
@@ -336,9 +336,9 @@ class _ScanLine extends StatelessWidget {
     return AnimatedBuilder(
       animation: animation,
       builder: (_, __) {
-        return Positioned(
+        return PositionedDirectional(
           top: MediaQuery.of(context).size.height * 0.55 * animation.value,
-          left: 32, right: 32,
+          start: 32, end: 32,
           child: Container(
             height: 3,
             decoration: BoxDecoration(

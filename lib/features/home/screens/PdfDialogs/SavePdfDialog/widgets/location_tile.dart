@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 
 class LocationTile extends StatelessWidget {
@@ -41,7 +42,7 @@ class LocationTile extends StatelessWidget {
                 : null,
             color: isSelected
                 ? null
-                : (isDark ? const Color(0xFF2A2A3E) : const Color(0xFFF5F5F5)),
+                : (isDark ? const Color(0xFF2A2A3E) : AppColors.lightBg),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? color : Colors.transparent,

@@ -267,13 +267,13 @@ class _CropInfoSheetState extends State<CropInfoSheet> {
           Expanded(child: _quickStatCard(
             isDark: isDark, icon: Icons.water_drop_rounded, label: t.get('water_needs'),
             value: info['waterNeeds'] as String? ?? '—',
-            color: const Color(0xFF3B82F6), borderColor: borderColor,
+            color: AppColors.blue, borderColor: borderColor,
           )),
           const SizedBox(width: 10),
           Expanded(child: _quickStatCard(
             isDark: isDark, icon: Icons.landscape_rounded, label: t.get('soil_type'),
             value: info['soilType'] as String? ?? '—',
-            color: const Color(0xFF8B5CF6), borderColor: borderColor,
+            color: AppColors.violet, borderColor: borderColor,
           )),
         ]),
 

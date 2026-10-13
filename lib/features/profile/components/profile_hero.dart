@@ -32,7 +32,7 @@ class ProfileHeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final surfaceBg = isDark ? AppColors.darkSurface : Colors.white;
@@ -52,11 +52,11 @@ class ProfileHeroSection extends StatelessWidget {
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: AlignmentDirectional.topStart,
+              end: AlignmentDirectional.bottomEnd,
               colors: isDark
-                  ? [const Color(0xFF1B4332), const Color(0xFF2D6A4F), const Color(0xFF40916C)]
-                  : [const Color(0xFF2D6A4F), const Color(0xFF40916C), const Color(0xFF52B788)],
+                  ? [const Color(0xFF1B4332), AppColors.primary, AppColors.secondary]
+                  : [AppColors.primary, AppColors.secondary, const Color(0xFF52B788)],
             ),
           ),
           child: Stack(
@@ -70,7 +70,7 @@ class ProfileHeroSection extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        t.isUrdu ? 'پروفائل' : 'Profile',
+                        t.get('ui_profile'),
                         style: const TextStyle(
                           color: Colors.white, fontSize: 20,
                           fontWeight: FontWeight.w800, letterSpacing: -0.3,
@@ -91,7 +91,7 @@ class ProfileHeroSection extends StatelessWidget {
                               const Icon(CupertinoIcons.pencil, size: 13, color: Colors.white),
                               const SizedBox(width: 5),
                               Text(
-                                t.isUrdu ? 'ترمیم' : 'Edit',
+                                t.get('ui_edit'),
                                 style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -139,8 +139,8 @@ class ProfileHeroSection extends StatelessWidget {
                           padding: const EdgeInsets.all(2),
                           child: ClipOval(child: buildAvatarImage()),
                         ),
-                        Positioned(
-                          bottom: 2, right: 2,
+                        PositionedDirectional(
+                          bottom: 2, end: 2,
                           child: Container(
                             width: 24, height: 24,
                             decoration: BoxDecoration(
@@ -192,7 +192,7 @@ class ProfileHeroSection extends StatelessWidget {
                     if (farmSize.isNotEmpty)
                       _InfoChip(
                         icon: CupertinoIcons.tree,
-                        label: '$farmSize ${t.isUrdu ? 'ایکڑ' : 'acres'}',
+                        label: '$farmSize ${t.get('ui_acres')}',
                         isDark: isDark,
                       ),
                   ],
@@ -212,21 +212,21 @@ class ProfileHeroSection extends StatelessWidget {
                   children: [
                     _StatCard(
                       value: '$totalScans',
-                      label: t.isUrdu ? 'کل اسکینز' : 'Total Scans',
+                      label: t.get('ui_total_scans'),
                       icon: CupertinoIcons.viewfinder,
                       color: AppColors.primary, isDark: isDark,
                     ),
                     _StatDivider(isDark: isDark),
                     _StatCard(
                       value: '$healthyScans',
-                      label: t.isUrdu ? 'صحت مند' : 'Healthy',
+                      label: t.get('ui_healthy'),
                       icon: CupertinoIcons.checkmark_seal_fill,
-                      color: const Color(0xFF10B981), isDark: isDark,
+                      color: AppColors.emerald, isDark: isDark,
                     ),
                     _StatDivider(isDark: isDark),
                     _StatCard(
                       value: '$diseasedScans',
-                      label: t.isUrdu ? 'بیمار' : 'Diseased',
+                      label: t.get('ui_diseased'),
                       icon: CupertinoIcons.exclamationmark_triangle_fill,
                       color: AppColors.error, isDark: isDark,
                     ),
@@ -332,20 +332,20 @@ class QuickLinksRow extends StatelessWidget {
     final links = [
       _QuickLink(
         icon: CupertinoIcons.clock_fill,
-        label: t.isUrdu ? 'تاریخ' : 'History',
+        label: t.get('ui_history'),
         color: const Color(0xFF6366F1),
         onTap: () => Navigator.pushNamed(context, AppRoutes.history),
       ),
       _QuickLink(
         icon: CupertinoIcons.question_circle_fill,
-        label: t.isUrdu ? 'مدد' : 'Help',
+        label: t.get('ui_help'),
         color: const Color(0xFF0EA5E9),
         onTap: () => Navigator.pushNamed(context, AppRoutes.help),
       ),
       _QuickLink(
         icon: CupertinoIcons.settings_solid,
-        label: t.isUrdu ? 'ترتیبات' : 'Settings',
-        color: const Color(0xFF8B5CF6),
+        label: t.get('ui_settings'),
+        color: AppColors.violet,
         onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
       ),
     ];
@@ -377,7 +377,7 @@ class QuickLinksRow extends StatelessWidget {
                   link.label,
                   style: TextStyle(
                     fontSize: 12, fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E),
+                    color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                   ),
                 ),
               ],

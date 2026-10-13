@@ -80,18 +80,18 @@ class _CropDetailSheetState extends State<CropDetailSheet>
     isDark ? const Color(0xFF0F1923) : const Color(0xFFFAFBFC);
     final cardBg = isDark ? const Color(0xFF1A2535) : Colors.white;
     final textColor =
-    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    isDark ? AppColors.slate100 : const Color(0xFF0F172A);
     final captionColor =
-    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    isDark ? AppColors.slate500 : AppColors.slate400;
     final borderColor = isDark
         ? const Color(0xFF1E3A5F).withValues(alpha: 0.6)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
     final inputBg =
     isDark ? const Color(0xFF111C28) : const Color(0xFFF0F4F8);
 
     final plantType = widget.crop['plantType'] as String?;
     final accentColor =
-    _isCustomSpecies ? const Color(0xFF3B82F6) : _plantColor(plantType);
+    _isCustomSpecies ? AppColors.blue : _plantColor(plantType);
     final isHealthy = _healthStatus == 'healthy';
     final scanCount = (widget.crop['scanCount'] as int?) ?? 0;
     final fieldSize = widget.crop['fieldSize'] as String? ?? '';
@@ -155,8 +155,8 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                     accentColor.withValues(alpha: 0.1),
                     accentColor.withValues(alpha: 0.03),
                   ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  begin: AlignmentDirectional.topStart,
+                  end: AlignmentDirectional.bottomEnd,
                 ),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
@@ -187,7 +187,7 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                       children: [
                         Text(
                           widget.crop['name'] as String? ??
-                              (t.isUrdu ? 'بے نام' : 'Unnamed'),
+                              (t.get('ui_unnamed')),
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
@@ -231,20 +231,20 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3B82F6)
+                              color: AppColors.blue
                                   .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0xFF3B82F6)
+                                color: AppColors.blue
                                     .withValues(alpha: 0.3),
                               ),
                             ),
                             child: Text(
-                              t.isUrdu ? 'اپنی مرضی کی فصل' : 'Custom Species',
+                              t.get('ui_custom_species'),
                               style: const TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF3B82F6),
+                                color: AppColors.blue,
                               ),
                             ),
                           ),
@@ -259,13 +259,13 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                         horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: isHealthy
-                          ? const Color(0xFF10B981).withValues(alpha: 0.1)
-                          : const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          ? AppColors.emerald.withValues(alpha: 0.1)
+                          : AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isHealthy
-                            ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                            : const Color(0xFFEF4444).withValues(alpha: 0.3),
+                            ? AppColors.emerald.withValues(alpha: 0.3)
+                            : AppColors.error.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -276,20 +276,20 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                               : Icons.sick_rounded,
                           size: 18,
                           color: isHealthy
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFFEF4444),
+                              ? AppColors.emerald
+                              : AppColors.error,
                         ),
                         const SizedBox(height: 3),
                         Text(
                           isHealthy
-                              ? (t.isUrdu ? 'صحت' : 'OK')
-                              : (t.isUrdu ? 'بیمار' : 'Sick'),
+                              ? (t.get('ui_ok'))
+                              : (t.get('ui_sick')),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             color: isHealthy
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFEF4444),
+                                ? AppColors.emerald
+                                : AppColors.error,
                           ),
                         ),
                       ],
@@ -313,9 +313,9 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                         Expanded(
                           child: _statCard(
                             icon: Icons.qr_code_scanner_rounded,
-                            label: t.isUrdu ? 'اسکین' : 'Scans',
+                            label: t.get('ui_scans'),
                             value: '$scanCount',
-                            color: const Color(0xFF8B5CF6),
+                            color: AppColors.violet,
                             cardBg: cardBg,
                             borderColor: borderColor,
                             textColor: textColor,
@@ -326,9 +326,9 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                         Expanded(
                           child: _statCard(
                             icon: Icons.straighten_rounded,
-                            label: t.isUrdu ? 'ایکڑ' : 'Acres',
+                            label: t.get('ui_acres_2'),
                             value: fieldSize.isEmpty ? '—' : fieldSize,
-                            color: const Color(0xFF3B82F6),
+                            color: AppColors.blue,
                             cardBg: cardBg,
                             borderColor: borderColor,
                             textColor: textColor,
@@ -340,9 +340,9 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                           Expanded(
                             child: _statCard(
                               icon: Icons.schedule_rounded,
-                              label: t.isUrdu ? 'آخری' : 'Last',
+                              label: t.get('ui_last'),
                               value: lastScan,
-                              color: const Color(0xFFF59E0B),
+                              color: AppColors.warning,
                               cardBg: cardBg,
                               borderColor: borderColor,
                               textColor: textColor,
@@ -377,7 +377,7 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    t.isUrdu ? 'نوٹس' : 'Notes',
+                                    t.get('ui_notes'),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -405,7 +405,7 @@ class _CropDetailSheetState extends State<CropDetailSheet>
 
                     // ── Health toggle ─────────────────────────────────
                     Text(
-                      t.isUrdu ? 'صحت کی حالت' : 'Health Status',
+                      t.get('ui_health_status'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -417,9 +417,9 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                       children: [
                         Expanded(
                           child: _healthToggle(
-                            label: t.isUrdu ? 'صحتمند ✓' : 'Healthy',
+                            label: t.get('ui_healthy_3'),
                             icon: Icons.favorite_rounded,
-                            color: const Color(0xFF10B981),
+                            color: AppColors.emerald,
                             selected: isHealthy,
                             onTap: () {
                               setState(() => _healthStatus = 'healthy');
@@ -434,9 +434,9 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                         const SizedBox(width: 10),
                         Expanded(
                           child: _healthToggle(
-                            label: t.isUrdu ? 'بیمار ⚠' : 'Diseased',
+                            label: t.get('ui_diseased_2'),
                             icon: Icons.sick_rounded,
-                            color: const Color(0xFFEF4444),
+                            color: AppColors.error,
                             selected: !isHealthy,
                             onTap: () {
                               setState(() => _healthStatus = 'diseased');
@@ -476,16 +476,16 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              const Color(0xFF10B981).withValues(alpha: 0.9),
-                              const Color(0xFF059669),
+                              AppColors.emerald.withValues(alpha: 0.9),
+                              AppColors.emeraldDark,
                             ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                            begin: AlignmentDirectional.topStart,
+                            end: AlignmentDirectional.bottomEnd,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF10B981)
+                              color: AppColors.emerald
                                   .withValues(alpha: 0.3),
                               blurRadius: 14,
                               offset: const Offset(0, 5),
@@ -510,9 +510,7 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    t.isUrdu
-                                        ? 'AI سے فصل کی مکمل رہنمائی'
-                                        : 'Get AI Crop Intelligence',
+                                    t.get('ui_get_ai_crop_intelligence'),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
@@ -520,9 +518,7 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                                     ),
                                   ),
                                   Text(
-                                    t.isUrdu
-                                        ? 'بیماریاں، ٹپس اور مکمل گائیڈ'
-                                        : 'Diseases, tips & full crop guide',
+                                    t.get('ui_diseases_tips_full_crop_guide'),
                                     style: TextStyle(
                                       color: Colors.white
                                           .withValues(alpha: 0.75),
@@ -553,22 +549,22 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.06),
+                          color: AppColors.error.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                              color: const Color(0xFFEF4444)
+                              color: AppColors.error
                                   .withValues(alpha: 0.25)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(Icons.delete_outline_rounded,
-                                color: Color(0xFFEF4444), size: 18),
+                                color: AppColors.error, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              t.isUrdu ? 'فصل حذف کریں' : 'Delete Crop',
+                              t.get('ui_delete_crop'),
                               style: const TextStyle(
-                                color: Color(0xFFEF4444),
+                                color: AppColors.error,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -614,23 +610,21 @@ class _CropDetailSheetState extends State<CropDetailSheet>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.delete_rounded,
-                  color: Color(0xFFEF4444), size: 28),
+                  color: AppColors.error, size: 28),
             ),
             const SizedBox(height: 16),
             Text(
-              t.isUrdu ? 'فصل حذف کریں؟' : 'Delete this crop?',
+              t.get('ui_delete_this_crop'),
               style: TextStyle(
                   fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
             ),
             const SizedBox(height: 8),
             Text(
-              t.isUrdu
-                  ? 'یہ عمل واپس نہیں ہوگا'
-                  : 'This action cannot be undone',
+              t.get('ui_this_action_cannot_be_undone'),
               style: TextStyle(fontSize: 13, color: captionColor),
               textAlign: TextAlign.center,
             ),
@@ -648,7 +642,7 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                       ),
                       child: Center(
                         child: Text(
-                          t.isUrdu ? 'منسوخ' : 'Cancel',
+                          t.get('ui_cancel'),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -669,12 +663,12 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                     child: Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.error,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Center(
                         child: Text(
-                          t.isUrdu ? 'حذف کریں' : 'Delete',
+                          t.get('ui_delete'),
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -781,8 +775,8 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                 color: selected
                     ? color
                     : (isDark
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF94A3B8))),
+                    ? AppColors.slate500
+                    : AppColors.slate400)),
             const SizedBox(width: 7),
             Text(
               label,
@@ -792,8 +786,8 @@ class _CropDetailSheetState extends State<CropDetailSheet>
                 color: selected
                     ? color
                     : (isDark
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF94A3B8)),
+                    ? AppColors.slate500
+                    : AppColors.slate400),
               ),
             ),
           ],

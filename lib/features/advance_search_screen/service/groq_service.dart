@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/services/api_gateway.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -6,19 +7,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class GroqService {
-  static const String _endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+  bool hasApiKey() => ApiGateway.groqAvailable;
 
-  bool hasApiKey() {
-    final key = dotenv.env['GROQ_API_KEY']?.trim();
-    return key != null && key.isNotEmpty;
-  }
-
-  String _requireApiKey() {
-    final key = dotenv.env['GROQ_API_KEY']?.trim();
-    if (key == null || key.isEmpty) {
+  /// Throws a friendly error if Groq cannot be used.
+  void _requireApiKey() {
+    if (!ApiGateway.groqAvailable) {
       throw Exception('Missing GROQ_API_KEY. Add it to your .env file.');
     }
-    return key;
   }
 
   String _model() {
@@ -34,7 +29,7 @@ class GroqService {
     bool inUrdu = false,
   }) async {
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
 
       final system = '''
 You are an expert agronomist assistant for a farmer-facing mobile app called AgriGuard.
@@ -83,10 +78,10 @@ Rules:
 
       final resp = await http
           .post(
-        Uri.parse(_endpoint),
+        Uri.parse(ApiGateway.groqUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          'Authorization': await ApiGateway.groqAuth(),
         },
         body: jsonEncode(body),
       )
@@ -140,7 +135,7 @@ Rules:
     int maxChars = 7000,
   }) async {
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
       final trimmed = text.length > maxChars ? text.substring(0, maxChars) : text;
 
       final system = '''
@@ -166,10 +161,10 @@ Rules:
 
       final resp = await http
           .post(
-        Uri.parse(_endpoint),
+        Uri.parse(ApiGateway.groqUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          'Authorization': await ApiGateway.groqAuth(),
         },
         body: jsonEncode(body),
       )
@@ -224,7 +219,7 @@ Rules:
     required Map<String, dynamic> data,
   }) async {
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
 
       final system = '''
 You translate agriculture scan results into Urdu for a farmer-facing app.
@@ -274,10 +269,10 @@ Input JSON schema example:
 
       final resp = await http
           .post(
-        Uri.parse(_endpoint),
+        Uri.parse(ApiGateway.groqUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          'Authorization': await ApiGateway.groqAuth(),
         },
         body: jsonEncode(body),
       )
@@ -328,13 +323,13 @@ Input JSON schema example:
 
   Future<bool> testGroqApi() async {
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
       final resp = await http
           .post(
-        Uri.parse(_endpoint),
+        Uri.parse(ApiGateway.groqUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          'Authorization': await ApiGateway.groqAuth(),
         },
         body: jsonEncode({
           'model': 'llama-3.1-8b-instant',
@@ -367,7 +362,7 @@ Input JSON schema example:
     if (!hasApiKey()) return null;
 
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
       final lang = inUrdu ? 'اردو' : 'English';
 
       final system = '''
@@ -398,10 +393,10 @@ Return ONLY valid JSON (no markdown):
 
       final resp = await http
           .post(
-            Uri.parse(_endpoint),
+            Uri.parse(ApiGateway.groqUrl),
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer $apiKey',
+              'Authorization': await ApiGateway.groqAuth(),
             },
             body: jsonEncode(body),
           )
@@ -429,7 +424,7 @@ Return ONLY valid JSON (no markdown):
     if (!hasApiKey()) return null;
 
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
       final lang = inUrdu ? 'اردو' : 'English';
 
       final system = '''
@@ -502,10 +497,10 @@ Rules:
 
       final resp = await http
           .post(
-            Uri.parse(_endpoint),
+            Uri.parse(ApiGateway.groqUrl),
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer $apiKey',
+              'Authorization': await ApiGateway.groqAuth(),
             },
             body: jsonEncode(body),
           )

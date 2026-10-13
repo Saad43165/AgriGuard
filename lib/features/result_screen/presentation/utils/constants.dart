@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 
 class ResultScreenConstants {
@@ -18,10 +19,10 @@ class ResultScreenConstants {
 
   // Colors
   static const Color primaryPurple = Color(0xFF6366F1);
-  static const Color secondaryPurple = Color(0xFF8B5CF6);
-  static const Color successGreen = Color(0xFF10B981);
-  static const Color errorRed = Color(0xFFEF4444);
-  static const Color warningOrange = Color(0xFFF59E0B);
+  static const Color secondaryPurple = AppColors.violet;
+  static const Color successGreen = AppColors.emerald;
+  static const Color errorRed = AppColors.error;
+  static const Color warningOrange = AppColors.warning;
 
   // Gradients
   static const List<Color> darkGradient = [

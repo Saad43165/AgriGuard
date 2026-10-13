@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     const bg = Colors.white;
-    const titleColor = Color(0xFF1B2B1E);
+    const titleColor = AppColors.lightOnSurface;
     const subtitleColor = Color(0xFF6B7280);
 
     return Scaffold(
@@ -68,9 +68,9 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         children: [
           // subtle top glow to keep premium feel on white background
-          Positioned(
+          PositionedDirectional(
             top: -120,
-            left: -80,
+            start: -80,
             child: Container(
               width: 280,
               height: 280,
@@ -80,9 +80,9 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-          Positioned(
+          PositionedDirectional(
             top: -100,
-            right: -90,
+            end: -90,
             child: Container(
               width: 240,
               height: 240,
@@ -150,10 +150,10 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          Positioned(
+          PositionedDirectional(
             bottom: 34,
-            left: 0,
-            right: 0,
+            start: 0,
+            end: 0,
             child: FadeTransition(
               opacity: _fade,
               child: Center(

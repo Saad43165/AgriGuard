@@ -1,4 +1,5 @@
 // lib/features/ResultScreen/presentation/service/plant_id_service.dart
+import 'package:agriguard_fyp/core/services/api_gateway.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -6,29 +7,25 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class PlantIdService {
-  static const String _plantIdBaseUrl = 'https://api.plant.id/v3';
+  static String get _plantIdBaseUrl => ApiGateway.plantIdBaseUrl;
 
-  bool hasApiKey() {
-    final key = dotenv.env['PLANTID_API_KEY']?.trim();
-    return key != null && key.isNotEmpty;
-  }
+  bool hasApiKey() => ApiGateway.plantIdAvailable;
 
-  String _requireApiKey() {
-    final key = dotenv.env['PLANTID_API_KEY']?.trim();
-    if (key == null || key.isEmpty) {
+  /// Throws a friendly error if Plant.id cannot be used.
+  void _requireApiKey() {
+    if (!ApiGateway.plantIdAvailable) {
       throw Exception('Missing PLANTID_API_KEY. Add it to your .env file.');
     }
-    return key;
   }
 
   /// Test if Plant.id API is working
   Future<bool> testPlantIdApi() async {
     try {
       debugPrint('🌿 Testing Plant.id v3 API connectivity...');
-      final apiKey = _requireApiKey();
+      _requireApiKey();
       final response = await http.get(
         Uri.parse('$_plantIdBaseUrl/usage_info'),
-        headers: {'Api-Key': apiKey},
+        headers: await ApiGateway.plantIdHeaders(),
       );
       debugPrint('🌿 Plant.id v3 Connectivity Test: ${response.statusCode}');
       if (response.statusCode == 200) {
@@ -85,7 +82,7 @@ class PlantIdService {
 
   /// Send Plant.id request WITH HEALTH ASSESSMENT
   Future<Map<String, dynamic>> _sendPlantIdRequestWithHealth(String base64Image) async {
-    final apiKey = _requireApiKey();
+    _requireApiKey();
     final requestBody = {
       'images': [base64Image],
       'health': 'all',
@@ -98,7 +95,7 @@ class PlantIdService {
       Uri.parse('$_plantIdBaseUrl/identification'),
       headers: {
         'Content-Type': 'application/json',
-        'Api-Key': apiKey,
+        ...await ApiGateway.plantIdHeaders(),
       },
       body: jsonEncode(requestBody),
     );
@@ -144,7 +141,7 @@ class PlantIdService {
   Future<Map<String, dynamic>> _pollForResult(String accessToken, {required bool healthRequested}) async {
     const maxAttempts = 20; // Increased from 15
     int delaySeconds = 1; // Start with shorter delay
-    final apiKey = _requireApiKey();
+    _requireApiKey();
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       debugPrint('🔄 Polling attempt $attempt/$maxAttempts (wait: ${delaySeconds}s)...');
@@ -159,7 +156,7 @@ class PlantIdService {
 
         final response = await http.get(
           uri,
-          headers: {'Api-Key': apiKey},
+          headers: await ApiGateway.plantIdHeaders(),
         ).timeout(
           const Duration(seconds: 10),
           onTimeout: () {
@@ -267,7 +264,7 @@ class PlantIdService {
 
   /// Send minimal Plant.id request (fallback)
   Future<Map<String, dynamic>> _sendMinimalPlantIdRequest(String base64Image) async {
-    final apiKey = _requireApiKey();
+    _requireApiKey();
     final minimalRequestBody = {
       'images': [base64Image],
     };
@@ -278,7 +275,7 @@ class PlantIdService {
       Uri.parse('$_plantIdBaseUrl/identification'),
       headers: {
         'Content-Type': 'application/json',
-        'Api-Key': apiKey,
+        ...await ApiGateway.plantIdHeaders(),
       },
       body: jsonEncode(minimalRequestBody),
     );
@@ -742,10 +739,10 @@ class PlantIdService {
   /// Get API status and credit info
   Future<Map<String, dynamic>> getApiStatus() async {
     try {
-      final apiKey = _requireApiKey();
+      _requireApiKey();
       final response = await http.get(
         Uri.parse('$_plantIdBaseUrl/usage_info'),
-        headers: {'Api-Key': apiKey},
+        headers: await ApiGateway.plantIdHeaders(),
       );
 
       if (response.statusCode == 200) {
@@ -755,7 +752,6 @@ class PlantIdService {
           'status': 'API is working',
           'version': 'v3',
           'endpoint': _plantIdBaseUrl,
-          'key': '${apiKey.substring(0, 8)}...',
           'details': data,
         };
       } else {

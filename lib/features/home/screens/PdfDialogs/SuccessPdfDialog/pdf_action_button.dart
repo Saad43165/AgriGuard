@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 
 class PdfActionButton extends StatelessWidget {
@@ -27,7 +28,7 @@ class PdfActionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
             color: isPrimary
-                ? const Color(0xFF059669)
+                ? AppColors.emeraldDark
                 : (isDark
                 ? Colors.white.withValues(alpha: 0.05)
                 : Colors.black.withValues(alpha: 0.03)),

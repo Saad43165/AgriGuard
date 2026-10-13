@@ -116,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        leading: IconButton(
+        leading: IconButton(tooltip: 'Back', 
           icon: Icon(Icons.arrow_back_rounded, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
@@ -251,9 +251,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       : _buildDefaultAvatar(textColor),
                 ),
               ),
-              Positioned(
+              PositionedDirectional(
                 bottom: 0,
-                right: 0,
+                end: 0,
                 child: Container(
                   width: 32,
                   height: 32,
@@ -262,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     shape: BoxShape.circle,
                     border: Border.all(color: cardBg, width: 2),
                   ),
-                  child: IconButton(
+                  child: IconButton(tooltip: 'Take photo', 
                     padding: EdgeInsets.zero,
                     icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
                     onPressed: () {

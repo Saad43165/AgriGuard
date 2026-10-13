@@ -56,15 +56,15 @@ class CaptureRetakeDialog extends StatelessWidget {
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              t.isUrdu ? '📸 بہتر نتائج کے لیے:' : '📸 Tips for better results:',
+              t.get('ui_tips_for_better_results'),
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            _tip(t.isUrdu ? 'پتے کو فریم میں بھریں' : 'Fill frame with a single leaf'),
-            _tip(t.isUrdu ? 'اچھی قدرتی روشنی استعمال کریں' : 'Use good natural lighting'),
-            _tip(t.isUrdu ? 'تصویر واضح اور فوکس میں ہو' : 'Keep image sharp and in focus'),
-            _tip(t.isUrdu ? 'پتے پر سائے سے بچیں' : 'Avoid shadows on the leaf'),
-            _tip(t.isUrdu ? 'ایڈوانسڈ AI آزمائیں' : 'Try Advanced AI for better accuracy'),
+            _tip(t.get('ui_fill_frame_with_a_single_leaf')),
+            _tip(t.get('ui_use_good_natural_lighting_2')),
+            _tip(t.get('ui_keep_image_sharp_and_in_focus')),
+            _tip(t.get('ui_avoid_shadows_on_the_leaf')),
+            _tip(t.get('ui_try_advanced_ai_for_better_accuracy')),
           ]),
         ),
       ]),
@@ -72,14 +72,14 @@ class CaptureRetakeDialog extends StatelessWidget {
         TextButton(
           onPressed: onRetry,
           child: Text(
-            t.isUrdu ? 'دوبارہ کوشش کریں' : 'Try Again',
+            t.get('ui_try_again'),
             style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
           ),
         ),
         TextButton(
           onPressed: onAdvanced,
           child: Text(
-            t.isUrdu ? 'ایڈوانسڈ AI' : 'Advanced AI',
+            t.get('ui_advanced_ai'),
             style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w700),
           ),
         ),
@@ -176,7 +176,7 @@ class CaptureTop3Dialog extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isFirst
                       ? AppColors.primary.withValues(alpha: 0.08)
-                      : (isDark ? AppColors.darkBg : const Color(0xFFF5F5F5)),
+                      : (isDark ? AppColors.darkBg : AppColors.lightBg),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isFirst ? AppColors.primary : (isDark ? AppColors.darkBorder : AppColors.lightBorder),

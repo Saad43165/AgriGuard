@@ -58,7 +58,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       centerTitle: false,
       leading: showBackButton
-          ? IconButton(
+          ? IconButton(tooltip: 'Back', 
               icon: Icon(Icons.arrow_back_rounded, color: textColor, size: 22),
               onPressed: () => _handleBack(context),
             )
@@ -75,7 +75,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         if (showLanguageToggle)
           Padding(
-            padding: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsetsDirectional.only(end: 4),
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -95,7 +95,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     Icon(Icons.language_rounded, size: 14, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(
-                      translation.isUrdu ? 'اردو' : 'EN',
+                      translation.get('ui_en'),
                       style: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w800,
                         color: AppColors.primary,

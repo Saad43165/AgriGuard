@@ -179,7 +179,7 @@ class _MessageBubbleState extends State<MessageBubble>
                     // Timestamp + status
                     if (widget.showTimestamp)
                       Padding(
-                        padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
+                        padding: const EdgeInsetsDirectional.only(top: 3, start: 4, end: 4),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -236,8 +236,8 @@ class _BotAvatar extends StatelessWidget {
             AppColors.primary.withValues(alpha: 0.85),
             AppColors.primary,
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
         ),
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
@@ -280,9 +280,9 @@ class _ImagePreview extends StatelessWidget {
               child: const Icon(Icons.broken_image, color: Colors.grey),
             ),
           ),
-          Positioned(
+          PositionedDirectional(
             bottom: 6,
-            right: 6,
+            end: 6,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
@@ -820,8 +820,8 @@ class WelcomeCard extends StatelessWidget {
             AppColors.primary.withValues(alpha: isDark ? 0.18 : 0.07),
             AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.03),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
@@ -842,8 +842,8 @@ class WelcomeCard extends StatelessWidget {
                       AppColors.primary.withValues(alpha: 0.9),
                       AppColors.primary,
                     ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: AlignmentDirectional.topStart,
+                    end: AlignmentDirectional.bottomEnd,
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [

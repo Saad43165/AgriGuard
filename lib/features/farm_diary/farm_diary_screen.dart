@@ -138,7 +138,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
               const Icon(Icons.check_circle_rounded,
                   color: Colors.white, size: 18),
               const SizedBox(width: 10),
-              Text(t.isUrdu ? 'فصل کامیابی سے شامل ہوئی' : 'Crop added successfully'),
+              Text(t.get('ui_crop_added_successfully')),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -224,10 +224,10 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
     final sheetBg =
     isDark ? const Color(0xFF0F1923) : const Color(0xFFFAFBFC);
     final textColor =
-    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    isDark ? AppColors.slate100 : const Color(0xFF0F172A);
     final borderColor = isDark
         ? const Color(0xFF1E3A5F).withValues(alpha: 0.6)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
 
     showModalBottomSheet(
       context: context,
@@ -251,9 +251,9 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
             ),
             const SizedBox(height: 20),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: Text(
-                t.isUrdu ? 'ترتیب دیں' : 'Sort Crops By',
+                t.get('ui_sort_crops_by'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -263,15 +263,15 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
             ),
             const SizedBox(height: 16),
             _sortTile(ctx, Icons.schedule_rounded,
-                t.isUrdu ? 'تاریخ (نئی پہلے)' : 'Date Created', 'date',
+                t.get('ui_date_created'), 'date',
                 textColor, borderColor, isDark),
             const SizedBox(height: 8),
             _sortTile(ctx, Icons.sort_by_alpha_rounded,
-                t.isUrdu ? 'نام (A-Z)' : 'Name (A–Z)', 'name',
+                t.get('ui_name_a_z'), 'name',
                 textColor, borderColor, isDark),
             const SizedBox(height: 8),
             _sortTile(ctx, Icons.straighten_rounded,
-                t.isUrdu ? 'رقبہ (بڑا پہلے)' : 'Field Size (Largest)', 'size',
+                t.get('ui_field_size_largest'), 'size',
                 textColor, borderColor, isDark),
           ],
         ),
@@ -360,7 +360,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                 height: 1,
                 color: isDark
                     ? const Color(0xFF1E3A5F).withValues(alpha: 0.4)
-                    : const Color(0xFFE2E8F0),
+                    : AppColors.slate200,
               ),
             ),
             actions: [
@@ -368,19 +368,19 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                 onPressed: _showSortMenu,
                 icon: Icon(Icons.tune_rounded,
                     color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
+                        ? AppColors.slate400
+                        : AppColors.slate500,
                     size: 20),
-                tooltip: t.isUrdu ? 'ترتیب' : 'Sort',
+                tooltip: t.get('ui_sort'),
               ),
               IconButton(
                 onPressed: _loadCrops,
                 icon: Icon(Icons.refresh_rounded,
                     color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF64748B),
+                        ? AppColors.slate400
+                        : AppColors.slate500,
                     size: 20),
-                tooltip: t.isUrdu ? 'تازہ کریں' : 'Refresh',
+                tooltip: t.get('ui_refresh'),
               ),
               const SizedBox(width: 8),
             ],
@@ -437,12 +437,12 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
           ? null
           : FloatingActionButton.extended(
         onPressed: _showAddCropSheet,
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.emerald,
         foregroundColor: Colors.white,
         elevation: 4,
         icon: const Icon(Icons.add_rounded, size: 22),
         label: Text(
-          t.isUrdu ? 'فصل شامل کریں' : 'Add Crop',
+          t.get('ui_add_crop'),
           style: const TextStyle(
               fontWeight: FontWeight.w700, fontSize: 14),
         ),
@@ -458,7 +458,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
       backgroundColor: bg,
       body: const Center(
         child: CircularProgressIndicator(
-          color: Color(0xFF10B981),
+          color: AppColors.emerald,
           strokeWidth: 2.5,
           strokeCap: StrokeCap.round,
         ),
@@ -468,13 +468,13 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
 
   Widget _buildHeroHeader(bool isDark, TranslationService t) {
     final textColor =
-    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    isDark ? AppColors.slate100 : const Color(0xFF0F172A);
     final captionColor =
-    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    isDark ? AppColors.slate500 : AppColors.slate400;
     final cardBg = isDark ? const Color(0xFF1A2535) : Colors.white;
     final borderColor = isDark
         ? const Color(0xFF1E3A5F).withValues(alpha: 0.6)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
 
     return AnimatedBuilder(
       animation: _headerAnim,
@@ -506,25 +506,25 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          color: AppColors.emerald.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color:
-                            const Color(0xFF10B981).withValues(alpha: 0.3),
+                            AppColors.emerald.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.circle,
-                                size: 6, color: Color(0xFF10B981)),
+                                size: 6, color: AppColors.emerald),
                             const SizedBox(width: 5),
                             Text(
-                              t.isUrdu ? 'لائیو ٹریکنگ' : 'Live Tracking',
+                              t.get('ui_live_tracking'),
                               style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF10B981),
+                                color: AppColors.emerald,
                               ),
                             ),
                           ],
@@ -534,7 +534,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    t.isUrdu ? 'کھیت ڈائری' : 'Farm Diary',
+                    t.get('ui_farm_diary_2'),
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -561,18 +561,18 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                 children: [
                   _miniStatCard(
                     '$_healthyCrops',
-                    t.isUrdu ? 'صحتمند' : 'Healthy',
+                    t.get('ui_healthy_2'),
                     Icons.check_circle_outline_rounded,
-                    const Color(0xFF10B981),
+                    AppColors.emerald,
                     cardBg,
                     borderColor,
                   ),
                   const SizedBox(height: 8),
                   _miniStatCard(
                     '$_diseasedCrops',
-                    t.isUrdu ? 'بیمار' : 'Diseased',
+                    t.get('ui_diseased'),
                     Icons.warning_amber_rounded,
-                    const Color(0xFFEF4444),
+                    AppColors.error,
                     cardBg,
                     borderColor,
                   ),
@@ -623,20 +623,20 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
     final cardBg = isDark ? const Color(0xFF1A2535) : Colors.white;
     final borderColor = isDark
         ? const Color(0xFF1E3A5F).withValues(alpha: 0.6)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
     final textColor =
-    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    isDark ? AppColors.slate100 : const Color(0xFF0F172A);
     final captionColor =
-    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    isDark ? AppColors.slate500 : AppColors.slate400;
 
     final filters = [
-      ('all', t.isUrdu ? 'سب' : 'All', Icons.grid_view_rounded,
-      const Color(0xFF3B82F6), '${_crops.length}'),
-      ('healthy', t.isUrdu ? 'صحتمند' : 'Healthy',
-      Icons.check_circle_outline_rounded, const Color(0xFF10B981),
+      ('all', t.get('ui_all'), Icons.grid_view_rounded,
+      AppColors.blue, '${_crops.length}'),
+      ('healthy', t.get('ui_healthy_2'),
+      Icons.check_circle_outline_rounded, AppColors.emerald,
       '$_healthyCrops'),
-      ('diseased', t.isUrdu ? 'بیمار' : 'Diseased',
-      Icons.warning_amber_rounded, const Color(0xFFEF4444),
+      ('diseased', t.get('ui_diseased'),
+      Icons.warning_amber_rounded, AppColors.error,
       '$_diseasedCrops'),
     ];
 
@@ -722,12 +722,12 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
     final inputBg =
     isDark ? const Color(0xFF111C28) : const Color(0xFFF0F4F8);
     final textColor =
-    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    isDark ? AppColors.slate100 : const Color(0xFF0F172A);
     final captionColor =
-    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    isDark ? AppColors.slate500 : AppColors.slate400;
     final borderColor = isDark
         ? const Color(0xFF1E3A5F).withValues(alpha: 0.6)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
 
     return Container(
       decoration: BoxDecoration(
@@ -747,14 +747,12 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
         style: TextStyle(color: textColor, fontSize: 14),
         onChanged: (v) => setState(() => _searchQuery = v),
         decoration: InputDecoration(
-          hintText: t.isUrdu
-              ? 'فصل یا پودے کی قسم تلاش کریں...'
-              : 'Search crops or species...',
+          hintText: t.get('ui_search_crops_or_species'),
           hintStyle: TextStyle(color: captionColor, fontSize: 13.5),
           prefixIcon: Icon(Icons.search_rounded,
-              color: const Color(0xFF10B981).withValues(alpha: 0.8), size: 20),
+              color: AppColors.emerald.withValues(alpha: 0.8), size: 20),
           suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
+              ? IconButton(tooltip: 'Clear', 
             icon:
             Icon(Icons.clear_rounded, color: captionColor, size: 18),
             onPressed: () {
@@ -773,13 +771,13 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
 
   Widget _buildEmptyState(bool isDark, TranslationService t) {
     final textColor =
-    isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    isDark ? AppColors.slate100 : const Color(0xFF0F172A);
     final captionColor =
-    isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    isDark ? AppColors.slate500 : AppColors.slate400;
     final cardBg = isDark ? const Color(0xFF1A2535) : Colors.white;
     final borderColor = isDark
         ? const Color(0xFF1E3A5F).withValues(alpha: 0.6)
-        : const Color(0xFFE2E8F0);
+        : AppColors.slate200;
 
     return Center(
       child: Padding(
@@ -793,8 +791,8 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF10B981).withValues(alpha: 0.2),
-                    const Color(0xFF10B981).withValues(alpha: 0.05),
+                    AppColors.emerald.withValues(alpha: 0.2),
+                    AppColors.emerald.withValues(alpha: 0.05),
                   ],
                 ),
                 shape: BoxShape.circle,
@@ -805,7 +803,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              t.isUrdu ? 'ابھی کوئی فصل نہیں' : 'No Crops Yet',
+              t.get('ui_no_crops_yet'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
@@ -815,9 +813,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              t.isUrdu
-                  ? 'اپنی پہلی فصل شامل کریں اور ٹریک کریں'
-                  : 'Add your first crop field to start tracking',
+              t.get('ui_add_your_first_crop_field_to_start_tra'),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: captionColor, height: 1.5),
             ),
@@ -836,11 +832,9 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                   _emptyStep(
                     '1',
                     Icons.add_circle_rounded,
-                    t.isUrdu ? '"فصل شامل کریں" دبائیں' : 'Tap "Add Crop" button',
-                    t.isUrdu
-                        ? 'کوئی بھی پودا یا فصل درج کریں'
-                        : 'Register any plant or crop species',
-                    const Color(0xFF10B981),
+                    t.get('ui_tap_add_crop_button'),
+                    t.get('ui_register_any_plant_or_crop_species'),
+                    AppColors.emerald,
                     textColor,
                     captionColor,
                   ),
@@ -848,11 +842,9 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                   _emptyStep(
                     '2',
                     Icons.local_florist_rounded,
-                    t.isUrdu ? 'فصل کا انتخاب کریں' : 'Choose your species',
-                    t.isUrdu
-                        ? 'موجودہ فہرست سے یا اپنا نام درج کریں'
-                        : 'Pick from the list or enter a custom species',
-                    const Color(0xFF3B82F6),
+                    t.get('ui_choose_your_species'),
+                    t.get('ui_pick_from_the_list_or_enter_a_custom_s'),
+                    AppColors.blue,
                     textColor,
                     captionColor,
                   ),
@@ -860,11 +852,9 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                   _emptyStep(
                     '3',
                     Icons.monitor_heart_rounded,
-                    t.isUrdu ? 'AI سے معلومات حاصل کریں' : 'Get AI-powered insights',
-                    t.isUrdu
-                        ? 'بیماریاں، ٹپس اور فصل کی مکمل رہنمائی'
-                        : 'Disease guides, tips & crop intelligence',
-                    const Color(0xFF8B5CF6),
+                    t.get('ui_get_ai_powered_insights'),
+                    t.get('ui_disease_guides_tips_crop_intelligence'),
+                    AppColors.violet,
                     textColor,
                     captionColor,
                   ),
@@ -880,12 +870,12 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                     horizontal: 28, vertical: 16),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+                    colors: [AppColors.emerald, AppColors.emeraldDark],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                      color: AppColors.emerald.withValues(alpha: 0.35),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -898,7 +888,7 @@ class _FarmDiaryScreenState extends State<FarmDiaryScreen>
                         color: Colors.white, size: 20),
                     const SizedBox(width: 10),
                     Text(
-                      t.isUrdu ? 'پہلی فصل شامل کریں' : 'Add Your First Crop',
+                      t.get('ui_add_your_first_crop'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,

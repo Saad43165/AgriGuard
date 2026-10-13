@@ -236,11 +236,6 @@ class ScanDatabase {
 
     final scanMap = scanWithDefaults.toSqliteMap();
 
-    print('📊 Inserting scan with fields:');
-    scanMap.forEach((key, value) {
-      print('  $key: ${value.toString().length > 50 ? '...' : value}');
-    });
-
     try {
       await db.insert(
         'scans',
@@ -414,6 +409,26 @@ class ScanDatabase {
   Future<void> clearAllScans() async {
     final db = await database;
     await db.delete('scans');
+  }
+
+  /// Ids of rows that still hold the photo as base64 text (pre-file storage).
+  Future<List<String>> getIdsWithInlineImage(String userId) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      "SELECT id FROM scans WHERE userId = ? AND imageBase64 IS NOT NULL AND imageBase64 != ''",
+      [userId],
+    );
+    return rows.map((r) => r['id'].toString()).toList();
+  }
+
+  Future<void> setImageFile(String id, String path) async {
+    final db = await database;
+    await db.update(
+      'scans',
+      {'imagePath': path, 'imageBase64': null},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<int> deleteScansForUser(String userId) async {

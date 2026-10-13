@@ -56,7 +56,7 @@ class AnalyticsSummaryCards extends StatelessWidget {
         final item = entry.value;
         return Expanded(
           child: Container(
-            margin: EdgeInsets.only(right: i < items.length - 1 ? 10 : 0),
+            margin: EdgeInsetsDirectional.only(end: i < items.length - 1 ? 10 : 0),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: card,

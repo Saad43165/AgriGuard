@@ -180,7 +180,7 @@ class AnalyticsHealthStreak extends StatelessWidget {
                       ),
                     ),
                     const Padding(
-                      padding: EdgeInsets.only(bottom: 2, left: 4),
+                      padding: EdgeInsetsDirectional.only(bottom: 2, start: 4),
                       child: Text('🔥', style: TextStyle(fontSize: 14)),
                     ),
                   ],

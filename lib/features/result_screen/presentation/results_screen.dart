@@ -366,6 +366,8 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
     final t = Provider.of<TranslationService>(context);
     final confidence = DataParsers.parseConfidence(widget.scanData['confidence']);
     final isUnknown = widget.scanData['isUnknown'] as bool? ?? false;
+    // Below this the model is guessing; showing treatments would be unsafe.
+    final isLowConfidence = !isUnknown && confidence < 60.0;
 
     // ── Ambient color based on health status ──────────────────────────────
     Color sheetBg;
@@ -379,7 +381,7 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
       sheetBg = const Color(0xFFFFF8F8); // subtle red tint
     }
 
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return PopScope(
@@ -410,8 +412,8 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                           imageBase64: widget.scanData['imageBase64'] as String?,
                         ),
                         // Fade into sheet at bottom
-                        Positioned(
-                          bottom: 0, left: 0, right: 0,
+                        PositionedDirectional(
+                          bottom: 0, start: 0, end: 0,
                           child: Container(
                             height: 60,
                             decoration: BoxDecoration(
@@ -424,15 +426,15 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                           ),
                         ),
                         // Back button only — no duplicate close
-                        Positioned(
+                        PositionedDirectional(
                           top: MediaQuery.of(context).padding.top + 12,
-                          left: 16,
+                          start: 16,
                           child: ResultCircleBtn(icon: Icons.arrow_back_ios_new_rounded, onTap: _handleBack),
                         ),
                         // Share only on right
-                        Positioned(
+                        PositionedDirectional(
                           top: MediaQuery.of(context).padding.top + 12,
-                          right: 16,
+                          end: 16,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -505,7 +507,7 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 4),
                                   child: Text(
-                                    t.isUrdu ? 'آپ کا پودا نہیں؟' : 'Not your plant?',
+                                    t.get('ui_not_your_plant'),
                                     style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
@@ -523,13 +525,13 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                               ResultChip(
                                   icon: '🌿',
                                   label: diagnosisResult.isHealthy
-                                      ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+                                      ? (t.get('ui_healthy'))
                                       : t.translateSeverity(_severity),
                                   isDark: isDark
                               ),
                               ResultChip(
                                   icon: '📊',
-                                  label: '${confidence.toStringAsFixed(0)}% ${t.isUrdu ? 'اعتماد' : 'Confidence'}',
+                                  label: '${confidence.toStringAsFixed(0)}% ${t.get('ui_confidence')}',
                                   isDark: isDark
                               ),
                               if (!diagnosisResult.isHealthy)
@@ -538,8 +540,8 @@ class _ResultsScreenState extends State<ResultsScreen> with TickerProviderStateM
                                     label: t.translateDisease(diagnosisResult.disease),
                                     isDark: isDark
                                 ),
-if (_remediation.isNotEmpty)
-                            ResultChip(icon: '💊', label: t.isUrdu ? 'علاج دستیاب' : 'Treatment Available', isDark: isDark),
+if (_remediation.isNotEmpty && !isLowConfidence)
+                            ResultChip(icon: '💊', label: t.get('ui_treatment_available'), isDark: isDark),
                         ]),
 
                             // Alerts
@@ -547,16 +549,26 @@ if (_remediation.isNotEmpty)
                               const SizedBox(height: 14),
                               ResultAlertRow(
                                   icon: Icons.help_outline_rounded,
-                                  message: t.isUrdu
-                                      ? 'پودے کی شناخت نہیں ہوئی — بہتر نتائج کے لیے Advanced AI آزمائیں'
-                                      : 'Plant not identified — try Advanced AI for better results',
+                                  message: t.get('ui_plant_not_identified_try_advanced_ai_f'),
                                   color: AppColors.info,
                                   isDark: isDark
                               ),
                             ],
 
+                            if (isLowConfidence && _isLeafImage) ...[
+                              const SizedBox(height: 14),
+                              ResultAlertRow(
+                                  icon: Icons.camera_alt_outlined,
+                                  message: t
+                                      .get('low_confidence_alert')
+                                      .replaceAll('{pct}', confidence.toStringAsFixed(0)),
+                                  color: AppColors.warning,
+                                  isDark: isDark
+                              ),
+                            ],
+
                             // Treatment
-                            if (_isLeafImage && _remediation.isNotEmpty) ...[
+                            if (_isLeafImage && !isLowConfidence && _remediation.isNotEmpty) ...[
                               const SizedBox(height: 16),
                               ResultSectionHeader(
                                   icon: Icons.healing_rounded,
@@ -565,6 +577,13 @@ if (_remediation.isNotEmpty)
                               ),
                               const SizedBox(height: 8),
                               ..._buildRemediationList(t),
+                              const SizedBox(height: 10),
+                              ResultAlertRow(
+                                  icon: Icons.info_outline_rounded,
+                                  message: t.get('ai_guidance_disclaimer'),
+                                  color: AppColors.warning,
+                                  isDark: isDark
+                              ),
                             ],
 
                             // Disease causes
@@ -588,8 +607,8 @@ if (_remediation.isNotEmpty)
             ),
 
             // ── Fixed bottom bar ───────────────────────────────────────
-            Positioned(
-              left: 0, right: 0, bottom: 0,
+            PositionedDirectional(
+              start: 0, end: 0, bottom: 0,
               child: Container(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
                 decoration: BoxDecoration(
@@ -607,13 +626,13 @@ if (_remediation.isNotEmpty)
                     child: Container(
                       width: 50, height: 50,
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
+                        color: isDark ? AppColors.darkBg : AppColors.lightBg,
                         shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+                        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                       ),
                       child: Icon(
                           Icons.camera_alt_outlined,
-                          color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E),
+                          color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                           size: 22
                       ),
                     ),
@@ -633,7 +652,7 @@ if (_remediation.isNotEmpty)
                           const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                              t.isUrdu ? 'ایڈوانسڈ AI' : 'Advanced AI',
+                              t.get('ui_advanced_ai'),
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -672,7 +691,7 @@ if (_remediation.isNotEmpty)
                   fontSize: 13,
                   color: Theme.of(context).brightness == Brightness.dark
                       ? AppColors.darkSubtext
-                      : const Color(0xFF4A5568),
+                      : AppColors.lightSubtext,
                   height: 1.5
               )
           ),
@@ -711,7 +730,7 @@ if (_remediation.isNotEmpty)
           Icon(Icons.compare_arrows_rounded, size: 18, color: AppColors.primary),
           const SizedBox(width: 8),
           Text(
-            t.isUrdu ? 'دوسرے نتائج دیکھیں' : 'Other possibilities',
+            t.get('ui_other_possibilities'),
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -760,7 +779,7 @@ if (_remediation.isNotEmpty)
         }),
         const SizedBox(height: 4),
         Text(
-          t.isUrdu ? 'بہتر نتائج کے لیے ایڈوانسڈ AI استعمال کریں' : 'Use Advanced AI for more accurate diagnosis',
+          t.get('ui_use_advanced_ai_for_more_accurate_diag'),
           style: TextStyle(
               fontSize: 11,
               color: isDark ? AppColors.darkCaption : AppColors.lightCaption

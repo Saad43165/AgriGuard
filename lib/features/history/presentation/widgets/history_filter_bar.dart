@@ -42,9 +42,7 @@ class HistorySearchBar extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
-            hintText: t.isUrdu
-                ? 'پودے یا بیماری سے تلاش کریں...'
-                : 'Search by plant or disease...',
+            hintText: t.get('ui_search_by_plant_or_disease'),
             hintStyle: TextStyle(
               color: isDark
                   ? AppColors.darkCaption
@@ -97,10 +95,10 @@ class HistoryFilterChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Provider.of<TranslationService>(context);
     final filters = [
-      ('all', t.isUrdu ? 'سب' : 'All'),
-      ('healthy', t.isUrdu ? 'صحت مند' : 'Healthy'),
-      ('diseased', t.isUrdu ? 'بیمار' : 'Diseased'),
-      ('high', t.isUrdu ? 'زیادہ شدت' : 'High Severity'),
+      ('all', t.get('ui_all')),
+      ('healthy', t.get('ui_healthy')),
+      ('diseased', t.get('ui_diseased')),
+      ('high', t.get('ui_high_severity')),
     ];
     return SizedBox(
       height: 36,
@@ -110,7 +108,7 @@ class HistoryFilterChips extends StatelessWidget {
         children: filters.map((f) {
           final isSelected = activeFilter == f.$1;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsetsDirectional.only(end: 8),
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();

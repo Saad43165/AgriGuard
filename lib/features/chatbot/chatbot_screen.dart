@@ -401,9 +401,9 @@ class _ChatbotScreenState extends State<ChatbotScreen>
 
                 // Scroll to bottom button
                 if (_showScrollBtn)
-                  Positioned(
+                  PositionedDirectional(
                     bottom: 12,
-                    right: 16,
+                    end: 16,
                     child: _ScrollToBottomBtn(
                       isDark: isDark,
                       onTap: _scrollToBottom,
@@ -460,8 +460,8 @@ class _ChatbotScreenState extends State<ChatbotScreen>
                   AppColors.primary.withValues(alpha: 0.85),
                   AppColors.primary,
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: AlignmentDirectional.topStart,
+                end: AlignmentDirectional.bottomEnd,
               ),
               borderRadius: BorderRadius.circular(11),
               boxShadow: [
@@ -517,7 +517,7 @@ class _ChatbotScreenState extends State<ChatbotScreen>
         // Message count badge
         if (_messages.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsetsDirectional.only(end: 4),
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

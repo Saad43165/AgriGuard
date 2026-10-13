@@ -92,7 +92,7 @@ class HomeHeader extends StatelessWidget {
                       const SizedBox(width: 16, height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
                       const SizedBox(width: 8),
-                      Text(t.isUrdu ? 'موسم لوڈ ہو رہا ہے…' : 'Loading weather…',
+                      Text(t.get('ui_loading_weather'),
                           style: TextStyle(fontSize: 12, color: captionColor)),
                     ]);
                   }
@@ -101,7 +101,7 @@ class HomeHeader extends StatelessWidget {
                     child: Row(children: [
                       Icon(CupertinoIcons.cloud, size: 18, color: captionColor),
                       const SizedBox(width: 6),
-                      Text(t.isUrdu ? 'موسم دستیاب نہیں - ٹیپ کریں' : 'Weather unavailable - tap to refresh',
+                      Text(t.get('ui_weather_unavailable_tap_to_refresh'),
                           style: TextStyle(fontSize: 12, color: captionColor)),
                     ]),
                   );
@@ -129,14 +129,14 @@ class HomeHeader extends StatelessWidget {
                 child: Container(
                   width: 36, height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                    color: AppColors.error.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+                        color: AppColors.error.withValues(alpha: 0.4)),
                   ),
                   child: Icon(CupertinoIcons.ant_fill,
                       size: 17,
-                      color: const Color(0xFFEF4444)),
+                      color: AppColors.error),
                 ),
               ),
             ],

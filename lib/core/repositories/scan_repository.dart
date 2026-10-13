@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 
 import '../database/scan_database.dart';
 import '../models/scan_model.dart';
+import '../services/scan_image_store.dart';
 
 class ScanRepository {
   final ScanDatabase _database = ScanDatabase.instance;
@@ -71,26 +71,14 @@ class ScanRepository {
         return existingScan;
       }
 
-      String? imageBase64;
-      if (imagePath != null) {
-        try {
-          final file = File(imagePath);
-          if (await file.exists()) {
-            final bytes = await file.readAsBytes();
-            imageBase64 = base64Encode(bytes);
-            debugPrint('📸 Image converted to base64, size: ${bytes.length} bytes');
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to convert image to base64: $e');
-        }
-      }
+      // Keep a compressed copy in app storage; the camera cache can be wiped.
+      final storedPath = await ScanImageStore.saveFromFile(scanId, imagePath) ?? imagePath;
 
       final scan = ScanModel.fromOnDeviceScan(
         userId: user.uid,
         scanData: scanData,
-        imagePath: imagePath,
+        imagePath: storedPath,
       ).copyWith(
-        imageBase64: imageBase64,
         id: scanId,
       );
 
@@ -155,24 +143,14 @@ class ScanRepository {
         return existingScan;
       }
 
-      String? imageBase64;
-      if (imagePath != null) {
-        try {
-          final file = File(imagePath);
-          if (await file.exists()) {
-            imageBase64 = base64Encode(await file.readAsBytes());
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to convert image to base64: $e');
-        }
-      }
+      // Keep a compressed copy in app storage; the camera cache can be wiped.
+      final storedPath = await ScanImageStore.saveFromFile(scanId, imagePath) ?? imagePath;
 
       final scan = ScanModel.fromGroqScan(
         userId: user.uid,
         analysisResult: analysisResult,
-        imagePath: imagePath,
+        imagePath: storedPath,
       ).copyWith(
-        imageBase64: imageBase64,
         id: scanId,
       );
 
@@ -213,24 +191,14 @@ class ScanRepository {
         return existingScan;
       }
 
-      String? imageBase64;
-      if (imagePath != null) {
-        try {
-          final file = File(imagePath);
-          if (await file.exists()) {
-            imageBase64 = base64Encode(await file.readAsBytes());
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to convert image to base64: $e');
-        }
-      }
+      // Keep a compressed copy in app storage; the camera cache can be wiped.
+      final storedPath = await ScanImageStore.saveFromFile(scanId, imagePath) ?? imagePath;
 
       final scan = ScanModel.fromPlantIdScan(
         userId: user.uid,
         analysisResult: analysisResult,
-        imagePath: imagePath,
+        imagePath: storedPath,
       ).copyWith(
-        imageBase64: imageBase64,
         id: scanId,
       );
 
@@ -272,24 +240,14 @@ class ScanRepository {
         return existingScan;
       }
 
-      String? imageBase64;
-      if (imagePath != null) {
-        try {
-          final file = File(imagePath);
-          if (await file.exists()) {
-            imageBase64 = base64Encode(await file.readAsBytes());
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to convert image to base64: $e');
-        }
-      }
+      // Keep a compressed copy in app storage; the camera cache can be wiped.
+      final storedPath = await ScanImageStore.saveFromFile(scanId, imagePath) ?? imagePath;
 
       final scan = ScanModel.fromPlantHealthScan(
         userId: user.uid,
         analysisResult: analysisResult,
-        imagePath: imagePath,
+        imagePath: storedPath,
       ).copyWith(
-        imageBase64: imageBase64,
         id: scanId,
       );
 
@@ -365,18 +323,109 @@ class ScanRepository {
     }
   }
 
-  /// Firestore documents are capped at 1 MiB. Full-resolution photos encoded
-  /// as base64 can exceed that and make the whole sync fail, so the embedded
-  /// image is dropped from the cloud copy when it is too large.
+  /// Firestore documents are capped at 1 MiB. Photos are stored compressed
+  /// (~100-300 KB), so they normally fit; if one is still too large it is left
+  /// out of the cloud copy rather than failing the whole sync.
   static const int _maxCloudImageChars = 700 * 1024;
 
-  Map<String, dynamic> _firestorePayload(ScanModel scan) {
+  Future<Map<String, dynamic>> _firestorePayload(ScanModel scan) async {
     final data = scan.toFirestore();
-    final image = data['imageBase64'] as String?;
-    if (image != null && image.length > _maxCloudImageChars) {
+    var image = data['imageBase64'] as String?;
+    if (image == null || image.isEmpty) {
+      image = await ScanImageStore.readBase64(scan.imagePath);
+    }
+    if (image != null && image.length <= _maxCloudImageChars) {
+      data['imageBase64'] = image;
+    } else {
       data.remove('imageBase64');
     }
+    // The local file path means nothing on another device.
+    data['imagePath'] = '';
     return data;
+  }
+
+  /// One-time upgrade for scans saved by older versions, which kept the photo
+  /// as base64 text inside SQLite. Moves each one into a file and clears the
+  /// column. Safe to call repeatedly; does nothing once everything is moved.
+  Future<void> migrateInlineImagesToFiles() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    try {
+      final ids = await _database.getIdsWithInlineImage(user.uid);
+      for (final id in ids) {
+        try {
+          final scan = await _database.getScanById(id);
+          final path = await ScanImageStore.saveFromBase64(id, scan?.imageBase64);
+          if (path != null) await _database.setImageFile(id, path);
+        } catch (e) {
+          debugPrint('⚠️ Could not migrate image for scan $id: $e');
+        }
+      }
+      if (ids.isNotEmpty) debugPrint('✅ Migrated ${ids.length} scan images to files');
+    } catch (e) {
+      debugPrint('⚠️ Image migration failed: $e');
+    }
+  }
+
+  /// Removes all local scans (and their photo files) for [userId].
+  Future<void> deleteLocalScansForUser(String userId) async {
+    try {
+      final scans = await _database.getScansByUser(userId, limit: 100000);
+      for (final scan in scans) {
+        await ScanImageStore.delete(scan.imagePath);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not remove scan image files: $e');
+    }
+    await _database.deleteScansForUser(userId);
+  }
+
+  static String? _restoredForUid;
+
+  /// Downloads this user's cloud scans that are missing from the local
+  /// database (new phone, reinstall, cleared app data). Runs once per user
+  /// per app session. Returns how many scans were restored.
+  Future<int> restoreFromCloud({bool force = false}) async {
+    final user = _auth.currentUser;
+    if (user == null) return 0;
+    if (!force && _restoredForUid == user.uid) return 0;
+
+    var restored = 0;
+    try {
+      final localIds = (await _database.getScansByUser(user.uid, limit: 100000))
+          .map((s) => s.id)
+          .toSet();
+
+      for (final collection in const ['onDeviceScans', 'advancedScans']) {
+        final snap = await _firestore
+            .collection(collection)
+            .where('userId', isEqualTo: user.uid)
+            .get();
+        for (final doc in snap.docs) {
+          if (localIds.contains(doc.id)) continue;
+          try {
+            final fromCloud = ScanModel.fromFirestore(doc);
+            // The cloud imagePath points at a file on the old device; rebuild
+            // the photo locally from the backed-up base64 instead.
+            final path = await ScanImageStore.saveFromBase64(doc.id, fromCloud.imageBase64);
+            final scan = fromCloud.copyWith(
+              imagePath: path ?? '',
+              clearImageBase64: true,
+              isSynced: true,
+            );
+            await _database.createScan(scan);
+            restored++;
+          } catch (e) {
+            debugPrint('⚠️ Could not restore scan ${doc.id}: $e');
+          }
+        }
+      }
+      _restoredForUid = user.uid;
+      debugPrint('✅ Restored $restored scans from cloud');
+    } catch (e) {
+      debugPrint('⚠️ Cloud restore failed (will retry next launch): $e');
+    }
+    return restored;
   }
 
   Future<void> _syncOnDeviceScanToFirebase(ScanModel scan) async {
@@ -391,7 +440,7 @@ class ScanRepository {
 
       final updatedScan = scan.copyWith(imageUrl: '');
 
-      await _firestore.collection('onDeviceScans').doc(scan.id).set(_firestorePayload(updatedScan));
+      await _firestore.collection('onDeviceScans').doc(scan.id).set(await _firestorePayload(updatedScan));
       await _database.markAsSynced(scan.id!);
 
       debugPrint('✅ On-Device scan synced to Firestore: ${scan.id}');
@@ -412,7 +461,7 @@ class ScanRepository {
 
       final updatedScan = scan.copyWith(imageUrl: '');
 
-      await _firestore.collection('advancedScans').doc(scan.id).set(_firestorePayload(updatedScan));
+      await _firestore.collection('advancedScans').doc(scan.id).set(await _firestorePayload(updatedScan));
       await _database.markAsSynced(scan.id!);
 
       debugPrint('✅ Advanced scan synced to Firestore: ${scan.id}');
@@ -483,6 +532,7 @@ class ScanRepository {
         }
 
         await _database.deleteScan(scanId);
+        await ScanImageStore.delete(scan.imagePath);
         debugPrint('✅ Scan deleted from SQLite: $scanId');
       } else {
         debugPrint('⚠️ Scan not found: $scanId');

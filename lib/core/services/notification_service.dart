@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
@@ -149,7 +150,7 @@ class NotificationService {
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
-            color: Color(0xFF10B981),
+            color: AppColors.emerald,
             enableVibration: true,
             playSound: true,
           ),
@@ -182,7 +183,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFF10B981),
+          color: AppColors.emerald,
           enableVibration: true,
           playSound: true,
         ),
@@ -268,7 +269,7 @@ class NotificationService {
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
-            color: Color(0xFF2D6A4F),
+            color: AppColors.primary,
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,

@@ -1,4 +1,5 @@
 // lib/features/support/widgets/contact_info_card.dart
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -48,7 +49,7 @@ class ContactInfoCard extends StatelessWidget {
           icon: Icons.phone_rounded,
           labelKey: 'phone',
           value: '+92 341 4279749',
-          color: const Color(0xFF10B981),
+          color: AppColors.emerald,
           onTap: () => _launchPhone(context, '+923414279749'),
           isDark: isDark,
         ),

@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../core/database/scan_database.dart';
+import '../../../../core/repositories/scan_repository.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_themes.dart';
 
@@ -97,10 +97,8 @@ class _ClearHistoryTileState extends State<ClearHistoryTile> {
     debugPrint('🔄 Clearing SQLite database...');
 
     try {
-      final db = ScanDatabase.instance;
-
       // Only remove this user's scans; other accounts on the device keep theirs.
-      await db.deleteScansForUser(userId).timeout(const Duration(seconds: 10));
+      await ScanRepository().deleteLocalScansForUser(userId).timeout(const Duration(seconds: 10));
 
       debugPrint('✅ SQLite cleared successfully');
     } catch (e) {

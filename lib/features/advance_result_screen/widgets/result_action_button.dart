@@ -16,6 +16,7 @@
 //     file_picker: ^8.1.2
 //     path:        ^1.9.0
 
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -264,7 +265,7 @@ class _SpeedItemState extends State<_SpeedItem>
         final v = _anim.value.clamp(0.0, 1.0);
         return Transform.scale(
           scale: v,
-          alignment: Alignment.centerRight,
+          alignment: AlignmentDirectional.centerEnd,
           child: Opacity(opacity: v, child: child),
         );
       },
@@ -280,10 +281,10 @@ class _SpeedItemState extends State<_SpeedItem>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: widget.onTap == null
-                  ? [const Color(0xFFBDBDBD), const Color(0xFF9E9E9E)]
+                  ? [const Color(0xFFBDBDBD), AppColors.grey500]
                   : [widget.color, widget.color.withValues(alpha: 0.78)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: AlignmentDirectional.topStart,
+              end: AlignmentDirectional.bottomEnd,
             ),
             borderRadius: BorderRadius.circular(50),
             boxShadow: [
@@ -378,8 +379,8 @@ class _GeneratingDialogState extends State<_GeneratingDialog>
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFFE65100), Color(0xFFFF8F00)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: AlignmentDirectional.topStart,
+                    end: AlignmentDirectional.bottomEnd,
                   ),
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
@@ -688,8 +689,8 @@ class _SuccessDialogState extends State<_SuccessDialog>
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF1B5E20), Color(0xFF388E3C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
@@ -829,7 +830,7 @@ class _SuccessDialogState extends State<_SuccessDialog>
                 duration: const Duration(milliseconds: 200),
                 child: _renamed
                     ? Padding(
-                  padding: const EdgeInsets.only(top: 5, left: 2),
+                  padding: const EdgeInsetsDirectional.only(top: 5, start: 2),
                   child: Row(
                     children: const [
                       Icon(Icons.check_circle_rounded,

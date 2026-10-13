@@ -88,8 +88,8 @@ class _FaqPageState extends State<FaqPage> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: AlignmentDirectional.topStart,
+            end: AlignmentDirectional.bottomEnd,
             colors: isDark
                 ? [
               const Color(0xFF0F0F23),

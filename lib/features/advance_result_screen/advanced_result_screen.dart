@@ -263,7 +263,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
         backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: IconButton(
+        leading: IconButton(tooltip: 'Back', 
           icon: Icon(Icons.arrow_back_rounded, color: textColor, size: 22),
           onPressed: () {
             HapticFeedback.lightImpact();
@@ -295,7 +295,7 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
           ),
           if (_isTranslating)
             Padding(
-              padding: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsetsDirectional.only(end: 10),
               child: Center(
                 child: SizedBox(
                   width: 16,

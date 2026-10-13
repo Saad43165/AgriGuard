@@ -33,7 +33,7 @@ class SettingsHeader extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       centerTitle: false,
       leading: showBackButton
-          ? IconButton(
+          ? IconButton(tooltip: 'Back', 
               icon: Icon(Icons.arrow_back_rounded, color: textColor, size: 22),
               onPressed: () {
                 HapticFeedback.lightImpact();

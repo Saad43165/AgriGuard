@@ -136,7 +136,7 @@ class _CaptureScreenState extends State<CaptureScreen>
                   onToggleFlash: c.toggleFlash,
                   onFlipCamera: c.flipCamera,
                   hintText:
-                  t.isUrdu ? 'پودے کے پتے پر نشانہ لگائیں' : 'Point at a plant leaf',
+                  t.get('ui_point_at_a_plant_leaf'),
                 ),
                 CaptureBottomControls(
                   scanModeIndex: c.scanModeIndex,

@@ -37,11 +37,11 @@ class PdfShareService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.only(
+        margin: const pw.EdgeInsetsDirectional.only(
           top: 60,      // Increased top margin for all pages
           bottom: 40,
-          left: 0,
-          right: 0,
+          start: 0,
+          end: 0,
         ),
         build: (context) => [
           // HEADER
@@ -375,7 +375,7 @@ class PdfShareService {
 
   static pw.Widget _buildSectionHeader(String title, PdfColor color) {
     return pw.Container(
-      padding: const pw.EdgeInsets.only(left: 14, bottom: 10),
+      padding: const pw.EdgeInsetsDirectional.only(start: 14, bottom: 10),
       decoration: pw.BoxDecoration(
         border: pw.Border(
           left: pw.BorderSide(color: color, width: 4),
@@ -434,7 +434,7 @@ class PdfShareService {
               ),
             ),
             child: pw.Padding(
-              padding: const pw.EdgeInsets.only(left: 10),
+              padding: const pw.EdgeInsetsDirectional.only(start: 10),
               child: pw.Text(
                 value,
                 style: pw.TextStyle(

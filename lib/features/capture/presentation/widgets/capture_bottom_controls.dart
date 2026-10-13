@@ -23,9 +23,9 @@ class CaptureBottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: 0,
-      right: 0,
+    return PositionedDirectional(
+      start: 0,
+      end: 0,
       bottom: 0,
       child: ClipRRect(
         child: BackdropFilter(

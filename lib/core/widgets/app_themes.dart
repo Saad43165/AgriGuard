@@ -35,6 +35,17 @@ class AppColors {
   static const error    = Color(0xFFEF4444);
   static const info     = Color(0xFF40916C);  // medium green
 
+  // Accent & neutral tokens (previously hardcoded across screens)
+  static const emerald     = Color(0xFF10B981);
+  static const emeraldDark = Color(0xFF059669);
+  static const blue        = Color(0xFF3B82F6);
+  static const violet      = Color(0xFF8B5CF6);
+  static const slate100    = Color(0xFFF1F5F9);
+  static const slate200    = Color(0xFFE2E8F0);
+  static const slate400    = Color(0xFF94A3B8);
+  static const slate500    = Color(0xFF64748B);
+  static const grey500     = Color(0xFF9E9E9E);
+
   // Extra botanical colors
   static const primaryLight = Color(0xFFD8F3DC); // very light green tint
   static const primaryDark  = Color(0xFF1B4332); // darkest green

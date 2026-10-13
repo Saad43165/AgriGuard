@@ -47,7 +47,7 @@ class CropCard extends StatelessWidget {
     final speciesName = t.isUrdu
         ? AppSpecies.allSpecies.firstWhere(
             (s) => s.nameEn == plantType, orElse: () => AppSpecies.allSpecies.first).nameUr
-        : (plantType ?? (t.isUrdu ? 'نامعلوم' : 'Unknown'));
+        : (plantType ?? (t.get('ui_unknown')));
 
     return GestureDetector(
       onTap: () {
@@ -110,7 +110,7 @@ class CropCard extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  crop['name'] as String? ?? (t.isUrdu ? 'بے نام' : 'Unnamed'),
+                                  crop['name'] as String? ?? (t.get('ui_unnamed')),
                                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: textColor),
                                   maxLines: 1, overflow: TextOverflow.ellipsis,
                                 ),

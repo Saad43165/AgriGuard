@@ -123,7 +123,7 @@ class SpeciesChip extends StatelessWidget {
                                     const SizedBox(height: 6),
                                     Text(species.getName(t.isUrdu), style: TextStyle(
                                       fontSize: 20, fontWeight: FontWeight.w800,
-                                      color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E),
+                                      color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                                     )),
                                     Text(species.scientificName, style: TextStyle(
                                       fontSize: 12, fontStyle: FontStyle.italic,
@@ -191,7 +191,7 @@ class SpeciesChip extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 4, left: 4),
+          padding: const EdgeInsetsDirectional.only(bottom: 4, start: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -199,7 +199,7 @@ class SpeciesChip extends StatelessWidget {
                   decoration: BoxDecoration(color: AppColors.secondary, shape: BoxShape.circle)),
               const SizedBox(width: 8),
               Expanded(child: Text(item.toString(), style: TextStyle(
-                fontSize: 12, color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568),
+                fontSize: 12, color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
               ))),
             ],
           ),
@@ -223,7 +223,7 @@ class SpeciesChip extends StatelessWidget {
         const SizedBox(height: 6),
         Text(content, style: TextStyle(
           fontSize: 13,
-          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568),
+          color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
           height: 1.5,
         )),
       ],
@@ -291,7 +291,7 @@ class FeatureCard extends StatelessWidget {
                         children: [
                           Text(title, style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w800,
-                            color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E),
+                            color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                             letterSpacing: -0.3,
                           )),
                           const SizedBox(height: 2),

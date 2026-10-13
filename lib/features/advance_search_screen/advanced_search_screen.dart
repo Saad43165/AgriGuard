@@ -113,18 +113,14 @@ static const _options = [
     final imagePath = widget.originalScanData['imagePath'] as String?;
     if (imagePath == null || !File(imagePath).existsSync()) {
       _err(
-        t.isUrdu
-            ? 'تصویر نہیں ملی۔ براہ کرم واپس جا کر دوبارہ تصویر لیں۔'
-            : 'Image not found. Please go back and retake the photo.',
+        t.get('ui_image_not_found_please_go_back_and_ret'),
       );
       return;
     }
 
     if (!_available(_selectedIndex)) {
       _err(
-        t.isUrdu
-            ? 'یہ سروس آف لائن ہے۔ براہ کرم دوسرا آپشن منتخب کریں۔'
-            : 'This service is offline. Please select another option.',
+        t.get('ui_this_service_is_offline_please_select'),
       );
       return;
     }
@@ -158,7 +154,7 @@ static const _options = [
         _err(
           result['message'] ??
               result['error'] ??
-              (t.isUrdu ? 'تجزیہ ناکام ہوا۔' : 'Analysis failed.'),
+              (t.get('ui_analysis_failed')),
         );
       }
     } catch (e) {
@@ -209,9 +205,9 @@ static const _options = [
                       ),
 
                       // Subtle gradient fade at the bottom of the image
-                      Positioned(
-                        left: 0,
-                        right: 0,
+                      PositionedDirectional(
+                        start: 0,
+                        end: 0,
                         bottom: 0,
                         child: IgnorePointer(
                           child: Container(
@@ -277,7 +273,7 @@ static const _options = [
                             onSelectOption: (i) => setState(() => _selectedIndex = i),
                             onAnalyze: () => _start(t),
                             analyzeLabel: _isAnalyzing
-                                ? (t.isUrdu ? 'تجزیہ ہو رہا ہے…' : 'Analyzing…')
+                                ? (t.get('ui_analyzing'))
                                 : (t.isUrdu
                                 ? '${localOpts[_selectedIndex].title} سے تجزیہ کریں'
                                 : 'Analyze with ${_options[_selectedIndex].title}'),
@@ -291,9 +287,9 @@ static const _options = [
             ),
 
             // ── Back button ─────────────────────────────────────────────
-            Positioned(
+            PositionedDirectional(
               top: MediaQuery.of(context).padding.top + 12,
-              left: 16,
+              start: 16,
               child: GestureDetector(
                 onTap: _isAnalyzing ? null : () => Navigator.pop(context),
                 child: Container(

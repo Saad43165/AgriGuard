@@ -2,12 +2,18 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:agriguard_fyp/core/services/api_gateway.dart';
 import '../models/weather_model.dart';
 
 class WeatherService {
-  static String get _apiKey => dotenv.env['WEATHER_API_KEY']?.trim() ?? '';
-  static const String _baseUrl = 'https://api.weatherapi.com/v1';
+  static Uri _forecastUri(String query, int days) =>
+      Uri.parse('${ApiGateway.weatherBaseUrl}/forecast.json').replace(queryParameters: {
+        ...ApiGateway.weatherQuery,
+        'q': query,
+        'days': '$days',
+        'aqi': 'yes',
+      });
+
   static const Duration _timeout = Duration(seconds: 15);
   static const Duration _cacheDuration = Duration(minutes: 10); // Cache for 10 minutes
 
@@ -70,7 +76,8 @@ class WeatherService {
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/forecast.json?key=$_apiKey&q=${Uri.encodeQueryComponent(city)}&days=$days&aqi=yes'),
+        _forecastUri(city, days),
+        headers: await ApiGateway.weatherHeaders(),
       ).timeout(_timeout);
 
       final forecast = _parseForecastResponse(response);
@@ -122,7 +129,8 @@ class WeatherService {
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/forecast.json?key=$_apiKey&q=$lat,$lon&days=$days&aqi=yes'),
+        _forecastUri('$lat,$lon', days),
+        headers: await ApiGateway.weatherHeaders(),
       ).timeout(_timeout);
 
       final forecast = _parseForecastResponse(response);

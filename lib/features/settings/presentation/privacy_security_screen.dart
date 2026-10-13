@@ -117,49 +117,49 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
     final t = Provider.of<TranslationService>(context, listen: false);
     switch (key) {
       case 'password_changed':
-        return t.isUrdu ? 'پاسورڈ کامیابی سے تبدیل ہوگیا' : 'Password changed successfully';
+        return t.get('ui_password_changed_successfully');
       case 'error':
-        return t.isUrdu ? 'خرابی' : 'Error';
+        return t.get('ui_error');
       case 'no_email':
-        return t.isUrdu ? 'ای میل دستیاب نہیں - گوگل لاگن سے سائن ان کیا ہے' : 'No email - you signed in with Google';
+        return t.get('ui_no_email_you_signed_in_with_google');
       case 'reset_link_sent':
-        return t.isUrdu ? 'ری سیٹ لنک بھیج دیا گیا' : 'Password reset link sent';
+        return t.get('ui_password_reset_link_sent');
       case 'current_password':
-        return t.isUrdu ? 'موجودہ پاسورڈ' : 'Current Password';
+        return t.get('ui_current_password');
       case 'new_password':
-        return t.isUrdu ? 'نیا پاسورڈ' : 'New Password';
+        return t.get('ui_new_password');
       case 'confirm_password':
-        return t.isUrdu ? 'تصدیق پاسورڈ' : 'Confirm Password';
+        return t.get('ui_confirm_password');
       case 'enter_current':
-        return t.isUrdu ? 'موجودہ پاسورڈ درج کریں' : 'Enter current password';
+        return t.get('ui_enter_current_password');
       case 'enter_new':
-        return t.isUrdu ? 'نیا پاسورڈ درج کریں' : 'Enter new password';
+        return t.get('ui_enter_new_password');
       case 'confirm_new':
-        return t.isUrdu ? 'نے پاسورڈ کی تصدیق کریں' : 'Confirm new password';
+        return t.get('ui_confirm_new_password');
       case 'mismatch':
-        return t.isUrdu ? 'پاسورڈ مماثل نہیں ہیں' : 'Passwords do not match';
+        return t.get('ui_passwords_do_not_match');
       case 'too_short':
-        return t.isUrdu ? 'پاسورڈ کم از کم 6 حروف کا ہونا چاہیے' : 'Password must be at least 6 characters';
+        return t.get('ui_password_must_be_at_least_6_characters');
       case 'change_password':
-        return t.isUrdu ? 'پاسورڈ تبدیل کریں' : 'Change Password';
+        return t.get('ui_change_password');
       case 'change_not_available':
-        return t.isUrdu ? 'پاسورڈ تبدیل نہیں کر سکتے' : 'Cannot change password';
+        return t.get('ui_cannot_change_password');
       case 'google_no_password':
-        return t.isUrdu ? 'گوگل سے لاگن کیا - پاسورڈ تبدیل نہیں کر سکتے' : 'Signed in with Google - cannot change password';
+        return t.get('ui_signed_in_with_google_cannot_change_pa');
       case 'forgot_password':
-        return t.isUrdu ? 'پاسورڈ بھول گیے؟' : 'Forgot Password?';
+        return t.get('ui_forgot_password');
       case 'send_reset_link':
-        return t.isUrdu ? 'ری سیٹ لنک بھیجیں' : 'Send Reset Link';
+        return t.get('ui_send_reset_link');
       case 'privacy_security':
-        return t.isUrdu ? 'رازداری اور سیکیورٹی' : 'Privacy & Security';
+        return t.get('ui_privacy_security');
       case 'password_section':
-        return t.isUrdu ? 'پاسورڈ' : 'PASSWORD';
+        return t.get('ui_password');
       case 'password_hint':
-        return t.isUrdu ? 'موجودہ پاسورڈ درج کریں اور نیا پاسورڈ انتخاب کریں' : 'Enter current password and choose a new one';
+        return t.get('ui_enter_current_password_and_choose_a_ne');
       case 'forgot_hint':
-        return t.isUrdu ? 'اپنا پاسورڈ ری سیٹ کرنے کے لیے لنک حاصل کریں' : 'Get a link to reset your password';
+        return t.get('ui_get_a_link_to_reset_your_password');
       case 'required':
-        return t.isUrdu ? 'یہ فیلڈ ضروری ہے' : 'This field is required';
+        return t.get('ui_this_field_is_required');
       default:
         return key;
     }
@@ -190,7 +190,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
-        leading: IconButton(
+        leading: IconButton(tooltip: 'Back', 
           icon: Icon(Icons.arrow_back_rounded, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
@@ -394,13 +394,13 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
         hintStyle: TextStyle(color: captionColor.withValues(alpha: 0.6)),
         labelStyle: TextStyle(color: captionColor),
         filled: true,
-        fillColor: isDark ? AppColors.darkSurface : const Color(0xFFF5F5F5),
+        fillColor: isDark ? AppColors.darkSurface : AppColors.lightBg,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderColor)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: borderColor)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
         errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.error)),
-        suffixIcon: IconButton(
+        suffixIcon: IconButton(tooltip: 'Show password', 
           icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: captionColor, size: 20),
           onPressed: onToggle,
         ),

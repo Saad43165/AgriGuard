@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'widgets/location_tile.dart';
 import 'utils/file_name_generator.dart';
@@ -46,8 +47,8 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
         constraints: const BoxConstraints(maxWidth: 340),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: AlignmentDirectional.topStart,
+            end: AlignmentDirectional.bottomEnd,
             colors: isDark
                 ? [const Color(0xFF1E1E2E), const Color(0xFF2A2A3E)]
                 : [Colors.white, const Color(0xFFFAFAFA)],
@@ -110,12 +111,12 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF059669), Color(0xFF047857)],
+              colors: [AppColors.emeraldDark, Color(0xFF047857)],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF059669).withValues(alpha: 0.3),
+                color: AppColors.emeraldDark.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -143,7 +144,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF059669).withValues(alpha: 0.8),
+                color: AppColors.emeraldDark.withValues(alpha: 0.8),
                 letterSpacing: 0.5,
               ),
             ),
@@ -151,7 +152,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF059669).withValues(alpha: 0.1),
+                color: AppColors.emeraldDark.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
@@ -159,7 +160,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
                 style: TextStyle(
                   fontSize: 8,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF059669),
+                  color: AppColors.emeraldDark,
                 ),
               ),
             ),
@@ -172,18 +173,18 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
             gradient: _isFocused
                 ? LinearGradient(
               colors: [
-                const Color(0xFF059669).withValues(alpha: 0.1),
-                const Color(0xFF059669).withValues(alpha: 0.05),
+                AppColors.emeraldDark.withValues(alpha: 0.1),
+                AppColors.emeraldDark.withValues(alpha: 0.05),
               ],
             )
                 : null,
             color: _isFocused
                 ? null
-                : (isDark ? const Color(0xFF2A2A3E) : const Color(0xFFF5F5F5)),
+                : (isDark ? const Color(0xFF2A2A3E) : AppColors.lightBg),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _isFocused
-                  ? const Color(0xFF059669)
+                  ? AppColors.emeraldDark
                   : (isDark
                   ? Colors.white.withValues(alpha: 0.1)
                   : Colors.black.withValues(alpha: 0.1)),
@@ -192,7 +193,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
             boxShadow: _isFocused
                 ? [
               BoxShadow(
-                color: const Color(0xFF059669).withValues(alpha: 0.2),
+                color: AppColors.emeraldDark.withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -219,13 +220,13 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
               suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF059669).withValues(alpha: 0.7),
+                color: AppColors.emeraldDark.withValues(alpha: 0.7),
               ),
               prefixIcon: Icon(
                 Icons.description_rounded,
                 size: 18,
                 color: _isFocused
-                    ? const Color(0xFF059669)
+                    ? AppColors.emeraldDark
                     : (isDark
                     ? Colors.white.withValues(alpha: 0.4)
                     : Colors.black.withValues(alpha: 0.4)),
@@ -250,7 +251,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF059669).withValues(alpha: 0.8),
+            color: AppColors.emeraldDark.withValues(alpha: 0.8),
             letterSpacing: 0.5,
           ),
         ),
@@ -259,7 +260,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           icon: Icons.download_rounded,
           title: 'Downloads',
           subtitle: '/Download/',
-          color: const Color(0xFF059669),
+          color: AppColors.emeraldDark,
           isSelected: _selectedLocation == 'downloads',
           onTap: () => setState(() => _selectedLocation = 'downloads'),
           isDark: isDark,
@@ -279,7 +280,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           icon: Icons.folder_outlined,
           title: 'Documents',
           subtitle: '/Documents/',
-          color: const Color(0xFFF59E0B),
+          color: AppColors.warning,
           isSelected: _selectedLocation == 'documents',
           onTap: () => setState(() => _selectedLocation = 'documents'),
           isDark: isDark,
@@ -321,7 +322,7 @@ class _SaveOptionsDialogState extends State<SaveOptionsDialog> {
           child: ElevatedButton(
             onPressed: () => _handleSave(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
+              backgroundColor: AppColors.emeraldDark,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               elevation: 0,

@@ -15,7 +15,7 @@ class GuestHistoryBlock extends StatelessWidget {
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final textColor =
-    isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor =
     isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
@@ -25,13 +25,13 @@ class GuestHistoryBlock extends StatelessWidget {
         backgroundColor:
         isDark ? AppColors.darkSurface : AppColors.lightSurface,
         elevation: 0,
-        leading: IconButton(
+        leading: IconButton(tooltip: 'Back', 
           icon: Icon(Icons.arrow_back_ios_new_rounded,
               size: 18, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          t.isUrdu ? 'اسکین ہسٹری' : 'Scan History',
+          t.get('ui_scan_history'),
           style: TextStyle(
               fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
         ),
@@ -50,8 +50,8 @@ class GuestHistoryBlock extends StatelessWidget {
               height: 120,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                  begin: AlignmentDirectional.topStart,
+                  end: AlignmentDirectional.bottomEnd,
                   colors: [
                     AppColors.primary.withValues(alpha: 0.15),
                     AppColors.secondary.withValues(alpha: 0.08),
@@ -64,9 +64,7 @@ class GuestHistoryBlock extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             Text(
-              t.isUrdu
-                  ? 'ہسٹری صرف اکاؤنٹ کے لیے'
-                  : 'History Requires an Account',
+              t.get('ui_history_requires_an_account'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -77,9 +75,7 @@ class GuestHistoryBlock extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              t.isUrdu
-                  ? 'مہمان موڈ میں اسکین ہسٹری محفوظ نہیں ہوتی۔ اپنے تمام اسکینز دیکھنے کے لیے مفت اکاؤنٹ بنائیں۔'
-                  : 'Scan history is not saved in guest mode. Create a free account to save and view all your scans.',
+              t.get('ui_scan_history_is_not_saved_in_guest_mod'),
               style: TextStyle(
                   fontSize: 14, color: captionColor, height: 1.6),
               textAlign: TextAlign.center,
@@ -96,40 +92,30 @@ class GuestHistoryBlock extends StatelessWidget {
                 children: [
                   _HistoryBenefit(
                     icon: Icons.history_rounded,
-                    title: t.isUrdu ? 'تمام اسکینز محفوظ' : 'All Scans Saved',
-                    subtitle: t.isUrdu
-                        ? 'ہر اسکین خودکار محفوظ ہوتا ہے'
-                        : 'Every scan auto-saved to your account',
+                    title: t.get('ui_all_scans_saved'),
+                    subtitle: t.get('ui_every_scan_auto_saved_to_your_account'),
                     isDark: isDark,
                   ),
                   const SizedBox(height: 14),
                   _HistoryBenefit(
                     icon: Icons.all_inclusive_rounded,
                     title:
-                    t.isUrdu ? 'لامحدود اسکینز' : 'Unlimited Scans',
-                    subtitle: t.isUrdu
-                        ? '5 کی حد ختم — جتنے چاہیں اسکین کریں'
-                        : 'No 5-scan limit — scan as much as you want',
+                    t.get('ui_unlimited_scans'),
+                    subtitle: t.get('ui_no_5_scan_limit_scan_as_much_as_you_wa'),
                     isDark: isDark,
                   ),
                   const SizedBox(height: 14),
                   _HistoryBenefit(
                     icon: Icons.cloud_sync_rounded,
-                    title: t.isUrdu ? 'کلاؤڈ سنک' : 'Cloud Sync',
-                    subtitle: t.isUrdu
-                        ? 'تمام ڈیوائسز پر ڈیٹا محفوظ'
-                        : 'Data synced across all your devices',
+                    title: t.get('ui_cloud_sync'),
+                    subtitle: t.get('ui_data_synced_across_all_your_devices'),
                     isDark: isDark,
                   ),
                   const SizedBox(height: 14),
                   _HistoryBenefit(
                     icon: Icons.analytics_rounded,
-                    title: t.isUrdu
-                        ? 'تجزیات اور رپورٹس'
-                        : 'Analytics & Reports',
-                    subtitle: t.isUrdu
-                        ? 'اپنی فصلوں کی صحت ٹریک کریں'
-                        : 'Track your crop health over time',
+                    title: t.get('ui_analytics_reports'),
+                    subtitle: t.get('ui_track_your_crop_health_over_time'),
                     isDark: isDark,
                   ),
                 ],
@@ -149,7 +135,7 @@ class GuestHistoryBlock extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.person_add_rounded, size: 18),
                 label: Text(
-                  t.isUrdu ? 'مفت اکاؤنٹ بنائیں' : 'Create Free Account',
+                  t.get('ui_create_free_account'),
                   style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w700),
                 ),
@@ -168,9 +154,7 @@ class GuestHistoryBlock extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  t.isUrdu
-                      ? 'پہلے سے اکاؤنٹ ہے؟ '
-                      : 'Already have an account? ',
+                  t.get('ui_already_have_an_account'),
                   style: TextStyle(fontSize: 14, color: captionColor),
                 ),
                 GestureDetector(
@@ -215,7 +199,7 @@ class _HistoryBenefit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor =
-    isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor =
     isDark ? AppColors.darkCaption : AppColors.lightCaption;
     return Row(

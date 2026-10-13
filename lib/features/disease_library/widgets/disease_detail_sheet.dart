@@ -1,6 +1,6 @@
+import 'package:agriguard_fyp/core/services/api_gateway.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
@@ -40,15 +40,14 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
     if (_liveLoaded || _loadingLive) return;
     setState(() => _loadingLive = true);
     try {
-      final apiKey = dotenv.env['GROQ_API_KEY']?.trim() ?? '';
-      if (apiKey.isEmpty) { setState(() { _loadingLive = false; _liveLoaded = true; }); return; }
+      if (!ApiGateway.groqAvailable) { setState(() { _loadingLive = false; _liveLoaded = true; }); return; }
       final isUrdu = widget.t.isUrdu;
       final langPrompt = isUrdu ? " Respond entirely in Urdu (اردو)." : "";
       final prompt =
           'In 2-3 sentences, describe ${widget.entry.condition} on ${widget.entry.plant}: main cause, key symptom, best treatment. Be concise.$langPrompt';
       final resp = await http.post(
-        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-        headers: {'Authorization': 'Bearer $apiKey', 'Content-Type': 'application/json'},
+        Uri.parse(ApiGateway.groqUrl),
+        headers: {'Authorization': await ApiGateway.groqAuth(), 'Content-Type': 'application/json'},
         body: jsonEncode({
           'model': 'llama-3.1-8b-instant',
           'messages': [{'role': 'user', 'content': prompt}],
@@ -72,8 +71,8 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
     final isDark = widget.isDark;
     final t = widget.t;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
-    final subtext = isDark ? AppColors.darkSubtext : const Color(0xFF4A5568);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final subtext = isDark ? AppColors.darkSubtext : AppColors.lightSubtext;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.85, minChildSize: 0.5, maxChildSize: 0.95,
@@ -144,12 +143,12 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
                   Wrap(spacing: 6, children: [
                     _Badge(
                       label: e.isHealthy
-                          ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+                          ? (t.get('ui_healthy'))
                           : _translateSeverityBadge(e.severity, t),
                       color: e.isHealthy ? AppColors.primary : AppColors.error),
                     if (!e.isHealthy)
                       _Badge(
-                        label: '${_translateSeverityBadge(e.spreadRate, t)} ${t.isUrdu ? 'پھیلاؤ' : 'spread'}',
+                        label: '${_translateSeverityBadge(e.spreadRate, t)} ${t.get('ui_spread')}',
                         color: AppColors.warning),
                   ]),
                 ])),
@@ -162,7 +161,7 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
                   const SizedBox(width: 16, height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
                   const SizedBox(width: 10),
-                  Text(t.isUrdu ? 'AI بصیرت حاصل ہو رہی ہے...' : 'Getting AI insights...',
+                  Text(t.get('ui_getting_ai_insights'),
                       style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkCaption : AppColors.lightCaption)),
                 ]))
               else if (_liveInfo != null)
@@ -170,7 +169,7 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
                   Row(children: [
                     const Icon(Icons.auto_awesome_rounded, size: 13, color: AppColors.primary),
                     const SizedBox(width: 6),
-                    Text(t.isUrdu ? 'AI بصیرت' : 'Live AI Insight',
+                    Text(t.get('ui_live_ai_insight'),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                   ]),
                   const SizedBox(height: 6),
@@ -180,34 +179,34 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
               if (_loadingLive || _liveInfo != null) const SizedBox(height: 14),
 
               _Section(icon: Icons.info_outline_rounded,
-                title: t.isUrdu ? 'تفصیل' : 'About',
+                title: t.get('ui_about'),
                 content: t.isUrdu ? e.descriptionUr : e.description, isDark: isDark),
               const SizedBox(height: 12),
 
               if (!e.isHealthy) ...[
                 _Section(icon: Icons.warning_amber_rounded,
-                  title: t.isUrdu ? 'علامات' : 'Symptoms',
+                  title: t.get('ui_symptoms'),
                   content: t.isUrdu ? e.symptomsUr : e.symptoms, isDark: isDark),
                 const SizedBox(height: 12),
               ],
 
               _Section(icon: Icons.biotech_rounded,
-                title: t.isUrdu ? 'وجوہات' : 'Causes',
+                title: t.get('ui_causes'),
                 content: e.causes, isDark: isDark),
               const SizedBox(height: 12),
 
               _Section(icon: Icons.healing_rounded,
-                title: t.isUrdu ? 'علاج' : 'Treatment',
+                title: t.get('ui_treatment'),
                 content: t.isUrdu ? e.treatmentUr : e.treatment, isDark: isDark),
               const SizedBox(height: 12),
 
               _Section(icon: Icons.shield_outlined,
-                title: t.isUrdu ? 'بچاؤ' : 'Prevention',
+                title: t.get('ui_prevention'),
                 content: t.isUrdu ? e.preventionUr : e.prevention, isDark: isDark),
               const SizedBox(height: 12),
 
               _Section(icon: Icons.cloud_outlined,
-                title: t.isUrdu ? 'موسمی حالات' : 'Weather Conditions',
+                title: t.get('ui_weather_conditions'),
                 content: e.weatherConditions, isDark: isDark),
 
               const SizedBox(height: 20),
@@ -220,7 +219,7 @@ class _DiseaseDetailSheetState extends State<DiseaseDetailSheet> {
                     Navigator.pushNamed(context, '/capture');
                   },
                   icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                  label: Text(t.isUrdu ? 'اسکین کریں' : 'Scan a Plant'),
+                  label: Text(t.get('ui_scan_a_plant')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -280,7 +279,7 @@ class _Section extends StatelessWidget {
     const SizedBox(height: 6),
     Text(content, style: TextStyle(
       fontSize: 13,
-      color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568),
+      color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
       height: 1.5)),
   ]);
 }

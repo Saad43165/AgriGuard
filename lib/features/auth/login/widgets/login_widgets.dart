@@ -24,13 +24,13 @@ class GuestModeDialog extends StatelessWidget {
           const SizedBox(height: 20),
           const Text(
             'Guest Mode Restrictions',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1B2B1E)),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.lightOnSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           const Text(
             'You are entering as a guest. Please note the following limitations:',
-            style: TextStyle(fontSize: 14, color: Color(0xFF718096), height: 1.4),
+            style: TextStyle(fontSize: 14, color: AppColors.lightCaption, height: 1.4),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -79,7 +79,7 @@ class GuestModeDialog extends StatelessWidget {
           Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 12),
           Expanded(child: Text(text, style: const TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1B2B1E)))),
+            fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.lightOnSurface))),
         ],
       ),
     );
@@ -91,23 +91,23 @@ class LoginLabel extends StatelessWidget {
   const LoginLabel(this.text, {super.key});
   @override
   Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1B2B1E)));
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.lightOnSurface));
 }
 
 InputDecoration buildLoginInputDeco(String hint, IconData icon) => InputDecoration(
   hintText: hint,
-  hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
-  prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
+  hintStyle: const TextStyle(color: AppColors.grey500, fontSize: 14),
+  prefixIcon: Icon(icon, color: AppColors.grey500, size: 20),
   filled: true,
   fillColor: const Color(0xFFF9F9F9),
-  labelStyle: const TextStyle(color: Color(0xFF4A5568), fontSize: 14),
+  labelStyle: const TextStyle(color: AppColors.lightSubtext, fontSize: 14),
   border: OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),
-    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+    borderSide: const BorderSide(color: AppColors.lightBorder),
   ),
   enabledBorder: OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),
-    borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+    borderSide: const BorderSide(color: AppColors.lightBorder),
   ),
   focusedBorder: OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),

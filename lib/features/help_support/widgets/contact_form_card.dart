@@ -1,4 +1,5 @@
 // lib/features/support/widgets/contact_form_card.dart
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -363,7 +364,7 @@ class _ContactFormCardState extends State<ContactFormCard> {
                   Text(translation.get('message_sent')),
                 ],
               ),
-              backgroundColor: const Color(0xFF10B981),
+              backgroundColor: AppColors.emerald,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -8,6 +10,7 @@ import 'core/widgets/app_themes.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/translation_service.dart';
 import 'features/auth/login/services/guest_service.dart';
+import 'core/widgets/connectivity_banner.dart';
 import 'features/splash/splash_screen.dart';
 import 'firebase_options.dart';
 
@@ -59,17 +62,39 @@ class AgriGuardApp extends StatelessWidget {
     this.authStateChangesOverride,
   });
 
+  ThemeData _withUrduFont(ThemeData base, bool isUrdu) {
+    if (!isUrdu) return base;
+    // Nastaliq glyphs are tall; the extra line height stops them clipping.
+    return base.copyWith(
+      textTheme: GoogleFonts.notoNastaliqUrduTextTheme(base.textTheme)
+          .apply(displayColor: base.colorScheme.onSurface, bodyColor: base.colorScheme.onSurface),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isUrdu = themeOverride == null
+        ? context.watch<TranslationService>().isUrdu
+        : false;
+    final light = themeOverride ?? AppTheme.lightTheme;
+
     return MaterialApp(
       navigatorKey: AppRouter.navigatorKey,
       title: 'AgriGuard',
-      theme: themeOverride ?? AppTheme.lightTheme,
-      darkTheme: themeOverride == null ? AppTheme.darkTheme : null,
+      theme: _withUrduFont(light, isUrdu),
+      darkTheme: themeOverride == null ? _withUrduFont(AppTheme.darkTheme, isUrdu) : null,
       themeMode: themeOverride == null
           ? Provider.of<ThemeProvider>(context).materialThemeMode
           : ThemeMode.light,
+      // Locale drives text direction (Urdu = right-to-left) and the built-in
+      // Material strings (back button labels, date pickers, ...).
+      locale: Locale(isUrdu ? 'ur' : 'en'),
+      supportedLocales: const [Locale('en'), Locale('ur')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => themeOverride == null
+          ? ConnectivityBanner(child: child ?? const SizedBox.shrink())
+          : (child ?? const SizedBox.shrink()),
       home: homeOverride ??
           StreamBuilder<User?>(
             stream: authStateChangesOverride ??

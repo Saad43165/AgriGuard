@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -191,12 +192,12 @@ class _StatusTile extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: (isOk ? const Color(0xFF10B981) : const Color(0xFFEF4444))
+              color: (isOk ? AppColors.emerald : AppColors.error)
                   .withValues(alpha: 0.12),
             ),
             child: Icon(
               isOk ? Icons.check_circle_rounded : Icons.cancel_rounded,
-              color: isOk ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              color: isOk ? AppColors.emerald : AppColors.error,
             ),
           ),
           const SizedBox(width: 12),
@@ -225,7 +226,7 @@ class _StatusTile extends StatelessWidget {
             isOk ? 'Ready' : 'Missing',
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w900,
-              color: isOk ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              color: isOk ? AppColors.emerald : AppColors.error,
             ),
           ),
         ],

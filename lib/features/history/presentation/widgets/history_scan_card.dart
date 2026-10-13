@@ -109,7 +109,7 @@ class HistoryScanCard extends StatelessWidget {
                                     if (_isAdvanced)
                                       Container(
                                         margin:
-                                        const EdgeInsets.only(left: 6),
+                                        const EdgeInsetsDirectional.only(start: 6),
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
@@ -413,8 +413,8 @@ class ScanThumbnail extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
           colors: [
             Colors.blue.withValues(alpha: 0.1),
             Colors.purple.withValues(alpha: 0.1),

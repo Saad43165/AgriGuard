@@ -298,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     void openEdit() => showEditProfileSheet(
@@ -346,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
           sliver: SliverToBoxAdapter(
-            child: _SectionLabel(label: t.isUrdu ? 'اکاؤنٹ' : 'Account', isDark: isDark),
+            child: _SectionLabel(label: t.get('ui_account'), isDark: isDark),
           ),
         ),
         SliverPadding(
@@ -355,28 +355,28 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             child: _MenuCard(isDark: isDark, items: [
               _MenuItem(
                 icon: CupertinoIcons.person_crop_circle,
-                label: t.isUrdu ? 'ذاتی معلومات' : 'Personal Info',
+                label: t.get('ui_personal_info'),
                 subtitle: _profile['name']?.toString().isNotEmpty == true
                     ? _profile['name'] : 'Tap to fill in',
                 onTap: openEdit,
               ),
               _MenuItem(
                 icon: CupertinoIcons.phone,
-                label: t.isUrdu ? 'فون' : 'Phone',
+                label: t.get('ui_phone'),
                 subtitle: _profile['phone']?.toString().isNotEmpty == true
                     ? _profile['phone'] : 'Not set',
                 onTap: openEdit,
               ),
               _MenuItem(
                 icon: CupertinoIcons.location,
-                label: t.isUrdu ? 'مقام' : 'Location',
+                label: t.get('ui_location'),
                 subtitle: _profile['location']?.toString().isNotEmpty == true
                     ? _profile['location'] : 'Not set',
                 onTap: openEdit,
               ),
               _MenuItem(
                 icon: CupertinoIcons.tree,
-                label: t.isUrdu ? 'فارم کا سائز' : 'Farm Size',
+                label: t.get('ui_farm_size'),
                 subtitle: _profile['farmSize']?.toString().isNotEmpty == true
                     ? '${_profile['farmSize']} acres' : 'Not set',
                 onTap: openEdit,
@@ -389,7 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
           sliver: SliverToBoxAdapter(
-            child: _SectionLabel(label: t.isUrdu ? 'اکاؤنٹ اقدامات' : 'Account Actions', isDark: isDark),
+            child: _SectionLabel(label: t.get('ui_account_actions'), isDark: isDark),
           ),
         ),
         SliverPadding(
@@ -398,8 +398,8 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             child: _MenuCard(isDark: isDark, items: [
               _MenuItem(
                 icon: CupertinoIcons.square_arrow_right,
-                label: t.isUrdu ? 'لاگ آؤٹ' : 'Log Out',
-                subtitle: t.isUrdu ? 'اپنے اکاؤنٹ سے سائن آؤٹ کریں' : 'Sign out of your account',
+                label: t.get('ui_log_out'),
+                subtitle: t.get('ui_sign_out_of_your_account'),
                 labelColor: AppColors.error,
                 iconColor: AppColors.error,
                 onTap: () => showLogoutConfirmationDialog(
@@ -467,7 +467,7 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsetsDirectional.only(start: 4),
       child: Text(
         label.toUpperCase(),
         style: TextStyle(
@@ -543,7 +543,7 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = item.labelColor ?? (isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E));
+    final textColor = item.labelColor ?? (isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface);
     final iconColor = item.iconColor ?? AppColors.primary;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 

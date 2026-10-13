@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/translation_service.dart';
 import 'app_themes.dart';
 
 class ConnectivityBanner extends StatefulWidget {
@@ -31,10 +33,10 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
 
     // Initial check after a short delay
-    Future.delayed(const Duration(seconds: 5), _checkConnectivity);
+    Future.delayed(const Duration(seconds: 3), _checkConnectivity);
     
     // Periodic check every 45 seconds (less aggressive)
-    _timer = Timer.periodic(const Duration(seconds: 45), (_) => _checkConnectivity());
+    _timer = Timer.periodic(const Duration(seconds: 20), (_) => _checkConnectivity());
   }
 
   @override
@@ -65,8 +67,8 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
 
     if (!online) {
       _failCount++;
-      // Only treat as truly offline after 3 consecutive failures (approx 2+ mins of downtime)
-      if (_failCount >= 3 && _isOnline) {
+      // Treat as offline after 2 consecutive failed checks (~40s).
+      if (_failCount >= 2 && _isOnline) {
         setState(() => _isOnline = false);
         if (!_manuallyDismissed) _showBannerAnimated();
       }
@@ -99,10 +101,10 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
       children: [
         widget.child,
         if (_showBanner)
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 4,
-            left: 16,
-            right: 16,
+            start: 16,
+            end: 16,
             child: FadeTransition(
               opacity: _fadeAnim,
               child: Material(
@@ -127,10 +129,10 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
                     children: [
                       const Text('📡', style: TextStyle(fontSize: 13)),
                       const SizedBox(width: 8),
-                      const Flexible(
+                      Flexible(
                         child: Text(
-                          'No internet — Advanced features unavailable',
-                          style: TextStyle(
+                          context.read<TranslationService>().get('offline_banner'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -141,7 +143,10 @@ class _ConnectivityBannerState extends State<ConnectivityBanner>
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () => _hideBannerAnimated(manual: true),
-                        child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(Icons.close_rounded, color: Colors.white, size: 16, semanticLabel: 'Dismiss'),
+                        ),
                       ),
                     ],
                   ),

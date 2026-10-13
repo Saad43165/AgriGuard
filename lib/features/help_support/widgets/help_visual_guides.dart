@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,7 +27,7 @@ class HelpVisualGuides extends StatelessWidget {
         title: 'Common disease patterns',
         subtitle: 'Spots, blight, and mildew examples',
         assetPath: 'assets/images/help/disease_patterns.jpg',
-        accent: Color(0xFFEF4444),
+        accent: AppColors.error,
         bullets: [
           'Spots: small circles/patches',
           'Blight: dark irregular areas',
@@ -37,7 +38,7 @@ class HelpVisualGuides extends StatelessWidget {
         title: 'If the app says “Not a leaf”',
         subtitle: 'Fix the most common causes',
         assetPath: 'assets/images/help/not_a_leaf.jpg',
-        accent: Color(0xFFF59E0B),
+        accent: AppColors.warning,
         bullets: [
           'Move closer to the leaf',
           'Avoid busy backgrounds',
@@ -153,8 +154,8 @@ class _GuideCard extends StatelessWidget {
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                              begin: AlignmentDirectional.topStart,
+                              end: AlignmentDirectional.bottomEnd,
                               colors: [
                                 data.accent.withValues(alpha: 0.35),
                                 Colors.transparent,
@@ -163,8 +164,8 @@ class _GuideCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Positioned(
-                        left: 10,
+                      PositionedDirectional(
+                        start: 10,
                         top: 10,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -253,7 +254,7 @@ class _GuideCard extends StatelessWidget {
                           ),
                         ),
                         Align(
-                          alignment: Alignment.bottomRight,
+                          alignment: AlignmentDirectional.bottomEnd,
                           child: TextButton(
                             onPressed: () {
                               HapticFeedback.selectionClick();
@@ -336,9 +337,9 @@ class _GuideCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              left: 14,
-                              right: 14,
+                            PositionedDirectional(
+                              start: 14,
+                              end: 14,
                               bottom: 14,
                               child: Row(
                                 children: [
@@ -358,7 +359,7 @@ class _GuideCard extends StatelessWidget {
                                     ),
                                   ),
                                   const Spacer(),
-                                  IconButton(
+                                  IconButton(tooltip: 'Close', 
                                     onPressed: () => Navigator.pop(context),
                                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                                   ),

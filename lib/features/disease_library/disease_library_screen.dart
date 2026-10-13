@@ -70,7 +70,7 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
     final t = Provider.of<TranslationService>(context);
     final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
@@ -95,7 +95,7 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Text(
-                  t.isUrdu ? 'بیماری لائبریری' : 'Disease Library',
+                  t.get('ui_disease_library'),
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
                       color: textColor, letterSpacing: -0.3))),
                 Container(
@@ -138,9 +138,9 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
                     ),
                     if (_search.isEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(right: 12),
+                        padding: const EdgeInsetsDirectional.only(end: 12),
                         child: Text(
-                          t.isUrdu ? 'تلاش کریں...' : 'Search...',
+                          t.get('ui_search'),
                           style: TextStyle(fontSize: 13, color: captionColor),
                         ),
                       )
@@ -152,7 +152,7 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
                           _focusNode.unfocus();
                         },
                         child: Padding(
-                          padding: const EdgeInsets.only(right: 12),
+                          padding: const EdgeInsetsDirectional.only(end: 12),
                           child: Icon(Icons.close_rounded, size: 16, color: captionColor))),
                   ]),
                 ),
@@ -166,19 +166,19 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
                 height: 32,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsetsDirectional.only(end: 16),
                   children: [
-                    DiseaseChip(label: t.isUrdu ? 'سب' : 'All', selected: _filter == 'all',
+                    DiseaseChip(label: t.get('ui_all'), selected: _filter == 'all',
                         isDark: isDark, onTap: () => setState(() { _filter = 'all'; _selectedPlant = null; })),
                     const SizedBox(width: 8),
-                    DiseaseChip(label: t.isUrdu ? 'صحت مند' : 'Healthy', selected: _filter == 'healthy',
+                    DiseaseChip(label: t.get('ui_healthy'), selected: _filter == 'healthy',
                         isDark: isDark, onTap: () => setState(() { _filter = 'healthy'; _selectedPlant = null; })),
                     const SizedBox(width: 8),
-                    DiseaseChip(label: t.isUrdu ? 'بیمار' : 'Diseased', selected: _filter == 'diseased',
+                    DiseaseChip(label: t.get('ui_diseased'), selected: _filter == 'diseased',
                         isDark: isDark, onTap: () => setState(() { _filter = 'diseased'; _selectedPlant = null; })),
                     const SizedBox(width: 8),
                     ..._plants.map((p) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsetsDirectional.only(end: 8),
                       child: DiseaseChip(
                         label: _translatePlant(p, t),
                         selected: _selectedPlant == p,
@@ -202,7 +202,7 @@ class _DiseaseLibraryScreenState extends State<DiseaseLibraryScreen> {
                 ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(Icons.search_off_rounded, size: 48, color: captionColor),
                     const SizedBox(height: 12),
-                    Text(t.isUrdu ? 'کوئی نتیجہ نہیں' : 'No results found',
+                    Text(t.get('ui_no_results_found'),
                       style: TextStyle(fontSize: 16, color: captionColor)),
                   ]))
                 : GridView.builder(

@@ -124,21 +124,13 @@ class _CropCalendarScreenState extends State<CropCalendarScreen> {
   String _getWeatherAdvisory(TranslationService t) {
     switch (_season) {
       case 'spring':
-        return t.isUrdu
-            ? 'بہار میں بارش اور نمی فنگل بیماریوں کو بڑھاتی ہے۔ ہوا کی اچھی گردش یقینی بنائیں اور پتوں کو گیلا ہونے سے بچائیں۔'
-            : 'Spring rains and humidity promote fungal diseases. Ensure good air circulation and avoid leaf wetness.';
+        return t.get('ui_spring_rains_and_humidity_promote_fung');
       case 'summer':
-        return t.isUrdu
-            ? 'گرمی اور خشکی بیکٹیریل بیماریوں اور کیڑوں کو بڑھاتی ہے۔ باقاعدہ پانی دیں لیکن پتوں کو گیلا نہ کریں۔'
-            : 'Heat and drought stress increases bacterial diseases and pest pressure. Water regularly but avoid leaf wetness.';
+        return t.get('ui_heat_and_drought_stress_increases_bact');
       case 'autumn':
-        return t.isUrdu
-            ? 'خزاں میں ٹھنڈک اور نمی لیٹ بلائٹ اور سڑن کا خطرہ بڑھاتی ہے۔ فصل جلد کاٹیں اور ملبہ صاف کریں۔'
-            : 'Cool, moist autumn conditions increase late blight and rot risk. Harvest early and clean up debris.';
+        return t.get('ui_cool_moist_autumn_conditions_increase');
       default:
-        return t.isUrdu
-            ? 'سردیوں میں پالا اور ٹھنڈ پودوں کو نقصان پہنچا سکتی ہے۔ پودوں کو ڈھانپیں اور ڈورمنٹ اسپرے کریں۔'
-            : 'Winter frost and cold can damage plants. Cover sensitive plants and apply dormant sprays.';
+        return t.get('ui_winter_frost_and_cold_can_damage_plant');
     }
   }
 
@@ -146,31 +138,31 @@ class _CropCalendarScreenState extends State<CropCalendarScreen> {
     switch (_season) {
       case 'spring':
         return [
-          t.isUrdu ? 'بارش سے پہلے احتیاطی فنگسائیڈ لگائیں' : 'Apply preventive fungicide before rainy periods',
-          t.isUrdu ? 'نئی نشوونما کا ہفتہ وار معائنہ کریں' : 'Inspect new growth weekly for early signs',
-          t.isUrdu ? 'پودوں کے درمیان ہوا کی اچھی گردش یقینی بنائیں' : 'Ensure good air circulation between plants',
-          t.isUrdu ? 'متاثرہ پودوں کے ملبے کو ہٹائیں اور تلف کریں' : 'Remove and destroy infected plant debris',
+          t.get('ui_apply_preventive_fungicide_before_rain'),
+          t.get('ui_inspect_new_growth_weekly_for_early_si'),
+          t.get('ui_ensure_good_air_circulation_between_pl'),
+          t.get('ui_remove_and_destroy_infected_plant_debr'),
         ];
       case 'summer':
         return [
-          t.isUrdu ? 'پتوں کو گیلا ہونے سے بچانے کے لیے جڑ میں پانی دیں' : 'Water at the base to avoid leaf wetness',
-          t.isUrdu ? 'بیکٹیریل بیماریوں کے لیے تانبے پر مبنی اسپرے لگائیں' : 'Apply copper-based sprays for bacterial diseases',
-          t.isUrdu ? 'گرمی کے تناؤ کی نگرانی کریں' : 'Monitor for heat stress and provide shade if needed',
-          t.isUrdu ? 'ہفتے میں دو بار کیڑوں کا معائنہ کریں' : 'Scout for insect pests twice weekly',
+          t.get('ui_water_at_the_base_to_avoid_leaf_wetnes'),
+          t.get('ui_apply_copper_based_sprays_for_bacteria'),
+          t.get('ui_monitor_for_heat_stress_and_provide_sh'),
+          t.get('ui_scout_for_insect_pests_twice_weekly'),
         ];
       case 'autumn':
         return [
-          t.isUrdu ? 'سڑن سے بچانے کے لیے پہلی ٹھنڈ سے پہلے فصل کاٹیں' : 'Harvest before first frost to prevent rot',
-          t.isUrdu ? 'نم حالات میں لیٹ بلائٹ سے بچاؤ کریں' : 'Apply late blight preventives in humid conditions',
-          t.isUrdu ? 'گرے ہوئے پتوں کو فوری صاف کریں' : 'Clean up fallen leaves and debris promptly',
-          t.isUrdu ? 'جڑ سڑن سے بچانے کے لیے آبپاشی کم کریں' : 'Reduce irrigation to prevent root rot',
+          t.get('ui_harvest_before_first_frost_to_prevent'),
+          t.get('ui_apply_late_blight_preventives_in_humid'),
+          t.get('ui_clean_up_fallen_leaves_and_debris_prom'),
+          t.get('ui_reduce_irrigation_to_prevent_root_rot'),
         ];
       default:
         return [
-          t.isUrdu ? 'پودوں کو ٹھنڈ سے ڈھانپ کر بچائیں' : 'Protect plants from frost with covers',
-          t.isUrdu ? 'سردیوں میں کیڑوں کے لیے ڈورمنٹ آئل اسپرے کریں' : 'Apply dormant oil sprays for overwintering pests',
-          t.isUrdu ? 'سکون کے دوران بیمار لکڑی کاٹیں' : 'Prune diseased wood during dormancy',
-          t.isUrdu ? 'بہار کی کاشت کے لیے کھاد سے مٹی تیار کریں' : 'Prepare soil with compost for spring planting',
+          t.get('ui_protect_plants_from_frost_with_covers'),
+          t.get('ui_apply_dormant_oil_sprays_for_overwinte'),
+          t.get('ui_prune_diseased_wood_during_dormancy'),
+          t.get('ui_prepare_soil_with_compost_for_spring_p'),
         ];
     }
   }
@@ -355,7 +347,7 @@ class _CropCalendarScreenState extends State<CropCalendarScreen> {
               children: [
                 Container(
                   width: 22, height: 22,
-                  margin: const EdgeInsets.only(right: 10),
+                  margin: const EdgeInsetsDirectional.only(end: 10),
                   decoration: BoxDecoration(
                     color: AppColors.success.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -394,7 +386,7 @@ class _CropCalendarScreenState extends State<CropCalendarScreen> {
             children: [
               const Icon(Icons.calendar_view_month_rounded, color: AppColors.primary, size: 18),
               const SizedBox(width: 8),
-              Text(t.isUrdu ? 'ماہانہ خطرے کا نقشہ' : 'Monthly Risk Map',
+              Text(t.get('ui_monthly_risk_map'),
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: text)),
             ],
           ),
@@ -446,20 +438,20 @@ class _CropCalendarScreenState extends State<CropCalendarScreen> {
               Container(width: 12, height: 12, decoration: BoxDecoration(
                   color: AppColors.error.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 6),
-              Text(t.isUrdu ? 'زیادہ خطرہ' : 'High Risk',
+              Text(t.get('ui_high_risk'),
                   style: TextStyle(fontSize: 11, color: caption)),
               const SizedBox(width: 16),
               Container(width: 12, height: 12, decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 6),
-              Text(t.isUrdu ? 'کم خطرہ' : 'Low Risk',
+              Text(t.get('ui_low_risk'),
                   style: TextStyle(fontSize: 11, color: caption)),
               const SizedBox(width: 16),
               Container(width: 12, height: 12, decoration: BoxDecoration(
                   border: Border.all(color: AppColors.primary, width: 1.5),
                   borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 6),
-              Text(t.isUrdu ? 'موجودہ ماہ' : 'Current Month',
+              Text(t.get('ui_current_month'),
                   style: TextStyle(fontSize: 11, color: caption)),
             ],
           ),
@@ -555,7 +547,7 @@ class _CropCalendarScreenState extends State<CropCalendarScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 6, height: 6, margin: const EdgeInsets.only(top: 5, right: 10),
+                  width: 6, height: 6, margin: const EdgeInsetsDirectional.only(top: 5, end: 10),
                   decoration: const BoxDecoration(
                       color: AppColors.primary, shape: BoxShape.circle),
                 ),

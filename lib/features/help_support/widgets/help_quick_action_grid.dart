@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -24,14 +25,14 @@ class HelpQuickActionGrid extends StatelessWidget {
         title: t.get('quick_answers'),
         subtitle: t.get('find_answers'),
         icon: Icons.question_answer_rounded,
-        gradient: const [Color(0xFF3B82F6), Color(0xFF22C55E)],
+        gradient: const [AppColors.blue, Color(0xFF22C55E)],
         onTap: onOpenFaqs,
       ),
       _QuickAction(
         title: t.get('take_photo'),
         subtitle: t.get('step1_text'),
         icon: Icons.photo_camera_rounded,
-        gradient: const [Color(0xFFF59E0B), Color(0xFFEF4444)],
+        gradient: const [AppColors.warning, AppColors.error],
         onTap: () {
           HapticFeedback.selectionClick();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -52,7 +53,7 @@ class HelpQuickActionGrid extends StatelessWidget {
         title: t.get('next_steps'),
         subtitle: t.get('recommended_actions'),
         icon: Icons.playlist_add_check_circle_rounded,
-        gradient: const [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+        gradient: const [AppColors.violet, Color(0xFFEC4899)],
         onTap: () {
           HapticFeedback.selectionClick();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -69,7 +70,7 @@ class HelpQuickActionGrid extends StatelessWidget {
         title: t.get('get_in_touch'),
         subtitle: t.get('help_questions'),
         icon: Icons.support_agent_rounded,
-        gradient: const [Color(0xFF06B6D4), Color(0xFF3B82F6)],
+        gradient: const [Color(0xFF06B6D4), AppColors.blue],
         onTap: onScrollToContact,
       ),
     ];

@@ -1,6 +1,7 @@
 // chatbot_service.dart
 // API service handling Groq AI + local fallback for AgriGuard chatbot
 
+import 'package:agriguard_fyp/core/services/api_gateway.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -14,11 +15,10 @@ class ChatbotService {
 
   /// Primary: Try Groq API. Returns reply string or null on failure.
   static Future<String?> sendToGroq(List<ChatMessage> messages) async {
-    final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
     final groqModel =
         dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile';
 
-    if (groqKey.isEmpty) return null;
+    if (!ApiGateway.groqAvailable) return null;
 
     try {
       final lastUserMsg = messages.lastWhere(
@@ -35,10 +35,10 @@ class ChatbotService {
 
       final response = await http
           .post(
-            Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+            Uri.parse(ApiGateway.groqUrl),
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer $groqKey',
+              'Authorization': await ApiGateway.groqAuth(),
             },
             body: jsonEncode({
               'model': groqModel,

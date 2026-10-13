@@ -1,0 +1,16 @@
+{
+  "name": "agriguard-functions",
+  "private": true,
+  "description": "API proxy that keeps third-party keys off the phone",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.1.0"
+  }
+}

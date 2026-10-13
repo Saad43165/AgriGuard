@@ -85,6 +85,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      // Upload anything still local-only, then pull down scans from other
+      // devices / previous installs. Both are no-ops when nothing is pending.
+      await _scanRepository.migrateInlineImagesToFiles();
+      await _scanRepository.syncUnsyncedScans();
+      await _scanRepository.restoreFromCloud();
+      if (!mounted) return;
+
       // Load more than 3 so we can filter low-confidence ones
       final allScans = await _scanRepository.getUserScans(limit: 20);
       if (!mounted) return;
@@ -384,7 +391,7 @@ class _ScanCard extends StatelessWidget {
     // Translated display values
     final displayPlant = t.translatePlant(plantName);
     final displayDisease = isHealthy
-        ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+        ? (t.get('ui_healthy'))
         : t.translateDisease(diseaseName);
     final severity = scan['severity']?.toString() ?? '';
     final displaySeverity = t.translateSeverity(severity);
@@ -395,9 +402,9 @@ class _ScanCard extends StatelessWidget {
       final now = DateTime.now();
       final diff = now.difference(scanDate);
       if (diff.inDays == 0) {
-        dateStr = t.isUrdu ? 'آج' : 'Today';
+        dateStr = t.get('ui_today');
       } else if (diff.inDays == 1) {
-        dateStr = t.isUrdu ? 'کل' : 'Yesterday';
+        dateStr = t.get('ui_yesterday');
       } else if (diff.inDays < 7) {
         dateStr = t.isUrdu ? '${diff.inDays} دن پہلے' : '${diff.inDays}d ago';
       } else {
@@ -525,7 +532,7 @@ class _EmptyScansState extends StatelessWidget {
     final t = Provider.of<TranslationService>(context);
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return Container(
@@ -577,7 +584,7 @@ class _EmptyScansState extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  t.isUrdu ? 'ابھی تک کوئی اسکین نہیں' : 'No scans yet',
+                  t.get('ui_no_scans_yet'),
                   style: TextStyle(
                     fontSize: 17, fontWeight: FontWeight.w800,
                     color: textColor, letterSpacing: -0.3,
@@ -587,9 +594,7 @@ class _EmptyScansState extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Text(
-                    t.isUrdu
-                        ? 'اپنے پودے کی تصویر لیں اور فوری بیماری کی تشخیص حاصل کریں'
-                        : 'Take a photo of your plant leaf and get instant disease diagnosis',
+                    t.get('ui_take_a_photo_of_your_plant_leaf_and_ge'),
                     style: TextStyle(fontSize: 12, color: captionColor, height: 1.5),
                     textAlign: TextAlign.center,
                   ),
@@ -603,11 +608,11 @@ class _EmptyScansState extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Row(
               children: [
-                _Step(number: '1', label: t.isUrdu ? 'تصویر لیں' : 'Take photo', isDark: isDark),
+                _Step(number: '1', label: t.get('ui_take_photo'), isDark: isDark),
                 _StepArrow(isDark: isDark),
-                _Step(number: '2', label: t.isUrdu ? 'AI تجزیہ' : 'AI analysis', isDark: isDark),
+                _Step(number: '2', label: t.get('ui_ai_analysis'), isDark: isDark),
                 _StepArrow(isDark: isDark),
-                _Step(number: '3', label: t.isUrdu ? 'نتائج دیکھیں' : 'Get results', isDark: isDark),
+                _Step(number: '3', label: t.get('ui_get_results'), isDark: isDark),
               ],
             ),
           ),
@@ -620,7 +625,7 @@ class _EmptyScansState extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onScanFirst,
                 icon: const Icon(CupertinoIcons.camera_fill, size: 16),
-                label: Text(t.isUrdu ? 'پہلا پودا اسکین کریں' : 'Scan Your First Plant'),
+                label: Text(t.get('ui_scan_your_first_plant')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -666,7 +671,7 @@ class _SkeletonScanCardState extends State<_SkeletonScanCard>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final base = isDark ? AppColors.darkCard : Colors.white;
-    final shimmer = isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8);
+    final shimmer = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
     return AnimatedBuilder(
       animation: _anim,

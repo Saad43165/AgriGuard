@@ -12,6 +12,7 @@ import 'tiles/clear_history_tile.dart';
 import 'tiles/delete_account_tile.dart';
 import 'components/notification_schedule_sheet.dart';
 import 'privacy_security_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -120,6 +121,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             }),
             _divider(isDark),
+            _arrowTile(Icons.policy_outlined, 'Privacy Policy',
+                'How your data is used', isDark, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+              );
+            }),
+            _divider(isDark),
             const ClearHistoryTile(padding: EdgeInsets.zero),
             _divider(isDark),
             const DeleteAccountTile(padding: EdgeInsets.zero),
@@ -149,7 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _sectionLabel(String label, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
       child: Text(label, style: TextStyle(
         fontSize: 11, fontWeight: FontWeight.w700,
         color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
@@ -164,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -211,9 +220,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   height: 34,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
+                    color: isDark ? AppColors.darkBg : AppColors.lightBg,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                   ),
                   child: Row(
                     children: options.map((opt) {
@@ -326,7 +335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         fontSize: 15, fontWeight: FontWeight.w600,
         color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface,
       )),
-      subtitle: Text(t.isUrdu ? 'اردو' : 'English', style: TextStyle(
+      subtitle: Text(t.get('ui_english'), style: TextStyle(
         fontSize: 12, color: isDark ? AppColors.darkCaption : AppColors.lightCaption,
       )),
       trailing: Container(
@@ -335,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Text(t.isUrdu ? 'EN' : 'اردو',
+        child: Text(t.get('ui_language_toggle'),
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
       ),
       onTap: () async {

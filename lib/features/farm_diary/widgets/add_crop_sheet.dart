@@ -138,11 +138,11 @@ class _AddCropSheetState extends State<AddCropSheet>
     final sheetBg = isDark ? const Color(0xFF0F1923) : const Color(0xFFFAFBFC);
     final cardBg = isDark ? const Color(0xFF1A2535) : Colors.white;
     final inputBg = isDark ? const Color(0xFF111C28) : const Color(0xFFF0F4F8);
-    final textColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-    final captionColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
-    final borderColor = isDark ? const Color(0xFF1E3A5F).withValues(alpha: 0.6) : const Color(0xFFE2E8F0);
-    final accentGreen = const Color(0xFF10B981);
-    final accentBlue = const Color(0xFF3B82F6);
+    final textColor = isDark ? AppColors.slate100 : const Color(0xFF0F172A);
+    final captionColor = isDark ? AppColors.slate500 : AppColors.slate400;
+    final borderColor = isDark ? const Color(0xFF1E3A5F).withValues(alpha: 0.6) : AppColors.slate200;
+    final accentGreen = AppColors.emerald;
+    final accentBlue = AppColors.blue;
 
     return AnimatedBuilder(
       animation: _sheetAnim,
@@ -196,8 +196,8 @@ class _AddCropSheetState extends State<AddCropSheet>
                           accentGreen.withValues(alpha: 0.2),
                           accentBlue.withValues(alpha: 0.1),
                         ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: AlignmentDirectional.topStart,
+                        end: AlignmentDirectional.bottomEnd,
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
@@ -212,7 +212,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          t.isUrdu ? 'نئی فصل شامل کریں' : 'Add New Crop Field',
+                          t.get('ui_add_new_crop_field'),
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -222,9 +222,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          t.isUrdu
-                              ? 'اپنی فصل درج کریں'
-                              : 'Register any crop or plant species',
+                          t.get('ui_register_any_crop_or_plant_species'),
                           style: TextStyle(fontSize: 12.5, color: captionColor),
                         ),
                       ],
@@ -264,7 +262,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                       // ── SECTION 1: Plant/Species Selection ─────────────
                       _sectionHeader(
                         '01',
-                        t.isUrdu ? 'فصل / پودے کی قسم' : 'Crop / Plant Species',
+                        t.get('ui_crop_plant_species'),
                         accentGreen,
                         textColor,
                         captionColor,
@@ -325,7 +323,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                                   children: [
                                     Text(
                                       _isCustomSpecies
-                                          ? (t.isUrdu ? 'اپنی مرضی کی فصل' : 'Custom Species')
+                                          ? (t.get('ui_custom_species'))
                                           : (t.isUrdu
                                           ? _selectedSpecies.nameUr
                                           : _selectedSpecies.nameEn),
@@ -338,9 +336,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                                     const SizedBox(height: 2),
                                     Text(
                                       _isCustomSpecies
-                                          ? (t.isUrdu
-                                          ? 'نام درج کریں'
-                                          : 'Enter name below')
+                                          ? (t.get('ui_enter_name_below'))
                                           : _selectedSpecies.scientificName,
                                       style: TextStyle(
                                         fontSize: 11.5,
@@ -364,7 +360,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      t.isUrdu ? 'تبدیل' : 'Change',
+                                      t.get('ui_change'),
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -508,9 +504,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                                             CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                t.isUrdu
-                                                    ? 'اپنی مرضی کی فصل / پودا'
-                                                    : 'Other / Custom Species',
+                                                t.get('ui_other_custom_species'),
                                                 style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w700,
@@ -520,9 +514,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                                                 ),
                                               ),
                                               Text(
-                                                t.isUrdu
-                                                    ? 'کوئی بھی پودا یا فصل درج کریں'
-                                                    : 'Add any plant not listed above',
+                                                t.get('ui_add_any_plant_not_listed_above'),
                                                 style: TextStyle(
                                                     fontSize: 11,
                                                     color: captionColor),
@@ -556,7 +548,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                       // ── SECTION 2: Field Details ────────────────────────
                       _sectionHeader(
                         '02',
-                        t.isUrdu ? 'کھیت کی تفصیل' : 'Field Details',
+                        t.get('ui_field_details'),
                         accentBlue,
                         textColor,
                         captionColor,
@@ -565,18 +557,18 @@ class _AddCropSheetState extends State<AddCropSheet>
 
                       // Crop field name
                       _buildLabel(Icons.drive_file_rename_outline_rounded,
-                          t.isUrdu ? 'کھیت کا نام' : 'Field Name', textColor),
+                          t.get('ui_field_name'), textColor),
                       const SizedBox(height: 8),
                       _buildTextField(
                         controller: _nameCtrl,
-                        hint: t.isUrdu ? 'مثال: شمالی کھیت' : 'e.g. North Field',
+                        hint: t.get('ui_e_g_north_field'),
                         icon: Icons.landscape_rounded,
                         textColor: textColor,
                         inputBg: inputBg,
                         borderColor: borderColor,
                         accentColor: accentGreen,
                         validator: (v) => (v == null || v.isEmpty)
-                            ? (t.isUrdu ? 'ضروری ہے' : 'Required')
+                            ? (t.get('ui_required'))
                             : null,
                       ),
 
@@ -584,7 +576,7 @@ class _AddCropSheetState extends State<AddCropSheet>
 
                       // Field size
                       _buildLabel(Icons.straighten_rounded,
-                          '${t.isUrdu ? 'رقبہ' : 'Field Size'} (${t.isUrdu ? 'ایکڑ' : 'Acres'})',
+                          '${t.get('ui_field_size')} (${t.get('ui_acres_2')})',
                           textColor),
                       const SizedBox(height: 8),
                       _buildTextField(
@@ -603,7 +595,7 @@ class _AddCropSheetState extends State<AddCropSheet>
 
                       // Notes
                       _buildLabel(Icons.sticky_note_2_rounded,
-                          t.isUrdu ? 'اضافی نوٹس' : 'Notes (Optional)',
+                          t.get('ui_notes_optional'),
                           textColor),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -612,14 +604,12 @@ class _AddCropSheetState extends State<AddCropSheet>
                         style: TextStyle(
                             color: textColor, fontSize: 14, height: 1.5),
                         decoration: InputDecoration(
-                          hintText: t.isUrdu
-                              ? 'فصل کے بارے میں کوئی خاص بات...'
-                              : 'Any special notes about this field...',
+                          hintText: t.get('ui_any_special_notes_about_this_field'),
                           hintStyle:
                           TextStyle(color: captionColor, fontSize: 13),
                           prefixIcon: Padding(
                             padding:
-                            const EdgeInsets.only(left: 16, top: 14),
+                            const EdgeInsetsDirectional.only(start: 16, top: 14),
                             child: Icon(Icons.notes_rounded,
                                 color: accentGreen.withValues(alpha: 0.8),
                                 size: 18),
@@ -660,7 +650,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                         child: TextButton(
                           onPressed: () => Navigator.pop(context),
                           child: Text(
-                            t.isUrdu ? 'منسوخ کریں' : 'Cancel',
+                            t.get('ui_cancel_2'),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -707,7 +697,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                   size: 15, color: accentBlue),
               const SizedBox(width: 6),
               Text(
-                t.isUrdu ? 'اپنی فصل کی معلومات' : 'Custom Species Details',
+                t.get('ui_custom_species_details'),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -721,7 +711,7 @@ class _AddCropSheetState extends State<AddCropSheet>
 
           // Species/crop name field
           Text(
-            t.isUrdu ? 'فصل / پودے کا نام *' : 'Species / Crop Name *',
+            t.get('ui_species_crop_name'),
             style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
@@ -734,7 +724,7 @@ class _AddCropSheetState extends State<AddCropSheet>
             TextStyle(color: textColor, fontSize: 14, fontWeight: FontWeight.w600),
             decoration: InputDecoration(
               hintText:
-              t.isUrdu ? 'مثال: گندم، مکئی، گلاب' : 'e.g. Wheat, Rose, Turmeric',
+              t.get('ui_e_g_wheat_rose_turmeric'),
               hintStyle: TextStyle(color: captionColor, fontSize: 13),
               prefixIcon: Icon(Icons.eco_rounded,
                   color: accentBlue, size: 18),
@@ -757,7 +747,7 @@ class _AddCropSheetState extends State<AddCropSheet>
               ),
             ),
             validator: (v) => (_isCustomSpecies && (v == null || v.isEmpty))
-                ? (t.isUrdu ? 'ضروری ہے' : 'Required')
+                ? (t.get('ui_required'))
                 : null,
           ),
 
@@ -765,7 +755,7 @@ class _AddCropSheetState extends State<AddCropSheet>
 
           // Scientific name (optional)
           Text(
-            t.isUrdu ? 'سائنسی نام (اختیاری)' : 'Scientific Name (Optional)',
+            t.get('ui_scientific_name_optional'),
             style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
@@ -779,9 +769,7 @@ class _AddCropSheetState extends State<AddCropSheet>
                 fontSize: 13,
                 fontStyle: FontStyle.italic),
             decoration: InputDecoration(
-              hintText: t.isUrdu
-                  ? 'مثال: Triticum aestivum'
-                  : 'e.g. Triticum aestivum',
+              hintText: t.get('ui_e_g_triticum_aestivum'),
               hintStyle: TextStyle(
                   color: captionColor,
                   fontSize: 12,
@@ -812,7 +800,7 @@ class _AddCropSheetState extends State<AddCropSheet>
 
           // Quick suggestions
           Text(
-            t.isUrdu ? 'تجاویز:' : 'Quick suggestions:',
+            t.get('ui_quick_suggestions'),
             style: TextStyle(
                 fontSize: 11, fontWeight: FontWeight.w600, color: captionColor),
           ),
@@ -1026,9 +1014,9 @@ class _AddCropSheetState extends State<AddCropSheet>
       height: 56,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [accentGreen, const Color(0xFF059669)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: [accentGreen, AppColors.emeraldDark],
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
         ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
@@ -1062,7 +1050,7 @@ class _AddCropSheetState extends State<AddCropSheet>
             const Icon(Icons.check_circle_rounded, size: 20),
             const SizedBox(width: 10),
             Text(
-              t.isUrdu ? 'فصل محفوظ کریں' : 'Save Crop Field',
+              t.get('ui_save_crop_field'),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,

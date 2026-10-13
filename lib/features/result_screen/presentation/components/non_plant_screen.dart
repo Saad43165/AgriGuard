@@ -17,7 +17,7 @@ class NonPlantScreen extends StatelessWidget {
     final t = Provider.of<TranslationService>(context);
     final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return Scaffold(
@@ -67,7 +67,7 @@ class NonPlantScreen extends StatelessWidget {
                     ),
                   const SizedBox(height: 28),
                   Text(
-                    t.isUrdu ? 'پودے کا پتہ نہیں ملا' : 'No Plant Detected',
+                    t.get('ui_no_plant_detected'),
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: textColor, letterSpacing: -0.5),
                     textAlign: TextAlign.center,
                   ),
@@ -87,16 +87,16 @@ class NonPlantScreen extends StatelessWidget {
                       border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
                     child: Column(children: [
                       _Tip(icon: Icons.center_focus_strong_rounded,
-                          text: t.isUrdu ? 'پتے کو فریم میں بھریں' : 'Fill the frame with a single leaf', isDark: isDark),
+                          text: t.get('ui_fill_the_frame_with_a_single_leaf'), isDark: isDark),
                       const SizedBox(height: 10),
                       _Tip(icon: Icons.wb_sunny_rounded,
-                          text: t.isUrdu ? 'اچھی روشنی میں تصویر لیں' : 'Use good natural lighting', isDark: isDark),
+                          text: t.get('ui_use_good_natural_lighting'), isDark: isDark),
                       const SizedBox(height: 10),
                       _Tip(icon: Icons.blur_off_rounded,
-                          text: t.isUrdu ? 'واضح اور فوکس تصویر لیں' : 'Keep the image sharp and in focus', isDark: isDark),
+                          text: t.get('ui_keep_the_image_sharp_and_in_focus'), isDark: isDark),
                       const SizedBox(height: 10),
                       _Tip(icon: Icons.eco_rounded,
-                          text: t.isUrdu ? 'صرف پودوں کے پتوں کی تصویر لیں' : 'Only scan plant leaves', isDark: isDark),
+                          text: t.get('ui_only_scan_plant_leaves'), isDark: isDark),
                     ]),
                   ),
                   const SizedBox(height: 28),
@@ -105,7 +105,7 @@ class NonPlantScreen extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: onRetry,
                       icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                      label: Text(t.isUrdu ? 'دوبارہ اسکین کریں' : 'Scan Again'),
+                      label: Text(t.get('ui_scan_again')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary, foregroundColor: Colors.white,
                         elevation: 0,
@@ -138,6 +138,6 @@ class _Tip extends StatelessWidget {
       child: Icon(icon, color: AppColors.primary, size: 16)),
     const SizedBox(width: 12),
     Expanded(child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
-        color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568)))),
+        color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext))),
   ]);
 }

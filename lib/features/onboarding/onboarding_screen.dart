@@ -62,7 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             // Skip button
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               child: TextButton(
                 onPressed: _finish,
                 child: const Text('Skip',

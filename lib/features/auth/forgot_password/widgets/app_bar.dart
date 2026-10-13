@@ -31,7 +31,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       centerTitle: true, // ✅ Center the title
       leading: Container(
-        margin: EdgeInsets.only(left: smallPadding),
+        margin: EdgeInsetsDirectional.only(start: smallPadding),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),

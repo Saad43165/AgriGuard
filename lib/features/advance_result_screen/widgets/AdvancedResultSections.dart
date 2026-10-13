@@ -80,6 +80,32 @@ class AdvancedResultSections extends StatelessWidget {
             isExpanded: treatmentExpanded,
             onToggle: onToggleTreatment,
           ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.get('ai_guidance_disclaimer'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 14),
 
           _buildCollapsibleSection(
@@ -209,7 +235,7 @@ class AdvancedResultSections extends StatelessWidget {
     final plantName = hasMeaningfulPlantName ? t.translatePlant(displayPlantRaw) : '';
     final plantNameFinal = t.isUrdu && plantNameUrdu.isNotEmpty ? plantNameUrdu : plantName;
     final diseaseName = diseaseNameRaw.toLowerCase() == 'healthy'
-        ? (t.isUrdu ? 'صحت مند' : 'Healthy')
+        ? (t.get('ui_healthy'))
         : t.translateDisease(diseaseNameRaw);
     final severityDisplay = t.translateSeverity(severity);
 

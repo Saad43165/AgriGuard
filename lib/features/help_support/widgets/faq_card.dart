@@ -1,4 +1,5 @@
 // lib/features/support/widgets/faq_card.dart
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -20,8 +21,8 @@ class FaqCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: AlignmentDirectional.topStart,
+              end: AlignmentDirectional.bottomEnd,
               colors: [
                 Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                 Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
@@ -102,7 +103,7 @@ class FaqCard extends StatelessWidget {
           questionKey: 'faq_plants_q',
           answerKey: 'faq_plants_a',
           icon: Icons.eco_rounded,
-          color: const Color(0xFF10B981),
+          color: AppColors.emerald,
           index: 1,
         ),
         const SizedBox(height: 12),
@@ -118,7 +119,7 @@ class FaqCard extends StatelessWidget {
           questionKey: 'faq_history_q',
           answerKey: 'faq_history_a',
           icon: Icons.history_rounded,
-          color: const Color(0xFF8B5CF6),
+          color: AppColors.violet,
           index: 3,
         ),
 

@@ -570,10 +570,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     return Scaffold(
       extendBodyBehindAppBar: false,
       appBar: HistoryAppBar(
-        title: t.isUrdu ? 'اسکین ہسٹری' : 'Scan History',
+        title: t.get('ui_scan_history'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 5),
+            padding: const EdgeInsetsDirectional.only(end: 5),
             child: HistoryAppBarAction(
               icon: Icons.file_download_rounded,
               onPressed: _exportHistory,

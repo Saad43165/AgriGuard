@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -24,7 +25,7 @@ class PdfDialogHelper {
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red.shade600 : const Color(0xFF059669),
+        backgroundColor: isError ? Colors.red.shade600 : AppColors.emeraldDark,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: Duration(seconds: isError ? 5 : 3),

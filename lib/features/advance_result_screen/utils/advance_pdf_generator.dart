@@ -188,8 +188,8 @@ class AdvancedPdfGenerator {
   // ─── Page Header ───────────────────────────────────────────────────────
   static pw.Widget _buildPageHeader() {
     return pw.Container(
-      alignment: pw.Alignment.centerRight,
-      padding: const pw.EdgeInsets.only(bottom: 10, right: 20),
+      alignment: pw.AlignmentDirectional.centerEnd,
+      padding: const pw.EdgeInsetsDirectional.only(bottom: 10, end: 20),
       child: pw.Text(
         'AgriGuard Advanced Analysis',
         style: pw.TextStyle(

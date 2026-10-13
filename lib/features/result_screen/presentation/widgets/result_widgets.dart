@@ -24,15 +24,15 @@ class ResultChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
     decoration: BoxDecoration(
-      color: isDark ? AppColors.darkBg : const Color(0xFFF5F5F5),
+      color: isDark ? AppColors.darkBg : AppColors.lightBg,
       borderRadius: BorderRadius.circular(50),
-      border: Border.all(color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+      border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
     ),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Text(icon, style: const TextStyle(fontSize: 12)),
       const SizedBox(width: 5),
       Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568))),
+          color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext)),
     ]),
   );
 }
@@ -55,7 +55,7 @@ class ResultAlertRow extends StatelessWidget {
       Icon(icon, color: color, size: 16),
       const SizedBox(width: 10),
       Expanded(child: Text(message, style: TextStyle(fontSize: 12,
-          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568), height: 1.4))),
+          color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext, height: 1.4))),
     ]),
   );
 }
@@ -70,6 +70,6 @@ class ResultSectionHeader extends StatelessWidget {
     Icon(icon, color: AppColors.primary, size: 16),
     const SizedBox(width: 8),
     Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E))),
+        color: isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface)),
   ]);
 }

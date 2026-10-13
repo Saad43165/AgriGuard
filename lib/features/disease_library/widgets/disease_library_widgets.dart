@@ -51,7 +51,7 @@ class DiseaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardBg = isDark ? AppColors.darkCard : Colors.white;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final captionColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final t = Provider.of<TranslationService>(context);
@@ -60,7 +60,7 @@ class DiseaseCard extends StatelessWidget {
         ? (t.isUrdu ? 'صحت مند' : entry.condition)
         : t.translateDisease(entry.condition);
     final displaySeverity = entry.isHealthy
-        ? (t.isUrdu ? 'صحت مند' : '✓')
+        ? (t.get('ui_text'))
         : _translateSeverityStatic(entry.severity, t);
     final displaySpread = _translateSeverityStatic(entry.spreadRate, t);
 
@@ -101,8 +101,8 @@ class DiseaseCard extends StatelessWidget {
                     child: Image.asset(entry.imageAsset, fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Icon(Icons.eco_rounded,
                             size: 44, color: entry.isHealthy ? AppColors.primary : _severityColor))),
-                Positioned(
-                  top: 7, right: 7,
+                PositionedDirectional(
+                  top: 7, end: 7,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(

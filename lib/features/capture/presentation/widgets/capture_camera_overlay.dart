@@ -73,8 +73,8 @@ class CaptureCameraOverlay extends StatelessWidget {
         ),
 
         if (showFocusCircle && focusPoint != null)
-          Positioned(
-            left: focusPoint!.dx - 30,
+          PositionedDirectional(
+            start: focusPoint!.dx - 30,
             top: focusPoint!.dy - 30,
             child: AnimatedBuilder(
               animation: focusAnimation,
@@ -92,10 +92,10 @@ class CaptureCameraOverlay extends StatelessWidget {
             ),
           ),
 
-        Positioned(
+        PositionedDirectional(
           bottom: 230,
-          left: 0,
-          right: 0,
+          start: 0,
+          end: 0,
           child: Text(
             hintText,
             textAlign: TextAlign.center,
@@ -104,10 +104,10 @@ class CaptureCameraOverlay extends StatelessWidget {
         ),
 
         if (currentZoom > 1.05)
-          Positioned(
+          PositionedDirectional(
             bottom: 210,
-            left: 0,
-            right: 0,
+            start: 0,
+            end: 0,
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -121,10 +121,10 @@ class CaptureCameraOverlay extends StatelessWidget {
             ),
           ),
 
-        Positioned(
+        PositionedDirectional(
           top: MediaQuery.of(context).padding.top + 8,
-          left: 16,
-          right: 16,
+          start: 16,
+          end: 16,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -143,10 +143,10 @@ class CaptureCameraOverlay extends StatelessWidget {
         ),
 
         if (plantHint != null)
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 60,
-            left: 0,
-            right: 0,
+            start: 0,
+            end: 0,
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

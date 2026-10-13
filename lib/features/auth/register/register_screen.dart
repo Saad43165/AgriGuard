@@ -159,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: IconButton(tooltip: 'Back', 
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.lightOnSurface),
           onPressed: () => Navigator.pop(context),
         ),
@@ -200,8 +200,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             : null,
                       ),
                     ),
-                    Positioned(
-                      bottom: 4, right: 4,
+                    PositionedDirectional(
+                      bottom: 4, end: 4,
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
@@ -245,9 +245,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _passCtrl,
                     obscureText: _obscurePass,
                     decoration: _inputDeco('Create a secure password', Icons.lock_outline_rounded).copyWith(
-                      suffixIcon: IconButton(
+                      suffixIcon: IconButton(tooltip: 'Show password', 
                         icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: const Color(0xFF9E9E9E), size: 20),
+                            color: AppColors.grey500, size: 20),
                         onPressed: () => setState(() => _obscurePass = !_obscurePass),
                       ),
                     ),
@@ -261,9 +261,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _confirmCtrl,
                     obscureText: _obscureConfirm,
                     decoration: _inputDeco('Confirm your password', Icons.lock_outline_rounded).copyWith(
-                      suffixIcon: IconButton(
+                      suffixIcon: IconButton(tooltip: 'Show password', 
                         icon: Icon(_obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            color: const Color(0xFF9E9E9E), size: 20),
+                            color: AppColors.grey500, size: 20),
                         onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                       ),
                     ),
@@ -314,14 +314,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _label(String text) => Text(text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1B2B1E)));
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.lightOnSurface));
 
   Widget _field(TextEditingController ctrl, String hint, IconData icon,
       {TextInputType? keyboardType, String? Function(String?)? validator}) {
     return TextFormField(
       controller: ctrl,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Color(0xFF1B2B1E), fontSize: 14),
+      style: const TextStyle(color: AppColors.lightOnSurface, fontSize: 14),
       decoration: _inputDeco(hint, icon),
       validator: validator,
       textInputAction: TextInputAction.next,
@@ -330,15 +330,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   InputDecoration _inputDeco(String hint, IconData icon) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
-    prefixIcon: Icon(icon, color: const Color(0xFF9E9E9E), size: 20),
+    hintStyle: const TextStyle(color: AppColors.grey500, fontSize: 14),
+    prefixIcon: Icon(icon, color: AppColors.grey500, size: 20),
     filled: true,
     fillColor: const Color(0xFFF9F9F9),
-    labelStyle: const TextStyle(color: Color(0xFF4A5568), fontSize: 14),
+    labelStyle: const TextStyle(color: AppColors.lightSubtext, fontSize: 14),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFE8E8E8))),
+        borderSide: const BorderSide(color: AppColors.lightBorder)),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFE8E8E8))),
+        borderSide: const BorderSide(color: AppColors.lightBorder)),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
     errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14),

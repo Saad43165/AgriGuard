@@ -12,6 +12,25 @@ the review environment) — every item below still needs a manual test on device
 
 ---
 
+## Round 2 status (follow-up work)
+
+| Item | Status |
+|------|--------|
+| API keys out of the APK | ✅ **Code done, deploy needed.** `functions/` is a Cloud Functions proxy (token check, per-user rate limits, keys as server secrets); the app uses it as soon as `API_PROXY_URL` is set (`lib/core/services/api_gateway.dart`). You must deploy it and then **delete the keys from `.env`** - see `functions/README.md`. Until then the app still works in direct mode. |
+| Urdu right-to-left + font | ✅ Locale/direction follow the language switch; 28 padding, 44 alignment and 29 `Positioned` usages now mirror automatically; Noto Nastaliq Urdu loaded through `google_fonts` (downloads on first Urdu use, then cached - **bundle the .ttf in `assets/fonts` if Urdu must work offline on first launch**). ⬜ Still needs a screen-by-screen visual check on a phone. |
+| History restored on a new phone / reinstall | ✅ `ScanRepository.restoreFromCloud()` runs from Home; unsynced scans are uploaded first. Note: a scan deleted while offline could reappear. |
+| Photos as files, not SQLite text | ✅ Compressed JPEGs (max 1024 px) in `scan_images/`; old rows are migrated automatically; cloud backup reads from the file. |
+| Play Store prep | ✅ Release-signing config + `docs/RELEASE.md` (package-name steps), in-app Privacy Policy (`assets/legal/privacy_policy.md`). ⬜ **You** still must: pick the real application ID, create the keystore, fill in the policy contact email and publish it at a URL. Gradle changes are untested (no Android SDK here). |
+| Low-confidence result | ✅ Under 60% confidence: "not sure, retake photo" alert, and treatment advice is hidden. |
+| AI-guidance warning | ✅ On the on-device and Advanced result screens next to treatments. |
+| Offline banner | ✅ Enabled app-wide, translated, appears after ~40 s offline. |
+| Icon-button accessibility | ✅ 26 `IconButton`s got tooltips (screen-reader labels). ⬜ Tap-only icons built with `GestureDetector`, and Urdu tooltips, remain. |
+| Hardcoded colours | 🟡 241 of 478 hex values replaced by `AppColors` tokens (no visual change). ⬜ The remaining ~237 one-off shades and dark-mode variants need design decisions. |
+| Inline Urdu/English text | 🟡 230 of 261 ternaries moved into `en.json`/`ur.json` (as `ui_*` keys). ⬜ 31 more (strings with `$` interpolation, escapes or multi-line) remain. |
+| Tests + CI | ✅ Translation-key test (found 2 missing keys), API gateway tests, proxy tests, GitHub Actions workflow. |
+
+---
+
 ## 0. Things YOU must do now (cannot be done from code)
 
 | # | Pri | Action |
@@ -40,7 +59,7 @@ the review environment) — every item below still needs a manual test on device
 | Pri | Issue | Status |
 |-----|-------|--------|
 | **P0** | `.env` with live keys tracked in git (despite being in `.gitignore`). | ✅ Untracked; added `.env.example`. ⬜ Rotate keys (0.1). |
-| **P0** | **API keys are bundled into the APK** (`.env` is listed under `flutter: assets:`). Anyone can unzip the APK and use your Groq/Plant.id credit. | ⬜ **Move the Groq/Plant.id/Weather calls behind a backend** (Firebase Cloud Functions or a small server). The app calls your function with the user's Firebase ID token; the function holds the keys and enforces per-user rate limits. This is the only real fix — obfuscation does not help. |
+| **P0** | **API keys are bundled into the APK** *(proxy code added in Round 2 - deploy it)* (`.env` is listed under `flutter: assets:`). Anyone can unzip the APK and use your Groq/Plant.id credit. | ⬜ **Move the Groq/Plant.id/Weather calls behind a backend** (Firebase Cloud Functions or a small server). The app calls your function with the user's Firebase ID token; the function holds the keys and enforces per-user rate limits. This is the only real fix — obfuscation does not help. |
 | **P0** | No Firestore/Storage rules in the repo. | ✅ Added `firestore.rules` + `storage.rules`. ⬜ Deploy them (0.3). |
 | P1 | WeatherAPI key hardcoded in Dart source. | ✅ Now read from `WEATHER_API_KEY` in `.env`. |
 | P1 | Requested `MANAGE_EXTERNAL_STORAGE` ("All files access") on every PDF save because of a hardcoded `androidVersion = 33`. Google Play rejects apps that use this without a strong reason, and users see a scary settings screen. | ✅ Removed. PDF save now tries to write first and asks for legacy storage permission only on Android ≤ 9. Storage permissions are capped with `maxSdkVersion`. |

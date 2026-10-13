@@ -24,9 +24,9 @@ class AppDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkCard : Colors.white;
-    final border = isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8);
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
-    final subColor = isDark ? AppColors.darkCaption : const Color(0xFF718096);
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final subColor = isDark ? AppColors.darkCaption : AppColors.lightCaption;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -96,7 +96,7 @@ class AppDialog extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: actions.map((w) => Padding(
-                    padding: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsetsDirectional.only(start: 8),
                     child: w,
                   )).toList(),
                 ),
@@ -144,7 +144,7 @@ class AppDialogActions {
       style: OutlinedButton.styleFrom(
         foregroundColor: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
         side: BorderSide(
-          color: isDark ? AppColors.darkBorder : const Color(0xFFE8E8E8)),
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
         textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),

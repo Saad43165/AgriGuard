@@ -121,7 +121,7 @@ class _BugReportScreenState extends State<BugReportScreen> {
         backgroundColor: surfaceColor,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: IconButton(
+        leading: IconButton(tooltip: 'Back', 
           icon: Icon(Icons.arrow_back_rounded, color: textPrimary, size: 22),
           onPressed: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
         ),
@@ -408,7 +408,7 @@ class _SeverityPicker extends StatelessWidget {
             onTap: () { HapticFeedback.selectionClick(); onChanged(s['label']); },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              margin: EdgeInsets.only(right: s == severities.last ? 0 : 8),
+              margin: EdgeInsetsDirectional.only(end: s == severities.last ? 0 : 8),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected ? color.withValues(alpha: 0.15) : (isDark ? AppColors.darkCard : AppColors.lightCard),

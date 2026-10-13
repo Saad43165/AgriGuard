@@ -40,9 +40,7 @@ class HistoryLoadingState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            t.isUrdu
-                ? 'آپ کے اسکینز لوڈ ہو رہے ہیں...'
-                : 'Loading your scans...',
+            t.get('ui_loading_your_scans'),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -85,15 +83,13 @@ class HistoryErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              t.isUrdu ? 'اسکینز لوڈ کرنے میں ناکامی' : 'Failed to load scans',
+              t.get('ui_failed_to_load_scans'),
               style:
               const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
-              t.isUrdu
-                  ? 'براہ کرم اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں'
-                  : 'Please check your connection and try again',
+              t.get('ui_please_check_your_connection_and_try_a'),
               style: TextStyle(
                   fontSize: 14,
                   color: Theme.of(context)
@@ -113,7 +109,7 @@ class HistoryErrorState extends StatelessWidget {
               ),
               icon: const Icon(Icons.refresh_rounded),
               label: Text(
-                t.isUrdu ? 'دوبارہ کوشش کریں' : 'Try Again',
+                t.get('ui_try_again'),
                 style: const TextStyle(fontSize: 16),
               ),
             ),
@@ -149,7 +145,7 @@ class HistoryNoResultsState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              t.isUrdu ? 'کوئی نتیجہ نہیں ملا' : 'No results found',
+              t.get('ui_no_results_found_2'),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -160,9 +156,7 @@ class HistoryNoResultsState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              t.isUrdu
-                  ? 'اپنی تلاش یا فلٹر تبدیل کریں'
-                  : 'Try adjusting your search or filter',
+              t.get('ui_try_adjusting_your_search_or_filter'),
               style: TextStyle(
                   fontSize: 14,
                   color: isDark
@@ -174,7 +168,7 @@ class HistoryNoResultsState extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onClearFilters,
               icon: const Icon(Icons.clear_rounded, size: 16),
-              label: Text(t.isUrdu ? 'فلٹر صاف کریں' : 'Clear filters'),
+              label: Text(t.get('ui_clear_filters')),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side:

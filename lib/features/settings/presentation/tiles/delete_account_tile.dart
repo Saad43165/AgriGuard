@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../features/auth/services/auth_service.dart';
-import '../../../../core/database/scan_database.dart';
+import '../../../../core/repositories/scan_repository.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_themes.dart';
 
@@ -37,7 +37,7 @@ class DeleteAccountTile extends StatelessWidget {
       final uid = user.uid;
       await auth.deleteAccount();
       try {
-        await ScanDatabase.instance.deleteScansForUser(uid);
+        await ScanRepository().deleteLocalScansForUser(uid);
       } catch (_) {}
 
       if (!context.mounted) return;
@@ -139,7 +139,7 @@ class DeleteAccountTile extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
-                    suffixIcon: IconButton(
+                    suffixIcon: IconButton(tooltip: 'Show password', 
                       icon: Icon(obscureText ? Icons.visibility_rounded : Icons.visibility_off_rounded, size: 18),
                       onPressed: () => setState(() => obscureText = !obscureText),
                     ),

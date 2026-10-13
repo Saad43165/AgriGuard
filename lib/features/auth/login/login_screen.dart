@@ -140,10 +140,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                       const Text('Welcome back',
                           style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800,
-                              color: Color(0xFF1B2B1E), letterSpacing: -0.5)),
+                              color: AppColors.lightOnSurface, letterSpacing: -0.5)),
                       const SizedBox(height: 4),
                       const Text('Sign in to your AgriGuard account',
-                          style: TextStyle(fontSize: 14, color: Color(0xFF718096))),
+                          style: TextStyle(fontSize: 14, color: AppColors.lightCaption)),
                     ],
                   ),
                 ),
@@ -155,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: Color(0xFF1B2B1E), fontSize: 14),
+                  style: const TextStyle(color: AppColors.lightOnSurface, fontSize: 14),
                   decoration: buildLoginInputDeco('Enter your email', Icons.email_outlined),
                   validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
                 ),
@@ -167,11 +167,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscure,
-                  style: const TextStyle(color: Color(0xFF1B2B1E), fontSize: 14),
+                  style: const TextStyle(color: AppColors.lightOnSurface, fontSize: 14),
                   decoration: buildLoginInputDeco('Enter your password', Icons.lock_outline_rounded).copyWith(
-                    suffixIcon: IconButton(
+                    suffixIcon: IconButton(tooltip: 'Show password', 
                       icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          color: const Color(0xFF9E9E9E), size: 20),
+                          color: AppColors.grey500, size: 20),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Forgot password
                 Align(
-                  alignment: Alignment.centerRight,
+                  alignment: AlignmentDirectional.centerEnd,
                   child: TextButton(
                     onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
                     child: const Text('Forgot password?',
@@ -213,12 +213,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Divider
                 Row(children: [
-                  const Expanded(child: Divider(color: Color(0xFFE8E8E8))),
+                  const Expanded(child: Divider(color: AppColors.lightBorder)),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or', style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 13)),
+                    child: Text('or', style: TextStyle(color: AppColors.grey500, fontSize: 13)),
                   ),
-                  const Expanded(child: Divider(color: Color(0xFFE8E8E8))),
+                  const Expanded(child: Divider(color: AppColors.lightBorder)),
                 ]),
                 const SizedBox(height: 16),
 
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: OutlinedButton(
                     onPressed: (_isLoading || _isGoogleLoading) ? null : _googleLogin,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFE8E8E8), width: 1.5),
+                      side: const BorderSide(color: AppColors.lightBorder, width: 1.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       backgroundColor: Colors.white,
                     ),
@@ -243,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(width: 10),
                               const Text('Continue with Google',
                                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1B2B1E))),
+                                      color: AppColors.lightOnSurface)),
                             ],
                           ),
                   ),
@@ -257,18 +257,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: OutlinedButton(
                     onPressed: _isLoading ? null : _guestLogin,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFE8E8E8), width: 1.5),
+                      side: const BorderSide(color: AppColors.lightBorder, width: 1.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       backgroundColor: Colors.white,
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.person_outline_rounded, size: 20, color: Color(0xFF718096)),
+                        Icon(Icons.person_outline_rounded, size: 20, color: AppColors.lightCaption),
                         SizedBox(width: 10),
                         Text('Continue as Guest (5 free scans)',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
-                                color: Color(0xFF718096))),
+                                color: AppColors.lightCaption)),
                       ],
                     ),
                   ),
@@ -281,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text("Don't have an account? ",
-                          style: TextStyle(color: Color(0xFF718096), fontSize: 14)),
+                          style: TextStyle(color: AppColors.lightCaption, fontSize: 14)),
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, AppRoutes.register),
                         child: const Text('Sign Up',

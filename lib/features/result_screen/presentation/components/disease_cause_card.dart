@@ -66,7 +66,7 @@ class DiseaseCausesCard extends StatelessWidget {
                         text,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? AppColors.darkSubtext : const Color(0xFF4A5568),
+                          color: isDark ? AppColors.darkSubtext : AppColors.lightSubtext,
                           height: 1.5,
                         ),
                       ),

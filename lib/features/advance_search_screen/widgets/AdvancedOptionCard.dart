@@ -21,8 +21,8 @@ class AdvancedOptionCard extends StatelessWidget {
   });
 
   static const _tagColors = [
-    Color(0xFF3B82F6),
-    Color(0xFF10B981),
+    AppColors.blue,
+    AppColors.emerald,
     AppColors.secondary,
   ];
 

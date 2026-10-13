@@ -35,7 +35,7 @@ class AgriAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkSurface : Colors.white;
-    final textColor = isDark ? AppColors.darkOnSurface : const Color(0xFF1B2B1E);
+    final textColor = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final borderColor = isDark ? AppColors.darkBorder : const Color(0xFFEEEEEE);
 
     return AppBar(
@@ -44,7 +44,7 @@ class AgriAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: centerTitle,
       automaticallyImplyLeading: false,
       leading: showBack
-          ? IconButton(
+          ? IconButton(tooltip: 'Back', 
               icon: Icon(Icons.arrow_back_rounded, color: textColor, size: 22),
               onPressed: () {
                 HapticFeedback.lightImpact();

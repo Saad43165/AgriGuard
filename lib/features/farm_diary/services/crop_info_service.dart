@@ -1,17 +1,15 @@
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:agriguard_fyp/core/services/api_gateway.dart';
 import 'package:http/http.dart' as http;
 
 /// Fetches real crop/disease information from Groq AI.
 /// Falls back to curated offline data if no internet.
 class CropInfoService {
-  static const _groqUrl = 'https://api.groq.com/openai/v1/chat/completions';
-
   // ── Fetch live crop info ──────────────────────────────────────────────────
   static Future<Map<String, dynamic>> getCropInfo(String cropName, String plantType, {String language = 'en'}) async {
     try {
-      final key = dotenv.env['GROQ_API_KEY'] ?? '';
-      if (key.isEmpty) return _fallback(plantType);
+      if (!ApiGateway.groqAvailable) return _fallback(plantType);
 
       final langPrompt = language == 'ur' 
           ? 'Respond ONLY in Urdu language (اردو). Translate all descriptive text, labels, and list items into clear, agricultural Urdu. All values in the JSON MUST be in Urdu.' 
@@ -39,10 +37,10 @@ Provide exactly 3 common diseases. Keep all text concise and practical for farme
 ''';
 
       final response = await http.post(
-        Uri.parse(_groqUrl),
+        Uri.parse(ApiGateway.groqUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $key',
+          'Authorization': await ApiGateway.groqAuth(),
         },
         body: jsonEncode({
           'model': dotenv.env['GROQ_MODEL'] ?? 'llama-3.3-70b-versatile',

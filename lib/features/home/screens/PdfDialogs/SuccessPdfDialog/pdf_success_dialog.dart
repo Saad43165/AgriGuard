@@ -1,3 +1,4 @@
+import 'package:agriguard_fyp/core/widgets/app_themes.dart';
 import 'dart:io';
 
 import 'package:agriguard_fyp/features/home/screens/PdfDialogs/SuccessPdfDialog/pdf_action_button.dart';
@@ -70,7 +71,7 @@ class PdfSuccessDialog extends StatelessWidget {
                         icon: Icons.picture_as_pdf_rounded,
                         label: 'Format',
                         value: 'PDF',
-                        color: const Color(0xFFEF4444),
+                        color: AppColors.error,
                         isDark: isDark,
                       ),
                       const SizedBox(width: 10),
@@ -78,7 +79,7 @@ class PdfSuccessDialog extends StatelessWidget {
                         icon: Icons.access_time_rounded,
                         label: 'Created',
                         value: currentTime,
-                        color: const Color(0xFF8B5CF6),
+                        color: AppColors.violet,
                         isDark: isDark,
                       ),
                     ],
@@ -133,12 +134,12 @@ class PdfSuccessDialog extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: const Color(0xFF059669).withValues(alpha: 0.1),
+              color: AppColors.emeraldDark.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.check_circle_rounded,
-              color: Color(0xFF059669),
+              color: AppColors.emeraldDark,
               size: 32,
             ),
           ),

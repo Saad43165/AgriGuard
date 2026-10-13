@@ -23,7 +23,7 @@ class SpeciesGridWidget extends StatelessWidget {
         children: [
           // Section title
           Text(
-            t.isUrdu ? 'معاون پودے' : 'Supported Plants',
+            t.get('ui_supported_plants'),
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -43,7 +43,7 @@ class SpeciesGridWidget extends StatelessWidget {
               itemBuilder: (context, index) {
                 final species = AppSpecies.allSpecies[index];
                 return Padding(
-                  padding: EdgeInsets.only(right: index < AppSpecies.allSpecies.length - 1 ? 8 : 0),
+                  padding: EdgeInsetsDirectional.only(end: index < AppSpecies.allSpecies.length - 1 ? 8 : 0),
                   child: SpeciesChip(species: species, isDark: isDark, t: t),
                 );
               },
@@ -53,8 +53,8 @@ class SpeciesGridWidget extends StatelessWidget {
 
           // Feature cards with custom images
           FeatureCard(
-            title: t.isUrdu ? 'تشخیص' : 'Diagnose',
-            subtitle: t.isUrdu ? 'آف لائن' : 'Offline',
+            title: t.get('ui_diagnose'),
+            subtitle: t.get('ui_offline'),
             customIconPath: 'assets/diag.png',
             imagePath: 'assets/diag.png',
             isDark: isDark,
@@ -62,8 +62,8 @@ class SpeciesGridWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           FeatureCard(
-            title: t.isUrdu ? 'ایڈوانسڈ اسکین' : 'Advance Scan',
-            subtitle: t.isUrdu ? 'انٹرنیٹ درکار' : 'Internet Required',
+            title: t.get('ui_advance_scan'),
+            subtitle: t.get('ui_internet_required'),
             customIconPath: 'assets/adv.png',
             imagePath: 'assets/adv.png',
             isDark: isDark,
@@ -72,8 +72,8 @@ class SpeciesGridWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           FeatureCard(
-            title: t.isUrdu ? 'فارم ڈائری' : 'Farm Diary',
-            subtitle: t.isUrdu ? 'اپنی فصلیں ٹریک کریں' : 'Track Your Crops',
+            title: t.get('ui_farm_diary'),
+            subtitle: t.get('ui_track_your_crops'),
             customIconPath: 'assets/farm.png',
             imagePath: 'assets/farm.png',
             isDark: isDark,
@@ -81,8 +81,8 @@ class SpeciesGridWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           FeatureCard(
-            title: t.isUrdu ? 'تجزیات' : 'Analytics',
-            subtitle: t.isUrdu ? 'آف لائن' : 'Offline',
+            title: t.get('ui_analytics'),
+            subtitle: t.get('ui_offline'),
             customIconPath: 'assets/analytics.png',
             imagePath: 'assets/analytics.png',
             isDark: isDark,
@@ -90,8 +90,8 @@ class SpeciesGridWidget extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           FeatureCard(
-            title: t.isUrdu ? 'بیماری لائبریری' : 'Disease Library',
-            subtitle: t.isUrdu ? '35 بیماریاں اور پودے' : '35 Diseases & Plants',
+            title: t.get('ui_disease_library'),
+            subtitle: t.get('ui_35_diseases_plants'),
             customIconPath: 'assets/library.png',
             imagePath: 'assets/library.png',
             isDark: isDark,
