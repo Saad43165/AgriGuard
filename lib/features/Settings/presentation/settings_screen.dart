@@ -11,7 +11,6 @@ import 'tiles/app_version_tile.dart';
 import 'tiles/clear_history_tile.dart';
 import 'tiles/delete_account_tile.dart';
 import 'components/notification_schedule_sheet.dart';
-import 'profile_screen.dart';
 import 'privacy_security_screen.dart';
 
 class SettingsScreen extends StatefulWidget {

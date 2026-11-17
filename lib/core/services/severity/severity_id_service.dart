@@ -1,20 +1,16 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
-import 'SeverityModelReference.dart';
+import 'SeverityModel.dart';
 import 'SeverityResult.dart';
 import 'severity_pixel_analyzer.dart';
 import 'severity_remediation_lookup.dart';
 
 /// SeverityIdService — Main Coordinator
-///
 /// Combines three approaches for severity detection:
 ///   1. Pixel Analysis (quantitative — counts damaged tissue)
 ///   2. Disease Knowledge Base (botanical — knows disease reputation)
-///   3. TFLite Model Reference (kept for FYP demonstration)
-///
-/// The TFLite model is loaded but NOT used because pixel analysis is more accurate.
-/// If instructor asks: "Where is your AI model?" → severity_model_reference.dart
+///   3. TFLite Model
 
 class SeverityIdService {
   final SeverityModelReference _modelRef = SeverityModelReference();

@@ -10,7 +10,7 @@ import '../../../core/widgets/app_themes.dart';
 import '../advance_result_screen/advanced_result_screen.dart';
 import '../capture/presentation/widgets/processing_overlay.dart';
 import 'models/advanced_option.dart';
-import 'service/advanced_search_service.dart';
+import 'service/advance_service/advanced_search_service.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
   final Map<String, dynamic> originalScanData;

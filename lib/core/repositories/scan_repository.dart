@@ -49,7 +49,6 @@ class ScanRepository {
     final isAdvancedSource = src.contains('groq') ||
         src.contains('plantid') ||
         src.contains('plant.id') ||
-        src.contains('planthealth') ||
         src.contains('advanced');
 
     return isAdvancedSource ? 'advanced_$hash' : 'ondevice_$hash';
@@ -254,64 +253,7 @@ class ScanRepository {
     }
   }
 
-  /// PlantHealth advanced scan save
-  Future<ScanModel> savePlantHealthScan({
-    required Map<String, dynamic> analysisResult,
-    String? imagePath,
-  }) async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('User not logged in');
 
-      final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-      final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
-
-      final existingScan = await _database.getScanById(scanId);
-      if (existingScan != null) {
-        debugPrint('✅ PlantHealth scan already exists, returning existing: $scanId');
-        return existingScan;
-      }
-
-      String? imageBase64;
-      if (imagePath != null) {
-        try {
-          final file = File(imagePath);
-          if (await file.exists()) {
-            imageBase64 = base64Encode(await file.readAsBytes());
-          }
-        } catch (e) {
-          debugPrint('⚠️ Failed to convert image to base64: $e');
-        }
-      }
-
-      final scan = ScanModel.fromPlantHealthScan(
-        userId: user.uid,
-        analysisResult: analysisResult,
-        imagePath: imagePath,
-      ).copyWith(
-        imageBase64: imageBase64,
-        id: scanId,
-      );
-
-      final savedScanId = await _database.createScan(scan);
-      final savedScan = scan.copyWith(id: savedScanId);
-
-      _syncAdvancedScanToFirebase(savedScan);
-
-      debugPrint('✅ PlantHealth scan saved: $savedScanId');
-      return savedScan;
-    } catch (e) {
-      if (e.toString().contains('UNIQUE constraint failed') || e.toString().contains('Duplicate')) {
-        debugPrint('⚠️ Duplicate PlantHealth scan detected');
-        final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-        final scanId = analysisResult['scanId'] as String? ?? _generateContentHash(data, imagePath);
-        final existing = await _database.getScanById(scanId);
-        if (existing != null) return existing;
-      }
-      debugPrint('❌ Error saving PlantHealth scan: $e');
-      rethrow;
-    }
-  }
 
   Future<void> checkForDuplicates() async {
     try {

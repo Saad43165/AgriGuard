@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
-import 'package:agriguard_fyp/features/advance_search_screen/service/plant_id_api_service.dart';
+import 'package:agriguard_fyp/features/advance_search_screen/service/plantid/plant_id_api_service.dart';
 import 'chatbot_constants.dart';
 import 'models/chatbot_models.dart';
 import 'models/chatbot_storage.dart';

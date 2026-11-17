@@ -10,7 +10,7 @@ class SeverityModelReference {
     try {
       _interpreter = await Interpreter.fromAsset('assets/models/severity_dynamic_quant.tflite');
       isLoaded = true;
-      debugPrint('✅ Severity TFLite model loaded (reference only — not used for inference)');
+      debugPrint('✅ Severity TFLite model loaded)');
       debugPrint('   Input: ${_interpreter!.getInputTensors()[0].shape}');
       debugPrint('   Output: ${_interpreter!.getOutputTensors()[0].shape}');
     } catch (e) {

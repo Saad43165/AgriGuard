@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:agriguard_fyp/core/services/translation_service.dart';
 import 'package:agriguard_fyp/core/widgets/app_themes.dart';
-import 'package:agriguard_fyp/features/advance_search_screen/service/groq_service.dart';
+import 'package:agriguard_fyp/features/advance_search_screen/service/groq/groq_service.dart';
 import '../plant_species.dart';
 
 class SpeciesChip extends StatelessWidget {

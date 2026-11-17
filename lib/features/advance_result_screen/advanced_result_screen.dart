@@ -12,7 +12,7 @@ import '../../core/widgets/app_themes.dart';
 import '../../features/home/screens/PdfDialogs/services/pdf_action_services.dart';
 import '../../features/home/screens/PdfDialogs/SuccessPdfDialog/pdf_success_dialog.dart';
 import '../auth/login/services/guest_service.dart';
-import '../advance_search_screen/service/groq_service.dart';
+import '../advance_search_screen/service/groq/groq_service.dart';
 
 class AdvancedResultsScreen extends StatefulWidget {
   final Map<String, dynamic> analysisResult;
@@ -164,16 +164,10 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
       final imagePath = widget.originalScanData['imagePath'] as String?;
 
       final isGroq = source.contains('groq');
-      final isPlantHealth = source.contains('planthealth');
-      final isPlantId = source.contains('plantid') || source.contains('plant.id') || !isGroq && !isPlantHealth;
+      final isPlantId = source.contains('plantid') || source.contains('plant.id') || !isGroq;
 
       final savedScan = isGroq
           ? await _scanRepository.saveGroqScan(
-        analysisResult: updatedAnalysisResult,
-        imagePath: imagePath,
-      )
-          : isPlantHealth
-          ? await _scanRepository.savePlantHealthScan(
         analysisResult: updatedAnalysisResult,
         imagePath: imagePath,
       )
@@ -202,14 +196,14 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
     HapticFeedback.lightImpact();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final scanDataForPdf = {
       ...widget.analysisResult,
       'data': _urduOverrideData ?? data,
     };
 
     final pdfService = PdfActionsService();
-    
+
     await pdfService.generateAndShowPdf(
       context: context,
       scan: scanDataForPdf,
@@ -230,13 +224,13 @@ class _AdvancedResultsScreenState extends State<AdvancedResultsScreen> {
 
   Future<void> _showPdfSuccessDialog(File pdfFile) async {
     final dialog = PdfSuccessDialog(pdfFile: pdfFile);
-    
+
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
       builder: (_) => dialog,
     );
-    
+
     if (result == null) return;
   }
 

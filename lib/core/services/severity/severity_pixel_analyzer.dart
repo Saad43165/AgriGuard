@@ -4,7 +4,7 @@ import 'package:image/image.dart' as img;
 /// Pixel-Based Damage Analyzer
 ///
 /// Actually measures severity by counting damaged vs healthy pixels.
-/// This is the REAL severity measurement system.
+/// This is thd severity measurement system.
 class SeverityPixelAnalyzer {
 
   static const double criticalThreshold = 50.0;  // 50%+ damage = Critical

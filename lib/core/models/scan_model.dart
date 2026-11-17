@@ -9,8 +9,7 @@ enum ScanType {
 enum AnalysisSource {
   onDeviceML('On-Device ML'),
   groq('Groq AI'),
-  plantId('Plant.id'),
-  plantHealth('PlantHealth');
+  plantId('Plant.id');
 
   final String displayName;
   const AnalysisSource(this.displayName);
@@ -99,8 +98,6 @@ class ScanModel {
     if (value is String) {
       final s = value.trim();
       if (s.isEmpty) return <String>[];
-
-      // If string looks like JSON array -> try decode
       if (s.startsWith('[') && s.endsWith(']')) {
         try {
           final parsed = jsonDecode(s);
@@ -109,8 +106,6 @@ class ScanModel {
           }
         } catch (_) {}
       }
-
-      // fallback split
       return s
           .split(RegExp(r'[,;\n]'))
           .map((x) => x.trim())
@@ -131,11 +126,9 @@ class ScanModel {
   }) {
     final confidence = _parseConfidence(scanData['confidence']);
     final symptomsList = _parseStringList(scanData['symptoms']);
-
     final remediationValue = scanData['remediation'];
     final treatmentValue = scanData['treatment'];
     final treatmentsList = _parseStringList(remediationValue ?? treatmentValue);
-
     final precautionsList = _parseStringList(scanData['precautions']);
 
     return ScanModel(
@@ -165,7 +158,6 @@ class ScanModel {
     String? imageUrl,
   }) {
     final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-
     final confidence = _parseConfidence(data['confidence']);
     final symptomsList = _parseStringList(data['symptoms']);
     final treatmentsList = _parseStringList(data['remediation']);
@@ -199,7 +191,6 @@ class ScanModel {
     String? imageUrl,
   }) {
     final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-
     final confidence = _parseConfidence(data['confidence']);
     final symptomsList = _parseStringList(data['symptoms']);
     final treatmentsList = _parseStringList(data['remediation']);
@@ -209,41 +200,6 @@ class ScanModel {
       userId: userId,
       scanType: ScanType.advanced,
       analysisSource: AnalysisSource.plantId,
-      plantName: data['plant']?.toString() ?? data['plantName']?.toString() ?? 'Unknown Plant',
-      scientificName: data['scientificName']?.toString() ?? '',
-      diseaseName: data['disease']?.toString() ?? data['diseaseName']?.toString() ?? 'Healthy',
-      severity: data['severity']?.toString() ?? 'Medium',
-      confidence: confidence,
-      symptoms: symptomsList,
-      treatments: treatmentsList,
-      precautions: precautionsList,
-      imagePath: imagePath,
-      imageUrl: imageUrl,
-      scanDate: DateTime.now(),
-      createdAt: DateTime.now(),
-      rawData: analysisResult,
-      advancedData: data,
-    );
-  }
-
-  /// Replaces the old Roboflow constructor.
-  factory ScanModel.fromPlantHealthScan({
-    required String userId,
-    required Map<String, dynamic> analysisResult,
-    String? imagePath,
-    String? imageUrl,
-  }) {
-    final data = analysisResult['data'] as Map<String, dynamic>? ?? {};
-
-    final confidence = _parseConfidence(data['confidence']);
-    final symptomsList = _parseStringList(data['symptoms']);
-    final treatmentsList = _parseStringList(data['remediation']);
-    final precautionsList = _parseStringList(data['precautions']);
-
-    return ScanModel(
-      userId: userId,
-      scanType: ScanType.advanced,
-      analysisSource: AnalysisSource.plantHealth,
       plantName: data['plant']?.toString() ?? data['plantName']?.toString() ?? 'Unknown Plant',
       scientificName: data['scientificName']?.toString() ?? '',
       diseaseName: data['disease']?.toString() ?? data['diseaseName']?.toString() ?? 'Healthy',
@@ -341,24 +297,14 @@ class ScanModel {
     final data = doc.data() as Map<String, dynamic>;
 
     AnalysisSource resolveSource() {
-      // Normal path if enum name exists
       final raw = data['analysisSource'];
       if (raw == null) return AnalysisSource.onDeviceML;
-
       final normalized = raw.toString().toLowerCase().trim();
 
-      // Legacy mappings
-      if (normalized == 'gemini') return AnalysisSource.groq;
-      if (normalized == 'huggingface' || normalized == 'hugging face' || normalized == 'hf') {
-        return AnalysisSource.plantHealth; // migrate legacy hf -> plantHealth
-      }
-      if (normalized == 'roboflow') return AnalysisSource.plantHealth; // migrate legacy roboflow -> plantHealth
-      if (normalized == 'planthealth') return AnalysisSource.plantHealth;
       if (normalized == 'plantid' || normalized == 'plant.id') return AnalysisSource.plantId;
       if (normalized == 'groq') return AnalysisSource.groq;
       if (normalized == 'ondeviceml' || normalized == 'on_device_ml') return AnalysisSource.onDeviceML;
 
-      // Try enum name match (for safety)
       return AnalysisSource.values.firstWhere(
             (e) => e.name.toLowerCase() == normalized,
         orElse: () => AnalysisSource.onDeviceML,
@@ -439,13 +385,6 @@ class ScanModel {
       if (raw == null) return AnalysisSource.onDeviceML;
       final normalized = raw.toString().toLowerCase().trim();
 
-      // Legacy mappings
-      if (normalized == 'gemini') return AnalysisSource.groq;
-      if (normalized == 'huggingface' || normalized == 'hugging face' || normalized == 'hf') {
-        return AnalysisSource.plantHealth; // migrate legacy hf -> plantHealth
-      }
-      if (normalized == 'roboflow') return AnalysisSource.plantHealth; // migrate legacy roboflow -> plantHealth
-      if (normalized == 'planthealth') return AnalysisSource.plantHealth;
       if (normalized == 'plantid' || normalized == 'plant.id') return AnalysisSource.plantId;
       if (normalized == 'groq') return AnalysisSource.groq;
 

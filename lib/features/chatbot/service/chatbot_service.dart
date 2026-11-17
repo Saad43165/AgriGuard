@@ -12,7 +12,61 @@ import '../models/chatbot_models.dart';
 class ChatbotService {
   static const Duration _timeout = Duration(seconds: 30);
 
-  /// Primary: Try Groq API. Returns reply string or null on failure.
+  // ── Off-topic filter ────────────────────────────────────────────────────────
+  /// Returns true if the query is related to agriculture, plants, or AgriGuard.
+  static bool _isAgriRelated(String query) {
+    final q = query.toLowerCase();
+
+    const agriKeywords = [
+      // Plants & crops
+      'plant', 'crop', 'leaf', 'leaves', 'disease', 'tomato', 'grape', 'corn',
+      'maize', 'bean', 'fig', 'walnut', 'apple', 'wheat', 'rice', 'mango',
+      'potato', 'pear', 'cherry', 'tree', 'fruit', 'vegetable', 'seed', 'soil',
+      'farm', 'field', 'garden', 'flower', 'root', 'stem', 'branch', 'bark',
+      // Diseases & pests
+      'blight', 'mold', 'mould', 'mite', 'rust', 'fungus', 'fungal',
+      'bacterial', 'virus', 'viral', 'pest', 'insect', 'wilt', 'spot', 'rot',
+      'infection', 'symptom', 'yellow', 'brown', 'curl', 'lesion', 'powdery',
+      'downy', 'anthracnose', 'septoria', 'canker', 'bud', 'scab',
+      // Treatments & farming
+      'fungicide', 'pesticide', 'treatment', 'cure', 'medicine', 'spray',
+      'fertilizer', 'irrigation', 'harvest', 'prune', 'pruning', 'compost',
+      'herbicide', 'insecticide', 'copper', 'mancozeb', 'triazole',
+      // App-related
+      'scan', 'agriguard', 'agri guard', 'how to', 'how do', 'use', 'work',
+      'support', 'owner', 'developer', 'contact', 'saad', 'on-device',
+      'advanced ai', 'camera', 'photo', 'image', 'model',
+      // General greetings (allowed — will get a scoped welcome reply)
+      'hello', 'hi', 'hey', 'salam', 'help',
+      // Urdu — plants & crops
+      'پودے', 'پودا', 'پتے', 'پتا', 'فصل', 'ٹماٹر', 'انگور', 'مکئی',
+      'پھلی', 'پھلیاں', 'انجیر', 'اخروٹ', 'سیب', 'گندم', 'چاول', 'آم',
+      'آلو', 'درخت', 'پھل', 'سبزی', 'بیج', 'مٹی', 'کھیت', 'باغ',
+      // Urdu — diseases & treatment
+      'بیماری', 'بیماریاں', 'علاج', 'دوا', 'فنگسائیڈ', 'کیڑے', 'سانچہ',
+      'زنگ', 'دھبے', 'مرجھانا', 'پیلا', 'بھورا', 'اسکین',
+      // Urdu — app & greetings
+      'مالک', 'رابطہ', 'بنایا', 'کیسے', 'استعمال', 'کام', 'فہرست',
+      'کون سے', 'السلام', 'ہیلو', 'سلام', 'مدد',
+    ];
+
+    for (final keyword in agriKeywords) {
+      if (q.contains(keyword) || query.contains(keyword)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Returns the off-topic rejection message.
+  static String _offTopicReply(bool isUrdu) {
+    return isUrdu
+        ? "🌱 **میں صرف AgriGuard اور زراعت کے بارے میں مدد کر سکتا ہوں۔**\n\nبراہ کرم پودوں، فصلوں، بیماریوں یا AgriGuard ایپ کے بارے میں سوال کریں۔\n\n**مثالیں:**\n• ٹماٹر کی بیماریوں کا علاج کیا ہے؟\n• AgriGuard کیسے استعمال کریں؟\n• مکئی کے پتے پیلے کیوں ہو رہے ہیں؟"
+        : "🌱 **I can only help with AgriGuard and agriculture-related topics.**\n\nPlease ask about plants, crops, diseases, or the AgriGuard app.\n\n**Examples:**\n• What are the treatments for tomato blight?\n• How do I use AgriGuard to scan a leaf?\n• Why are my corn leaves turning yellow?";
+  }
+
+  // ── Primary: Try Groq API ───────────────────────────────────────────────────
+  /// Returns reply string or null on failure.
   static Future<String?> sendToGroq(List<ChatMessage> messages) async {
     final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
     final groqModel =
@@ -20,14 +74,35 @@ class ChatbotService {
 
     if (groqKey.isEmpty) return null;
 
+    // Check off-topic before hitting the API
+    final lastUserMsg = messages.lastWhere(
+          (m) => m.role == 'user',
+      orElse: () => messages.last,
+    );
+    final isUrdu = ChatbotConstants.isUrduText(lastUserMsg.content);
+
+    if (!_isAgriRelated(lastUserMsg.content)) {
+      return _offTopicReply(isUrdu);
+    }
+
     try {
-      final lastUserMsg = messages.lastWhere(
-        (m) => m.role == 'user',
-        orElse: () => messages.last,
-      );
-      final langHint = ChatbotConstants.isUrduText(lastUserMsg.content)
+      final langHint = isUrdu
           ? '\n\nIMPORTANT: The user is writing in Urdu. You MUST respond entirely in Urdu script. Use the same structured emoji format but in Urdu.'
           : '';
+
+      // Extra system-level guardrail so the LLM itself also stays on topic
+      const scopeGuardrail = '''
+
+STRICT SCOPE RULE: You are exclusively an AgriGuard plant disease assistant. 
+You MUST refuse any question that is NOT about:
+- Plant diseases, crop health, or agricultural problems
+- Treatments, fungicides, pesticides, or farming practices
+- The AgriGuard app features, scanning, or usage
+
+If the user asks about anything outside this scope (e.g. coding, politics, 
+general knowledge, math, entertainment, etc.), respond ONLY with:
+"🌱 I can only help with plant diseases and AgriGuard. Please ask about crops, 
+diseases, or app usage." — and nothing else.''';
 
       final apiMessages = messages
           .map((m) => {'role': m.role, 'content': m.content})
@@ -35,30 +110,31 @@ class ChatbotService {
 
       final response = await http
           .post(
-            Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $groqKey',
+        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $groqKey',
+        },
+        body: jsonEncode({
+          'model': groqModel,
+          'messages': [
+            {
+              'role': 'system',
+              'content':
+              ChatbotConstants.systemPrompt + scopeGuardrail + langHint,
             },
-            body: jsonEncode({
-              'model': groqModel,
-              'messages': [
-                {
-                  'role': 'system',
-                  'content': ChatbotConstants.systemPrompt + langHint,
-                },
-                ...apiMessages,
-              ],
-              'max_tokens': 700,
-              'temperature': 0.65,
-            }),
-          )
+            ...apiMessages,
+          ],
+          'max_tokens': 700,
+          'temperature': 0.65,
+        }),
+      )
           .timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final reply =
-            data['choices'][0]['message']['content'] as String;
+        data['choices'][0]['message']['content'] as String;
         return reply.trim();
       }
       debugPrint('Groq error ${response.statusCode}: ${response.body}');
@@ -69,8 +145,13 @@ class ChatbotService {
     }
   }
 
-  /// Fallback: keyword-based local responses
+  // ── Fallback: keyword-based local responses ─────────────────────────────────
   static String localFallback(String query, bool isUrduQuery) {
+    // Off-topic check first
+    if (!_isAgriRelated(query)) {
+      return _offTopicReply(isUrduQuery);
+    }
+
     final q = query.toLowerCase();
 
     // ── Owner / contact ──────────────────────────────────────────────────────
@@ -136,6 +217,7 @@ class ChatbotService {
     // ── How to use / scan ────────────────────────────────────────────────────
     if (q.contains('scan') ||
         q.contains('how to') ||
+        q.contains('how do') ||
         q.contains('use') ||
         q.contains('work') ||
         query.contains('اسکین') ||
@@ -169,9 +251,11 @@ class ChatbotService {
         q.contains('hi') ||
         q.contains('hey') ||
         q.contains('salam') ||
+        q.contains('help') ||
         query.contains('السلام') ||
         query.contains('ہیلو') ||
-        query.contains('سلام')) {
+        query.contains('سلام') ||
+        query.contains('مدد')) {
       return isUrduQuery
           ? "🌱 **السلام علیکم! AgriGuard AI میں خوش آمدید**\n\nمیں آپ کا پودوں کا ماہر ہوں۔ میں مدد کر سکتا ہوں:\n\n🔌 **آن ڈیوائس:** 6 پودوں کی 35 بیماریاں (آف لائن)\n🌐 **ایڈوانسڈ AI:** ہزاروں پودوں کی شناخت\n💬 **یہ چیٹ:** کسی بھی پودے کے بارے میں سوال کریں\n\n**آج کیا مسئلہ ہے؟**"
           : "🌱 **Welcome to AgriGuard AI!**\n\nI'm your personal plant health expert. I can help with:\n\n🔌 **On-Device:** 35 diseases for Bean, Corn, Fig, Grape, Walnut, Tomato (offline)\n🌐 **Advanced AI:** Thousands of plant species via Plant.id\n💬 **This Chat:** Ask me anything about any plant!\n\n**What plant issue can I help you with today?**";
@@ -203,7 +287,7 @@ class ChatbotService {
           : "💊 **General Treatment Guide**\n\n🍄 **Fungal Diseases:**\n• Copper fungicides, mancozeb, triazoles, strobilurin\n\n🦠 **Bacterial Diseases:**\n• Copper bactericides, streptomycin\n\n🦠 **Viral Diseases:**\n• Control insect vectors — no direct cure exists\n\n🕷️ **Mites:**\n• Abamectin, bifenazate miticides\n\n⚠️ **Important:** Always follow label dosage instructions!\n\n💡 **Tip:** Scan with AgriGuard first to identify the exact disease!";
     }
 
-    // ── Default ──────────────────────────────────────────────────────────────
+    // ── Default (agri-related but no specific match) ─────────────────────────
     return isUrduQuery
         ? "🌱 **میں مدد کر سکتا ہوں!**\n\nمجھ سے پوچھیں:\n• کسی بھی پودے کی بیماری کے بارے میں\n• AgriGuard کے استعمال کے بارے میں\n• کسی بھی فصل کی دیکھ بھال کے بارے میں\n\nیا AgriGuard سے اپنے پودے کو اسکین کریں!"
         : "🌱 **I'm here to help!**\n\nAsk me about:\n• Any plant disease (Bean, Corn, Fig, Grape, Walnut, Tomato + more)\n• How to use AgriGuard features\n• General crop care & treatment advice\n\nOr scan your plant with AgriGuard for instant AI diagnosis!";
